@@ -21,7 +21,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     { href: "#", label: "Տվյալներ" },
     { href: "#", label: "Տեղեկատվական կենտրոն" },
     { href: "#", label: "Հետադարձ կապ" },
-    { href: "#", label: "Նորություններ" },
+    { href: "/attributes", label: "Տվյալներ" },
   ];
 
   function handleLogout() {
@@ -47,9 +47,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
         <Separator className="mb-4 bg-[#e6e7eb]" />
         <nav className="space-y-1">
-          {navItems.map((item) => (
+          {navItems.map((item, index) => (
             <Link
-              key={item.href}
+              key={index}
               href={item.href}
               className={`block h-10 rounded-[4px] px-4 py-[13px] text-[12px] leading-[14px] transition ${
                 pathname === item.href
@@ -68,12 +68,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="flex flex-1 flex-col">
-        <header className="flex h-[84px] items-center justify-between bg-[#f9fafb] px-[44px]">
-          <div>
-            <p className="text-[20px] font-medium leading-[24px] text-[#2c2c2c]">Ցուցանիշ</p>
-          </div>
-        </header>
-        <main className="px-[44px] pb-10">{children}</main>
+        {/*<header className="flex h-[84px] items-center justify-between bg-[#f9fafb] px-[44px]">*/}
+        {/*  <div>*/}
+        {/*    <p className="text-[20px] font-medium leading-[24px] text-[#2c2c2c]">Ցուցանիշ</p>*/}
+        {/*  </div>*/}
+        {/*</header>*/}
+        <main className="px-[44px] pb-10 pt-10">{children}</main>
       </div>
     </div>
   );
