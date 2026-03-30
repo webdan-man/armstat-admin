@@ -5,6 +5,16 @@ export async function fetchAttributes() {
     return apiClient<Attribute[]>(`${process.env.NEXT_PUBLIC_BASE_URL}/attributes`);
 }
 
+export async function createAttribute(payload: {
+    category: string;
+    key: string;
+}): Promise<Attribute> {
+    return apiClient<Attribute>(`/api/attributes`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
 export async function importAttributesFromCSV(payload: {
     file: File;
     key: string;

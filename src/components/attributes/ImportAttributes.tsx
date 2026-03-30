@@ -1,7 +1,11 @@
 "use client";
 
 import React, { useMemo, useRef, useState } from "react";
-import { fetchAttributes, importAttributesFromCSV } from "@/services/attributeService";
+import {
+    createAttribute,
+    fetchAttributes,
+    importAttributesFromCSV,
+} from "@/services/attributeService";
 import { withToastError } from "@/lib/withToastError";
 import {
     Select,
@@ -26,21 +30,50 @@ import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 
-const schema = z.object({
-    category: z.string().min(1, "Ընտրեք տեսակը"),
-    key: z.string().min(1, "Ընտրեք գրադարանը"),
-    file: z
-        .instanceof(File, { message: "Ֆայլը պարտադիր է" })
-        .refine((f) => f.size > 0, "Ֆայլը պարտադիր է"),
-});
+const ADD_NEW_KEY_VALUE = "__add_new__";
+
+/** Latin letters, digits, underscore, hyphen; must start with a letter (English-style key). */
+const ENGLISH_ATTRIBUTE_KEY_REGEX = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
+
+const schema = z
+    .object({
+        category: z.string().min(1, "Ընտրեք տեսակը"),
+        key: z.string().min(1, "Ընտրեք գրադարանը"),
+        newKey: z.string().optional(),
+        file: z
+            .instanceof(File, { message: "Ֆայլը պարտադիր է" })
+            .refine((f) => f.size > 0, "Ֆայլը պարտադիր է"),
+    })
+    .superRefine((val, ctx) => {
+        if (val.key === ADD_NEW_KEY_VALUE) {
+            const trimmed = (val.newKey ?? "").trim();
+            if (!trimmed) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["newKey"],
+                    message: "Մուտքագրեք նոր գրադարանը",
+                });
+                return;
+            }
+            if (!ENGLISH_ATTRIBUTE_KEY_REGEX.test(trimmed)) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["newKey"],
+                    message:
+                        "Գրադարանի անունը պետք է լինի անգլերեն (լատինատառ), սկսվի տառով, թույլատրվում են թվեր, _ և -",
+                });
+            }
+        }
+    });
 
 type FormValues = z.infer<typeof schema>;
 
 export default function ImportAttributes() {
     const fileRef = useRef<HTMLInputElement | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+    const { mutate } = useSWRConfig();
 
     const { data: attributesList } = useSWR("attributes", () => fetchAttributes(), {
         revalidateOnFocus: false,
@@ -48,7 +81,7 @@ export default function ImportAttributes() {
 
     const form = useForm<FormValues>({
         resolver: zodResolver(schema),
-        defaultValues: { category: "", key: "" },
+        defaultValues: { category: "", key: "", newKey: "" },
         mode: "onSubmit",
     });
 
@@ -60,18 +93,41 @@ export default function ImportAttributes() {
     } = form;
 
     const selectedCategory = watch("category");
+    const selectedKey = watch("key");
 
     const onSubmit = async (data: FormValues) => {
         console.log("Submitting:", data, data.file.name);
         try {
             setIsUploading(true);
 
-            await withToastError(() => importAttributesFromCSV(data), {
-                title: "Ֆայլը բեռնվել է հաջողությամբ:",
-                description: "Ֆայլը հաջողությամբ բեռնվել և մշակվել է:",
-            });
+            let keyToUse = data.key;
+            if (keyToUse === ADD_NEW_KEY_VALUE) {
+                const created = await withToastError(
+                    () =>
+                        createAttribute({
+                            category: data.category,
+                            key: (data.newKey ?? "").trim(),
+                        }),
+                    {
+                        title: "Գրադարանը ստեղծվեց հաջողությամբ:",
+                    }
+                );
 
-            reset({ category: "", key: "" });
+                if (!created?.key) return;
+
+                keyToUse = created.key;
+                await mutate("attributes");
+            }
+
+            await withToastError(
+                () => importAttributesFromCSV({ file: data.file, key: keyToUse }),
+                {
+                    title: "Ֆայլը բեռնվել է հաջողությամբ:",
+                    description: "Ֆայլը հաջողությամբ բեռնվել և մշակվել է:",
+                }
+            );
+
+            reset({ category: "", key: "", newKey: "" });
 
             if (fileRef.current) {
                 fileRef.current.value = "";
@@ -99,7 +155,10 @@ export default function ImportAttributes() {
 
             <div className='flex w-full flex-col'>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+                    <form
+                        onSubmit={form.handleSubmit(onSubmit, (errors) => console.log(errors))}
+                        className='space-y-4'
+                    >
                         <div className='flex gap-4 pb-5'>
                             <div>
                                 <FormField
@@ -114,6 +173,7 @@ export default function ImportAttributes() {
                                                     onValueChange={(v) => {
                                                         field.onChange(v === "__none__" ? "" : v);
                                                         form.setValue("key", "");
+                                                        form.setValue("newKey", "");
                                                     }}
                                                 >
                                                     <SelectTrigger className='w-[180px]'>
@@ -157,9 +217,13 @@ export default function ImportAttributes() {
                                             <FormControl>
                                                 <Select
                                                     value={field.value ? field.value : "__none__"}
-                                                    onValueChange={(v) =>
-                                                        field.onChange(v === "__none__" ? "" : v)
-                                                    }
+                                                    onValueChange={(v) => {
+                                                        const nextValue = v === "__none__" ? "" : v;
+                                                        field.onChange(nextValue);
+                                                        if (nextValue !== ADD_NEW_KEY_VALUE) {
+                                                            form.setValue("newKey", "");
+                                                        }
+                                                    }}
                                                 >
                                                     <SelectTrigger className='w-[180px]'>
                                                         <SelectValue placeholder='Ընտրեք լեզուն' />
@@ -171,6 +235,11 @@ export default function ImportAttributes() {
                                                                 className='text-muted-foreground'
                                                             >
                                                                 Չընտրված
+                                                            </SelectItem>
+                                                            <SelectItem value={ADD_NEW_KEY_VALUE}>
+                                                                <span className='font-medium'>
+                                                                    Add new
+                                                                </span>
                                                             </SelectItem>
                                                             {keys.map((key) => (
                                                                 <SelectItem value={key} key={key}>
@@ -188,6 +257,32 @@ export default function ImportAttributes() {
                                     )}
                                 />
                             </div>
+
+                            {selectedKey === ADD_NEW_KEY_VALUE && (
+                                <div>
+                                    <FormField
+                                        control={form.control}
+                                        name='newKey'
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Նոր գրադարան</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        value={field.value ?? ""}
+                                                        onChange={field.onChange}
+                                                        className='w-[180px]'
+                                                        lang='en'
+                                                        spellCheck={false}
+                                                        autoComplete='off'
+                                                        placeholder='e.g. library_key'
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                            )}
 
                             <div>
                                 <FormLabel className='mb-2'>Ֆայլ</FormLabel>
