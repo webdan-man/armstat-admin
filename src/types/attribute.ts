@@ -1,5 +1,6 @@
 export type Attribute = {
     _id: string;
+    category: string;
     key: string;
     values: Array<{
         key: string;
@@ -8,5 +9,4 @@ export type Attribute = {
             [key: string]: string;
         };
     }>;
-    category: string;
 };

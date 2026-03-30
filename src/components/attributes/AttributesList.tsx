@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { fetchAttributes } from "@/services/attributeService";
 import { Loader2 } from "lucide-react";
+import AttributesExportButton from "@/components/attributes/AttributesExportButton";
 
 const thClass = "bg-background sticky top-0 z-20";
 
@@ -47,41 +48,45 @@ export default function AttributesList() {
         <div>
             <h1 className='mb-4 text-2xl font-bold'>Տվյալներ</h1>
 
-            <div className='my-8 flex flex-wrap gap-3'>
-                <label className='flex items-center gap-2 text-sm'>
-                    <span className='text-muted-foreground'>Տեսակ</span>
-                    <select
-                        className='border-input bg-background h-9 rounded-md border px-3 text-sm'
-                        value={categoryFilter}
-                        onChange={(e) => {
-                            setCategoryFilter(e.target.value);
-                            setKeyFilter("__all__");
-                        }}
-                    >
-                        <option value='__all__'>Բոլորը</option>
-                        {categories.map((c) => (
-                            <option key={c} value={c}>
-                                {c}
-                            </option>
-                        ))}
-                    </select>
-                </label>
+            <div className='flex items-center justify-between'>
+                <div className='my-8 flex flex-wrap gap-3'>
+                    <label className='flex items-center gap-2 text-sm'>
+                        <span className='text-muted-foreground'>Տեսակ</span>
+                        <select
+                            className='border-input bg-background h-9 rounded-md border px-3 text-sm'
+                            value={categoryFilter}
+                            onChange={(e) => {
+                                setCategoryFilter(e.target.value);
+                                setKeyFilter("__all__");
+                            }}
+                        >
+                            <option value='__all__'>Բոլորը</option>
+                            {categories.map((c) => (
+                                <option key={c} value={c}>
+                                    {c}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
 
-                <label className='flex items-center gap-2 text-sm'>
-                    <span className='text-muted-foreground'>Բանալին</span>
-                    <select
-                        className='border-input bg-background h-9 rounded-md border px-3 text-sm'
-                        value={keyFilter}
-                        onChange={(e) => setKeyFilter(e.target.value)}
-                    >
-                        <option value='__all__'>Բոլորը</option>
-                        {keys.map((k) => (
-                            <option key={k} value={k}>
-                                {k}
-                            </option>
-                        ))}
-                    </select>
-                </label>
+                    <label className='flex items-center gap-2 text-sm'>
+                        <span className='text-muted-foreground'>Բանալին</span>
+                        <select
+                            className='border-input bg-background h-9 rounded-md border px-3 text-sm'
+                            value={keyFilter}
+                            onChange={(e) => setKeyFilter(e.target.value)}
+                        >
+                            <option value='__all__'>Բոլորը</option>
+                            {keys.map((k) => (
+                                <option key={k} value={k}>
+                                    {k}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                </div>
+
+                <AttributesExportButton />
             </div>
 
             <div className='h-[calc(100vh-164px)] w-full overflow-y-auto'>

@@ -6,21 +6,19 @@ async function apiClient<T>(
     options: RequestInit & { parseAsText?: boolean } = {}
 ): Promise<T> {
     try {
-        console.log('kokkoo')
         const isFormData = options.body instanceof FormData;
 
         const res = await fetch(url, {
             ...options,
-            // cache: "no-store",
+            cache: "no-store",
             credentials: "include",
             headers: {
-                // ...(isFormData ? {} : { "Content-Type": "application/json" }),
-                // ...(options.headers || {}),
+                // TODO: REMOVE
+                authorization: `3fb8adbc-40d2-41ba-b15e-f9fd457effa0`,
+                ...(isFormData ? {} : { "Content-Type": "application/json" }),
+                ...(options.headers || {}),
             },
         });
-
-        console.log('url azaza', res)
-
 
         if (res.status === 401) {
             if (typeof window !== "undefined") {
@@ -46,8 +44,7 @@ async function apiClient<T>(
         if (options.parseAsText) return text as unknown as T;
         return JSON.parse(text) as T;
     } catch (error: any) {
-        console.log('kokkoo error', error)
-
+        console.log("kokkoo error", error);
 
         if (error instanceof ApiError) throw error;
         throw new ApiError(error.message || "Network error", error.status || undefined, error);
