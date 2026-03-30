@@ -32,9 +32,17 @@ export default function AttributesList() {
 
     const keys = useMemo(() => {
         const set = new Set<string>();
-        data?.forEach((a) => a.key && set.add(a.key));
+        const shouldInclude =
+            categoryFilter === "__all__"
+                ? () => true
+                : (category: string) => category === categoryFilter;
+
+        for (const a of data ?? []) {
+            if (shouldInclude(a.category)) set.add(a.key);
+        }
+
         return Array.from(set).sort((a, b) => a.localeCompare(b));
-    }, [data]);
+    }, [data, categoryFilter]);
 
     const filtered = useMemo(() => {
         if (!data) return [];
@@ -108,28 +116,35 @@ export default function AttributesList() {
                         {filtered.map((attribute) => {
                             const { values } = attribute;
 
-                            return values.map((value) => {
-                                const parent = values.find((item) => item.parent === value.key);
+                            return values
+                                .sort((a, b) => {
+                                    const aHasParent = a.parent ? 1 : 0;
+                                    const bHasParent = b.parent ? 1 : 0;
 
-                                return (
-                                    <TableRow key={value.key}>
-                                        <TableCell>{attribute.category}</TableCell>
-                                        <TableCell>{attribute.key}</TableCell>
+                                    return bHasParent - aHasParent; // parents first
+                                })
+                                .map((value) => {
+                                    const parent = values.find((item) => item.parent === value.key);
 
-                                        {parent && (
-                                            <>
-                                                <TableCell>{parent.translations.am}</TableCell>
-                                                <TableCell>{parent.translations.ru}</TableCell>
-                                                <TableCell>{parent.translations.en} </TableCell>
-                                            </>
-                                        )}
+                                    return (
+                                        <TableRow key={value.key}>
+                                            <TableCell>{attribute.category}</TableCell>
+                                            <TableCell>{attribute.key}</TableCell>
 
-                                        <TableCell>{value.translations.am}</TableCell>
-                                        <TableCell>{value.translations.ru}</TableCell>
-                                        <TableCell>{value.translations.en} </TableCell>
-                                    </TableRow>
-                                );
-                            });
+                                            {parent && (
+                                                <>
+                                                    <TableCell>{parent.translations.am}</TableCell>
+                                                    <TableCell>{parent.translations.ru}</TableCell>
+                                                    <TableCell>{parent.translations.en} </TableCell>
+                                                </>
+                                            )}
+
+                                            <TableCell>{value.translations.am}</TableCell>
+                                            <TableCell>{value.translations.ru}</TableCell>
+                                            <TableCell>{value.translations.en} </TableCell>
+                                        </TableRow>
+                                    );
+                                });
                         })}
                     </TableBody>
                 </Table>

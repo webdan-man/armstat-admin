@@ -95,7 +95,7 @@ export default function ImportAttributes() {
 
     return (
         <div className='flex w-full flex-col'>
-            <h1 className='mt-10 mb-4 text-2xl font-bold'>Տվյալների ներմուծում</h1>
+            <h1 className='mb-4 text-2xl font-bold'>Տվյալների ներմուծում</h1>
 
             <div className='flex w-full flex-col'>
                 <Form {...form}>
