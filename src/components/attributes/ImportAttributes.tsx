@@ -3,6 +3,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import {
     createAttribute,
+    fetchAttributeCategories,
     fetchAttributes,
     importAttributesFromCSV,
 } from "@/services/attributeService";
@@ -79,6 +80,14 @@ export default function ImportAttributes() {
         revalidateOnFocus: false,
     });
 
+    const { data: attributesCategories = [] } = useSWR(
+        "attributesCategories",
+        () => fetchAttributeCategories(),
+        {
+            revalidateOnFocus: false,
+        }
+    );
+
     const form = useForm<FormValues>({
         resolver: zodResolver(schema),
         defaultValues: { category: "", key: "", newKey: "" },
@@ -138,10 +147,8 @@ export default function ImportAttributes() {
     };
 
     const categories = useMemo(() => {
-        const set = new Set<string>();
-        attributesList?.forEach((a) => set.add(a.category));
-        return Array.from(set).sort((a, b) => a.localeCompare(b));
-    }, [attributesList]);
+        return Array.from(attributesCategories).sort((a, b) => a.localeCompare(b));
+    }, [attributesCategories]);
 
     const keys = useMemo(() => {
         const set = new Set<string>();

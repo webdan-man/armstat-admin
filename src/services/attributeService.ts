@@ -5,6 +5,10 @@ export async function fetchAttributes() {
     return apiClient<Attribute[]>(`${process.env.NEXT_PUBLIC_BASE_URL}/attributes`);
 }
 
+export async function fetchAttributeCategories() {
+    return apiClient<string[]>(`${process.env.NEXT_PUBLIC_BASE_URL}/attributes/categories`);
+}
+
 export async function createAttribute(payload: {
     category: string;
     key: string;
