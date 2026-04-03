@@ -1,68 +1,126 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
-
-import { RedirectIfAuthenticated } from "@/components/auth/route-guards";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+    Form,
+    FormControl,
+    FormDescription,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { loginWithDemoCredentials } from "@/lib/auth/service";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
-export function LoginForm({ nextPath }: { nextPath: string }) {
-  const router = useRouter();
-  const [error, setError] = useState<string>("");
-  const [loading, setLoading] = useState(false);
+const formSchema = z.object({
+    email: z.email({ message: "Please enter a valid email." }),
+    password: z.string(),
+});
 
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    setLoading(true);
+type FormValues = z.infer<typeof formSchema>;
 
-    const formData = new FormData(event.currentTarget);
-    const login = String(formData.get("login") ?? "");
-    const password = String(formData.get("password") ?? "");
+export default function LoginForm({ nextPath }: { nextPath: string }) {
+    const router = useRouter();
+    const [loading, setLoading] = useState(false);
 
-    const result = loginWithDemoCredentials({ login, password });
+    const form = useForm<FormValues>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            email: "",
+            password: "",
+        },
+    });
 
-    if (!result.ok) {
-      setLoading(false);
-      setError(result.error ?? "Login failed.");
-      return;
+    async function onSubmit(values: FormValues) {
+        setLoading(true);
+        try {
+            console.log("Submitting form with values:", values);
+            const res = await fetch("/api/login", {
+                method: "POST",
+                body: JSON.stringify(values),
+            });
+
+            if (!res.ok) {
+                const data = await res.text();
+                alert(data || "Login failed");
+                return;
+            }
+
+            router.push(nextPath);
+        } catch (err) {
+            console.error(err);
+            alert("An error occurred");
+        } finally {
+            setLoading(false);
+        }
     }
 
-    router.replace(nextPath);
-  }
+    return (
+        <>
+            <div className='bg-muted/20 flex min-h-screen items-center justify-center px-4'>
+                <Card className='w-full max-w-sm'>
+                    <CardHeader>
+                        <CardTitle>Sign in</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+                                <FormField
+                                    control={form.control}
+                                    name='email'
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Email</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder='admin@example.com'
+                                                    type='email'
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormDescription>
+                                                Enter your admin email address.
+                                            </FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
-  return (
-    <RedirectIfAuthenticated>
-      <div className="flex min-h-screen items-center justify-center bg-muted/20 px-4">
-        <Card className="w-full max-w-sm">
-          <CardHeader>
-            <CardTitle>Sign in</CardTitle>
-            <CardDescription>
-              Temporary mock auth until backend integration.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={onSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="login">Login</Label>
-                <Input id="login" name="login" placeholder="admin" required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" name="password" required />
-              </div>
-              {error ? <p className="text-sm text-destructive">{error}</p> : null}
-              <Button className="w-full" type="submit" disabled={loading}>
-                {loading ? "Signing in..." : "Sign in"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </RedirectIfAuthenticated>
-  );
+                                <FormField
+                                    control={form.control}
+                                    name='password'
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Password</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder='********'
+                                                    type='password'
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormDescription>
+                                                Your account password.
+                                            </FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <Button type='submit' className='w-full' disabled={loading}>
+                                    {loading ? "Signing in..." : "Sign In"}
+                                </Button>
+                            </form>
+                        </Form>
+                    </CardContent>
+                </Card>
+            </div>
+        </>
+    );
 }

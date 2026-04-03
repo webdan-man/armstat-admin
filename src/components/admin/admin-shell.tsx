@@ -5,27 +5,23 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { getCurrentSession, logout } from "@/lib/auth/service";
 import Image from "next/image";
 import React from "react";
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
-    const session = getCurrentSession();
-    const role = session?.role ?? "unknown";
-    const userId = session?.userId ?? "guest";
 
     const navItems = [
         { href: "/admin", label: "Ցուցանիշ" },
         { href: "#", label: "Տեղեկատվական կենտրոն" },
         { href: "#", label: "Հետադարձ կապ" },
-        // { href: "/attributes", label: "Տվյալներ" },
+        { href: "/attributes/list", label: "Տվյալներ" },
+        { href: "/attributes/manage-data", label: "Տվյալների ներմուծում" },
     ];
 
     function handleLogout() {
-        logout();
-        router.replace("/login");
+        router.push("/logout");
     }
 
     return (
@@ -47,7 +43,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                     </Link>
                 </div>
                 <Separator className='mb-4 bg-[#e6e7eb]' />
-                <nav className='space-y-1'>
+                <nav className='space-y-1 pb-5'>
                     {navItems.map((item, index) => (
                         <Link
                             key={index}

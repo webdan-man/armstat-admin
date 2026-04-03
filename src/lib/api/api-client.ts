@@ -13,8 +13,6 @@ async function apiClient<T>(
             cache: "no-store",
             credentials: "include",
             headers: {
-                // TODO: REMOVE
-                authorization: `3fb8adbc-40d2-41ba-b15e-f9fd457effa0`,
                 ...(isFormData ? {} : { "Content-Type": "application/json" }),
                 ...(options.headers || {}),
             },
