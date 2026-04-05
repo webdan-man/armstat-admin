@@ -6,6 +6,7 @@ import useSWR from "swr";
 import { fetchSections } from "@/services/sectionsService";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import type { Section, Topic } from "@/types/section";
+import { isRootTopic } from "@/lib/section-topic-utils";
 
 export type IndicatorSelectedFilter = {
   section: string;
@@ -33,11 +34,6 @@ type IndicatorFilterStateContextValue = {
 
 const IndicatorSectionsContext = createContext<IndicatorSectionsContextValue | null>(null);
 const IndicatorFilterStateContext = createContext<IndicatorFilterStateContextValue | null>(null);
-
-function isRootTopic(topic: Topic) {
-  const p = topic.parentTopicId;
-  return p == null || (typeof p === "string" && p.trim() === "");
-}
 
 export function IndicatorFiltersProvider({ children }: { children: React.ReactNode }) {
   const { data: sections = [], isLoading } = useSWR(swrKeys.sections, fetchSections);
