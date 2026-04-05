@@ -1,7 +1,9 @@
+"use client";
+
 import React from "react";
 
+import { NewsPageEditor } from "@/components/news/NewsPageEditor";
+
 export default function NewsPage() {
-  return (
-    <h1 className="justify-start text-xl leading-4 font-semibold text-zinc-800">Նորություններ</h1>
-  );
+  return <NewsPageEditor />;
 }
