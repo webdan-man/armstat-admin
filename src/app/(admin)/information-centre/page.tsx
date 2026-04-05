@@ -1,9 +1,9 @@
+"use client";
+
 import React from "react";
 
+import { InformationCentreEditor } from "@/components/information-centre/InformationCentreEditor";
+
 export default function InformationCentrePage() {
-  return (
-    <h1 className="justify-start text-xl leading-4 font-semibold text-zinc-800">
-      Տեղեկատվական կենտրոն
-    </h1>
-  );
+  return <InformationCentreEditor />;
 }
