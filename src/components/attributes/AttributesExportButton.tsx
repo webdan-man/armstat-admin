@@ -2,9 +2,10 @@ import React from "react";
 import { downloadAttributesAsCSV } from "@/services/attributeService";
 import useSWRMutation from "swr/mutation";
 import { Button } from "@/components/ui/button";
+import { swrKeys } from "@/lib/swr/cache-keys";
 
 const AttributesExportButton = () => {
-    const { trigger: getCsv } = useSWRMutation(["attributes/csv"], async () =>
+    const { trigger: getCsv } = useSWRMutation(swrKeys.attributesExportCsv, async () =>
         downloadAttributesAsCSV()
     );
 

@@ -11,15 +11,14 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { fetchAttributes } from "@/services/attributeService";
+import { swrKeys } from "@/lib/swr/cache-keys";
 import { Loader2 } from "lucide-react";
 import AttributesExportButton from "@/components/attributes/AttributesExportButton";
 
 const thClass = "bg-background sticky top-0 z-20";
 
 export default function AttributesList() {
-    const { data, isLoading } = useSWR("attributes", () => fetchAttributes(), {
-        revalidateOnFocus: false,
-    });
+    const { data, isLoading } = useSWR(swrKeys.attributes, fetchAttributes);
 
     const [categoryFilter, setCategoryFilter] = useState<string>("__all__");
     const [keyFilter, setKeyFilter] = useState<string>("__all__");
