@@ -7,7 +7,7 @@ type LoginPageProps = {
 export default async function LoginPage({ searchParams }: LoginPageProps) {
     const params = await searchParams;
     const rawNext = params.next;
-    const nextPath = typeof rawNext === "string" && rawNext.startsWith("/") ? rawNext : "/admin";
+    const nextPath = typeof rawNext === "string" && rawNext.startsWith("/") ? rawNext : "/main";
 
     return <LoginForm nextPath={nextPath} />;
 }

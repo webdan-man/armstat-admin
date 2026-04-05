@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Montserrat } from "next/font/google";
+import { Noto_Sans_Armenian } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 import React from "react";
 
-const montserratArm = Montserrat({
-  subsets: ["latin", "cyrillic"],
-  display: "swap",
+const notoSansArmenian = Noto_Sans_Armenian({
+  variable: "--font-noto-sans-armenian",
+  subsets: ["armenian"],
 });
 
 export const metadata: Metadata = {
@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${montserratArm.className} h-full antialiased`}
+      className={`${notoSansArmenian.className} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}
