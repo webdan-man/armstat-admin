@@ -1,7 +1,9 @@
+"use client";
+
 import React from "react";
 
+import { ContactUsEditor } from "@/components/contact-us/ContactUsEditor";
+
 export default function ContactUsPage() {
-  return (
-    <h1 className="justify-start text-xl leading-4 font-semibold text-zinc-800">Հետադարձ կապ</h1>
-  );
+  return <ContactUsEditor />;
 }
