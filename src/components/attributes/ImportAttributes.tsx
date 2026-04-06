@@ -21,11 +21,13 @@ type FormValues = z.infer<typeof schema>;
 
 type ImportAttributesProps = {
   selectedKey?: string;
+  onImport: () => void;
 };
 
-export default function ImportAttributes({ selectedKey }: ImportAttributesProps) {
+export default function ImportAttributes({ selectedKey, onImport }: ImportAttributesProps) {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState<string>("");
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -52,6 +54,8 @@ export default function ImportAttributes({ selectedKey }: ImportAttributesProps)
       if (fileRef.current) {
         fileRef.current.value = "";
       }
+      setSelectedFileName("");
+      onImport();
     } finally {
       setIsUploading(false);
     }
@@ -64,16 +68,32 @@ export default function ImportAttributes({ selectedKey }: ImportAttributesProps)
           <div className="flex items-center gap-4 pb-5">
             <div>
               <FormLabel className="mb-2">Ֆայլ</FormLabel>
-              <Input
-                type="file"
-                accept=".csv,.zip"
-                ref={fileRef}
-                className="w-80"
-                onChange={(e) => {
-                  const f = e.target.files?.[0] ?? null;
-                  if (f) setValue("file", f, { shouldValidate: true });
-                }}
-              />
+              <div className="flex items-center gap-3">
+                <Input
+                  type="file"
+                  accept=".csv,.zip"
+                  ref={fileRef}
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] ?? null;
+                    if (f) {
+                      setValue("file", f, { shouldValidate: true });
+                      setSelectedFileName(f.name);
+                    } else {
+                      setSelectedFileName("");
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-80 justify-start"
+                  disabled={isUploading}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  {selectedFileName || "Ընտրել CSV ֆայլը"}
+                </Button>
+              </div>
               {errors.file && <p style={{ color: "crimson" }}>{errors.file.message}</p>}
             </div>
 

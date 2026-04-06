@@ -2,67 +2,83 @@ import apiClient from "@/lib/api/api-client";
 import { Attribute } from "@/types/attribute";
 
 export async function fetchAttributes() {
-    return apiClient<Attribute[]>(`${process.env.NEXT_PUBLIC_BASE_URL}/attributes`);
+  return apiClient<Attribute[]>(`${process.env.NEXT_PUBLIC_BASE_URL}/attributes`);
 }
 
 export async function fetchAttributeCategories() {
-    return apiClient<string[]>(`${process.env.NEXT_PUBLIC_BASE_URL}/attributes/categories`);
+  return apiClient<string[]>(`${process.env.NEXT_PUBLIC_BASE_URL}/attributes/categories`);
 }
 
 export async function createAttribute(payload: {
-    category: string;
-    key: string;
+  category: string;
+  key: string;
 }): Promise<Attribute> {
-    return apiClient<Attribute>(`/api/attributes`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-    });
+  return apiClient<Attribute>(`/api/attributes`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function saveAttributeLibrary(payload: {
-    category: string;
-    key: string;
-    translations?: { am: string; ru: string; en: string };
-    mode: "create" | "edit";
+  category: string;
+  key: string;
+  translations?: { am: string; ru: string; en: string };
+  mode: "create" | "edit";
 }): Promise<Attribute> {
-    const { mode, ...body } = payload;
-    return apiClient<Attribute>(`/api/attributes`, {
-        method: mode === "create" ? "POST" : "PUT",
+  const { mode, ...body } = payload;
+
+  switch (mode) {
+    case "create":
+      return apiClient<Attribute>(`/api/attributes`, {
+        method: "POST",
         body: JSON.stringify(body),
-    });
+      });
+
+    case "edit":
+      return apiClient<Attribute>(`/api/attributes/${body.key}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      });
+  }
 }
 
 export async function importAttributesFromCSV(payload: {
-    file: File;
-    key: string;
+  file: File;
+  key: string;
 }): Promise<{ inserted: number }> {
-    const { key, file } = payload;
+  const { key, file } = payload;
 
-    const formData = new FormData();
-    formData.append("file", file);
+  const formData = new FormData();
+  formData.append("file", file);
 
-    return apiClient(`/api/attributes/csv?key=${key}`, {
-        method: "POST",
-        body: formData,
-    });
+  return apiClient(`/api/attributes/csv?key=${key}`, {
+    method: "POST",
+    body: formData,
+  });
 }
 
-export async function downloadAttributesAsCSV(): Promise<void> {
-    const csvText = await apiClient<string>(`/api/attributes/csv`, {
-        headers: { Accept: "text/csv" },
-        parseAsText: true,
-    });
+export async function downloadAttributesAsCSV(key: string): Promise<void> {
+  const csvText = await apiClient<string>(`/api/attributes/csv?key=${key}`, {
+    headers: { Accept: "text/csv" },
+    parseAsText: true,
+  });
 
-    const blob = new Blob([csvText], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob([csvText], { type: "text/csv;charset=utf-8;" });
 
-    const url = URL.createObjectURL(blob);
+  const url = URL.createObjectURL(blob);
 
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "attributes.csv";
-    document.body.appendChild(a);
-    a.click();
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${key}-attributes.csv`;
+  document.body.appendChild(a);
+  a.click();
 
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+export async function deleteAttribute(key: string) {
+  return apiClient<Attribute>(`/api/attributes/${key}`, {
+    method: "DELETE",
+  });
 }

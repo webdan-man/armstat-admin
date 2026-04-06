@@ -10,7 +10,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { fetchAttributes, saveAttributeLibrary } from "@/services/attributeService";
+import {
+  deleteAttribute,
+  fetchAttributeCategories,
+  fetchAttributes,
+  saveAttributeLibrary,
+} from "@/services/attributeService";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { Loader2 } from "lucide-react";
 import AttributesExportButton from "@/components/attributes/AttributesExportButton";
@@ -34,6 +39,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Attribute } from "@/types/attribute";
+import { withToastError } from "@/lib/withToastError";
 
 const thClass = "bg-background sticky top-0 z-20";
 
@@ -48,6 +55,7 @@ function buildKeyFromNames(names: { am: string; ru: string; en: string }) {
 
 export default function AttributesList() {
   const { data, isLoading } = useSWR(swrKeys.attributes, fetchAttributes);
+  const { data: categories = [] } = useSWR(swrKeys.attributesCategories, fetchAttributeCategories);
   const { mutate } = useSWRConfig();
 
   const [categoryFilter, setCategoryFilter] = useState<string>("__all__");
@@ -63,12 +71,6 @@ export default function AttributesList() {
     ru: "",
     en: "",
   });
-
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    data?.forEach((a) => a.category && set.add(a.category));
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [data]);
 
   const keys = useMemo(() => {
     const set = new Set<string>();
@@ -99,46 +101,107 @@ export default function AttributesList() {
   };
 
   const onEdit = () => {
-    if (!data?.length || keyFilter === "__all__") return;
-    const attribute = data.find((a) => a.key === keyFilter);
+    const attribute = data?.find((a) => a.key === keyFilter);
     if (!attribute) return;
 
-    const firstValue = attribute.values?.[0];
+    console.log("attribute", attribute);
+
     setModalMode("edit");
     setFormCategory(attribute.category || "");
     setFormNames({
-      am: String(firstValue?.translations?.am ?? ""),
-      ru: String(firstValue?.translations?.ru ?? ""),
-      en: String(firstValue?.translations?.en ?? ""),
+      am: String(attribute.translations.am ?? ""),
+      ru: String(attribute.translations.ru ?? ""),
+      en: String(attribute.translations.en ?? ""),
     });
     setNameLang("am");
     setModalOpen(true);
   };
 
-  const onDelete = () => {};
+  const onDelete = async () => {
+    try {
+      await deleteAttribute(keyFilter);
+
+      toast.success("Ջնջված է");
+
+      await mutate(swrKeys.attributes);
+      setKeyFilter("__all__");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Սխալ";
+      toast.error(message);
+    }
+  };
 
   const onSave = async () => {
     if (!formCategory) return;
     const key = modalMode === "edit" ? keyFilter : buildKeyFromNames(formNames);
     if (!key) return;
 
+    if (!formNames.en) {
+      toast.error("ԱՆգլերենը դաշտը պարտադիր է");
+      return;
+    }
     setFormSaving(true);
     try {
-      await saveAttributeLibrary({
-        mode: modalMode,
-        category: formCategory,
-        key,
-        translations: formNames,
-      });
+      await withToastError(
+        () =>
+          saveAttributeLibrary({
+            mode: modalMode,
+            category: formCategory,
+            key,
+            translations: formNames,
+          }),
+        {
+          title: modalMode === "edit" ? "Թարմացված է" : "Ստեղծված է",
+        }
+      );
+
       await mutate(swrKeys.attributes);
       setModalOpen(false);
-      toast.success(modalMode === "edit" ? "Թարմացված է" : "Ստեղծված է");
     } catch (e) {
       const message = e instanceof Error ? e.message : "Սխալ";
       toast.error(message);
     } finally {
       setFormSaving(false);
     }
+  };
+
+  let counter = 1;
+
+  const renderItems = (attribute: Attribute) => {
+    const { values } = attribute;
+
+    return values
+      .sort((a, b) => {
+        const aHasParent = a.parent ? 1 : 0;
+        const bHasParent = b.parent ? 1 : 0;
+
+        return bHasParent - aHasParent; // parents first
+      })
+      .map((value) => {
+        const id = counter++;
+
+        const parent = values.find((item) => item.parent === value.key);
+
+        return (
+          <TableRow key={value.key}>
+            <TableCell>{id || Math.random()}</TableCell>
+            <TableCell>{attribute.category}</TableCell>
+            <TableCell>{attribute.translations.am}</TableCell>
+
+            {parent && (
+              <>
+                <TableCell>{parent.translations.am}</TableCell>
+                <TableCell>{parent.translations.ru}</TableCell>
+                <TableCell>{parent.translations.en} </TableCell>
+              </>
+            )}
+
+            <TableCell>{value.translations.am}</TableCell>
+            <TableCell>{value.translations.ru}</TableCell>
+            <TableCell>{value.translations.en} </TableCell>
+          </TableRow>
+        );
+      });
   };
 
   return (
@@ -188,14 +251,25 @@ export default function AttributesList() {
           </label>
         </div>
 
-        <AttributesExportButton />
+        <AttributesExportButton selectedKey={keyFilter} disabled={keyFilter === "__all__"} />
 
-        <ImportAttributes selectedKey={keyFilter === "__all__" ? undefined : keyFilter} />
+        <ImportAttributes
+          selectedKey={keyFilter === "__all__" ? undefined : keyFilter}
+          onImport={() => mutate(swrKeys.attributes)}
+        />
 
-        <Button className="h-15 max-w-30 bg-amber-500" onClick={onEdit}>
+        <Button
+          className="h-15 max-w-30 bg-amber-500"
+          onClick={onEdit}
+          disabled={keyFilter === "__all__"}
+        >
           Խմբագրել գրադարանը
         </Button>
-        <Button className="bg-destructive h-15 max-w-30" onClick={onDelete}>
+        <Button
+          className="bg-destructive h-15 max-w-30"
+          onClick={onDelete}
+          disabled={keyFilter === "__all__"}
+        >
           Հեռացնել գրադարանը
         </Button>
       </div>
@@ -258,6 +332,7 @@ export default function AttributesList() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className={thClass}>ID</TableHead>
               <TableHead className={thClass}>Տեսակ</TableHead>
               <TableHead className={thClass}>Գրադարան</TableHead>
               <TableHead className={thClass}>Հիմնական հայերեն</TableHead>
@@ -269,41 +344,7 @@ export default function AttributesList() {
             </TableRow>
           </TableHeader>
 
-          <TableBody>
-            {filtered.map((attribute) => {
-              const { values } = attribute;
-
-              return values
-                .sort((a, b) => {
-                  const aHasParent = a.parent ? 1 : 0;
-                  const bHasParent = b.parent ? 1 : 0;
-
-                  return bHasParent - aHasParent; // parents first
-                })
-                .map((value) => {
-                  const parent = values.find((item) => item.parent === value.key);
-
-                  return (
-                    <TableRow key={value.key}>
-                      <TableCell>{attribute.category}</TableCell>
-                      <TableCell>{attribute.key}</TableCell>
-
-                      {parent && (
-                        <>
-                          <TableCell>{parent.translations.am}</TableCell>
-                          <TableCell>{parent.translations.ru}</TableCell>
-                          <TableCell>{parent.translations.en} </TableCell>
-                        </>
-                      )}
-
-                      <TableCell>{value.translations.am}</TableCell>
-                      <TableCell>{value.translations.ru}</TableCell>
-                      <TableCell>{value.translations.en} </TableCell>
-                    </TableRow>
-                  );
-                });
-            })}
-          </TableBody>
+          <TableBody>{filtered.map(renderItems)}</TableBody>
         </Table>
 
         {isLoading && (

@@ -1,12 +1,15 @@
 export type Attribute = {
-    _id: string;
-    category: string;
+  _id: string;
+  category: string;
+  key: string;
+  translations: {
+    [key: string]: string;
+  };
+  values: Array<{
     key: string;
-    values: Array<{
-        key: string;
-        parent: null;
-        translations: {
-            [key: string]: string;
-        };
-    }>;
+    parent: null;
+    translations: {
+      [key: string]: string;
+    };
+  }>;
 };
