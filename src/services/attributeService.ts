@@ -19,6 +19,19 @@ export async function createAttribute(payload: {
     });
 }
 
+export async function saveAttributeLibrary(payload: {
+    category: string;
+    key: string;
+    translations?: { am: string; ru: string; en: string };
+    mode: "create" | "edit";
+}): Promise<Attribute> {
+    const { mode, ...body } = payload;
+    return apiClient<Attribute>(`/api/attributes`, {
+        method: mode === "create" ? "POST" : "PUT",
+        body: JSON.stringify(body),
+    });
+}
+
 export async function importAttributesFromCSV(payload: {
     file: File;
     key: string;
