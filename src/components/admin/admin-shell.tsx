@@ -17,8 +17,7 @@ const navItems = [
   { href: "/information-centre", label: "Տեղեկատվական կենտրոն" },
   { href: "/contact-us", label: "Հետադարձ կապ" },
   { href: "/news", label: "Նորություններ" },
-  { href: "/attributes/list", label: "Հատկանիշներ" },
-  { href: "/attributes/manage-data", label: "Հատկանիշներ ներմուծում" },
+  { href: "/attributes", label: "Հատկանիշներ" },
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
