@@ -23,13 +23,16 @@ export function SectionAccordion({ sections }: SectionAccordionProps) {
   }
 
   return (
-    <Accordion
-      type="multiple"
-      defaultValue={[]}
-      className="flex w-full flex-col gap-3"
-    >
+    <Accordion type="multiple" defaultValue={[]} className="flex w-full flex-col gap-3">
       {sections.map((section) => {
-        const topics = [...section.topics].sort((a, b) => a.order - b.order);
+        const sectionHeadingTopic = {
+          ...section,
+          title: section.name,
+          topics: [],
+          sectionId: section._id,
+        };
+        const topLevelTopics = section.topics.filter((topic) => !topic.parentTopicId);
+
         return (
           <AccordionItem
             key={section._id}
@@ -43,23 +46,35 @@ export function SectionAccordion({ sections }: SectionAccordionProps) {
                 "[&>svg]:-rotate-90 [&[data-state=open]>svg]:rotate-0"
               )}
             >
-              <ChevronDown className="size-5 shrink-0 text-[#2c2c2c] transition-transform duration-200" aria-hidden />
-              <span className="flex-1 text-left text-[14px] font-medium leading-[14px] text-[#2c2c2c]">
+              <ChevronDown
+                className="size-5 shrink-0 text-[#2c2c2c] transition-transform duration-200"
+                aria-hidden
+              />
+              <span className="flex-1 text-left text-[14px] leading-[14px] font-medium text-[#2c2c2c]">
                 {section.name}
               </span>
             </AccordionTrigger>
             <AccordionContent className="pb-0">
-              {topics.length === 0 ? (
-                <p className="px-4 py-3 text-sm text-[#646464]">Թեմաներ չկան։</p>
-              ) : (
-                topics.map((topic, index) => (
-                  <SectionTopicRow
-                    key={topic._id}
-                    topic={topic}
-                    showHeadingPrefix={index === 0}
-                  />
-                ))
-              )}
+              <SectionTopicRow
+                key={`${section._id}-heading`}
+                topic={sectionHeadingTopic}
+                showHeadingPrefix
+                siblingTopics={section.topics}
+              />
+              {topLevelTopics.map((topic) => (
+                <React.Fragment key={topic._id}>
+                  <SectionTopicRow topic={topic} showHeadingPrefix={false} siblingTopics={section.topics} />
+                  {(topic.subtopics ?? []).map((subtopic) => (
+                    <SectionTopicRow
+                      key={subtopic._id}
+                      topic={subtopic}
+                      showHeadingPrefix={false}
+                      siblingTopics={section.topics}
+                      isSubtopic
+                    />
+                  ))}
+                </React.Fragment>
+              ))}
             </AccordionContent>
           </AccordionItem>
         );

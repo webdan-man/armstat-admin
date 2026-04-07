@@ -3,6 +3,18 @@ export type NewsItem = {
   title: string;
   /** Display as MM/DD/YYYY (e.g. 02/19/2026) */
   publishedLabel: string;
+  link?: string;
+  publishedAt?: string;
+  titleTranslations?: {
+    am: string;
+    ru: string;
+    en: string;
+  };
+  contentTranslations?: {
+    am: string;
+    ru: string;
+    en: string;
+  };
 };
 
 /** Mock news list for the admin table (no API yet). */

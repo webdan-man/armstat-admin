@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import useSWR from "swr";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
@@ -16,8 +16,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Input } from "@/components/ui/input";
-import { Field, FieldLabel } from "@/components/ui/field";
+import { Checkbox } from "@/components/ui/checkbox";
+import { FieldLabel } from "@/components/ui/field";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -34,7 +35,11 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { fetchAttributes } from "@/services/attributeService";
+import {
+  fetchAttributeCategories,
+  fetchAttributes,
+  getLibraryFromAttributeById,
+} from "@/services/attributeService";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { useIndicatorFeatures } from "@/components/indicators/indicator-features-context";
 import {
@@ -45,20 +50,24 @@ import {
   emptyIndicatorFeatureRow,
   indicatorFeaturesBatchFormSchema,
   type IndicatorFeaturesBatchFormValues,
-  parseLibraryOption,
 } from "@/components/indicators/indicator-feature-form-schema";
+import type { Attribute } from "@/types/attribute";
+import { cn } from "@/lib/utils";
+
+const LEVEL_OPTIONS = [
+  { value: "primary", label: "Հիմնական" },
+  { value: "secondary", label: "Երկրորդային" },
+] as const;
 
 export default function CreateWindow() {
   const { features, dialogOpen, editingId, setDialogOpen, startCreate, addFeature, updateFeature } =
     useIndicatorFeatures();
 
+  const { data: attributesCategories = [] } = useSWR(
+    swrKeys.attributesCategories,
+    fetchAttributeCategories
+  );
   const { data: attributes, isLoading } = useSWR(swrKeys.attributes, fetchAttributes);
-
-  const categories = useMemo(() => {
-    if (!attributes?.length) return [];
-    const set = new Set(attributes.map((a) => a.category).filter(Boolean));
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [attributes]);
 
   const editing = editingId ? features.find((f) => f.id === editingId) : undefined;
   const isEdit = Boolean(editingId && editing);
@@ -71,6 +80,7 @@ export default function CreateWindow() {
   });
 
   const { control, handleSubmit, reset, setValue } = form;
+  const [valuesPopoverOpenByRow, setValuesPopoverOpenByRow] = useState<Record<number, boolean>>({});
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -78,6 +88,34 @@ export default function CreateWindow() {
   });
 
   const rowsWatch = useWatch({ control, name: "rows" });
+  const selectedAttributeKeys = useMemo(() => {
+    const keys = (rowsWatch ?? []).map((row) => row?.libraryOption).filter(Boolean);
+    return Array.from(new Set(keys)).sort((a, b) => a.localeCompare(b));
+  }, [rowsWatch]);
+
+  const detailsKey = useMemo(
+    () =>
+      selectedAttributeKeys.length > 0
+        ? ([swrKeys.attributes, "details", ...selectedAttributeKeys] as const)
+        : null,
+    [selectedAttributeKeys]
+  );
+
+  const { data: attributeByKey = {}, isLoading: isLoadingAttributeDetails } = useSWR<
+    Record<string, Attribute | null>
+  >(detailsKey, async () => {
+    const entries = await Promise.all(
+      selectedAttributeKeys.map(async (key) => {
+        try {
+          const attribute = await getLibraryFromAttributeById(key);
+          return [key, attribute] as const;
+        } catch {
+          return [key, null] as const;
+        }
+      })
+    );
+    return Object.fromEntries(entries);
+  });
 
   useEffect(() => {
     if (!dialogOpen) return;
@@ -85,9 +123,10 @@ export default function CreateWindow() {
       reset({
         rows: [
           {
-            name: editing.name,
             category: editing.category,
-            libraryOption: `${editing.attributeKey}:${editing.valueKey}`,
+            libraryOption: editing.attributeKey,
+            levelOption: editing.level,
+            valueIds: editing.valueIds ?? [],
           },
         ],
       });
@@ -98,34 +137,57 @@ export default function CreateWindow() {
     }
   }, [dialogOpen, editingId, editing, reset]);
 
+  useEffect(() => {
+    const rows = rowsWatch ?? [];
+    rows.forEach((row, index) => {
+      const selectedLibrary = row?.libraryOption ?? "";
+      if (!selectedLibrary) return;
+      const selectedAttribute = attributeByKey[selectedLibrary];
+      if (!selectedAttribute) return;
+      if (selectedAttribute.values.length > 0 && row.levelOption !== "primary") {
+        setValue(`rows.${index}.levelOption`, "primary", { shouldValidate: true });
+      }
+    });
+  }, [rowsWatch, attributeByKey, setValue]);
+
   const onSubmit = (values: IndicatorFeaturesBatchFormValues) => {
     if (!attributes?.length) return;
     if (isEdit && editing) {
       const row = values.rows[0];
-      const parsed = parseLibraryOption(row.libraryOption);
-      if (!parsed) return;
-      const libraryDisplay = buildLibraryDisplay(attributes, parsed.attributeKey, parsed.valueKey);
+      const selectedAttribute = attributeByKey[row.libraryOption];
+      const selectedLabels = (selectedAttribute?.values ?? [])
+        .filter((v) => row.valueIds.includes(v._id))
+        .map((v) => v.translations?.am ?? v.key);
+      const libraryDisplay =
+        selectedLabels.length > 0
+          ? selectedLabels.join(", ")
+          : buildLibraryDisplay(attributes, row.libraryOption, row.levelOption);
+
       updateFeature(editing.id, {
-        name: row.name.trim(),
         category: row.category,
-        attributeKey: parsed.attributeKey,
-        valueKey: parsed.valueKey,
+        attributeKey: row.libraryOption,
+        attributeKeyLabel: selectedAttribute?.key ?? "",
+        level: row.levelOption as "primary" | "secondary",
+        valueIds: row.valueIds,
         libraryDisplay,
       });
     } else {
       for (const row of values.rows) {
-        const parsed = parseLibraryOption(row.libraryOption);
-        if (!parsed) continue;
-        const libraryDisplay = buildLibraryDisplay(
-          attributes,
-          parsed.attributeKey,
-          parsed.valueKey
-        );
+        const selectedAttribute = attributeByKey[row.libraryOption];
+        const selectedLabels = (selectedAttribute?.values ?? [])
+          .filter((v) => row.valueIds.includes(v._id))
+          .map((v) => v.translations?.am ?? v.key);
+        const libraryDisplay =
+          selectedLabels.length > 0
+            ? selectedLabels.join(", ")
+            : buildLibraryDisplay(attributes, row.libraryOption, row.levelOption);
+
         addFeature({
-          name: row.name.trim(),
           category: row.category,
-          attributeKey: parsed.attributeKey,
-          valueKey: parsed.valueKey,
+          attributeKey: row.libraryOption,
+          attributeKeyLabel: selectedAttribute?.key ?? "",
+          level: row.levelOption as "primary" | "secondary",
+          valueIds: row.valueIds,
           libraryDisplay,
         });
       }
@@ -163,7 +225,21 @@ export default function CreateWindow() {
               <div className="flex w-full flex-col">
                 {fields.map((field, index) => {
                   const selectedCategory = rowsWatch?.[index]?.category ?? "";
+                  const selectedLibrary = rowsWatch?.[index]?.libraryOption ?? "";
                   const libraryOptions = buildLibraryOptions(attributes, selectedCategory);
+
+                  const levelOptions = selectedLibrary
+                    ? (attributeByKey[selectedLibrary]?.values ?? [])
+                    : [];
+                  const currentRow = rowsWatch?.[index];
+                  const selectedValueIds = currentRow?.valueIds ?? [];
+                  const hasValues = levelOptions.length > 0;
+                  const shouldLockLevel = hasValues;
+                  const isLevelsLoading = Boolean(
+                    selectedLibrary &&
+                    isLoadingAttributeDetails &&
+                    attributeByKey[selectedLibrary] === undefined
+                  );
 
                   return (
                     <Collapsible
@@ -171,42 +247,25 @@ export default function CreateWindow() {
                       defaultOpen
                       className="w-full rounded-none border-b border-b-[rgba(217,217,217,1)] pt-3.5"
                     >
-                      <div className="flex w-full items-end gap-2.25 pr-10 pb-6 pl-2.5">
-                        <CollapsibleTrigger className="group mb-1.25" type="button">
-                          <ChevronDownIcon className="size-5 transition-transform group-data-[state=open]:rotate-90" />
+                      <div className="flex w-full justify-between gap-2.25 pr-10 pb-6 pl-2.5">
+                        <CollapsibleTrigger
+                          className="group flex items-center gap-1.5"
+                          type="button"
+                        >
+                          <ChevronDownIcon className="size-5 transition-transform group-data-panel-open:rotate-90" />
+                          <p className="text-start text-xs leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
+                            {`Հատկանիշ ${index + 1}`}
+                          </p>
                         </CollapsibleTrigger>
-                        <div className="flex w-full flex-col items-start gap-1.75">
-                          <div className="flex w-full items-center justify-between gap-2">
-                            <p className="text-start text-xs leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
-                              {`Հատկանիշ ${index + 1}`}
-                            </p>
-                            {!isEdit && fields.length > 1 && (
-                              <button
-                                type="button"
-                                className="text-[12px] font-medium text-[rgba(204,0,0,1)] hover:underline"
-                                onClick={() => remove(index)}
-                              >
-                                Հեռացնել
-                              </button>
-                            )}
-                          </div>
-                          <FormField
-                            control={control}
-                            name={`rows.${index}.name`}
-                            render={({ field: f }) => (
-                              <FormItem className="w-full">
-                                <FormControl>
-                                  <Input
-                                    {...f}
-                                    className="rounded-[9px] border border-[rgba(230,231,235,1)]"
-                                    disabled={isLoading}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
+                        {!isEdit && fields.length > 1 && (
+                          <button
+                            type="button"
+                            className="text-[12px] font-medium text-[rgba(204,0,0,1)] hover:underline"
+                            onClick={() => remove(index)}
+                          >
+                            Հեռացնել
+                          </button>
+                        )}
                       </div>
                       <CollapsibleContent className="flex w-full flex-col gap-4 border-t border-t-[rgba(217,217,217,1)] bg-[rgba(217,217,217,0.1)] px-10 py-4.25">
                         <FormField
@@ -222,17 +281,19 @@ export default function CreateWindow() {
                                 onValueChange={(val) => {
                                   f.onChange(val);
                                   setValue(`rows.${index}.libraryOption`, "");
+                                  setValue(`rows.${index}.levelOption`, "");
+                                  setValue(`rows.${index}.valueIds`, []);
                                 }}
-                                disabled={isLoading || !categories.length}
+                                disabled={isLoading || !attributesCategories.length}
                               >
                                 <FormControl>
-                                  <SelectTrigger>
+                                  <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Ընտրել" />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
                                   <SelectGroup>
-                                    {categories.map((c) => (
+                                    {attributesCategories.map((c) => (
                                       <SelectItem key={c} value={c}>
                                         {c}
                                       </SelectItem>
@@ -254,13 +315,17 @@ export default function CreateWindow() {
                               </FormLabel>
                               <Select
                                 value={f.value || undefined}
-                                onValueChange={f.onChange}
+                                onValueChange={(val) => {
+                                  f.onChange(val);
+                                  setValue(`rows.${index}.levelOption`, "");
+                                  setValue(`rows.${index}.valueIds`, []);
+                                }}
                                 disabled={
                                   isLoading || !selectedCategory || libraryOptions.length === 0
                                 }
                               >
                                 <FormControl>
-                                  <SelectTrigger>
+                                  <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Ընտրել" />
                                   </SelectTrigger>
                                 </FormControl>
@@ -278,36 +343,152 @@ export default function CreateWindow() {
                             </FormItem>
                           )}
                         />
-                        <Field className="w-full">
-                          <FieldLabel className="text-[12px] leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
-                            Ընտրել Մակարդակ
-                          </FieldLabel>
-                          <Select disabled>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Ընտրել" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectGroup>
-                                <SelectItem value="_">—</SelectItem>
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                        </Field>
-                        <Field className="w-full">
-                          <FieldLabel className="text-[12px] leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
-                            Գրադարան Արժեքներ
-                          </FieldLabel>
-                          <Select disabled>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Ընտրել" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectGroup>
-                                <SelectItem value="__">—</SelectItem>
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                        </Field>
+                        <FormField
+                          control={control}
+                          name={`rows.${index}.levelOption`}
+                          render={({ field: f }) => (
+                            <FormItem className="w-full">
+                              <FormLabel className="text-[12px] leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
+                                Ընտրել Մակարդակ
+                              </FormLabel>
+                              <Select
+                                value={f.value || undefined}
+                                onValueChange={f.onChange}
+                                disabled={
+                                  isLoading ||
+                                  !selectedLibrary ||
+                                  isLevelsLoading ||
+                                  shouldLockLevel
+                                }
+                              >
+                                <FormControl>
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue
+                                      placeholder={isLevelsLoading ? "Բեռնում…" : "Ընտրել"}
+                                    />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectGroup>
+                                    {LEVEL_OPTIONS.map((level) => (
+                                      <SelectItem key={level.value} value={level.value}>
+                                        {level.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectGroup>
+                                </SelectContent>
+                              </Select>
+                              {shouldLockLevel && (
+                                <p className="text-[11px] text-zinc-500">
+                                  Մակարդակը ֆիքսված է՝ «Հիմնական», քանի որ առկա են արժեքներ։
+                                </p>
+                              )}
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={control}
+                          name={`rows.${index}.valueIds`}
+                          render={({ field: f }) => {
+                            const totalOptions = levelOptions.length;
+                            const selectedCount = selectedValueIds.length;
+                            const allSelected = totalOptions > 0 && selectedCount === totalOptions;
+                            const triggerLabel =
+                              selectedCount > 0 ? `Ընտրված է ${selectedCount}` : "Ընտրել";
+
+                            return (
+                              <FormItem className="w-full">
+                                <FormLabel className="text-[12px] leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
+                                  Գրադարան Արժեքներ
+                                </FormLabel>
+                                <Popover
+                                  open={Boolean(valuesPopoverOpenByRow[index])}
+                                  onOpenChange={(open) =>
+                                    setValuesPopoverOpenByRow((prev) => ({
+                                      ...prev,
+                                      [index]: open,
+                                    }))
+                                  }
+                                >
+                                  <PopoverTrigger asChild>
+                                    <FormControl>
+                                      <button
+                                        type="button"
+                                        disabled={
+                                          isLoading ||
+                                          !selectedLibrary ||
+                                          isLevelsLoading ||
+                                          levelOptions.length === 0
+                                        }
+                                        className={cn(
+                                          "border-input flex h-9 w-full items-center justify-between rounded-md border bg-transparent px-3 py-2 text-left text-sm",
+                                          "disabled:cursor-not-allowed disabled:opacity-50"
+                                        )}
+                                      >
+                                        <span
+                                          className={cn(
+                                            "truncate",
+                                            selectedCount === 0 && "text-muted-foreground"
+                                          )}
+                                        >
+                                          {triggerLabel}
+                                        </span>
+                                        <ChevronDownIcon className="size-4 opacity-50" />
+                                      </button>
+                                    </FormControl>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                    <div className="flex items-center justify-between border-b px-3 py-2">
+                                      <FieldLabel className="text-xs font-medium text-zinc-700">
+                                        Գրադարան Արժեքներ
+                                      </FieldLabel>
+                                      <button
+                                        type="button"
+                                        className="text-xs font-medium text-[rgba(39,81,153,1)] hover:underline"
+                                        onClick={() => {
+                                          if (allSelected) {
+                                            f.onChange([]);
+                                            return;
+                                          }
+                                          f.onChange(levelOptions.map((opt) => opt._id));
+                                        }}
+                                      >
+                                        Ընտրել բոլորը
+                                      </button>
+                                    </div>
+                                    <div className="max-h-56 space-y-2 overflow-y-auto px-3 py-2">
+                                      {levelOptions.map((opt) => {
+                                        const checked = selectedValueIds.includes(opt._id);
+                                        return (
+                                          <label
+                                            key={opt._id}
+                                            className="flex cursor-pointer items-center gap-2 text-sm"
+                                          >
+                                            <Checkbox
+                                              checked={checked}
+                                              onCheckedChange={(next) => {
+                                                if (next) {
+                                                  f.onChange([...selectedValueIds, opt._id]);
+                                                  return;
+                                                }
+                                                f.onChange(
+                                                  selectedValueIds.filter((id) => id !== opt._id)
+                                                );
+                                              }}
+                                            />
+                                            <span>{opt.translations.am ?? opt.key}</span>
+                                          </label>
+                                        );
+                                      })}
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                              </FormItem>
+                            );
+                          }}
+                        />
                       </CollapsibleContent>
                     </Collapsible>
                   );

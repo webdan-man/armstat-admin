@@ -14,6 +14,7 @@ export type IndicatorSelectedFilter = {
   subSubgroup: string;
   indicator: string;
 };
+export type IndicatorFormMode = "closed" | "create" | "edit";
 
 type IndicatorSectionsContextValue = {
   sections: Section[];
@@ -23,6 +24,11 @@ type IndicatorSectionsContextValue = {
 type IndicatorFilterStateContextValue = {
   selectedFilter: IndicatorSelectedFilter;
   setSelectedFilter: React.Dispatch<React.SetStateAction<IndicatorSelectedFilter>>;
+  formMode: IndicatorFormMode;
+  isFormVisible: boolean;
+  canSelectIndicator: boolean;
+  openCreateForm: () => void;
+  closeForm: () => void;
   selectedSection: Section | undefined;
   rootTopics: Topic[];
   childTopics: Topic[];
@@ -44,6 +50,7 @@ export function IndicatorFiltersProvider({ children }: { children: React.ReactNo
     subSubgroup: "",
     indicator: "",
   });
+  const [formMode, setFormMode] = useState<IndicatorFormMode>("closed");
 
   const sectionsValue = useMemo<IndicatorSectionsContextValue>(
     () => ({ sections, isLoading }),
@@ -57,14 +64,12 @@ export function IndicatorFiltersProvider({ children }: { children: React.ReactNo
 
   const rootTopics = useMemo(() => {
     if (!selectedSection) return [];
-    return selectedSection.topics.filter(isRootTopic).sort((a, b) => a.order - b.order);
+    return selectedSection.topics.filter(isRootTopic);
   }, [selectedSection]);
 
   const childTopics = useMemo(() => {
     if (!selectedSection || !selectedFilter.subgroup) return [];
-    return selectedSection.topics
-      .filter((t) => t.parentTopicId === selectedFilter.subgroup)
-      .sort((a, b) => a.order - b.order);
+    return selectedSection.topics.find((t) => t._id === selectedFilter.subgroup)?.subtopics || [];
   }, [selectedSection, selectedFilter.subgroup]);
 
   const needsSubSubgroup = childTopics.length > 0;
@@ -79,10 +84,37 @@ export function IndicatorFiltersProvider({ children }: { children: React.ReactNo
     return selectedFilter.subgroup;
   }, [hierarchyComplete, selectedFilter.subgroup, selectedFilter.subSubgroup]);
 
+  const canSelectIndicator = hierarchyComplete;
+
+  const openCreateForm = () => {
+    if (!canSelectIndicator) return;
+    setSelectedFilter((prev) => ({ ...prev, indicator: "" }));
+    setFormMode("create");
+  };
+  const closeForm = () => setFormMode("closed");
+
+  React.useEffect(() => {
+    if (formMode === "create") {
+      return;
+    }
+    if (selectedFilter.indicator) {
+      setFormMode("edit");
+      return;
+    }
+    if (formMode === "edit") {
+      setFormMode("closed");
+    }
+  }, [selectedFilter.indicator, formMode]);
+
   const filterStateValue = useMemo<IndicatorFilterStateContextValue>(
     () => ({
       selectedFilter,
       setSelectedFilter,
+      formMode,
+      isFormVisible: formMode !== "closed",
+      canSelectIndicator,
+      openCreateForm,
+      closeForm,
       selectedSection,
       rootTopics,
       childTopics,
@@ -93,12 +125,16 @@ export function IndicatorFiltersProvider({ children }: { children: React.ReactNo
     [
       selectedFilter,
       setSelectedFilter,
+      formMode,
+      canSelectIndicator,
       selectedSection,
       rootTopics,
       childTopics,
       needsSubSubgroup,
       hierarchyComplete,
       resolvedTopicId,
+      openCreateForm,
+      closeForm,
     ]
   );
 

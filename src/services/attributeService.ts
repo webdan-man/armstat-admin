@@ -2,11 +2,11 @@ import apiClient from "@/lib/api/api-client";
 import { Attribute } from "@/types/attribute";
 
 export async function fetchAttributes() {
-  return apiClient<Attribute[]>(`${process.env.NEXT_PUBLIC_BASE_URL}/attributes`);
+  return apiClient<Attribute[]>("/api/attributes");
 }
 
 export async function fetchAttributeCategories() {
-  return apiClient<string[]>(`${process.env.NEXT_PUBLIC_BASE_URL}/attributes/categories`);
+  return apiClient<string[]>("/api/attributes/categories");
 }
 
 export async function createAttribute(payload: {
@@ -15,6 +15,12 @@ export async function createAttribute(payload: {
   return apiClient<Attribute>(`/api/attributes`, {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+}
+
+export async function getLibraryFromAttributeById(id: string): Promise<Attribute> {
+  return apiClient<Attribute>(`/api/attributes/${id}`, {
+    method: "GET",
   });
 }
 

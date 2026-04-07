@@ -22,8 +22,7 @@ export async function POST(req: Request) {
             if (match) {
                 const [, name, value] = match;
                 nextRes.cookies.set(name, value, {
-                    // Must be readable by client route-guards / api-client.
-                    httpOnly: false,
+                    httpOnly: true,
                     sameSite: "strict",
                     secure: process.env.NODE_ENV === "production",
                     path: "/",

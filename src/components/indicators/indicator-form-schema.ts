@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-import type { CreateMetricBody } from "@/types/metric";
+import type { CreateMetricBody, MetricAttributeKey, UpdateMetricBody } from "@/types/metric";
+import type { IndicatorFeature } from "@/types/indicator-feature";
 
 const perLangStrings = z.object({
   en: z.string(),
@@ -36,7 +37,12 @@ export const indicatorFormSchema = z.object({
   }),
   charts: z.tuple([chartBlock, chartBlock]),
   order: z.number().int(),
-  attributeKeys: z.array(z.string().min(1)),
+  attributeKeys: z.array(
+    z.object({
+      attributeId: z.string().min(1),
+      valueIds: z.array(z.string().min(1)),
+    })
+  ),
 });
 
 export type IndicatorFormValues = z.infer<typeof indicatorFormSchema>;
@@ -134,14 +140,12 @@ const localeKeys = ["en", "hy", "ru"] as const;
 /** Плоскі об'єкти для API (ключі мов — як очікує бекенд). */
 export function mapIndicatorFormToCreateMetric(
   topicId: string,
-  values: IndicatorFormValues
+  values: IndicatorFormValues,
+  attributeKeys: MetricAttributeKey[]
 ): CreateMetricBody {
-  const metadata: Record<string, unknown> = {};
+  const metadata: Record<string, string> = {};
   for (const lang of localeKeys) {
-    metadata[lang] = {
-      body: values.metadata[lang].body,
-      sourceUrl: values.metadata[lang].sourceUrl,
-    };
+    metadata[lang] = values.metadata[lang].body;
   }
 
   return {
@@ -157,7 +161,40 @@ export function mapIndicatorFormToCreateMetric(
       en: values.description.en,
     },
     metadata,
-    attributeKeys: values.attributeKeys,
+    attributeKeys,
     order: values.order,
   };
+}
+
+export function mapIndicatorFormToUpdateMetric(
+  values: IndicatorFormValues,
+  attributeKeys: MetricAttributeKey[]
+): UpdateMetricBody {
+  const metadata: Record<string, string> = {};
+  for (const lang of localeKeys) {
+    metadata[lang] = values.metadata[lang].body;
+  }
+
+  return {
+    title: {
+      hy: values.title.hy,
+      ru: values.title.ru,
+      en: values.title.en,
+    },
+    description: {
+      hy: values.description.hy,
+      ru: values.description.ru,
+      en: values.description.en,
+    },
+    metadata,
+    attributeKeys,
+    order: values.order,
+  };
+}
+
+export function mapFeaturesToMetricAttributeKeys(features: IndicatorFeature[]): MetricAttributeKey[] {
+  return features.map((feature) => ({
+    attributeId: feature.attributeKey,
+    valueIds: feature.valueIds,
+  }));
 }

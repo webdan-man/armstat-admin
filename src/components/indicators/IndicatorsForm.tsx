@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useForm, useFormState } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import useSWR, { useSWRConfig } from "swr";
@@ -20,27 +20,35 @@ import { useIndicatorFilters } from "@/components/indicators/indicator-filters-c
 import {
   emptyIndicatorFormValues,
   indicatorFormSchema,
+  mapFeaturesToMetricAttributeKeys,
   mapIndicatorFormToCreateMetric,
+  mapIndicatorFormToUpdateMetric,
   type IndicatorFormValues,
 } from "@/components/indicators/indicator-form-schema";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import {
   createMetric,
   fetchMetricForForm,
+  patchMetric,
   publishMetric,
 } from "@/services/metricsService";
 import { ApiError } from "@/lib/api/api-error";
+import { useIndicatorFeatures } from "@/components/indicators/indicator-features-context";
+import type { IndicatorFeature } from "@/types/indicator-feature";
+import type { MetricAttributeKey } from "@/types/metric";
 
 const cardSurface =
   "ring-0 rounded-[10px] border-0 bg-white text-[#2c2c2c] shadow-[0_6px_14px_rgba(0,0,0,0.05)]";
 
 export default function IndicatorsForm() {
-  const { selectedFilter, resolvedTopicId } = useIndicatorFilters();
+  const { selectedFilter, resolvedTopicId, formMode } = useIndicatorFilters();
+  const { features, replaceFeatures } = useIndicatorFeatures();
   const { mutate } = useSWRConfig();
   const committedRef = useRef<IndicatorFormValues>(emptyIndicatorFormValues());
+  const committedFeaturesRef = useRef<IndicatorFeature[]>([]);
 
   const indicatorId = selectedFilter.indicator;
-  const { data: loadedForm } = useSWR(
+  const { data: loadedMetricData } = useSWR(
     indicatorId ? swrKeys.metricForm(indicatorId) : null,
     () => fetchMetricForForm(indicatorId!)
   );
@@ -50,37 +58,77 @@ export default function IndicatorsForm() {
     defaultValues: emptyIndicatorFormValues(),
   });
 
-  const { reset } = form;
+  const { getValues, reset, setValue } = form;
   const { isDirty, isSubmitting } = useFormState({ control: form.control });
+  const [featuresDirty, setFeaturesDirty] = useState(false);
 
   useEffect(() => {
     if (!indicatorId) {
       const empty = emptyIndicatorFormValues();
       committedRef.current = empty;
+      committedFeaturesRef.current = [];
+      setFeaturesDirty(false);
       reset(empty);
+      replaceFeatures([]);
       return;
     }
-    if (!loadedForm) return;
-    committedRef.current = loadedForm;
-    reset(loadedForm);
-  }, [indicatorId, loadedForm, reset]);
+    if (!loadedMetricData) return;
+    const metricAttributeKeys = mapFeaturesToMetricAttributeKeys(loadedMetricData.features);
+    committedRef.current = {
+      ...loadedMetricData.form,
+      attributeKeys: metricAttributeKeys,
+    };
+    committedFeaturesRef.current = loadedMetricData.features;
+    setFeaturesDirty(false);
+    reset(committedRef.current);
+    replaceFeatures(loadedMetricData.features);
+  }, [indicatorId, loadedMetricData, reset, replaceFeatures]);
+
+  useEffect(() => {
+    const nextAttributeKeys = mapFeaturesToMetricAttributeKeys(features);
+    const currentAttributeKeys = getValues("attributeKeys");
+    const sameAttributeKeys = areMetricAttributeKeysEqual(currentAttributeKeys, nextAttributeKeys);
+    if (!sameAttributeKeys) {
+      setValue("attributeKeys", nextAttributeKeys, { shouldDirty: true });
+    }
+    setFeaturesDirty(
+      !areMetricAttributeKeysEqual(
+        mapFeaturesToMetricAttributeKeys(committedFeaturesRef.current),
+        nextAttributeKeys
+      )
+    );
+  }, [features, getValues, setValue]);
 
   const submitSave = async (values: IndicatorFormValues) => {
+    const metricAttributeKeys = mapFeaturesToMetricAttributeKeys(features);
+
     if (!resolvedTopicId) {
       toast.error("Ընտրեք բաժին, ենթախումբ և անհրաժեշտության դեպքում ենթա-ենթախումբ։");
       return;
     }
-
     try {
-      const body = mapIndicatorFormToCreateMetric(resolvedTopicId, values);
-      await createMetric(body);
+      if (formMode === "edit" && selectedFilter.indicator) {
+        const patchBody = mapIndicatorFormToUpdateMetric(values, metricAttributeKeys);
+        await patchMetric(selectedFilter.indicator, patchBody);
+      } else {
+        const createBody = mapIndicatorFormToCreateMetric(
+          resolvedTopicId,
+          values,
+          metricAttributeKeys
+        );
+        await createMetric(createBody);
+      }
       await mutate(swrKeys.metrics);
+      await mutate(swrKeys.metricsByTopic(resolvedTopicId));
       if (selectedFilter.indicator) {
         await mutate(swrKeys.metricForm(selectedFilter.indicator));
       }
       toast.success("Պահպանված է");
-      committedRef.current = values;
-      form.reset(values);
+      const committedValues = { ...values, attributeKeys: metricAttributeKeys };
+      committedRef.current = committedValues;
+      committedFeaturesRef.current = features;
+      setFeaturesDirty(false);
+      form.reset(committedValues);
     } catch (e) {
       const message = e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Սխալ";
       toast.error(message);
@@ -97,8 +145,12 @@ export default function IndicatorsForm() {
       await mutate(swrKeys.metrics);
       await mutate(swrKeys.metricForm(selectedFilter.indicator));
       toast.success("Հրապարակված է");
-      committedRef.current = values;
-      form.reset(values);
+      const metricAttributeKeys = mapFeaturesToMetricAttributeKeys(features);
+      const committedValues = { ...values, attributeKeys: metricAttributeKeys };
+      committedRef.current = committedValues;
+      committedFeaturesRef.current = features;
+      setFeaturesDirty(false);
+      form.reset(committedValues);
     } catch (e) {
       const message = e instanceof Error ? e.message : "Սխալ";
       toast.error(message);
@@ -107,6 +159,8 @@ export default function IndicatorsForm() {
 
   const onCancel = () => {
     form.reset(committedRef.current);
+    replaceFeatures(committedFeaturesRef.current);
+    setFeaturesDirty(false);
   };
 
   return (
@@ -172,7 +226,7 @@ export default function IndicatorsForm() {
           <Button
             type="button"
             variant="outline"
-            disabled={!isDirty}
+            disabled={!isDirty && !featuresDirty}
             className="h-11 min-w-[131px] rounded-lg border-[#c7c7c7] bg-white text-[#2c2c2c] hover:bg-[#fafafa] disabled:opacity-50"
             onClick={onCancel}
           >
@@ -180,7 +234,7 @@ export default function IndicatorsForm() {
           </Button>
           <Button
             type="button"
-            disabled={!isDirty || isSubmitting}
+            disabled={(!isDirty && !featuresDirty) || isSubmitting}
             className="h-11 min-w-[132px] rounded-lg border-transparent bg-[#282828] text-white hover:bg-[#282828]/90 disabled:opacity-50"
             onClick={() => void form.handleSubmit(submitSave)()}
           >
@@ -198,4 +252,20 @@ export default function IndicatorsForm() {
       </form>
     </Form>
   );
+}
+
+function areMetricAttributeKeysEqual(
+  left: MetricAttributeKey[] | undefined,
+  right: MetricAttributeKey[]
+): boolean {
+  const leftSafe = left ?? [];
+  if (leftSafe.length !== right.length) return false;
+
+  return leftSafe.every((entry, index) => {
+    const other = right[index];
+    if (!other) return false;
+    if (entry.attributeId !== other.attributeId) return false;
+    if (entry.valueIds.length !== other.valueIds.length) return false;
+    return entry.valueIds.every((valueId, valueIndex) => valueId === other.valueIds[valueIndex]);
+  });
 }

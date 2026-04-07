@@ -1,13 +1,19 @@
 export type Topic = {
   _id: string;
-  sectionId: string;
-  parentTopicId: string | null;
+  sectionId?: string;
+  parentTopicId?: string | null;
   title: string;
-  body: string;
-  order: number;
+  body?: string;
+  order?: number;
   createdAt: string;
   updatedAt: string;
-  subtopics: string[];
+  subtopics?: Topic[];
+};
+
+export type SectionLocalizedText = {
+  am: string;
+  ru: string;
+  en: string;
 };
 
 export type Section = {

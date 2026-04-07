@@ -7,25 +7,23 @@ export function buildLibraryOptions(
   if (!attributes || !category) return [];
   const rows: { value: string; label: string }[] = [];
   for (const attr of attributes.filter((a) => a.category === category)) {
-    for (const v of attr.values) {
-      const labelAm = v.translations?.am ?? v.key;
-      rows.push({
-        value: `${attr.key}:${v.key}`,
-        label: labelAm,
-      });
-    }
+    rows.push({
+      value: attr._id,
+      label: attr.key,
+    });
   }
+
   return rows;
 }
 
 export function buildLibraryDisplay(
   attributes: Attribute[],
-  attributeKey: string,
+  attributeId: string,
   valueKey: string
 ): string {
-  const attr = attributes.find((a) => a.key === attributeKey);
+  const attr = attributes.find((a) => a._id === attributeId);
   const val = attr?.values.find((v) => v.key === valueKey);
-  if (!attr || !val) return `${attributeKey}:${valueKey}`;
+  if (!attr || !val) return `${attributeId}:${valueKey}`;
 
   return val.translations?.am ?? val.key;
 }

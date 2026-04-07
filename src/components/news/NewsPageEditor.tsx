@@ -5,6 +5,10 @@ import { Search } from "lucide-react";
 import { toast } from "sonner";
 
 import {
+  CreateNewsDialog,
+  type CreateNewsFormValues,
+} from "@/components/news/CreateNewsDialog";
+import {
   MOCK_NEWS_ITEMS,
   type NewsItem,
 } from "@/components/news/news-mock-data";
@@ -24,11 +28,56 @@ function filterByTitle(items: NewsItem[], query: string): NewsItem[] {
 export function NewsPageEditor() {
   const [search, setSearch] = useState("");
   const [items, setItems] = useState<NewsItem[]>(() => [...MOCK_NEWS_ITEMS]);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const filtered = useMemo(
     () => filterByTitle(items, search),
     [items, search]
   );
+
+  const formatPublishedLabel = (publishedAt: string): string => {
+    const [year, month, day] = publishedAt.split("-");
+    if (!year || !month || !day) return publishedAt;
+    return `${month}/${day}/${year}`;
+  };
+
+  const resolveTitleForList = (values: CreateNewsFormValues): string => {
+    return (
+      values.title.am.trim() ||
+      values.title.ru.trim() ||
+      values.title.en.trim()
+    );
+  };
+
+  const createNews = (values: CreateNewsFormValues) => {
+    const listTitle = resolveTitleForList(values);
+    const publishedLabel = formatPublishedLabel(values.publishedAt);
+    const id =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}`;
+
+    const nextItem: NewsItem = {
+      id,
+      title: listTitle,
+      publishedLabel,
+      link: values.link.trim(),
+      publishedAt: values.publishedAt,
+      titleTranslations: {
+        am: values.title.am.trim(),
+        ru: values.title.ru.trim(),
+        en: values.title.en.trim(),
+      },
+      contentTranslations: {
+        am: values.content.am.trim(),
+        ru: values.content.ru.trim(),
+        en: values.content.en.trim(),
+      },
+    };
+
+    setItems((prev) => [nextItem, ...prev]);
+    toast.success("Նորությունը ստեղծվել է (մոկ)։");
+  };
 
   return (
     <div className="flex w-full flex-col gap-4 pb-10">
@@ -39,7 +88,7 @@ export function NewsPageEditor() {
         <Button
           type="button"
           className="h-11 shrink-0 rounded-lg border-0 bg-[#004d99] px-5 text-[13px] font-medium text-white hover:bg-[#004080]"
-          onClick={() => toast.message("Ավելացումը կկապվի API-ի հետ։")}
+          onClick={() => setCreateDialogOpen(true)}
         >
           Ավելացնել Լուր
         </Button>
@@ -135,6 +184,11 @@ export function NewsPageEditor() {
           </table>
         </div>
       </div>
+      <CreateNewsDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSubmitNews={createNews}
+      />
     </div>
   );
 }

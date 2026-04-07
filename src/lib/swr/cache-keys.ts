@@ -8,6 +8,7 @@
 export const swrKeys = {
   /** Invalidate after create/update/delete metric; use for metric lists when implemented. */
   metrics: "metrics",
+  metricsByTopic: (topicId: string) => ["metrics", "topic", topicId] as const,
   /** Cached indicator form loaded for the editor (GET /metrics/:id or fallback). */
   metricForm: (metricId: string) => ["metrics", "form", metricId] as const,
   attributes: "attributes",

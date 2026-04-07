@@ -12,6 +12,7 @@ type IndicatorFeaturesContextValue = {
   startCreate: () => void;
   startEdit: (id: string) => void;
   addFeature: (input: Omit<IndicatorFeature, "id">) => void;
+  replaceFeatures: (next: IndicatorFeature[]) => void;
   updateFeature: (id: string, patch: Partial<IndicatorFeature>) => void;
   removeFeature: (id: string) => void;
 };
@@ -43,6 +44,9 @@ export function IndicatorFeaturesProvider({ children }: { children: React.ReactN
   const addFeature = useCallback((input: Omit<IndicatorFeature, "id">) => {
     setFeatures((prev) => [...prev, { ...input, id: crypto.randomUUID() }]);
   }, []);
+  const replaceFeatures = useCallback((next: IndicatorFeature[]) => {
+    setFeatures(next);
+  }, []);
 
   const updateFeature = useCallback((id: string, patch: Partial<IndicatorFeature>) => {
     setFeatures((prev) => prev.map((f) => (f.id === id ? { ...f, ...patch } : f)));
@@ -61,6 +65,7 @@ export function IndicatorFeaturesProvider({ children }: { children: React.ReactN
       startCreate,
       startEdit,
       addFeature,
+      replaceFeatures,
       updateFeature,
       removeFeature,
     }),
@@ -72,6 +77,7 @@ export function IndicatorFeaturesProvider({ children }: { children: React.ReactN
       startCreate,
       startEdit,
       addFeature,
+      replaceFeatures,
       updateFeature,
       removeFeature,
     ]

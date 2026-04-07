@@ -33,25 +33,33 @@ function FeaturesTable() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="text-[14px] leading-3.5">Անվանում</TableHead>
+            <TableHead className="text-[14px] leading-3.5">Տեսակ</TableHead>
             <TableHead className="text-[14px] leading-3.5">Գրադարան</TableHead>
             <TableHead className="text-[14px] leading-3.5">Մակարդակ</TableHead>
+            <TableHead className="text-[14px] leading-3.5">Գրադարան Արժեքներ</TableHead>
             <TableHead></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {features.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4} className="py-8 text-center text-[14px] text-zinc-500">
+              <TableCell colSpan={5} className="py-8 text-center text-[14px] text-zinc-500">
                 Հատկանիշներ չկան։ Սեղմեք «Ավել Հատկանիշ»։
               </TableCell>
             </TableRow>
           ) : (
             features.map((row) => (
               <TableRow key={row.id}>
-                <TableCell className="py-5 text-[14px] leading-3.5">{row.name}</TableCell>
-                <TableCell className="py-5 text-[14px] leading-3.5">{row.libraryDisplay}</TableCell>
-                <TableCell className="py-5 text-[14px] leading-3.5 text-zinc-500">—</TableCell>
+                <TableCell className="py-5 text-[14px] leading-3.5">{row.category}</TableCell>
+                <TableCell className="py-5 text-[14px] leading-3.5">
+                  {row.attributeKeyLabel || row.attributeKey}
+                </TableCell>
+                <TableCell className="py-5 text-[14px] leading-3.5">
+                  {row.level === "primary" ? "Հիմնական" : "Երկրորդային"}
+                </TableCell>
+                <TableCell className="max-w-[340px] py-5 text-[14px] leading-3.5 break-words">
+                  {row.libraryDisplay || "—"}
+                </TableCell>
                 <TableCell className="py-5">
                   <div className="flex h-full w-full items-center justify-end gap-6.75">
                     <button
@@ -82,7 +90,7 @@ function FeaturesTable() {
             <AlertDialogTitle>Ջնջե՞լ հատկանիշը</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingDelete
-                ? `«${pendingDelete.name}» կհեռացվի ցուցակից։ Այս գործողությունը չի կարելի հետ կանչել։`
+                ? `«${pendingDelete.attributeKeyLabel || pendingDelete.attributeKey}» կհեռացվի ցուցակից։ Այս գործողությունը չի կարելի հետ կանչել։`
                 : null}
             </AlertDialogDescription>
           </AlertDialogHeader>

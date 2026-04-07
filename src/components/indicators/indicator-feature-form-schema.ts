@@ -1,9 +1,10 @@
 import { z } from "zod";
 
 export const indicatorFeatureRowSchema = z.object({
-  name: z.string().trim().min(1, "Մուտքագրեք անվանումը"),
   category: z.string().min(1, "Ընտրեք տեսակը"),
   libraryOption: z.string().min(1, "Ընտրեք գրադարանը"),
+  levelOption: z.string().min(1, "Ընտրեք մակարդակը"),
+  valueIds: z.array(z.string().min(1)).min(1, "Ընտրեք գրադարան արժեքները"),
 });
 
 /** @deprecated use indicatorFeatureRowSchema */
@@ -25,8 +26,9 @@ export function parseLibraryOption(s: string): { attributeKey: string; valueKey:
 
 export function emptyIndicatorFeatureRow(): IndicatorFeatureRowValues {
   return {
-    name: "",
     category: "",
     libraryOption: "",
+    levelOption: "",
+    valueIds: [],
   };
 }
