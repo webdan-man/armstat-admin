@@ -72,17 +72,20 @@ export default function AttributesList() {
   });
 
   const keys = useMemo(() => {
+    if (categoryFilter === "__all__") return [];
     const set = new Set<string>();
+    const shouldInclude =
+      categoryFilter === "__all__" ? () => true : (category: string) => category === categoryFilter;
 
     for (const a of data ?? []) {
-      set.add(a.key);
+      if (shouldInclude(a.category)) set.add(a.key);
     }
 
     return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [data]);
+  }, [data, categoryFilter]);
 
   const filtered = useMemo(() => {
-    if (!data) return [];
+    if (!data || keyFilter === "__all__") return [];
     return data.filter((a) => {
       if (categoryFilter !== "__all__" && a.category !== categoryFilter) return false;
       return !(keyFilter !== "__all__" && a.key !== keyFilter);
