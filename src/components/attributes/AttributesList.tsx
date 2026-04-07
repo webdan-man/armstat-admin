@@ -205,7 +205,7 @@ export default function AttributesList() {
               <option value="__all__">Ընտրել գրադարան</option>
               {keys.map((k) => (
                 <option key={k} value={k}>
-                  {k}
+                  {data?.find((attribute) => attribute.key === k)?.translations?.am}
                 </option>
               ))}
             </select>
