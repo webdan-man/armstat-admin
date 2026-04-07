@@ -3,14 +3,6 @@
 import React, { useMemo, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   deleteAttribute,
   fetchAttributeCategories,
   fetchAttributes,
@@ -39,10 +31,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Attribute } from "@/types/attribute";
 import { withToastError } from "@/lib/withToastError";
-
-const thClass = "bg-background sticky top-0 z-20";
+import AttributesTable from "@/components/attributes/AttributesTable";
 
 function buildKeyFromNames(names: { am: string; ru: string; en: string }) {
   const base = (names.en || names.ru || names.am || "").trim();
@@ -52,6 +42,15 @@ function buildKeyFromNames(names: { am: string; ru: string; en: string }) {
     .replace(/[^\p{L}\p{N}_-]+/gu, "")
     .slice(0, 80);
 }
+
+const categoryTranslations: Record<string, string> = {
+  gender: "Սեռ",
+  time: "Ժամանակ",
+  province: "Մարզեր",
+  age: "Տարիք",
+  area: "Տարացք",
+  other: "Այլ",
+};
 
 export default function AttributesList() {
   const { data, isLoading } = useSWR(swrKeys.attributes, fetchAttributes);
@@ -74,15 +73,13 @@ export default function AttributesList() {
 
   const keys = useMemo(() => {
     const set = new Set<string>();
-    const shouldInclude =
-      categoryFilter === "__all__" ? () => true : (category: string) => category === categoryFilter;
 
     for (const a of data ?? []) {
-      if (shouldInclude(a.category)) set.add(a.key);
+      set.add(a.key);
     }
 
     return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [data, categoryFilter]);
+  }, [data]);
 
   const filtered = useMemo(() => {
     if (!data) return [];
@@ -165,45 +162,6 @@ export default function AttributesList() {
     }
   };
 
-  let counter = 1;
-
-  const renderItems = (attribute: Attribute) => {
-    const { values } = attribute;
-
-    return values
-      .sort((a, b) => {
-        const aHasParent = a.parent ? 1 : 0;
-        const bHasParent = b.parent ? 1 : 0;
-
-        return bHasParent - aHasParent; // parents first
-      })
-      .map((value) => {
-        const id = counter++;
-
-        const parent = values.find((item) => item.parent === value.key);
-
-        return (
-          <TableRow key={value.key}>
-            <TableCell>{id || Math.random()}</TableCell>
-            <TableCell>{attribute.category}</TableCell>
-            <TableCell>{attribute.translations.am}</TableCell>
-
-            {parent && (
-              <>
-                <TableCell>{parent.translations.am}</TableCell>
-                <TableCell>{parent.translations.ru}</TableCell>
-                <TableCell>{parent.translations.en} </TableCell>
-              </>
-            )}
-
-            <TableCell>{value.translations.am}</TableCell>
-            <TableCell>{value.translations.ru}</TableCell>
-            <TableCell>{value.translations.en} </TableCell>
-          </TableRow>
-        );
-      });
-  };
-
   return (
     <div>
       <div className="mb-8 flex items-center justify-between">
@@ -225,10 +183,10 @@ export default function AttributesList() {
                 setKeyFilter("__all__");
               }}
             >
-              <option value="__all__">Բոլորը</option>
+              <option value="__all__">Ընտրել տեսակ</option>
               {categories.map((c) => (
                 <option key={c} value={c}>
-                  {c}
+                  {categoryTranslations[c]}
                 </option>
               ))}
             </select>
@@ -241,7 +199,7 @@ export default function AttributesList() {
               value={keyFilter}
               onChange={(e) => setKeyFilter(e.target.value)}
             >
-              <option value="__all__">Բոլորը</option>
+              <option value="__all__">Ընտրել գրադարան</option>
               {keys.map((k) => (
                 <option key={k} value={k}>
                   {k}
@@ -295,7 +253,7 @@ export default function AttributesList() {
                   <SelectGroup>
                     {categories.map((c) => (
                       <SelectItem key={c} value={c}>
-                        {c}
+                        {categoryTranslations[c]}
                       </SelectItem>
                     ))}
                   </SelectGroup>
@@ -318,41 +276,23 @@ export default function AttributesList() {
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
-              Cancel
+              Չեղարկել
             </Button>
             <Button type="button" onClick={onSave} disabled={formSaving || !formCategory}>
               {formSaving ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-              Save
+              Պահպանել
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <div className="h-[calc(100vh-164px)] w-full overflow-y-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className={thClass}>ID</TableHead>
-              <TableHead className={thClass}>Տեսակ</TableHead>
-              <TableHead className={thClass}>Գրադարան</TableHead>
-              <TableHead className={thClass}>Հիմնական հայերեն</TableHead>
-              <TableHead className={thClass}>Հիմնական ռուսերեն</TableHead>
-              <TableHead className={thClass}>Հիմնական անգլերեն</TableHead>
-              <TableHead className={thClass}>Երկրորդային հայերեն</TableHead>
-              <TableHead className={thClass}>Երկրորդային ռուսերեն</TableHead>
-              <TableHead className={thClass}>Երկրորդային անգլերեն</TableHead>
-            </TableRow>
-          </TableHeader>
+      {!!filtered.length && <AttributesTable attributes={filtered} />}
 
-          <TableBody>{filtered.map(renderItems)}</TableBody>
-        </Table>
-
-        {isLoading && (
-          <div className="flex w-full justify-center py-2">
-            <Loader2 className="size-13 animate-spin" />
-          </div>
-        )}
-      </div>
+      {isLoading && (
+        <div className="flex w-full justify-center py-2">
+          <Loader2 className="size-13 animate-spin" />
+        </div>
+      )}
     </div>
   );
 }
