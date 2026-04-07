@@ -20,11 +20,11 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 type ImportAttributesProps = {
-  selectedKey?: string;
+  selectedId?: string;
   onImport: () => void;
 };
 
-export default function ImportAttributes({ selectedKey, onImport }: ImportAttributesProps) {
+export default function ImportAttributes({ selectedId, onImport }: ImportAttributesProps) {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState<string>("");
@@ -41,12 +41,12 @@ export default function ImportAttributes({ selectedKey, onImport }: ImportAttrib
   } = form;
 
   const onSubmit = async (data: FormValues) => {
-    if (!selectedKey) return;
+    if (!selectedId) return;
 
     try {
       setIsUploading(true);
 
-      await withToastError(() => importAttributesFromCSV({ file: data.file, key: selectedKey }), {
+      await withToastError(() => importAttributesFromCSV({ file: data.file, id: selectedId }), {
         title: "Ֆայլը բեռնվել է հաջողությամբ:",
         description: "Ֆայլը հաջողությամբ բեռնվել և մշակվել է:",
       });
@@ -100,7 +100,7 @@ export default function ImportAttributes({ selectedKey, onImport }: ImportAttrib
             <Button
               type="submit"
               className="mt-5 h-15"
-              disabled={!selectedKey || isUploading || !form.watch("file")}
+              disabled={!selectedId || isUploading || !form.watch("file")}
             >
               {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isUploading ? "Բեռնվում է..." : "Ներմուծել արժեքները"}

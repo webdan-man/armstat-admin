@@ -5,14 +5,14 @@ import { Button } from "@/components/ui/button";
 import { swrKeys } from "@/lib/swr/cache-keys";
 
 const AttributesExportButton = ({
-  selectedKey,
+  selectedId,
   disabled,
 }: {
-  selectedKey: string;
+  selectedId: string;
   disabled: boolean;
 }) => {
   const { trigger: getCsv } = useSWRMutation(swrKeys.attributesExportCsv, async () =>
-    downloadAttributesAsCSV(selectedKey)
+    downloadAttributesAsCSV(selectedId)
   );
 
   return (

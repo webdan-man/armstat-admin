@@ -11,7 +11,6 @@ export async function fetchAttributeCategories() {
 
 export async function createAttribute(payload: {
   category: string;
-  key: string;
 }): Promise<Attribute> {
   return apiClient<Attribute>(`/api/attributes`, {
     method: "POST",
@@ -21,7 +20,7 @@ export async function createAttribute(payload: {
 
 export async function saveAttributeLibrary(payload: {
   category: string;
-  key: string;
+  id?: string;
   translations?: { am: string; ru: string; en: string };
   mode: "create" | "edit";
 }): Promise<Attribute> {
@@ -35,7 +34,10 @@ export async function saveAttributeLibrary(payload: {
       });
 
     case "edit":
-      return apiClient<Attribute>(`/api/attributes/${body.key}`, {
+      if (!body.id) {
+        throw new Error("Missing attribute id");
+      }
+      return apiClient<Attribute>(`/api/attributes/${body.id}`, {
         method: "PATCH",
         body: JSON.stringify(body),
       });
@@ -44,21 +46,21 @@ export async function saveAttributeLibrary(payload: {
 
 export async function importAttributesFromCSV(payload: {
   file: File;
-  key: string;
+  id: string;
 }): Promise<{ inserted: number }> {
-  const { key, file } = payload;
+  const { id, file } = payload;
 
   const formData = new FormData();
   formData.append("file", file);
 
-  return apiClient(`/api/attributes/csv?key=${key}`, {
+  return apiClient(`/api/attributes/csv?id=${id}`, {
     method: "POST",
     body: formData,
   });
 }
 
-export async function downloadAttributesAsCSV(key: string): Promise<void> {
-  const csvText = await apiClient<string>(`/api/attributes/csv?key=${key}`, {
+export async function downloadAttributesAsCSV(id: string): Promise<void> {
+  const csvText = await apiClient<string>(`/api/attributes/csv?id=${id}`, {
     headers: { Accept: "text/csv" },
     parseAsText: true,
   });
@@ -69,7 +71,7 @@ export async function downloadAttributesAsCSV(key: string): Promise<void> {
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${key}-attributes.csv`;
+  a.download = `${id}-attributes.csv`;
   document.body.appendChild(a);
   a.click();
 
@@ -77,8 +79,8 @@ export async function downloadAttributesAsCSV(key: string): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
-export async function deleteAttribute(key: string) {
-  return apiClient<Attribute>(`/api/attributes/${key}`, {
+export async function deleteAttribute(id: string) {
+  return apiClient<Attribute>(`/api/attributes/${id}`, {
     method: "DELETE",
   });
 }

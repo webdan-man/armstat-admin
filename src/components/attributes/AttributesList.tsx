@@ -34,15 +34,6 @@ import {
 import { withToastError } from "@/lib/withToastError";
 import AttributesTable from "@/components/attributes/AttributesTable";
 
-function buildKeyFromNames(names: { am: string; ru: string; en: string }) {
-  const base = (names.en || names.ru || names.am || "").trim();
-  return base
-    .toLowerCase()
-    .replace(/\s+/g, "_")
-    .replace(/[^\p{L}\p{N}_-]+/gu, "")
-    .slice(0, 80);
-}
-
 const categoryTranslations: Record<string, string> = {
   gender: "Սեռ",
   time: "Ժամանակ",
@@ -58,7 +49,7 @@ export default function AttributesList() {
   const { mutate } = useSWRConfig();
 
   const [categoryFilter, setCategoryFilter] = useState<string>("__all__");
-  const [keyFilter, setKeyFilter] = useState<string>("__all__");
+  const [idFilter, setIdFilter] = useState<string>("__all__");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
@@ -71,26 +62,31 @@ export default function AttributesList() {
     en: "",
   });
 
-  const keys = useMemo(() => {
+  const attributeIds = useMemo(() => {
     if (categoryFilter === "__all__") return [];
     const set = new Set<string>();
     const shouldInclude =
       categoryFilter === "__all__" ? () => true : (category: string) => category === categoryFilter;
 
     for (const a of data ?? []) {
-      if (shouldInclude(a.category)) set.add(a.key);
+      if (shouldInclude(a.category)) set.add(a._id);
     }
 
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [data, categoryFilter]);
 
+  const selectedAttribute = useMemo(() => {
+    if (!data || idFilter === "__all__") return undefined;
+    return data.find((a) => a._id === idFilter);
+  }, [data, idFilter]);
+
   const filtered = useMemo(() => {
-    if (!data || keyFilter === "__all__") return [];
+    if (!data || idFilter === "__all__") return [];
     return data.filter((a) => {
       if (categoryFilter !== "__all__" && a.category !== categoryFilter) return false;
-      return !(keyFilter !== "__all__" && a.key !== keyFilter);
+      return !(idFilter !== "__all__" && a._id !== idFilter);
     });
-  }, [data, categoryFilter, keyFilter]);
+  }, [data, categoryFilter, idFilter]);
 
   const openCreate = () => {
     setModalMode("create");
@@ -101,10 +97,8 @@ export default function AttributesList() {
   };
 
   const onEdit = () => {
-    const attribute = data?.find((a) => a.key === keyFilter);
+    const attribute = selectedAttribute;
     if (!attribute) return;
-
-    console.log("attribute", attribute);
 
     setModalMode("edit");
     setFormCategory(attribute.category || "");
@@ -118,13 +112,14 @@ export default function AttributesList() {
   };
 
   const onDelete = async () => {
+    if (!selectedAttribute) return;
     try {
-      await deleteAttribute(keyFilter);
+      await deleteAttribute(selectedAttribute._id);
 
       toast.success("Ջնջված է");
 
       await mutate(swrKeys.attributes);
-      setKeyFilter("__all__");
+      setIdFilter("__all__");
     } catch (e) {
       const message = e instanceof Error ? e.message : "Սխալ";
       toast.error(message);
@@ -133,8 +128,8 @@ export default function AttributesList() {
 
   const onSave = async () => {
     if (!formCategory) return;
-    const key = modalMode === "edit" ? keyFilter : buildKeyFromNames(formNames);
-    if (!key) return;
+    const id = modalMode === "edit" ? selectedAttribute?._id : undefined;
+    if (modalMode === "edit" && !id) return;
 
     if (!formNames.en) {
       toast.error("ԱՆգլերենը դաշտը պարտադիր է");
@@ -147,7 +142,7 @@ export default function AttributesList() {
           saveAttributeLibrary({
             mode: modalMode,
             category: formCategory,
-            key,
+            id,
             translations: formNames,
           }),
         {
@@ -183,7 +178,7 @@ export default function AttributesList() {
               value={categoryFilter}
               onChange={(e) => {
                 setCategoryFilter(e.target.value);
-                setKeyFilter("__all__");
+                setIdFilter("__all__");
               }}
             >
               <option value="__all__">Ընտրել տեսակ</option>
@@ -199,37 +194,40 @@ export default function AttributesList() {
             <div className="text-muted-foreground">Գրադարան</div>
             <select
               className="border-input bg-background h-9 rounded-md border px-3 text-sm"
-              value={keyFilter}
-              onChange={(e) => setKeyFilter(e.target.value)}
+              value={idFilter}
+              onChange={(e) => setIdFilter(e.target.value)}
             >
               <option value="__all__">Ընտրել գրադարան</option>
-              {keys.map((k) => (
-                <option key={k} value={k}>
-                  {data?.find((attribute) => attribute.key === k)?.translations?.am}
+              {attributeIds.map((id) => (
+                <option key={id} value={id}>
+                  {data?.find((attribute) => attribute._id === id)?.translations?.am}
                 </option>
               ))}
             </select>
           </label>
         </div>
 
-        <AttributesExportButton selectedKey={keyFilter} disabled={keyFilter === "__all__"} />
+        <AttributesExportButton
+          selectedId={selectedAttribute?._id ?? "__all__"}
+          disabled={idFilter === "__all__" || !selectedAttribute}
+        />
 
         <ImportAttributes
-          selectedKey={keyFilter === "__all__" ? undefined : keyFilter}
+          selectedId={selectedAttribute?._id}
           onImport={() => mutate(swrKeys.attributes)}
         />
 
         <Button
           className="h-15 max-w-30 bg-amber-500"
           onClick={onEdit}
-          disabled={keyFilter === "__all__"}
+          disabled={idFilter === "__all__"}
         >
           Խմբագրել գրադարանը
         </Button>
         <Button
           className="bg-destructive h-15 max-w-30"
           onClick={onDelete}
-          disabled={keyFilter === "__all__"}
+          disabled={idFilter === "__all__"}
         >
           Հեռացնել գրադարանը
         </Button>
