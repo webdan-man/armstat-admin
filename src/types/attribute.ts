@@ -6,7 +6,8 @@ export type Attribute = {
     [key: string]: string;
   };
   values: Array<{
-    id: number;
+    _id: string;
+    number: number;
     key: string;
     parent: null;
     translations: {

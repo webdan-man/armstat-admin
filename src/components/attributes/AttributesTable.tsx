@@ -24,7 +24,7 @@ const AttributesTable = ({ attributes }: AttributesTableProps) => {
 
       return (
         <TableRow key={value.key}>
-          <TableCell>{value.id}</TableCell>
+          <TableCell>{value.number}</TableCell>
 
           {parent ? (
             <>

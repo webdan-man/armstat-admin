@@ -51,6 +51,8 @@ export default function ImportAttributes({ selectedId, onImport }: ImportAttribu
         description: "Ֆայլը հաջողությամբ բեռնվել և մշակվել է:",
       });
 
+      form.setValue("file", null as any);
+
       if (fileRef.current) {
         fileRef.current.value = "";
       }
