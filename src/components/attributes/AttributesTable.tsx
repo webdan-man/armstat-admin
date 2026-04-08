@@ -55,10 +55,11 @@ const AttributesTable = ({ attributes }: AttributesTableProps) => {
       <Table>
         <TableHeader>
           <TableRow>
-
             <TableHead className={thClass}>ID</TableHead>
-            <TableHead className={thClass}>Հատկանիշի արժեքները(տեսակները)</TableHead>
-            <TableHead className={thClass}>Հատկանիշի արժեքները(տեսակները)՝ 2-րդ մակարդակի</TableHead>
+            <TableHead className={thClass}>Հատկանիշի արժեքները (տեսակները)</TableHead>
+            <TableHead className={thClass}>
+              Հատկանիշի արժեքները (տեսակները)՝ 2-րդ մակարդակի
+            </TableHead>
             <TableHead className={thClass}>Значения признака (типы)</TableHead>
             <TableHead className={thClass}>Значения признака (типы) - 2-й уровень</TableHead>
             <TableHead className={thClass}>Attribute values (types) </TableHead>
