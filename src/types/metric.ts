@@ -1,5 +1,5 @@
 /** Body for POST /metrics */
-export type MetricAttributeKey = {
+export type MetricAttribute = {
   attributeId: string;
   valueIds: string[];
 };
@@ -9,7 +9,7 @@ export type CreateMetricBody = {
   title: Record<string, string>;
   description: Record<string, string>;
   metadata: Record<string, string>;
-  attributeKeys: MetricAttributeKey[];
+  attributes: MetricAttribute[];
   order: number;
 };
 
@@ -17,7 +17,7 @@ export type UpdateMetricBody = {
   title: Record<string, string>;
   description: Record<string, string>;
   metadata: Record<string, string>;
-  attributeKeys: MetricAttributeKey[];
+  attributes: MetricAttribute[];
   order: number;
 };
 
@@ -27,7 +27,7 @@ export type MetricResponse = {
   title?: Record<string, string> & { am?: string; hy?: string; ru?: string; en?: string };
   description?: Record<string, string> & { am?: string; hy?: string; ru?: string; en?: string };
   metadata?: Record<string, unknown>;
-  attributeKeys?: MetricAttributeKey[];
+  attributes?: MetricAttribute[];
   order?: number;
   createdAt?: string;
   updatedAt?: string;

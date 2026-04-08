@@ -3,7 +3,7 @@ import type { IndicatorFormValues } from "@/components/indicators/indicator-form
 import { emptyIndicatorFormValues } from "@/components/indicators/indicator-form-schema";
 import type {
   CreateMetricBody,
-  MetricAttributeKey,
+  MetricAttribute,
   MetricResponse,
   MetricSelectOption,
   UpdateMetricBody,
@@ -79,7 +79,7 @@ function mapApiMetricToIndicatorForm(raw: MetricResponse): IndicatorFormValues {
       },
     },
     order: typeof raw.order === "number" ? raw.order : 0,
-    attributeKeys: raw.attributeKeys ?? [],
+    attributes: raw.attributes ?? [],
   };
 }
 
@@ -106,12 +106,12 @@ export async function fetchMetricForForm(metricId: string): Promise<{
   const raw = await getMetricById(metricId);
   return {
     form: mapApiMetricToIndicatorForm(raw),
-    features: mapMetricAttributeKeysToFeatures(raw.attributeKeys ?? []),
+    features: mapMetricAttributesToFeatures(raw.attributes ?? []),
   };
 }
 
-function mapMetricAttributeKeysToFeatures(attributeKeys: MetricAttributeKey[]): IndicatorFeature[] {
-  return attributeKeys.map((item, index) => ({
+function mapMetricAttributesToFeatures(attributes: MetricAttribute[]): IndicatorFeature[] {
+  return attributes.map((item, index) => ({
     id: `${item.attributeId}-${index}`,
     category: "",
     attributeKey: item.attributeId,

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { CreateMetricBody, MetricAttributeKey, UpdateMetricBody } from "@/types/metric";
+import type { CreateMetricBody, MetricAttribute, UpdateMetricBody } from "@/types/metric";
 import type { IndicatorFeature } from "@/types/indicator-feature";
 
 const perLangStrings = z.object({
@@ -37,7 +37,7 @@ export const indicatorFormSchema = z.object({
   }),
   charts: z.tuple([chartBlock, chartBlock]),
   order: z.number().int(),
-  attributeKeys: z.array(
+  attributes: z.array(
     z.object({
       attributeId: z.string().min(1),
       valueIds: z.array(z.string().min(1)),
@@ -76,7 +76,7 @@ export function emptyIndicatorFormValues(): IndicatorFormValues {
     },
     charts: [{ link: "" }, { link: "" }],
     order: 0,
-    attributeKeys: [],
+    attributes: [],
   };
 }
 
@@ -131,7 +131,7 @@ export function mockIndicatorFormValues(indicatorId: string): IndicatorFormValue
       { link: `https://charts.example/${suffix}/2` },
     ],
     order: Number.isNaN(n) ? 0 : n,
-    attributeKeys: [],
+    attributes: [],
   };
 }
 
@@ -141,7 +141,7 @@ const localeKeys = ["en", "hy", "ru"] as const;
 export function mapIndicatorFormToCreateMetric(
   topicId: string,
   values: IndicatorFormValues,
-  attributeKeys: MetricAttributeKey[]
+  attributes: MetricAttribute[]
 ): CreateMetricBody {
   const metadata: Record<string, string> = {};
   for (const lang of localeKeys) {
@@ -161,14 +161,14 @@ export function mapIndicatorFormToCreateMetric(
       en: values.description.en,
     },
     metadata,
-    attributeKeys,
+    attributes,
     order: values.order,
   };
 }
 
 export function mapIndicatorFormToUpdateMetric(
   values: IndicatorFormValues,
-  attributeKeys: MetricAttributeKey[]
+  attributes: MetricAttribute[]
 ): UpdateMetricBody {
   const metadata: Record<string, string> = {};
   for (const lang of localeKeys) {
@@ -187,12 +187,12 @@ export function mapIndicatorFormToUpdateMetric(
       en: values.description.en,
     },
     metadata,
-    attributeKeys,
+    attributes,
     order: values.order,
   };
 }
 
-export function mapFeaturesToMetricAttributeKeys(features: IndicatorFeature[]): MetricAttributeKey[] {
+export function mapFeaturesToMetricAttributeKeys(features: IndicatorFeature[]): MetricAttribute[] {
   return features.map((feature) => ({
     attributeId: feature.attributeKey,
     valueIds: feature.valueIds,

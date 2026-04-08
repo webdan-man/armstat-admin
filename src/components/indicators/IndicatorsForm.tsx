@@ -35,7 +35,7 @@ import {
 import { ApiError } from "@/lib/api/api-error";
 import { useIndicatorFeatures } from "@/components/indicators/indicator-features-context";
 import type { IndicatorFeature } from "@/types/indicator-feature";
-import type { MetricAttributeKey } from "@/types/metric";
+import type { MetricAttribute } from "@/types/metric";
 
 const cardSurface =
   "ring-0 rounded-[10px] border-0 bg-white text-[#2c2c2c] shadow-[0_6px_14px_rgba(0,0,0,0.05)]";
@@ -76,7 +76,7 @@ export default function IndicatorsForm() {
     const metricAttributeKeys = mapFeaturesToMetricAttributeKeys(loadedMetricData.features);
     committedRef.current = {
       ...loadedMetricData.form,
-      attributeKeys: metricAttributeKeys,
+      attributes: metricAttributeKeys,
     };
     committedFeaturesRef.current = loadedMetricData.features;
     setFeaturesDirty(false);
@@ -86,10 +86,10 @@ export default function IndicatorsForm() {
 
   useEffect(() => {
     const nextAttributeKeys = mapFeaturesToMetricAttributeKeys(features);
-    const currentAttributeKeys = getValues("attributeKeys");
+    const currentAttributeKeys = getValues("attributes");
     const sameAttributeKeys = areMetricAttributeKeysEqual(currentAttributeKeys, nextAttributeKeys);
     if (!sameAttributeKeys) {
-      setValue("attributeKeys", nextAttributeKeys, { shouldDirty: true });
+      setValue("attributes", nextAttributeKeys, { shouldDirty: true });
     }
     setFeaturesDirty(
       !areMetricAttributeKeysEqual(
@@ -124,7 +124,7 @@ export default function IndicatorsForm() {
         await mutate(swrKeys.metricForm(selectedFilter.indicator));
       }
       toast.success("Պահպանված է");
-      const committedValues = { ...values, attributeKeys: metricAttributeKeys };
+      const committedValues = { ...values, attributes: metricAttributeKeys };
       committedRef.current = committedValues;
       committedFeaturesRef.current = features;
       setFeaturesDirty(false);
@@ -146,7 +146,7 @@ export default function IndicatorsForm() {
       await mutate(swrKeys.metricForm(selectedFilter.indicator));
       toast.success("Հրապարակված է");
       const metricAttributeKeys = mapFeaturesToMetricAttributeKeys(features);
-      const committedValues = { ...values, attributeKeys: metricAttributeKeys };
+      const committedValues = { ...values, attributes: metricAttributeKeys };
       committedRef.current = committedValues;
       committedFeaturesRef.current = features;
       setFeaturesDirty(false);
@@ -255,8 +255,8 @@ export default function IndicatorsForm() {
 }
 
 function areMetricAttributeKeysEqual(
-  left: MetricAttributeKey[] | undefined,
-  right: MetricAttributeKey[]
+  left: MetricAttribute[] | undefined,
+  right: MetricAttribute[]
 ): boolean {
   const leftSafe = left ?? [];
   if (leftSafe.length !== right.length) return false;

@@ -13,7 +13,7 @@ import { SwrProvider } from "@/lib/swr/swr-provider";
 const navItems = [
   { href: "/main", label: "Գլխավոր էջ" },
   { href: "/groups", label: "Բաժիններ" },
-  { href: "/indicators", label: "Ցուցաւնիշ" },
+  { href: "/indicators", label: "Ցուցանիշ" },
   { href: "/information-centre", label: "Տեղեկատվական կենտրոն" },
   { href: "/contact-us", label: "Հետադարձ կապ" },
   { href: "/news", label: "Նորություններ" },
