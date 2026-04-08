@@ -55,13 +55,14 @@ const AttributesTable = ({ attributes }: AttributesTableProps) => {
       <Table>
         <TableHeader>
           <TableRow>
+
             <TableHead className={thClass}>ID</TableHead>
-            <TableHead className={thClass}>Հիմնական հայերեն (L1)</TableHead>
-            <TableHead className={thClass}>Երկրորդային հայերեն (L2)</TableHead>
-            <TableHead className={thClass}>Հիմնական ռուսերեն (L1)</TableHead>
-            <TableHead className={thClass}>Երկրորդային ռուսերեն (L2)</TableHead>
-            <TableHead className={thClass}>Հիմնական անգլերեն (L1)</TableHead>
-            <TableHead className={thClass}>Երկրորդային անգլերեն (L2)</TableHead>
+            <TableHead className={thClass}>Հատկանիշի արժեքները(տեսակները)</TableHead>
+            <TableHead className={thClass}>Հատկանիշի արժեքները(տեսակները)՝ 2-րդ մակարդակի</TableHead>
+            <TableHead className={thClass}>Значения признака (типы)</TableHead>
+            <TableHead className={thClass}>Значения признака (типы) - 2-й уровень</TableHead>
+            <TableHead className={thClass}>Attribute values (types) </TableHead>
+            <TableHead className={thClass}>Attribute values (types) - 2nd level</TableHead>
           </TableRow>
         </TableHeader>
 
