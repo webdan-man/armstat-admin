@@ -68,7 +68,6 @@ export default function CreateWindow() {
     fetchAttributeCategories
   );
   const { data: attributes, isLoading } = useSWR(swrKeys.attributes, fetchAttributes);
-
   const editing = editingId ? features.find((f) => f.id === editingId) : undefined;
   const isEdit = Boolean(editingId && editing);
 
@@ -86,6 +85,14 @@ export default function CreateWindow() {
     control,
     name: "rows",
   });
+
+  const resolveEditCategory = (feature: NonNullable<typeof editing>): string => {
+    const featureCategory = feature.category?.trim();
+    if (featureCategory) return featureCategory;
+    const attributeCategory = attributeByKey[feature.attributeKey]?.category?.trim();
+    if (attributeCategory) return attributeCategory;
+    return "";
+  };
 
   const rowsWatch = useWatch({ control, name: "rows" });
   const selectedAttributeKeys = useMemo(() => {
@@ -123,7 +130,7 @@ export default function CreateWindow() {
       reset({
         rows: [
           {
-            category: editing.category,
+            category: resolveEditCategory(editing),
             libraryOption: editing.attributeKey,
             levelOption: editing.level,
             valueIds: editing.valueIds ?? [],
@@ -136,6 +143,17 @@ export default function CreateWindow() {
       });
     }
   }, [dialogOpen, editingId, editing, reset]);
+
+  useEffect(() => {
+    if (!dialogOpen || !isEdit || !editing) return;
+    const currentCategory = rowsWatch?.[0]?.category?.trim() ?? "";
+    if (currentCategory) return;
+
+    const resolvedCategory = resolveEditCategory(editing);
+    if (!resolvedCategory) return;
+
+    setValue("rows.0.category", resolvedCategory, { shouldValidate: true });
+  }, [dialogOpen, isEdit, editing, rowsWatch, setValue, attributeByKey]);
 
   useEffect(() => {
     const rows = rowsWatch ?? [];
@@ -157,7 +175,7 @@ export default function CreateWindow() {
       const selectedAttribute = attributeByKey[row.libraryOption];
       const selectedLabels = (selectedAttribute?.values ?? [])
         .filter((v) => row.valueIds.includes(v._id))
-        .map((v) => v.translations?.am ?? v.key);
+        .map((v) => v.translations?.hy ?? v.translations?.am ?? v.key);
       const libraryDisplay =
         selectedLabels.length > 0
           ? selectedLabels.join(", ")
@@ -176,7 +194,7 @@ export default function CreateWindow() {
         const selectedAttribute = attributeByKey[row.libraryOption];
         const selectedLabels = (selectedAttribute?.values ?? [])
           .filter((v) => row.valueIds.includes(v._id))
-          .map((v) => v.translations?.am ?? v.key);
+          .map((v) => v.translations?.hy ?? v.translations?.am ?? v.key);
         const libraryDisplay =
           selectedLabels.length > 0
             ? selectedLabels.join(", ")
@@ -477,7 +495,7 @@ export default function CreateWindow() {
                                                 );
                                               }}
                                             />
-                                            <span>{opt.translations.am ?? opt.key}</span>
+                                            <span>{opt.translations.hy ?? opt.translations.am ?? opt.key}</span>
                                           </label>
                                         );
                                       })}

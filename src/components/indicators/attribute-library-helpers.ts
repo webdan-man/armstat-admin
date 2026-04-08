@@ -9,7 +9,7 @@ export function buildLibraryOptions(
   for (const attr of attributes.filter((a) => a.category === category)) {
     rows.push({
       value: attr._id,
-      label: attr.key,
+      label: attr.translations?.hy?.trim() || attr.translations?.am?.trim() || attr.key,
     });
   }
 
@@ -25,5 +25,5 @@ export function buildLibraryDisplay(
   const val = attr?.values.find((v) => v.key === valueKey);
   if (!attr || !val) return `${attributeId}:${valueKey}`;
 
-  return val.translations?.am ?? val.key;
+  return val.translations?.hy ?? val.translations?.am ?? val.key;
 }

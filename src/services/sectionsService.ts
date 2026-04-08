@@ -11,7 +11,7 @@ export async function createSection(payload: {
 }): Promise<Section> {
   return apiClient<Section>("/api/sections", {
     method: "POST",
-    body: JSON.stringify({ name: payload.name.am, description: payload.description.am }),
+    body: JSON.stringify({ name: payload.name.hy, description: payload.description.hy }),
   });
 }
 

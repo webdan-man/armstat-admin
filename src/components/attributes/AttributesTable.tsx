@@ -28,8 +28,8 @@ const AttributesTable = ({ attributes }: AttributesTableProps) => {
 
           {parent ? (
             <>
-              <TableCell>{parent?.translations.am}</TableCell>
-              <TableCell>{value.translations.am}</TableCell>
+              <TableCell>{parent?.translations.hy ?? parent?.translations.am}</TableCell>
+              <TableCell>{value.translations.hy ?? value.translations.am}</TableCell>
               <TableCell>{parent?.translations.ru}</TableCell>
               <TableCell>{value.translations.ru}</TableCell>
               <TableCell>{parent?.translations.en}</TableCell>
@@ -37,7 +37,7 @@ const AttributesTable = ({ attributes }: AttributesTableProps) => {
             </>
           ) : (
             <>
-              <TableCell>{value.translations.am}</TableCell>
+              <TableCell>{value.translations.hy ?? value.translations.am}</TableCell>
               <TableCell>-</TableCell>
               <TableCell>{value.translations.ru}</TableCell>
               <TableCell>-</TableCell>

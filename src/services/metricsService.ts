@@ -70,8 +70,8 @@ function mapApiMetricToIndicatorForm(raw: MetricResponse): IndicatorFormValues {
         sourceUrl: readMetadataSourceUrl(metadata.en),
       },
       hy: {
-        body: readMetadataBody(metadata.hy),
-        sourceUrl: readMetadataSourceUrl(metadata.hy),
+        body: readMetadataBody(metadata.hy ?? metadata.am),
+        sourceUrl: readMetadataSourceUrl(metadata.hy ?? metadata.am),
       },
       ru: {
         body: readMetadataBody(metadata.ru),

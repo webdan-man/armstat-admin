@@ -26,18 +26,18 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 
-type LangCode = "am" | "ru" | "en";
+type LangCode = "hy" | "ru" | "en";
 type LocalizedText = Record<LangCode, string>;
 
 const createNewsSchema = z
   .object({
     title: z.object({
-      am: z.string().trim(),
+      hy: z.string().trim(),
       ru: z.string().trim(),
       en: z.string().trim(),
     }),
     content: z.object({
-      am: z.string().trim(),
+      hy: z.string().trim(),
       ru: z.string().trim(),
       en: z.string().trim(),
     }),
@@ -49,11 +49,11 @@ const createNewsSchema = z
     publishedAt: z.string().trim().min(1, "Լրացրեք հրապարակման ամսաթիվը"),
   })
   .superRefine((values, ctx) => {
-    const hasAnyTitle = Boolean(values.title.am || values.title.ru || values.title.en);
-    const hasAnyContent = Boolean(values.content.am || values.content.ru || values.content.en);
+    const hasAnyTitle = Boolean(values.title.hy || values.title.ru || values.title.en);
+    const hasAnyContent = Boolean(values.content.hy || values.content.ru || values.content.en);
 
     if (!hasAnyTitle) {
-      (["am", "ru", "en"] as const).forEach((lang) => {
+      (["hy", "ru", "en"] as const).forEach((lang) => {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["title", lang],
@@ -63,7 +63,7 @@ const createNewsSchema = z
     }
 
     if (!hasAnyContent) {
-      (["am", "ru", "en"] as const).forEach((lang) => {
+      (["hy", "ru", "en"] as const).forEach((lang) => {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["content", lang],
@@ -81,22 +81,22 @@ type CreateNewsDialogProps = {
   onSubmitNews: (values: CreateNewsFormValues) => Promise<void> | void;
 };
 
-const defaultLocalized: LocalizedText = { am: "", ru: "", en: "" };
+const defaultLocalized: LocalizedText = { hy: "", ru: "", en: "" };
 
 const fieldLabels: Record<LangCode, { title: string; content: string }> = {
-  am: { title: "Վերնագիր", content: "Բովանդակություն" },
+  hy: { title: "Վերնագիր", content: "Բովանդակություն" },
   ru: { title: "Заголовок", content: "Содержание" },
   en: { title: "Title", content: "Content" },
 };
 
 const fieldPlaceholders: Record<LangCode, { title: string; content: string }> = {
-  am: { title: "Մուտքագրել վերնագիրը", content: "Մուտքագրել բովանդակությունը" },
+  hy: { title: "Մուտքագրել վերնագիրը", content: "Մուտքագրել բովանդակությունը" },
   ru: { title: "Введите заголовок", content: "Введите содержание" },
   en: { title: "Enter title", content: "Enter content" },
 };
 
 export function CreateNewsDialog({ open, onOpenChange, onSubmitNews }: CreateNewsDialogProps) {
-  const [activeLang, setActiveLang] = useState<LangCode>("am");
+  const [activeLang, setActiveLang] = useState<LangCode>("hy");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<CreateNewsFormValues>({
@@ -111,7 +111,7 @@ export function CreateNewsDialog({ open, onOpenChange, onSubmitNews }: CreateNew
 
   useEffect(() => {
     if (!open) {
-      setActiveLang("am");
+      setActiveLang("hy");
       form.reset({
         title: defaultLocalized,
         content: defaultLocalized,
@@ -157,7 +157,7 @@ export function CreateNewsDialog({ open, onOpenChange, onSubmitNews }: CreateNew
                   EN
                 </TabsTrigger>
                 <TabsTrigger
-                  value="am"
+                  value="hy"
                   className="h-full rounded-[8px] px-5 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"
                 >
                   HY

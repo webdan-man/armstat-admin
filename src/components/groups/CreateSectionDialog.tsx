@@ -30,30 +30,30 @@ import { withToastError } from "@/lib/withToastError";
 import { createSection, fetchSections } from "@/services/sectionsService";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-type LangCode = "am" | "ru" | "en";
+type LangCode = "hy" | "ru" | "en";
 type LocalizedField = Record<LangCode, string>;
 
 const createSectionSchema = z
   .object({
     name: z.object({
-      am: z.string().trim(),
+      hy: z.string().trim(),
       ru: z.string().trim(),
       en: z.string().trim(),
     }),
     description: z.object({
-      am: z.string().trim(),
+      hy: z.string().trim(),
       ru: z.string().trim(),
       en: z.string().trim(),
     }),
   })
   .superRefine((values, ctx) => {
-    const hasName = Boolean(values.name.am || values.name.ru || values.name.en);
+    const hasName = Boolean(values.name.hy || values.name.ru || values.name.en);
     const hasDescription = Boolean(
-      values.description.am || values.description.ru || values.description.en
+      values.description.hy || values.description.ru || values.description.en
     );
 
     if (!hasName) {
-      (["am", "ru", "en"] as const).forEach((lang) => {
+      (["hy", "ru", "en"] as const).forEach((lang) => {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["name", lang],
@@ -63,7 +63,7 @@ const createSectionSchema = z
     }
 
     if (!hasDescription) {
-      (["am", "ru", "en"] as const).forEach((lang) => {
+      (["hy", "ru", "en"] as const).forEach((lang) => {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["description", lang],
@@ -82,15 +82,15 @@ type CreateSectionDialogProps = {
 
 export function CreateSectionDialog({ open, onOpenChange }: CreateSectionDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeLang, setActiveLang] = useState<LangCode>("am");
+  const [activeLang, setActiveLang] = useState<LangCode>("hy");
   const { mutate } = useSWRConfig();
   const { isLoading: isSectionsLoading } = useSWR(swrKeys.sections, fetchSections);
 
   const form = useForm<CreateSectionFormValues>({
     resolver: zodResolver(createSectionSchema),
     defaultValues: {
-      name: { am: "", ru: "", en: "" },
-      description: { am: "", ru: "", en: "" },
+      name: { hy: "", ru: "", en: "" },
+      description: { hy: "", ru: "", en: "" },
     },
   });
 
@@ -100,28 +100,28 @@ export function CreateSectionDialog({ open, onOpenChange }: CreateSectionDialogP
 
   useEffect(() => {
     if (!open) {
-      setActiveLang("am");
+      setActiveLang("hy");
       form.reset({
-        name: { am: "", ru: "", en: "" },
-        description: { am: "", ru: "", en: "" },
+        name: { hy: "", ru: "", en: "" },
+        description: { hy: "", ru: "", en: "" },
       });
     }
   }, [open, form]);
 
   const fieldLabels: Record<LangCode, { name: string; description: string }> = {
-    am: { name: "Անվանում", description: "Նկարագրություն" },
+    hy: { name: "Անվանում", description: "Նկարագրություն" },
     ru: { name: "Название", description: "Описание" },
     en: { name: "Name", description: "Description" },
   };
 
   const fieldPlaceholders: Record<LangCode, { name: string; description: string }> = {
-    am: { name: "Մուտքագրել անվանումը", description: "Մուտքագրել նկարագրությունը" },
+    hy: { name: "Մուտքագրել անվանումը", description: "Մուտքագրել նկարագրությունը" },
     ru: { name: "Введите название", description: "Введите описание" },
     en: { name: "Enter name", description: "Enter description" },
   };
 
   const payloadFor = (value: LocalizedField): LocalizedField => ({
-    am: value.am.trim(),
+    hy: value.hy.trim(),
     ru: value.ru.trim(),
     en: value.en.trim(),
   });
@@ -143,10 +143,10 @@ export function CreateSectionDialog({ open, onOpenChange }: CreateSectionDialogP
       if (!created) return;
 
       await mutate(swrKeys.sections);
-      setActiveLang("am");
+      setActiveLang("hy");
       form.reset({
-        name: { am: "", ru: "", en: "" },
-        description: { am: "", ru: "", en: "" },
+        name: { hy: "", ru: "", en: "" },
+        description: { hy: "", ru: "", en: "" },
       });
       onOpenChange(false);
     } finally {
@@ -180,7 +180,7 @@ export function CreateSectionDialog({ open, onOpenChange }: CreateSectionDialogP
                   EN
                 </TabsTrigger>
                 <TabsTrigger
-                  value="am"
+                  value="hy"
                   className="h-full rounded-[8px] px-5 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"
                 >
                   HY

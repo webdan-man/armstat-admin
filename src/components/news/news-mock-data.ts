@@ -6,12 +6,12 @@ export type NewsItem = {
   link?: string;
   publishedAt?: string;
   titleTranslations?: {
-    am: string;
+    hy: string;
     ru: string;
     en: string;
   };
   contentTranslations?: {
-    am: string;
+    hy: string;
     ru: string;
     en: string;
   };

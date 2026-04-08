@@ -55,9 +55,9 @@ export default function AttributesList() {
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
   const [formSaving, setFormSaving] = useState(false);
   const [formCategory, setFormCategory] = useState<string>("");
-  const [nameLang, setNameLang] = useState<"am" | "ru" | "en">("am");
-  const [formNames, setFormNames] = useState<{ am: string; ru: string; en: string }>({
-    am: "",
+  const [nameLang, setNameLang] = useState<"hy" | "ru" | "en">("hy");
+  const [formNames, setFormNames] = useState<{ hy: string; ru: string; en: string }>({
+    hy: "",
     ru: "",
     en: "",
   });
@@ -79,6 +79,10 @@ export default function AttributesList() {
     if (!data || idFilter === "__all__") return undefined;
     return data.find((a) => a._id === idFilter);
   }, [data, idFilter]);
+  const getAttributeLabel = (id: string): string => {
+    const attribute = data?.find((item) => item._id === id);
+    return attribute?.translations?.hy ?? attribute?.translations?.am ?? id;
+  };
 
   const filtered = useMemo(() => {
     if (!data || idFilter === "__all__") return [];
@@ -91,8 +95,8 @@ export default function AttributesList() {
   const openCreate = () => {
     setModalMode("create");
     setFormCategory(categoryFilter !== "__all__" ? categoryFilter : "");
-    setFormNames({ am: "", ru: "", en: "" });
-    setNameLang("am");
+    setFormNames({ hy: "", ru: "", en: "" });
+    setNameLang("hy");
     setModalOpen(true);
   };
 
@@ -103,11 +107,11 @@ export default function AttributesList() {
     setModalMode("edit");
     setFormCategory(attribute.category || "");
     setFormNames({
-      am: String(attribute.translations.am ?? ""),
+      hy: String(attribute.translations.hy ?? attribute.translations.am ?? ""),
       ru: String(attribute.translations.ru ?? ""),
       en: String(attribute.translations.en ?? ""),
     });
-    setNameLang("am");
+    setNameLang("hy");
     setModalOpen(true);
   };
 
@@ -200,7 +204,7 @@ export default function AttributesList() {
               <option value="__all__">Ընտրել գրադարան</option>
               {attributeIds.map((id) => (
                 <option key={id} value={id}>
-                  {data?.find((attribute) => attribute._id === id)?.translations?.am}
+                  {getAttributeLabel(id)}
                 </option>
               ))}
             </select>

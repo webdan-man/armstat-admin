@@ -195,7 +195,7 @@ function BlockCard({
 
 export function MainPageEditor() {
   const initialJson = useRef(JSON.stringify(MOCK_MAIN_PAGE));
-  const [lang, setLang] = useState<MainLangCode>("am");
+  const [lang, setLang] = useState<MainLangCode>("hy");
   const [data, setData] = useState<MainPageMock>(() =>
     structuredClone(MOCK_MAIN_PAGE)
   );

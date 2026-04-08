@@ -1,5 +1,5 @@
 /** Mock CMS shape for the main homepage editor (no API yet). */
-export type MainLangCode = "am" | "ru" | "en";
+export type MainLangCode = "hy" | "ru" | "en";
 
 export type MainHomeBlock = {
   id: string;

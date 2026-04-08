@@ -43,7 +43,7 @@ export function NewsPageEditor() {
 
   const resolveTitleForList = (values: CreateNewsFormValues): string => {
     return (
-      values.title.am.trim() ||
+      values.title.hy.trim() ||
       values.title.ru.trim() ||
       values.title.en.trim()
     );
@@ -64,12 +64,12 @@ export function NewsPageEditor() {
       link: values.link.trim(),
       publishedAt: values.publishedAt,
       titleTranslations: {
-        am: values.title.am.trim(),
+        hy: values.title.hy.trim(),
         ru: values.title.ru.trim(),
         en: values.title.en.trim(),
       },
       contentTranslations: {
-        am: values.content.am.trim(),
+        hy: values.content.hy.trim(),
         ru: values.content.ru.trim(),
         en: values.content.en.trim(),
       },

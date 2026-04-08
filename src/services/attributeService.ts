@@ -27,7 +27,7 @@ export async function getLibraryFromAttributeById(id: string): Promise<Attribute
 export async function saveAttributeLibrary(payload: {
   category: string;
   id?: string;
-  translations?: { am: string; ru: string; en: string };
+  translations?: { hy: string; ru: string; en: string };
   mode: "create" | "edit";
 }): Promise<Attribute> {
   const { mode, ...body } = payload;

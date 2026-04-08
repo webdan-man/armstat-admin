@@ -11,7 +11,7 @@ export type Topic = {
 };
 
 export type SectionLocalizedText = {
-  am: string;
+  hy: string;
   ru: string;
   en: string;
 };

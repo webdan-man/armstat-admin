@@ -155,7 +155,7 @@ function BlockItemEditor({
 
 export function InformationCentreEditor() {
   const initialJson = useRef(JSON.stringify(MOCK_INFORMATION_CENTRE));
-  const [lang, setLang] = useState<MainLangCode>("am");
+  const [lang, setLang] = useState<MainLangCode>("hy");
   const [data, setData] = useState<InformationCentreMock>(() =>
     structuredClone(MOCK_INFORMATION_CENTRE)
   );

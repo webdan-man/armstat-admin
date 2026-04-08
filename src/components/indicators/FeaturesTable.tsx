@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import useSWR from "swr";
 
 import {
   Table,
@@ -21,10 +22,76 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useIndicatorFeatures } from "@/components/indicators/indicator-features-context";
+import { getLibraryFromAttributeById } from "@/services/attributeService";
+import type { Attribute } from "@/types/attribute";
+import { swrKeys } from "@/lib/swr/cache-keys";
 
 function FeaturesTable() {
   const { features, startEdit, removeFeature } = useIndicatorFeatures();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const selectedAttributeKeys = useMemo(
+    () =>
+      Array.from(
+        new Set(features.map((feature) => feature.attributeKey).filter((attributeKey) => Boolean(attributeKey)))
+      ),
+    [features]
+  );
+  const detailsKey = useMemo(
+    () =>
+      selectedAttributeKeys.length > 0
+        ? ([swrKeys.attributes, "features-table-details", ...selectedAttributeKeys] as const)
+        : null,
+    [selectedAttributeKeys]
+  );
+  const { data: attributeByKey = {} } = useSWR<Record<string, Attribute | null>>(
+    detailsKey,
+    async () => {
+      const entries = await Promise.all(
+        selectedAttributeKeys.map(async (key) => {
+          try {
+            const attribute = await getLibraryFromAttributeById(key);
+            return [key, attribute] as const;
+          } catch {
+            return [key, null] as const;
+          }
+        })
+      );
+      return Object.fromEntries(entries);
+    }
+  );
+
+  const resolveAttributeLabel = (row: (typeof features)[number]): string => {
+    const attribute = attributeByKey[row.attributeKey];
+    const translated = attribute?.translations?.hy?.trim() || attribute?.translations?.am?.trim();
+    if (translated) return translated;
+    const keyFallback = attribute?.key?.trim();
+    if (keyFallback) return keyFallback;
+    if (row.attributeKeyLabel) return row.attributeKeyLabel;
+    return row.attributeKey;
+  };
+
+  const resolveCategoryLabel = (row: (typeof features)[number]): string => {
+    const rowCategory = row.category?.trim();
+    if (rowCategory) return rowCategory;
+    const attributeCategory = attributeByKey[row.attributeKey]?.category?.trim();
+    if (attributeCategory) return attributeCategory;
+    return "—";
+  };
+
+  const resolveLibraryValues = (row: (typeof features)[number]): string => {
+    const attribute = attributeByKey[row.attributeKey];
+    if (!attribute) return row.libraryDisplay || "—";
+    if (!row.valueIds?.length) return row.libraryDisplay || "—";
+
+    const labels = row.valueIds.map((valueId) => {
+      const option = attribute.values.find((value) => value._id === valueId);
+      if (!option) return valueId;
+      return option.translations?.hy?.trim() || option.translations?.am?.trim() || option.key || valueId;
+    });
+
+    const joined = labels.filter(Boolean).join(", ");
+    return joined || row.libraryDisplay || "—";
+  };
 
   const pendingDelete = deleteId ? features.find((f) => f.id === deleteId) : undefined;
 
@@ -50,15 +117,17 @@ function FeaturesTable() {
           ) : (
             features.map((row) => (
               <TableRow key={row.id}>
-                <TableCell className="py-5 text-[14px] leading-3.5">{row.category}</TableCell>
                 <TableCell className="py-5 text-[14px] leading-3.5">
-                  {row.attributeKeyLabel || row.attributeKey}
+                  {resolveCategoryLabel(row)}
+                </TableCell>
+                <TableCell className="py-5 text-[14px] leading-3.5">
+                  {resolveAttributeLabel(row)}
                 </TableCell>
                 <TableCell className="py-5 text-[14px] leading-3.5">
                   {row.level === "primary" ? "Հիմնական" : "Երկրորդային"}
                 </TableCell>
                 <TableCell className="max-w-[340px] py-5 text-[14px] leading-3.5 break-words">
-                  {row.libraryDisplay || "—"}
+                  {resolveLibraryValues(row)}
                 </TableCell>
                 <TableCell className="py-5">
                   <div className="flex h-full w-full items-center justify-end gap-6.75">
@@ -90,7 +159,7 @@ function FeaturesTable() {
             <AlertDialogTitle>Ջնջե՞լ հատկանիշը</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingDelete
-                ? `«${pendingDelete.attributeKeyLabel || pendingDelete.attributeKey}» կհեռացվի ցուցակից։ Այս գործողությունը չի կարելի հետ կանչել։`
+                ? `«${resolveAttributeLabel(pendingDelete)}» կհեռացվի ցուցակից։ Այս գործողությունը չի կարելի հետ կանչել։`
                 : null}
             </AlertDialogDescription>
           </AlertDialogHeader>

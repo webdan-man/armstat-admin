@@ -181,7 +181,7 @@ function ContactBlockCard({
 
 export function ContactUsEditor() {
   const initialJson = useRef(JSON.stringify(MOCK_CONTACT_US));
-  const [lang, setLang] = useState<MainLangCode>("am");
+  const [lang, setLang] = useState<MainLangCode>("hy");
   const [data, setData] = useState<ContactUsMock>(() =>
     structuredClone(MOCK_CONTACT_US)
   );

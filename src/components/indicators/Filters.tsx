@@ -155,50 +155,52 @@ export default function Filters() {
         </div>
       </div>
       <div className={"grid min-h-11 w-full grid-cols-[5fr_1fr] items-center gap-6"}>
-        {Boolean(selectedFilter.indicator) && <FilterChip>Ցուցանիշ</FilterChip>}
-        <Select
-          key={resolvedTopicId || "empty-topic"}
-          disabled={controlsDisabled}
-          value={selectedFilter.indicator || undefined}
-          onValueChange={(val) => setSelectedFilter((prev) => ({ ...prev, indicator: val }))}
-        >
-          <SelectTrigger className={selectTriggerClass}>
-            <SelectValue placeholder="Ցուցանիշ" />
-          </SelectTrigger>
-          <SelectContent>
-            {indicators.map((option) => {
-              let formatted = null;
+        <div className="flex flex-col items-start">
+          {Boolean(selectedFilter.indicator) && <FilterChip>Ցուցանիշ</FilterChip>}
+          <Select
+            key={resolvedTopicId || "empty-topic"}
+            disabled={controlsDisabled}
+            value={selectedFilter.indicator || undefined}
+            onValueChange={(val) => setSelectedFilter((prev) => ({ ...prev, indicator: val }))}
+          >
+            <SelectTrigger className={selectTriggerClass}>
+              <SelectValue placeholder="Ցուցանիշ" />
+            </SelectTrigger>
+            <SelectContent>
+              {indicators.map((option) => {
+                let formatted = null;
 
-              if (option.updatedAt) {
-                const date = new Date(option.updatedAt);
+                if (option.updatedAt) {
+                  const date = new Date(option.updatedAt);
 
-                formatted = `${date.getDate()}.${date.getMonth()}.${date.getFullYear()}`;
-              }
+                  formatted = `${date.getDate()}.${date.getMonth()}.${date.getFullYear()}`;
+                }
 
-              return (
-                <SelectItem
-                  className={
-                    "flex w-full items-center justify-between rounded-none border-b border-b-[rgba(234,234,234,1)] py-5 *:[span]:last:w-full"
-                  }
-                  key={option.id}
-                  value={option.id}
-                >
-                  {option.label}{" "}
-                  {formatted && (
-                    <div className="relative ml-auto justify-start pl-5 text-xs leading-4 font-medium text-zinc-800 before:absolute before:top-[2px] before:left-0 before:h-[7px] before:w-[7px] before:translate-1/2 before:rounded-full before:bg-[rgba(37,201,34,1)]">
-                      {formatted}
-                    </div>
-                  )}
+                return (
+                  <SelectItem
+                    className={
+                      "flex w-full items-center justify-between rounded-none border-b border-b-[rgba(234,234,234,1)] py-5 *:[span]:last:w-full"
+                    }
+                    key={option.id}
+                    value={option.id}
+                  >
+                    {option.label}{" "}
+                    {formatted && (
+                      <div className="relative ml-auto justify-start pl-5 text-xs leading-4 font-medium text-zinc-800 before:absolute before:top-[2px] before:left-0 before:h-[7px] before:w-[7px] before:translate-1/2 before:rounded-full before:bg-[rgba(37,201,34,1)]">
+                        {formatted}
+                      </div>
+                    )}
+                  </SelectItem>
+                );
+              })}
+              {!isIndicatorsLoading && indicators.length === 0 && (
+                <SelectItem value="__empty" disabled>
+                  Ցուցանիշներ չկան
                 </SelectItem>
-              );
-            })}
-            {!isIndicatorsLoading && indicators.length === 0 && (
-              <SelectItem value="__empty" disabled>
-                Ցուցանիշներ չկան
-              </SelectItem>
-            )}
-          </SelectContent>
-        </Select>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
         <button
           type="button"
           onClick={openCreateForm}

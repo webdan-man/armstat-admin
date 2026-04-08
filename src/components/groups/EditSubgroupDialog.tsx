@@ -32,30 +32,30 @@ import { getTopicById, getTopicSubtopics, upsertTopic } from "@/services/section
 import type { Topic } from "@/types/section";
 import Image from "next/image";
 
-type LangCode = "am" | "ru" | "en";
+type LangCode = "hy" | "ru" | "en";
 type LocalizedField = Record<LangCode, string>;
 
 const schema = z
   .object({
     title: z.object({
-      am: z.string().trim(),
+      hy: z.string().trim(),
       ru: z.string().trim(),
       en: z.string().trim(),
     }),
     body: z.object({
-      am: z.string().trim(),
+      hy: z.string().trim(),
       ru: z.string().trim(),
       en: z.string().trim(),
     }),
     nestedSubgroups: z.array(
       z.object({
         title: z.object({
-          am: z.string().trim(),
+          hy: z.string().trim(),
           ru: z.string().trim(),
           en: z.string().trim(),
         }),
         body: z.object({
-          am: z.string().trim(),
+          hy: z.string().trim(),
           ru: z.string().trim(),
           en: z.string().trim(),
         }),
@@ -63,9 +63,9 @@ const schema = z
     ),
   })
   .superRefine((values, ctx) => {
-    const hasTitle = Boolean(values.title.am || values.title.ru || values.title.en);
+    const hasTitle = Boolean(values.title.hy || values.title.ru || values.title.en);
     if (!hasTitle) {
-      (["am", "ru", "en"] as const).forEach((lang) => {
+      (["hy", "ru", "en"] as const).forEach((lang) => {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["title", lang],
@@ -92,8 +92,8 @@ export function EditSubgroupDialog({
   siblingTopics,
   headingTopic,
 }: EditSubgroupDialogProps) {
-  const [activeLang, setActiveLang] = useState<LangCode>("am");
-  const [addDialogActiveLang, setAddDialogActiveLang] = useState<LangCode>("am");
+  const [activeLang, setActiveLang] = useState<LangCode>("hy");
+  const [addDialogActiveLang, setAddDialogActiveLang] = useState<LangCode>("hy");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [addDialogError, setAddDialogError] = useState<string | null>(null);
   const [isAddSubmitting, setIsAddSubmitting] = useState(false);
@@ -101,8 +101,8 @@ export function EditSubgroupDialog({
     title: LocalizedField;
     body: LocalizedField;
   }>({
-    title: { am: "", ru: "", en: "" },
-    body: { am: "", ru: "", en: "" },
+    title: { hy: "", ru: "", en: "" },
+    body: { hy: "", ru: "", en: "" },
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { mutate } = useSWRConfig();
@@ -125,11 +125,11 @@ export function EditSubgroupDialog({
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      title: { am: topic.title, ru: "", en: "" },
-      body: { am: topic.body ?? "", ru: "", en: "" },
+      title: { hy: topic.title, ru: "", en: "" },
+      body: { hy: topic.body ?? "", ru: "", en: "" },
       nestedSubgroups: childTopics.map((t) => ({
-        title: { am: topic.title, ru: "", en: "" },
-        body: { am: topic.body ?? "", ru: "", en: "" },
+        title: { hy: t.title, ru: "", en: "" },
+        body: { hy: t.body ?? "", ru: "", en: "" },
       })),
     },
   });
@@ -140,16 +140,16 @@ export function EditSubgroupDialog({
   });
 
   const pickLocalized = (value: LocalizedField): string =>
-    value.am.trim() || value.ru.trim() || value.en.trim() || "";
+    value.hy.trim() || value.ru.trim() || value.en.trim() || "";
 
   const addDialogTitle = headingTopic ? "Ավելացնել Ենթաթեմա" : "Ավելացնել Ենթա-ենթեմա";
 
   const resetAddDialogState = () => {
-    setAddDialogActiveLang("am");
+    setAddDialogActiveLang("hy");
     setAddDialogError(null);
     setNewNestedSubgroup({
-      title: { am: "", ru: "", en: "" },
-      body: { am: "", ru: "", en: "" },
+      title: { hy: "", ru: "", en: "" },
+      body: { hy: "", ru: "", en: "" },
     });
   };
 
@@ -167,7 +167,7 @@ export function EditSubgroupDialog({
 
   const handleAddNestedSubgroup = async () => {
     const hasTitle = Boolean(
-      newNestedSubgroup.title.am.trim() ||
+      newNestedSubgroup.title.hy.trim() ||
       newNestedSubgroup.title.ru.trim() ||
       newNestedSubgroup.title.en.trim()
     );
@@ -280,10 +280,10 @@ export function EditSubgroupDialog({
             >
               <TabsList className="h-9 w-full gap-0 rounded-[9px] bg-[#e6e7eb] p-[2px]">
                 <TabsTrigger
-                  value="am"
+                  value="hy"
                   className="h-full rounded-[8px] text-[14px] font-medium text-[#2c2c2c] data-[state=active]:bg-white data-[state=active]:text-black"
                 >
-                  AM
+                  HY
                 </TabsTrigger>
                 <TabsTrigger
                   value="ru"
@@ -452,10 +452,10 @@ export function EditSubgroupDialog({
             >
               <TabsList className="h-9 w-full gap-0 rounded-[9px] bg-[#e6e7eb] p-[2px]">
                 <TabsTrigger
-                  value="am"
+                  value="hy"
                   className="h-full rounded-[8px] text-[14px] font-medium text-[#2c2c2c] data-[state=active]:bg-white data-[state=active]:text-black"
                 >
-                  AM
+                  HY
                 </TabsTrigger>
                 <TabsTrigger
                   value="ru"

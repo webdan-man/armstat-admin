@@ -6,7 +6,7 @@ import type { MainLangCode } from "@/components/main/main-mock-data";
 import { cn } from "@/lib/utils";
 
 const LANGS: { code: MainLangCode; label: string }[] = [
-  { code: "am", label: "AM" },
+  { code: "hy", label: "HY" },
   { code: "ru", label: "RU" },
   { code: "en", label: "ENG" },
 ];
