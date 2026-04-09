@@ -187,7 +187,7 @@ export default function IndicatorsForm() {
             </CardAction>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 px-8 pt-6 pb-8">
-            <FeaturesTable />
+            <FeaturesTable metricId={indicatorId} />
           </CardContent>
         </Card>
 

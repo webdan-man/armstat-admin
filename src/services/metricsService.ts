@@ -135,3 +135,23 @@ export async function publishMetric(_metricId: string): Promise<void> {
   void _metricId;
   throw new Error("Հրապարակման API-ը դեռ հասանելի չէ։");
 }
+
+export async function downloadMetricCombinationsCSV(metricId: string): Promise<void> {
+  const csvText = await apiClient<string>(`/api/metrics/${metricId}/csv?locale=hy`, {
+    headers: { Accept: "text/csv" },
+    parseAsText: true,
+  });
+
+  const blob = new Blob([csvText], { type: "text/csv;charset=utf-8;" });
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${metricId}-combinations.csv`;
+  document.body.appendChild(a);
+  a.click();
+
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}

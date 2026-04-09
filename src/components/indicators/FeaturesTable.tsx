@@ -25,8 +25,10 @@ import { useIndicatorFeatures } from "@/components/indicators/indicator-features
 import { getLibraryFromAttributeById } from "@/services/attributeService";
 import type { Attribute } from "@/types/attribute";
 import { swrKeys } from "@/lib/swr/cache-keys";
+import { Button } from "@/components/ui/button";
+import { downloadMetricCombinationsCSV } from "@/services/metricsService";
 
-function FeaturesTable() {
+function FeaturesTable({ metricId }: { metricId: string }) {
   const { features, startEdit, removeFeature } = useIndicatorFeatures();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const selectedAttributeKeys = useMemo(
@@ -156,6 +158,12 @@ function FeaturesTable() {
           )}
         </TableBody>
       </Table>
+
+      <div>
+        <Button size="lg" onClick={() => downloadMetricCombinationsCSV(metricId)}>
+          Գեներացնել CSV
+        </Button>
+      </div>
 
       <AlertDialog open={deleteId != null} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
