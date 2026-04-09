@@ -1,17 +1,27 @@
+export type AttributeValue = {
+  _id: string;
+  number: number;
+  parentTitle: {
+    [key: string]: string;
+  } | null;
+  title: {
+    [key: string]: string;
+  };
+};
+
 export type Attribute = {
   _id: string;
   category: string;
-  key: string;
-  translations: {
+  title: {
     [key: string]: string;
   };
-  values: Array<{
-    _id: string;
-    number: number;
-    key: string;
-    parent: null;
-    translations: {
-      [key: string]: string;
-    };
-  }>;
+  values: AttributeValue[];
+};
+
+
+export type AttributeCategory = {
+  value: string;
+  title: {
+    [key: string]: string;
+  };
 };

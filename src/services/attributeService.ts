@@ -1,17 +1,15 @@
 import apiClient from "@/lib/api/api-client";
-import { Attribute } from "@/types/attribute";
+import { Attribute, AttributeCategory } from "@/types/attribute";
 
 export async function fetchAttributes() {
   return apiClient<Attribute[]>("/api/attributes");
 }
 
 export async function fetchAttributeCategories() {
-  return apiClient<string[]>("/api/attributes/categories");
+  return apiClient<AttributeCategory[]>("/api/attributes/categories");
 }
 
-export async function createAttribute(payload: {
-  category: string;
-}): Promise<Attribute> {
+export async function createAttribute(payload: { category: string }): Promise<Attribute> {
   return apiClient<Attribute>(`/api/attributes`, {
     method: "POST",
     body: JSON.stringify(payload),
@@ -27,7 +25,7 @@ export async function getLibraryFromAttributeById(id: string): Promise<Attribute
 export async function saveAttributeLibrary(payload: {
   category: string;
   id?: string;
-  translations?: { hy: string; ru: string; en: string };
+  title?: { hy: string; ru: string; en: string };
   mode: "create" | "edit";
 }): Promise<Attribute> {
   const { mode, ...body } = payload;
@@ -59,14 +57,14 @@ export async function importAttributesFromCSV(payload: {
   const formData = new FormData();
   formData.append("file", file);
 
-  return apiClient(`/api/attributes/csv?id=${id}`, {
+  return apiClient(`/api/attribute-values/csv?attributeId=${id}`, {
     method: "POST",
     body: formData,
   });
 }
 
 export async function downloadAttributesAsCSV(id: string): Promise<void> {
-  const csvText = await apiClient<string>(`/api/attributes/csv?id=${id}`, {
+  const csvText = await apiClient<string>(`/api/attribute-values/csv?attributeId=${id}`, {
     headers: { Accept: "text/csv" },
     parseAsText: true,
   });

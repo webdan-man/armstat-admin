@@ -32,7 +32,11 @@ function FeaturesTable() {
   const selectedAttributeKeys = useMemo(
     () =>
       Array.from(
-        new Set(features.map((feature) => feature.attributeKey).filter((attributeKey) => Boolean(attributeKey)))
+        new Set(
+          features
+            .map((feature) => feature.attributeKey)
+            .filter((attributeKey) => Boolean(attributeKey))
+        )
       ),
     [features]
   );
@@ -62,9 +66,9 @@ function FeaturesTable() {
 
   const resolveAttributeLabel = (row: (typeof features)[number]): string => {
     const attribute = attributeByKey[row.attributeKey];
-    const translated = attribute?.translations?.hy?.trim() || attribute?.translations?.am?.trim();
+    const translated = attribute?.title?.hy?.trim();
     if (translated) return translated;
-    const keyFallback = attribute?.key?.trim();
+    const keyFallback = attribute?._id?.trim();
     if (keyFallback) return keyFallback;
     if (row.attributeKeyLabel) return row.attributeKeyLabel;
     return row.attributeKey;
@@ -86,7 +90,7 @@ function FeaturesTable() {
     const labels = row.valueIds.map((valueId) => {
       const option = attribute.values.find((value) => value._id === valueId);
       if (!option) return valueId;
-      return option.translations?.hy?.trim() || option.translations?.am?.trim() || option.key || valueId;
+      return option.title?.hy?.trim() || option._id || valueId;
     });
 
     const joined = labels.filter(Boolean).join(", ");

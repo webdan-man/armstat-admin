@@ -162,7 +162,8 @@ export default function CreateWindow() {
       if (!selectedLibrary) return;
       const selectedAttribute = attributeByKey[selectedLibrary];
       if (!selectedAttribute) return;
-      if (selectedAttribute.values.length > 0 && row.levelOption !== "primary") {
+
+      if (selectedAttribute.values?.length > 0 && row.levelOption !== "primary") {
         setValue(`rows.${index}.levelOption`, "primary", { shouldValidate: true });
       }
     });
@@ -175,7 +176,7 @@ export default function CreateWindow() {
       const selectedAttribute = attributeByKey[row.libraryOption];
       const selectedLabels = (selectedAttribute?.values ?? [])
         .filter((v) => row.valueIds.includes(v._id))
-        .map((v) => v.translations?.hy ?? v.translations?.am ?? v.key);
+        .map((v) => v.title?.hy);
       const libraryDisplay =
         selectedLabels.length > 0
           ? selectedLabels.join(", ")
@@ -184,7 +185,7 @@ export default function CreateWindow() {
       updateFeature(editing.id, {
         category: row.category,
         attributeKey: row.libraryOption,
-        attributeKeyLabel: selectedAttribute?.key ?? "",
+        attributeKeyLabel: selectedAttribute?.title["hy"] ?? "",
         level: row.levelOption as "primary" | "secondary",
         valueIds: row.valueIds,
         libraryDisplay,
@@ -194,7 +195,7 @@ export default function CreateWindow() {
         const selectedAttribute = attributeByKey[row.libraryOption];
         const selectedLabels = (selectedAttribute?.values ?? [])
           .filter((v) => row.valueIds.includes(v._id))
-          .map((v) => v.translations?.hy ?? v.translations?.am ?? v.key);
+          .map((v) => v.title?.hy);
         const libraryDisplay =
           selectedLabels.length > 0
             ? selectedLabels.join(", ")
@@ -203,7 +204,7 @@ export default function CreateWindow() {
         addFeature({
           category: row.category,
           attributeKey: row.libraryOption,
-          attributeKeyLabel: selectedAttribute?.key ?? "",
+          attributeKeyLabel: selectedAttribute?.title?.["hy"] ?? "",
           level: row.levelOption as "primary" | "secondary",
           valueIds: row.valueIds,
           libraryDisplay,
@@ -312,8 +313,8 @@ export default function CreateWindow() {
                                 <SelectContent>
                                   <SelectGroup>
                                     {attributesCategories.map((c) => (
-                                      <SelectItem key={c} value={c}>
-                                        {c}
+                                      <SelectItem key={c.value} value={c.value}>
+                                        {c.title.hy}
                                       </SelectItem>
                                     ))}
                                   </SelectGroup>
@@ -495,7 +496,7 @@ export default function CreateWindow() {
                                                 );
                                               }}
                                             />
-                                            <span>{opt.translations.hy ?? opt.translations.am ?? opt.key}</span>
+                                            <span>{opt.title.hy}</span>
                                           </label>
                                         );
                                       })}

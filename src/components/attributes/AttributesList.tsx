@@ -34,15 +34,6 @@ import {
 import { withToastError } from "@/lib/withToastError";
 import AttributesTable from "@/components/attributes/AttributesTable";
 
-const categoryTranslations: Record<string, string> = {
-  gender: "Սեռ",
-  time: "Ժամանակ",
-  province: "Մարզեր",
-  age: "Տարիք",
-  area: "Տարացք",
-  other: "Այլ",
-};
-
 export default function AttributesList() {
   const { data, isLoading } = useSWR(swrKeys.attributes, fetchAttributes);
   const { data: categories = [] } = useSWR(swrKeys.attributesCategories, fetchAttributeCategories);
@@ -81,7 +72,7 @@ export default function AttributesList() {
   }, [data, idFilter]);
   const getAttributeLabel = (id: string): string => {
     const attribute = data?.find((item) => item._id === id);
-    return attribute?.translations?.hy ?? attribute?.translations?.am ?? id;
+    return attribute?.title?.hy ?? id;
   };
 
   const filtered = useMemo(() => {
@@ -107,9 +98,9 @@ export default function AttributesList() {
     setModalMode("edit");
     setFormCategory(attribute.category || "");
     setFormNames({
-      hy: String(attribute.translations.hy ?? attribute.translations.am ?? ""),
-      ru: String(attribute.translations.ru ?? ""),
-      en: String(attribute.translations.en ?? ""),
+      hy: String(attribute.title.hy ?? ""),
+      ru: String(attribute.title.ru ?? ""),
+      en: String(attribute.title.en ?? ""),
     });
     setNameLang("hy");
     setModalOpen(true);
@@ -147,7 +138,7 @@ export default function AttributesList() {
             mode: modalMode,
             category: formCategory,
             id,
-            translations: formNames,
+            title: formNames,
           }),
         {
           title: modalMode === "edit" ? "Թարմացված է" : "Ստեղծված է",
@@ -187,8 +178,8 @@ export default function AttributesList() {
             >
               <option value="__all__">Ընտրել տեսակ</option>
               {categories.map((c) => (
-                <option key={c} value={c}>
-                  {categoryTranslations[c]}
+                <option key={c.value} value={c.value}>
+                  {c.title.hy}
                 </option>
               ))}
             </select>
@@ -257,8 +248,8 @@ export default function AttributesList() {
                 <SelectContent>
                   <SelectGroup>
                     {categories.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {categoryTranslations[c]}
+                      <SelectItem key={c.value} value={c.value}>
+                        {c.title.hy}
                       </SelectItem>
                     ))}
                   </SelectGroup>
