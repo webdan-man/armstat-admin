@@ -137,6 +137,16 @@ export async function publishMetric(_metricId: string): Promise<void> {
   throw new Error("Հրապարակման API-ը դեռ հասանելի չէ։");
 }
 
+export async function uploadMetricCsv(metricId: string, file: File): Promise<void> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  await apiClient<unknown>(`/api/metrics/${encodeURIComponent(metricId)}/csv?locale=hy`, {
+    method: "POST",
+    body: formData,
+  });
+}
+
 export async function downloadMetricCombinationsCSV(metricId: string): Promise<void> {
   const csvText = await apiClient<string>(`/api/metrics/${metricId}/csv?locale=hy`, {
     headers: { Accept: "text/csv" },

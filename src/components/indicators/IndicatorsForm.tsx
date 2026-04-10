@@ -31,6 +31,7 @@ import {
   fetchMetricForForm,
   patchMetric,
   publishMetric,
+  uploadMetricCsv,
 } from "@/services/metricsService";
 import { ApiError } from "@/lib/api/api-error";
 import { useIndicatorFeatures } from "@/components/indicators/indicator-features-context";
@@ -61,6 +62,8 @@ export default function IndicatorsForm() {
   const { getValues, reset, setValue } = form;
   const { isDirty, isSubmitting } = useFormState({ control: form.control });
   const [featuresDirty, setFeaturesDirty] = useState(false);
+  const csvInputRef = useRef<HTMLInputElement>(null);
+  const [csvUploading, setCsvUploading] = useState(false);
 
   useEffect(() => {
     if (!indicatorId) {
@@ -164,6 +167,28 @@ export default function IndicatorsForm() {
     setFeaturesDirty(false);
   };
 
+  const onMetricCsvSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target;
+    const file = input.files?.[0];
+    if (!file || !indicatorId) {
+      input.value = "";
+      return;
+    }
+    setCsvUploading(true);
+    try {
+      await uploadMetricCsv(indicatorId, file);
+      await mutate(swrKeys.metricCombinations(indicatorId));
+      toast.success("CSV-ն վերբեռնված է");
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : err instanceof Error ? err.message : "Սխալ";
+      toast.error(message);
+    } finally {
+      input.value = "";
+      setCsvUploading(false);
+    }
+  };
+
   return (
     <Form {...form}>
       <form
@@ -198,13 +223,24 @@ export default function IndicatorsForm() {
               Տվյալների Մուտքագրում
             </CardTitle>
             <CardAction>
+              <input
+                ref={csvInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                className="sr-only"
+                aria-label="Մուտքագրել CSV"
+                disabled={!indicatorId || csvUploading}
+                onChange={(ev) => void onMetricCsvSelected(ev)}
+              />
               <button
                 type="button"
-                className="flex cursor-pointer items-center gap-3.25 self-center"
+                disabled={!indicatorId || csvUploading}
+                className="flex cursor-pointer items-center gap-3.25 self-center disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => csvInputRef.current?.click()}
               >
                 <Image src="/add.svg" width={24} height={24} alt="" />
                 <span className="text-[14px] leading-3.5 font-medium text-[rgba(39,81,153,1)]">
-                  Մուտքագրել CSV
+                  {csvUploading ? "Բեռնվում է…" : "Մուտքագրել CSV"}
                 </span>
               </button>
             </CardAction>
