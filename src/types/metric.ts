@@ -38,3 +38,33 @@ export type MetricSelectOption = {
   label: string;
   updatedAt: string | null;
 };
+
+/** GET /api/combinations/:metricId/combinations */
+export type MetricCombinationRowAttribute = {
+  _id: string;
+  title: string;
+};
+
+export type MetricCombinationRowValue = {
+  _id: string;
+  title: string;
+};
+
+export type MetricCombinationRowEntry = {
+  attribute: MetricCombinationRowAttribute;
+  value: MetricCombinationRowValue;
+  level: number;
+};
+
+export type MetricCombination = {
+  _id: string;
+  combinationKey: string;
+  metricId: string;
+  __v?: number;
+  attributes: Record<string, string>;
+  createdAt?: string;
+  updatedAt?: string;
+  value: string;
+  /** Breakdown of attribute–value pairs for this combination; may be empty. */
+  row?: MetricCombinationRowEntry[];
+};

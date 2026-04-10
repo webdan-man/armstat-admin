@@ -1,28 +1,136 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { useFormContext } from "react-hook-form";
+import useSWR from "swr";
 
 import { Input } from "@/components/ui/input";
 
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 import { Field, FieldLabel } from "@/components/ui/field";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from "@/components/ui/form";
+import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 import type { IndicatorFormValues } from "@/components/indicators/indicator-form-schema";
+import { swrKeys } from "@/lib/swr/cache-keys";
+import { getMetricCombinations } from "@/services/metricsService";
+import type { MetricCombination } from "@/types/metric";
 
 const fieldBorder =
   "h-9 rounded-[8.5px] border-[rgba(230,231,235,1)] bg-white text-sm text-[#2c2c2c] md:text-sm";
 
-const ChartDataTabs = ({ className }: { className?: string }) => {
+function maxRowLength(combinations: MetricCombination[]): number {
+  let max = 0;
+  for (const combo of combinations) {
+    const len = combo.row?.length ?? 0;
+    if (len > max) max = len;
+  }
+  return max;
+}
+
+function headerForColumnIndex(combinations: MetricCombination[], columnIndex: number): string {
+  for (const combo of combinations) {
+    const entry = combo.row?.[columnIndex];
+    if (entry) {
+      const t = entry.attribute.title?.trim();
+      return t && t.length > 0 ? `${t} (${entry.level})` : entry.attribute._id;
+    }
+  }
+  return String(columnIndex + 1);
+}
+
+function valueAtColumnIndex(combo: MetricCombination, columnIndex: number): string {
+  const entry = combo.row?.[columnIndex];
+  if (!entry) return "—";
+  const t = entry.value.title?.trim();
+  return t && t.length > 0 ? t : entry.value._id;
+}
+
+function CombinationsTable({ metricId }: { metricId: string }) {
+  const { data, error, isLoading } = useSWR(
+    metricId ? swrKeys.metricCombinations(metricId) : null,
+    () => getMetricCombinations(metricId)
+  );
+
+  const combinations = data ?? [];
+
+  const columnCount = useMemo(() => maxRowLength(combinations), [combinations]);
+
+  if (isLoading) {
+    return <p className="text-[14px] leading-3.5 text-[rgba(44,44,44,0.65)]">Բեռնվում է…</p>;
+  }
+
+  if (error) {
+    return <p className="text-destructive text-[14px] leading-3.5">Չհաջողվեց բեռնել տվյալները։</p>;
+  }
+
+  if (combinations.length === 0) {
+    return (
+      <p className="text-[14px] leading-3.5 text-[rgba(44,44,44,0.65)]">
+        Դեռ մուտքագրված համակցություններ չկան։
+      </p>
+    );
+  }
+
+  if (columnCount === 0) {
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="text-[14px] leading-3.5">Metric unit</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {combinations.map((combo) => (
+            <TableRow key={combo._id}>
+              <TableCell className="text-[14px] leading-3.5">{combo.value}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  }
+
+  const columnIndexes = Array.from({ length: columnCount }, (_, i) => i);
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          {columnIndexes.map((i) => (
+            <TableHead key={i} className="text-[14px] leading-3.5">
+              {headerForColumnIndex(combinations, i)}
+            </TableHead>
+          ))}
+          <TableHead className="text-[14px] leading-3.5">Metric unit</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {combinations.map((combo) => (
+          <TableRow key={combo._id}>
+            {columnIndexes.map((i) => (
+              <TableCell key={i} className="text-[14px] leading-3.5">
+                {valueAtColumnIndex(combo, i)}
+              </TableCell>
+            ))}
+            <TableCell className="text-[14px] leading-3.5">{combo.value}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+
+const ChartDataTabs = ({ className, metricId }: { className?: string; metricId: string }) => {
   const { control } = useFormContext<IndicatorFormValues>();
 
   return (
@@ -82,18 +190,13 @@ const ChartDataTabs = ({ className }: { className?: string }) => {
         </div>
       </TabsContent>
       <TabsContent className="flex w-full flex-col gap-5" value="table">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-[14px] leading-3.5">Ժամանակային Շարք</TableHead>
-              <TableHead className="text-[14px] leading-3.5">Տարիք</TableHead>
-              <TableHead className="text-[14px] leading-3.5">Մարզեր</TableHead>
-              <TableHead className="text-[14px] leading-3.5">Սեռ</TableHead>
-              <TableHead className="text-[14px] leading-3.5">Քանակ</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody></TableBody>
-        </Table>
+        {metricId ? (
+          <CombinationsTable metricId={metricId} />
+        ) : (
+          <p className="text-[14px] leading-3.5 text-[rgba(44,44,44,0.65)]">
+            Ընտրեք ցուցանիշ՝ տվյալների աղյուսակը տեսնելու համար։
+          </p>
+        )}
       </TabsContent>
     </Tabs>
   );

@@ -122,6 +122,7 @@ export default function IndicatorsForm() {
       await mutate(swrKeys.metricsByTopic(resolvedTopicId));
       if (selectedFilter.indicator) {
         await mutate(swrKeys.metricForm(selectedFilter.indicator));
+        await mutate(swrKeys.metricCombinations(selectedFilter.indicator));
       }
       toast.success("Պահպանված է");
       const committedValues = { ...values, attributes: metricAttributeKeys };
@@ -209,7 +210,7 @@ export default function IndicatorsForm() {
             </CardAction>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 px-8 pt-6 pb-8">
-            <ChartDataTabs />
+            <ChartDataTabs metricId={indicatorId} />
           </CardContent>
         </Card>
 

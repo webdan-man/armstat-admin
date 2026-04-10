@@ -11,6 +11,8 @@ export const swrKeys = {
   metricsByTopic: (topicId: string) => ["metrics", "topic", topicId] as const,
   /** Cached indicator form loaded for the editor (GET /metrics/:id or fallback). */
   metricForm: (metricId: string) => ["metrics", "form", metricId] as const,
+  /** Cached combination rows for the data table (GET combinations API). */
+  metricCombinations: (metricId: string) => ["metrics", "combinations", metricId] as const,
   attributes: "attributes",
   attributesCategories: "attributesCategories",
   /** useSWRMutation key for CSV export (not a GET cache). */

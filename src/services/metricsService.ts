@@ -1,9 +1,10 @@
 import apiClient from "@/lib/api/api-client";
 import type { IndicatorFormValues } from "@/components/indicators/indicator-form-schema";
 import { emptyIndicatorFormValues } from "@/components/indicators/indicator-form-schema";
-import type {
+import {
   CreateMetricBody,
   MetricAttribute,
+  MetricCombination,
   MetricResponse,
   MetricSelectOption,
   UpdateMetricBody,
@@ -154,4 +155,10 @@ export async function downloadMetricCombinationsCSV(metricId: string): Promise<v
 
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+export async function getMetricCombinations(metricId: string): Promise<MetricCombination[]> {
+  return apiClient<MetricCombination[]>(
+    `/api/metrics/${encodeURIComponent(metricId)}/combinations?locale=hy`
+  );
 }
