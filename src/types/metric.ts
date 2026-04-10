@@ -31,6 +31,7 @@ export type MetricResponse = {
   order?: number;
   createdAt?: string;
   updatedAt?: string;
+  unit?: string;
 };
 
 export type MetricSelectOption = {

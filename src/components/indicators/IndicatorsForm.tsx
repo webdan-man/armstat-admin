@@ -246,7 +246,7 @@ export default function IndicatorsForm() {
             </CardAction>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 px-8 pt-6 pb-8">
-            <ChartDataTabs metricId={indicatorId} />
+            <ChartDataTabs metricId={indicatorId} metric={loadedMetricData?.metric} />
           </CardContent>
         </Card>
 

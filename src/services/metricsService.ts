@@ -101,11 +101,13 @@ export async function fetchMetricsByTopicId(topicId: string): Promise<MetricSele
 }
 
 export async function fetchMetricForForm(metricId: string): Promise<{
+  metric: MetricResponse;
   form: IndicatorFormValues;
   features: IndicatorFeature[];
 }> {
   const raw = await getMetricById(metricId);
   return {
+    metric: raw,
     form: mapApiMetricToIndicatorForm(raw),
     features: mapMetricAttributesToFeatures(raw.attributes ?? []),
   };

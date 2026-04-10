@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import type { IndicatorFormValues } from "@/components/indicators/indicator-form-schema";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { getMetricCombinations } from "@/services/metricsService";
-import type { MetricCombination } from "@/types/metric";
+import type { MetricCombination, MetricResponse } from "@/types/metric";
 
 const fieldBorder =
   "h-9 rounded-[8.5px] border-[rgba(230,231,235,1)] bg-white text-sm text-[#2c2c2c] md:text-sm";
@@ -55,7 +55,7 @@ function valueAtColumnIndex(combo: MetricCombination, columnIndex: number): stri
   return t && t.length > 0 ? t : entry.value._id;
 }
 
-function CombinationsTable({ metricId }: { metricId: string }) {
+function CombinationsTable({ metricId, metricUnit }: { metricId: string; metricUnit: string }) {
   const { data, error, isLoading } = useSWR(
     metricId ? swrKeys.metricCombinations(metricId) : null,
     () => getMetricCombinations(metricId)
@@ -86,7 +86,7 @@ function CombinationsTable({ metricId }: { metricId: string }) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="text-[14px] leading-3.5">Metric unit</TableHead>
+            <TableHead className="text-[14px] leading-3.5">{metricUnit}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -111,7 +111,7 @@ function CombinationsTable({ metricId }: { metricId: string }) {
               {headerForColumnIndex(combinations, i)}
             </TableHead>
           ))}
-          <TableHead className="text-[14px] leading-3.5">Metric unit</TableHead>
+          <TableHead className="text-[14px] leading-3.5">{metricUnit}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -130,7 +130,15 @@ function CombinationsTable({ metricId }: { metricId: string }) {
   );
 }
 
-const ChartDataTabs = ({ className, metricId }: { className?: string; metricId: string }) => {
+const ChartDataTabs = ({
+  className,
+  metricId,
+  metric,
+}: {
+  className?: string;
+  metricId: string;
+  metric?: MetricResponse;
+}) => {
   const { control } = useFormContext<IndicatorFormValues>();
 
   return (
@@ -191,7 +199,7 @@ const ChartDataTabs = ({ className, metricId }: { className?: string; metricId: 
       </TabsContent>
       <TabsContent className="flex w-full flex-col gap-5" value="table">
         {metricId ? (
-          <CombinationsTable metricId={metricId} />
+          <CombinationsTable metricId={metricId} metricUnit={metric?.unit ?? "Metric unit"} />
         ) : (
           <p className="text-[14px] leading-3.5 text-[rgba(44,44,44,0.65)]">
             Ընտրեք ցուցանիշ՝ տվյալների աղյուսակը տեսնելու համար։
