@@ -8,6 +8,7 @@ export type CreateMetricBody = {
   topicId: string;
   title: Record<string, string>;
   description: Record<string, string>;
+  unit: Record<string, string>;
   metadata: Record<string, string>;
   attributes: MetricAttribute[];
   order: number;

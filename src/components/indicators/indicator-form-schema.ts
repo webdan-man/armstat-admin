@@ -160,6 +160,11 @@ export function mapIndicatorFormToCreateMetric(
       ru: values.description.ru,
       en: values.description.en,
     },
+    unit: {
+      hy: values.description.hy,
+      ru: values.description.ru,
+      en: values.description.en,
+    },
     metadata,
     attributes,
     order: values.order,
