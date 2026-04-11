@@ -273,9 +273,9 @@ export default function IndicatorsForm() {
             type="button"
             disabled={(!isDirty && !featuresDirty) || isSubmitting}
             className="h-11 min-w-[132px] rounded-lg border-transparent bg-[#282828] text-white hover:bg-[#282828]/90 disabled:opacity-50"
-            onClick={() => void form.handleSubmit(submitSave)()}
+            onClick={() => void form.handleSubmit(submitSave, (errors) => console.log(errors))()}
           >
-            Հաստատել
+            Պահպանել
           </Button>
           <Button
             type="button"
@@ -283,7 +283,7 @@ export default function IndicatorsForm() {
             className="h-11 min-w-[132px] rounded-lg border-transparent bg-[#004d99] text-white hover:bg-[#004d99]/90 disabled:opacity-50"
             onClick={() => void form.handleSubmit(submitPublish)()}
           >
-            Պահպանել
+            Հաստատել
           </Button>
         </div>
       </form>

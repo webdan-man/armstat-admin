@@ -33,6 +33,8 @@ function mapApiMetricToIndicatorForm(raw: MetricResponse): IndicatorFormValues {
   const empty = emptyIndicatorFormValues();
   const title = raw.title ?? {};
   const description = raw.description ?? {};
+  const unit = raw.unit ?? {};
+  const link = raw.link ?? {};
   const metadata = raw.metadata ?? {};
   const readMetadataBody = (value: unknown): string => {
     if (typeof value === "string") return value;
@@ -64,6 +66,16 @@ function mapApiMetricToIndicatorForm(raw: MetricResponse): IndicatorFormValues {
             ? description.am
             : "",
       ru: typeof description.ru === "string" ? description.ru : "",
+    },
+    link: {
+      en: typeof link.en === "string" ? link.en : "",
+      hy: typeof link.hy === "string" ? link.hy : typeof link.am === "string" ? link.am : "",
+      ru: typeof link.ru === "string" ? link.ru : "",
+    },
+    unit: {
+      en: typeof unit.en === "string" ? unit.en : "",
+      hy: typeof unit.hy === "string" ? unit.hy : typeof unit.am === "string" ? unit.am : "",
+      ru: typeof unit.ru === "string" ? unit.ru : "",
     },
     metadata: {
       en: {

@@ -186,6 +186,16 @@ export function mapIndicatorFormToUpdateMetric(
       ru: values.description.ru,
       en: values.description.en,
     },
+    unit: {
+      hy: values.unit.hy,
+      ru: values.unit.ru,
+      en: values.unit.en,
+    },
+    link: {
+      hy: values.link.hy,
+      ru: values.link.ru,
+      en: values.link.en,
+    },
     metadata,
     attributes,
     order: values.order,

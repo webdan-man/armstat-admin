@@ -55,7 +55,7 @@ function valueAtColumnIndex(combo: MetricCombination, columnIndex: number): stri
   return t && t.length > 0 ? t : entry.value._id;
 }
 
-function CombinationsTable({ metricId, metricUnit }: { metricId: string; metricUnit: string }) {
+function CombinationsTable({ metricId, metric }: { metricId: string; metric?: MetricResponse }) {
   const { data, error, isLoading } = useSWR(
     metricId ? swrKeys.metricCombinations(metricId) : null,
     () => getMetricCombinations(metricId)
@@ -81,12 +81,14 @@ function CombinationsTable({ metricId, metricUnit }: { metricId: string; metricU
     );
   }
 
+  const metricUnit = metric?.unit?.['hy']
+
   if (columnCount === 0) {
     return (
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="text-[14px] leading-3.5">{metricUnit}</TableHead>
+            <TableHead className="text-[14px] leading-3.5">{}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -199,7 +201,7 @@ const ChartDataTabs = ({
       </TabsContent>
       <TabsContent className="flex w-full flex-col gap-5" value="table">
         {metricId ? (
-          <CombinationsTable metricId={metricId} metricUnit={metric?.unit ?? "Metric unit"} />
+          <CombinationsTable metricId={metricId} metric={metric} />
         ) : (
           <p className="text-[14px] leading-3.5 text-[rgba(44,44,44,0.65)]">
             Ընտրեք ցուցանիշ՝ տվյալների աղյուսակը տեսնելու համար։

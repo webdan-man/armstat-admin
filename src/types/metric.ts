@@ -16,6 +16,8 @@ export type CreateMetricBody = {
 export type UpdateMetricBody = {
   title: Record<string, string>;
   description: Record<string, string>;
+  unit: Record<string, string>;
+  link: Record<string, string>;
   metadata: Record<string, string>;
   attributes: MetricAttribute[];
   order: number;
@@ -29,9 +31,10 @@ export type MetricResponse = {
   metadata?: Record<string, unknown>;
   attributes?: MetricAttribute[];
   order?: number;
+  link?: Record<string, string> & { am?: string; hy?: string; ru?: string; en?: string };
   createdAt?: string;
   updatedAt?: string;
-  unit?: string;
+  unit?: Record<string, string> & { am?: string; hy?: string; ru?: string; en?: string };
 };
 
 export type MetricSelectOption = {
