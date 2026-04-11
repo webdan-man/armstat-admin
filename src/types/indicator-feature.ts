@@ -7,6 +7,8 @@ export type IndicatorFeature = {
   valueIds: string[];
   /** Per-locale display label sent to the API on each attributes[] entry. */
   label: { hy: string; en: string; ru: string };
+  /** Per-locale secondary label (`secondaryLabel` on the API payload). */
+  secondaryLabel: { hy: string; en: string; ru: string };
   /** Ցուցադրման համար սյունակ «Գրադարան» */
   libraryDisplay: string;
 };

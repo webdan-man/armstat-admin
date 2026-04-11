@@ -46,6 +46,11 @@ export const indicatorFormSchema = z.object({
         en: z.string().min(1),
         ru: z.string().min(1),
       }),
+      secondaryLabel: z.object({
+        hy: z.string().min(1),
+        en: z.string().min(1),
+        ru: z.string().min(1),
+      }),
     })
   ),
 });
@@ -220,6 +225,11 @@ export function mapFeaturesToMetricAttributeKeys(features: IndicatorFeature[]): 
       hy: feature.label.hy.trim(),
       en: feature.label.en.trim(),
       ru: feature.label.ru.trim(),
+    },
+    secondaryLabel: {
+      hy: feature.secondaryLabel.hy.trim(),
+      en: feature.secondaryLabel.en.trim(),
+      ru: feature.secondaryLabel.ru.trim(),
     },
   }));
 }

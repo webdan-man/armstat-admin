@@ -11,11 +11,14 @@ export type MetricAttribute = {
   valueIds: string[];
   /** `label: { [lang]: text }` for hy, en, ru. */
   label: MetricAttributeLabel;
+  /** Same shape as `label`, sent as `secondaryLabel` on each attributes[] item. */
+  secondaryLabel: MetricAttributeLabel;
 };
 
-/** Shape returned by GET /metrics/:id when `label` may be absent (legacy rows). */
-export type MetricAttributeFromApi = Omit<MetricAttribute, "label"> & {
+/** Shape returned by GET /metrics/:id when `label` / `secondaryLabel` may be absent (legacy rows). */
+export type MetricAttributeFromApi = Omit<MetricAttribute, "label" | "secondaryLabel"> & {
   label?: MetricAttributeLabel;
+  secondaryLabel?: MetricAttributeLabel;
 };
 
 export type CreateMetricBody = {

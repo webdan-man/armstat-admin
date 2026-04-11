@@ -16,6 +16,11 @@ export const indicatorFeatureRowSchema = z.object({
     en: trimmedNonEmpty("Լրացրեք անգլերեն պիտակը"),
     ru: trimmedNonEmpty("Լրացրեք ռուսերեն պիտակը"),
   }),
+  secondaryLabel: z.object({
+    hy: trimmedNonEmpty("Լրացրեք հայերեն երկրորդային պիտակը"),
+    en: trimmedNonEmpty("Լրացրեք անգլերեն երկրորդային պիտակը"),
+    ru: trimmedNonEmpty("Լրացրեք ռուսերեն երկրորդային պիտակը"),
+  }),
 });
 
 /** @deprecated use indicatorFeatureRowSchema */
@@ -42,5 +47,6 @@ export function emptyIndicatorFeatureRow(): IndicatorFeatureRowValues {
     levelOption: "",
     valueIds: [],
     label: { hy: "", en: "", ru: "" },
+    secondaryLabel: { hy: "", en: "", ru: "" },
   };
 }

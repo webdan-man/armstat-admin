@@ -306,10 +306,17 @@ function areMetricAttributeKeysEqual(
     if (!entry.valueIds.every((valueId, valueIndex) => valueId === other.valueIds[valueIndex])) {
       return false;
     }
+    if (
+      entry.label.hy !== other.label.hy ||
+      entry.label.en !== other.label.en ||
+      entry.label.ru !== other.label.ru
+    ) {
+      return false;
+    }
     return (
-      entry.label.hy === other.label.hy &&
-      entry.label.en === other.label.en &&
-      entry.label.ru === other.label.ru
+      entry.secondaryLabel.hy === other.secondaryLabel.hy &&
+      entry.secondaryLabel.en === other.secondaryLabel.en &&
+      entry.secondaryLabel.ru === other.secondaryLabel.ru
     );
   });
 }

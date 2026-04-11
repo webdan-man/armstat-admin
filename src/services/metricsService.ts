@@ -41,6 +41,11 @@ function normalizeMetricAttributesFromApi(
       en: typeof a.label?.en === "string" ? a.label.en.trim() : "",
       ru: typeof a.label?.ru === "string" ? a.label.ru.trim() : "",
     },
+    secondaryLabel: {
+      hy: typeof a.secondaryLabel?.hy === "string" ? a.secondaryLabel.hy.trim() : "",
+      en: typeof a.secondaryLabel?.en === "string" ? a.secondaryLabel.en.trim() : "",
+      ru: typeof a.secondaryLabel?.ru === "string" ? a.secondaryLabel.ru.trim() : "",
+    },
   }));
 }
 
@@ -153,6 +158,11 @@ function mapMetricAttributesToFeatures(attributes: MetricAttributeFromApi[]): In
       hy: typeof item.label?.hy === "string" ? item.label.hy.trim() : "",
       en: typeof item.label?.en === "string" ? item.label.en.trim() : "",
       ru: typeof item.label?.ru === "string" ? item.label.ru.trim() : "",
+    },
+    secondaryLabel: {
+      hy: typeof item.secondaryLabel?.hy === "string" ? item.secondaryLabel.hy.trim() : "",
+      en: typeof item.secondaryLabel?.en === "string" ? item.secondaryLabel.en.trim() : "",
+      ru: typeof item.secondaryLabel?.ru === "string" ? item.secondaryLabel.ru.trim() : "",
     },
   }));
 }
