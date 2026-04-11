@@ -56,7 +56,8 @@ export type MetricCombinationRowValue = {
 };
 
 export type MetricCombinationRowEntry = {
-  attribute: MetricCombinationRowAttribute;
+  attributeId: string;
+  label: string;
   value: MetricCombinationRowValue;
   level: number;
 };

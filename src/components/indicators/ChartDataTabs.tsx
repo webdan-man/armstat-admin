@@ -41,7 +41,7 @@ function headerForColumnIndex(combinations: MetricCombination[], columnIndex: nu
   for (const combo of combinations) {
     const entry = combo.row?.[columnIndex];
     if (entry) {
-      const t = entry.attribute.title?.trim();
+      const t = entry.label?.trim();
       return t && t.length > 0 ? `${t} (${entry.level})` : entry.attribute._id;
     }
   }
@@ -81,7 +81,7 @@ function CombinationsTable({ metricId, metric }: { metricId: string; metric?: Me
     );
   }
 
-  const metricUnit = metric?.unit?.['hy']
+  const metricUnit = metric?.unit?.["hy"];
 
   if (columnCount === 0) {
     return (
