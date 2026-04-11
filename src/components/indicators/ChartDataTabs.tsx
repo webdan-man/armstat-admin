@@ -42,7 +42,7 @@ function headerForColumnIndex(combinations: MetricCombination[], columnIndex: nu
     const entry = combo.row?.[columnIndex];
     if (entry) {
       const t = entry.label?.trim();
-      return t && t.length > 0 ? `${t} (${entry.level})` : entry.attribute._id;
+      return t && t.length > 0 ? `${t} (${entry.level})` : entry.attributeId;
     }
   }
   return String(columnIndex + 1);

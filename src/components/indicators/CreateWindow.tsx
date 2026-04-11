@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FieldLabel } from "@/components/ui/field";
@@ -58,6 +59,15 @@ const LEVEL_OPTIONS = [
   { value: "primary", label: "Հիմնական" },
   { value: "secondary", label: "Երկրորդային" },
 ] as const;
+
+const FEATURE_LABEL_LANGS = [
+  { key: "hy" as const, fieldLabel: "Պիտակ (Հայերեն)" },
+  { key: "en" as const, fieldLabel: "Պիտակ (Անգլերեն)" },
+  { key: "ru" as const, fieldLabel: "Պիտակ (Ռուսերեն)" },
+] as const;
+
+const featureLabelInputClass =
+  "h-9 rounded-[8.5px] border-[rgba(230,231,235,1)] bg-white text-sm text-[#2c2c2c] md:text-sm";
 
 export default function CreateWindow() {
   const { features, dialogOpen, editingId, setDialogOpen, startCreate, addFeature, updateFeature } =
@@ -134,6 +144,7 @@ export default function CreateWindow() {
             libraryOption: editing.attributeKey,
             levelOption: editing.level,
             valueIds: editing.valueIds ?? [],
+            label: editing.label,
           },
         ],
       });
@@ -189,6 +200,7 @@ export default function CreateWindow() {
         level: row.levelOption as "primary" | "secondary",
         valueIds: row.valueIds,
         libraryDisplay,
+        label: row.label,
       });
     } else {
       for (const row of values.rows) {
@@ -208,6 +220,7 @@ export default function CreateWindow() {
           level: row.levelOption as "primary" | "secondary",
           valueIds: row.valueIds,
           libraryDisplay,
+          label: row.label,
         });
       }
     }
@@ -287,6 +300,35 @@ export default function CreateWindow() {
                         )}
                       </div>
                       <CollapsibleContent className="flex w-full flex-col gap-4 border-t border-t-[rgba(217,217,217,1)] bg-[rgba(217,217,217,0.1)] px-10 py-4.25">
+                        <div className="flex w-full flex-col gap-3">
+                          <p className="text-[12px] leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
+                            Պիտակներ
+                          </p>
+                          <div className="grid w-full gap-3 sm:grid-cols-3 sm:gap-4">
+                            {FEATURE_LABEL_LANGS.map(({ key, fieldLabel }) => (
+                              <FormField
+                                key={key}
+                                control={control}
+                                name={`rows.${index}.label.${key}`}
+                                render={({ field: f }) => (
+                                  <FormItem className="w-full">
+                                    <FormLabel className="text-[12px] leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
+                                      {fieldLabel}
+                                    </FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        className={featureLabelInputClass}
+                                        placeholder=""
+                                        {...f}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            ))}
+                          </div>
+                        </div>
                         <FormField
                           control={control}
                           name={`rows.${index}.category`}

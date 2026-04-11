@@ -4,6 +4,7 @@ import { emptyIndicatorFormValues } from "@/components/indicators/indicator-form
 import {
   CreateMetricBody,
   MetricAttribute,
+  MetricAttributeFromApi,
   MetricCombination,
   MetricResponse,
   MetricSelectOption,
@@ -27,6 +28,20 @@ export async function patchMetric(
     method: "PATCH",
     body: JSON.stringify(body),
   });
+}
+
+function normalizeMetricAttributesFromApi(
+  raw: MetricAttributeFromApi[] | undefined
+): MetricAttribute[] {
+  return (raw ?? []).map((a) => ({
+    attributeId: a.attributeId,
+    valueIds: a.valueIds ?? [],
+    label: {
+      hy: typeof a.label?.hy === "string" ? a.label.hy.trim() : "",
+      en: typeof a.label?.en === "string" ? a.label.en.trim() : "",
+      ru: typeof a.label?.ru === "string" ? a.label.ru.trim() : "",
+    },
+  }));
 }
 
 function mapApiMetricToIndicatorForm(raw: MetricResponse): IndicatorFormValues {
@@ -92,7 +107,7 @@ function mapApiMetricToIndicatorForm(raw: MetricResponse): IndicatorFormValues {
       },
     },
     order: typeof raw.order === "number" ? raw.order : 0,
-    attributes: raw.attributes ?? [],
+    attributes: normalizeMetricAttributesFromApi(raw.attributes),
   };
 }
 
@@ -125,7 +140,7 @@ export async function fetchMetricForForm(metricId: string): Promise<{
   };
 }
 
-function mapMetricAttributesToFeatures(attributes: MetricAttribute[]): IndicatorFeature[] {
+function mapMetricAttributesToFeatures(attributes: MetricAttributeFromApi[]): IndicatorFeature[] {
   return attributes.map((item, index) => ({
     id: `${item.attributeId}-${index}`,
     category: "",
@@ -134,6 +149,11 @@ function mapMetricAttributesToFeatures(attributes: MetricAttribute[]): Indicator
     level: "primary",
     valueIds: item.valueIds ?? [],
     libraryDisplay: "",
+    label: {
+      hy: typeof item.label?.hy === "string" ? item.label.hy.trim() : "",
+      en: typeof item.label?.en === "string" ? item.label.en.trim() : "",
+      ru: typeof item.label?.ru === "string" ? item.label.ru.trim() : "",
+    },
   }));
 }
 

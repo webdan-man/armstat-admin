@@ -303,6 +303,13 @@ function areMetricAttributeKeysEqual(
     if (!other) return false;
     if (entry.attributeId !== other.attributeId) return false;
     if (entry.valueIds.length !== other.valueIds.length) return false;
-    return entry.valueIds.every((valueId, valueIndex) => valueId === other.valueIds[valueIndex]);
+    if (!entry.valueIds.every((valueId, valueIndex) => valueId === other.valueIds[valueIndex])) {
+      return false;
+    }
+    return (
+      entry.label.hy === other.label.hy &&
+      entry.label.en === other.label.en &&
+      entry.label.ru === other.label.ru
+    );
   });
 }

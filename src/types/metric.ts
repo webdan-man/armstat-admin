@@ -1,7 +1,21 @@
-/** Body for POST /metrics */
+/** Per-locale label for a metric attribute row (sent as `label` on each attributes[] item). */
+export type MetricAttributeLabel = {
+  hy: string;
+  en: string;
+  ru: string;
+};
+
+/** Single attribute row on a metric (API + admin form). */
 export type MetricAttribute = {
   attributeId: string;
   valueIds: string[];
+  /** `label: { [lang]: text }` for hy, en, ru. */
+  label: MetricAttributeLabel;
+};
+
+/** Shape returned by GET /metrics/:id when `label` may be absent (legacy rows). */
+export type MetricAttributeFromApi = Omit<MetricAttribute, "label"> & {
+  label?: MetricAttributeLabel;
 };
 
 export type CreateMetricBody = {
@@ -30,7 +44,7 @@ export type MetricResponse = {
   title?: Record<string, string> & { am?: string; hy?: string; ru?: string; en?: string };
   description?: Record<string, string> & { am?: string; hy?: string; ru?: string; en?: string };
   metadata?: Record<string, unknown>;
-  attributes?: MetricAttribute[];
+  attributes?: MetricAttributeFromApi[];
   order?: number;
   link?: Record<string, string> & { am?: string; hy?: string; ru?: string; en?: string };
   createdAt?: string;

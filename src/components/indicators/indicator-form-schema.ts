@@ -41,6 +41,11 @@ export const indicatorFormSchema = z.object({
     z.object({
       attributeId: z.string().min(1),
       valueIds: z.array(z.string().min(1)),
+      label: z.object({
+        hy: z.string().min(1),
+        en: z.string().min(1),
+        ru: z.string().min(1),
+      }),
     })
   ),
 });
@@ -211,5 +216,10 @@ export function mapFeaturesToMetricAttributeKeys(features: IndicatorFeature[]): 
   return features.map((feature) => ({
     attributeId: feature.attributeKey,
     valueIds: feature.valueIds,
+    label: {
+      hy: feature.label.hy.trim(),
+      en: feature.label.en.trim(),
+      ru: feature.label.ru.trim(),
+    },
   }));
 }

@@ -1,10 +1,21 @@
 import { z } from "zod";
 
+const trimmedNonEmpty = (message: string) =>
+  z
+    .string()
+    .transform((s) => s.trim())
+    .pipe(z.string().min(1, message));
+
 export const indicatorFeatureRowSchema = z.object({
   category: z.string().min(1, "Ընտրեք տեսակը"),
   libraryOption: z.string().min(1, "Ընտրեք գրադարանը"),
   levelOption: z.string().min(1, "Ընտրեք մակարդակը"),
   valueIds: z.array(z.string().min(1)).min(1, "Ընտրեք գրադարան արժեքները"),
+  label: z.object({
+    hy: trimmedNonEmpty("Լրացրեք հայերեն պիտակը"),
+    en: trimmedNonEmpty("Լրացրեք անգլերեն պիտակը"),
+    ru: trimmedNonEmpty("Լրացրեք ռուսերեն պիտակը"),
+  }),
 });
 
 /** @deprecated use indicatorFeatureRowSchema */
@@ -30,5 +41,6 @@ export function emptyIndicatorFeatureRow(): IndicatorFeatureRowValues {
     libraryOption: "",
     levelOption: "",
     valueIds: [],
+    label: { hy: "", en: "", ru: "" },
   };
 }
