@@ -20,31 +20,15 @@ const AttributesTable = ({ attributes }: AttributesTableProps) => {
     const { values } = attribute;
 
     return values.map((value) => {
-      const hasParent = Boolean(value?.parentTitle?.hy);
-
       return (
         <TableRow key={value._id}>
           <TableCell>{value.number}</TableCell>
-
-          {hasParent ? (
-            <>
-              <TableCell>{value.parentTitle?.hy}</TableCell>
-              <TableCell>{value.title.hy}</TableCell>
-              <TableCell>{value.parentTitle?.ru}</TableCell>
-              <TableCell>{value.title.ru}</TableCell>
-              <TableCell>{value.parentTitle?.en}</TableCell>
-              <TableCell>{value.title.en}</TableCell>
-            </>
-          ) : (
-            <>
-              <TableCell>{value.title.hy}</TableCell>
-              <TableCell>-</TableCell>
-              <TableCell>{value.title.ru}</TableCell>
-              <TableCell>-</TableCell>
-              <TableCell>{value.title.en}</TableCell>
-              <TableCell>-</TableCell>
-            </>
-          )}
+          <TableCell>{value.title.hy}</TableCell>
+          <TableCell>{value.secondaryTitle?.hy || "-"}</TableCell>
+          <TableCell>{value.title.ru}</TableCell>
+          <TableCell>{value.secondaryTitle?.ru || "-"}</TableCell>
+          <TableCell>{value.title.en}</TableCell>
+          <TableCell>{value.secondaryTitle?.en || "-"}</TableCell>
         </TableRow>
       );
     });

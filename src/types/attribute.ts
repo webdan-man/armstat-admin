@@ -1,12 +1,12 @@
 export type AttributeValue = {
   _id: string;
   number: number;
-  parentTitle: {
-    [key: string]: string;
-  } | null;
   title: {
     [key: string]: string;
   };
+  secondaryTitle: {
+    [key: string]: string;
+  } | null;
 };
 
 export type Attribute = {
@@ -17,7 +17,6 @@ export type Attribute = {
   };
   values: AttributeValue[];
 };
-
 
 export type AttributeCategory = {
   value: string;
