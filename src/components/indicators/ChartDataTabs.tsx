@@ -108,6 +108,7 @@ function CombinationsTable({ metricId, metric }: { metricId: string; metric?: Me
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead className="text-[14px] leading-3.5">ID</TableHead>
           {columnIndexes.map((i) => (
             <TableHead key={i} className="text-[14px] leading-3.5">
               {headerForColumnIndex(combinations, i)}
@@ -117,8 +118,9 @@ function CombinationsTable({ metricId, metric }: { metricId: string; metric?: Me
         </TableRow>
       </TableHeader>
       <TableBody>
-        {combinations.map((combo) => (
+        {combinations.map((combo, index) => (
           <TableRow key={combo._id}>
+            <TableCell className="text-[14px] leading-3.5">{index + 1}</TableCell>
             {columnIndexes.map((i) => (
               <TableCell key={i} className="text-[14px] leading-3.5">
                 {valueAtColumnIndex(combo, i)}
