@@ -54,6 +54,8 @@ import {
 } from "@/components/indicators/indicator-feature-form-schema";
 import type { Attribute } from "@/types/attribute";
 import { cn } from "@/lib/utils";
+import { LangSwitcher } from "@/components/main/LangSwitcher";
+import type { MainLangCode } from "@/components/main/main-mock-data";
 
 const LEVEL_OPTIONS = [
   { value: "primary", label: "Հիմնական" },
@@ -72,10 +74,20 @@ const FEATURE_SECONDARY_LABEL_LANGS = [
   { key: "ru" as const, fieldLabel: "Երկրորդային պիտակ (Ռուսերեն)" },
 ] as const;
 
+const FEATURE_LABEL_LANG_BY_KEY = Object.fromEntries(
+  FEATURE_LABEL_LANGS.map((lang) => [lang.key, lang.fieldLabel])
+) as Record<MainLangCode, string>;
+
+const FEATURE_SECONDARY_LABEL_LANG_BY_KEY = Object.fromEntries(
+  FEATURE_SECONDARY_LABEL_LANGS.map((lang) => [lang.key, lang.fieldLabel])
+) as Record<MainLangCode, string>;
+
 const featureLabelInputClass =
   "h-9 rounded-[8.5px] border-[rgba(230,231,235,1)] bg-white text-sm text-[#2c2c2c] md:text-sm";
 
 const hasTextValue = (value?: string) => Boolean(value?.trim());
+const hasSecondaryTitle = (value: Attribute["values"][number]) =>
+  Object.values(value.secondaryTitle ?? {}).some((title) => hasTextValue(title));
 
 export default function CreateWindow() {
   const { features, dialogOpen, editingId, setDialogOpen, startCreate, addFeature, updateFeature } =
@@ -97,6 +109,10 @@ export default function CreateWindow() {
   });
 
   const { control, handleSubmit, reset, setValue } = form;
+  const [labelLangByRow, setLabelLangByRow] = useState<Record<string, MainLangCode>>({});
+  const [secondaryLabelLangByRow, setSecondaryLabelLangByRow] = useState<
+    Record<string, MainLangCode>
+  >({});
   const [valuesPopoverOpenByRow, setValuesPopoverOpenByRow] = useState<Record<number, boolean>>({});
   const [openCollapsibleId, setOpenCollapsibleId] = useState<string | null>(null);
   const [openLastCollapsibleOnAppend, setOpenLastCollapsibleOnAppend] = useState(false);
@@ -178,20 +194,6 @@ export default function CreateWindow() {
 
     setValue("rows.0.category", resolvedCategory, { shouldValidate: true });
   }, [dialogOpen, isEdit, editing, rowsWatch, setValue, attributeByKey]);
-
-  useEffect(() => {
-    const rows = rowsWatch ?? [];
-    rows.forEach((row, index) => {
-      const selectedLibrary = row?.libraryOption ?? "";
-      if (!selectedLibrary) return;
-      const selectedAttribute = attributeByKey[selectedLibrary];
-      if (!selectedAttribute) return;
-
-      if (selectedAttribute.values?.length > 0 && row.levelOption !== "primary") {
-        setValue(`rows.${index}.levelOption`, "primary", { shouldValidate: true });
-      }
-    });
-  }, [rowsWatch, attributeByKey, setValue]);
 
   useEffect(() => {
     if (!fields.length) {
@@ -335,12 +337,19 @@ export default function CreateWindow() {
               )}
               <div className="flex w-full flex-col gap-3.5">
                 {fields.map((field, index) => {
+                  const labelLang = labelLangByRow[field.id] ?? "hy";
+                  const secondaryLabelLang = secondaryLabelLangByRow[field.id] ?? "hy";
                   const selectedCategory = rowsWatch?.[index]?.category ?? "";
                   const selectedLibrary = rowsWatch?.[index]?.libraryOption ?? "";
+                  const selectedLevel = rowsWatch?.[index]?.levelOption ?? "";
                   const libraryOptions = buildLibraryOptions(attributes, selectedCategory);
 
                   const levelOptions = selectedLibrary
-                    ? (attributeByKey[selectedLibrary]?.values ?? [])
+                    ? (attributeByKey[selectedLibrary]?.values ?? []).filter((value) => {
+                        if (selectedLevel === "primary") return !hasSecondaryTitle(value);
+                        if (selectedLevel === "secondary") return hasSecondaryTitle(value);
+                        return false;
+                      })
                     : [];
                   const currentRow = rowsWatch?.[index];
                   const isCollapsibleOpen = openCollapsibleId === field.id;
@@ -358,8 +367,6 @@ export default function CreateWindow() {
                     hasTextValue(currentRow.secondaryLabel?.ru)
                   );
                   const selectedValueIds = currentRow?.valueIds ?? [];
-                  const hasValues = levelOptions.length > 0;
-                  const shouldLockLevel = hasValues;
                   const isLevelsLoading = Boolean(
                     selectedLibrary &&
                     isLoadingAttributeDetails &&
@@ -379,7 +386,7 @@ export default function CreateWindow() {
                           type="button"
                         >
                           <ChevronDownIcon className="size-5 transition-transform group-data-panel-open:rotate-90" />
-                          <p className="text-start text-xs leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
+                          <p className="text-start text-[16px] font-semibold text-black">
                             {`Հատկանիշ ${index + 1}`}
                           </p>
                         </CollapsibleTrigger>
@@ -400,19 +407,65 @@ export default function CreateWindow() {
                       </div>
                       <CollapsibleContent className="flex w-full flex-col gap-4 border-t border-t-[rgba(217,217,217,1)] bg-[rgba(217,217,217,0.1)] px-10 py-4.25">
                         <div className="flex w-full flex-col gap-3">
-                          <p className="text-[12px] leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
-                            Պիտակներ (SHOULD BE REPLACED WITH LANGUAGE INPUT)
-                          </p>
-                          <div className="grid w-full gap-3 sm:grid-cols-3 sm:gap-4">
-                            {FEATURE_LABEL_LANGS.map(({ key, fieldLabel }) => (
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-[12px] leading-3.5 font-semibold text-black">
+                              Պիտակներ
+                            </p>
+                            <LangSwitcher
+                              value={labelLang}
+                              onChange={(nextLang) =>
+                                setLabelLangByRow((prev) => ({ ...prev, [field.id]: nextLang }))
+                              }
+                              className="sm:shrink-0"
+                            />
+                          </div>
+                          <div className="grid w-full gap-3">
+                            <FormField
+                              control={control}
+                              name={`rows.${index}.label.${labelLang}`}
+                              render={({ field: f }) => (
+                                <FormItem className="w-full">
+                                  <FormLabel className="text-[12px] leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
+                                    {FEATURE_LABEL_LANG_BY_KEY[labelLang]}
+                                  </FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      className={featureLabelInputClass}
+                                      placeholder=""
+                                      {...f}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </div>
+                        {selectedLevel === "secondary" && (
+                          <div className="flex w-full flex-col gap-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-[12px] leading-3.5 font-semibold text-black">
+                                Երկրորդային պիտակներ
+                              </p>
+                              <LangSwitcher
+                                value={secondaryLabelLang}
+                                onChange={(nextLang) =>
+                                  setSecondaryLabelLangByRow((prev) => ({
+                                    ...prev,
+                                    [field.id]: nextLang,
+                                  }))
+                                }
+                                className="sm:shrink-0"
+                              />
+                            </div>
+                            <div className="grid w-full gap-3">
                               <FormField
-                                key={key}
                                 control={control}
-                                name={`rows.${index}.label.${key}`}
+                                name={`rows.${index}.secondaryLabel.${secondaryLabelLang}`}
                                 render={({ field: f }) => (
                                   <FormItem className="w-full">
                                     <FormLabel className="text-[12px] leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
-                                      {fieldLabel}
+                                      {FEATURE_SECONDARY_LABEL_LANG_BY_KEY[secondaryLabelLang]}
                                     </FormLabel>
                                     <FormControl>
                                       <Input
@@ -425,45 +478,15 @@ export default function CreateWindow() {
                                   </FormItem>
                                 )}
                               />
-                            ))}
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex w-full flex-col gap-3">
-                          <p className="text-[12px] leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
-                            Երկրորդային պիտակներ (SHOULD BE MOVED DOWN AND APPEAR ONLY WHEN
-                            SECONDARY VALUES ARE SELECTED)
-                          </p>
-                          <div className="grid w-full gap-3 sm:grid-cols-3 sm:gap-4">
-                            {FEATURE_SECONDARY_LABEL_LANGS.map(({ key, fieldLabel }) => (
-                              <FormField
-                                key={key}
-                                control={control}
-                                name={`rows.${index}.secondaryLabel.${key}`}
-                                render={({ field: f }) => (
-                                  <FormItem className="w-full">
-                                    <FormLabel className="text-[12px] leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
-                                      {fieldLabel}
-                                    </FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        className={featureLabelInputClass}
-                                        placeholder=""
-                                        {...f}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            ))}
-                          </div>
-                        </div>
+                        )}
                         <FormField
                           control={control}
                           name={`rows.${index}.category`}
                           render={({ field: f }) => (
                             <FormItem className="w-full">
-                              <FormLabel className="text-[12px] leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
+                              <FormLabel className="text-[12px] leading-3.5 font-semibold text-black">
                                 Ընտրել Տեսակը
                               </FormLabel>
                               <Select
@@ -500,7 +523,7 @@ export default function CreateWindow() {
                           name={`rows.${index}.libraryOption`}
                           render={({ field: f }) => (
                             <FormItem className="w-full">
-                              <FormLabel className="text-[12px] leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
+                              <FormLabel className="text-[12px] leading-3.5 text-[rgba(87,87,87,1)]">
                                 Գրադարան
                               </FormLabel>
                               <Select
@@ -538,17 +561,19 @@ export default function CreateWindow() {
                           name={`rows.${index}.levelOption`}
                           render={({ field: f }) => (
                             <FormItem className="w-full">
-                              <FormLabel className="text-[12px] leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
+                              <FormLabel className="text-[12px] leading-3.5 text-[rgba(87,87,87,1)]">
                                 Ընտրել Մակարդակ
                               </FormLabel>
                               <Select
                                 value={f.value || undefined}
-                                onValueChange={f.onChange}
+                                onValueChange={(val) => {
+                                  f.onChange(val);
+                                  setValue(`rows.${index}.valueIds`, []);
+                                }}
                                 disabled={
                                   isLoading ||
                                   !selectedLibrary ||
-                                  isLevelsLoading ||
-                                  shouldLockLevel
+                                  isLevelsLoading
                                 }
                               >
                                 <FormControl>
@@ -568,11 +593,6 @@ export default function CreateWindow() {
                                   </SelectGroup>
                                 </SelectContent>
                               </Select>
-                              {shouldLockLevel && (
-                                <p className="text-[11px] text-zinc-500">
-                                  Մակարդակը ֆիքսված է՝ «Հիմնական», քանի որ առկա են արժեքներ։
-                                </p>
-                              )}
                               <FormMessage />
                             </FormItem>
                           )}
@@ -589,7 +609,7 @@ export default function CreateWindow() {
 
                             return (
                               <FormItem className="w-full">
-                                <FormLabel className="text-[12px] leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
+                                <FormLabel className="text-[12px] leading-3.5 text-[rgba(87,87,87,1)]">
                                   Գրադարան Արժեքներ
                                 </FormLabel>
                                 <Popover

@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useIndicatorFeatures } from "@/components/indicators/indicator-features-context";
-import { getLibraryFromAttributeById } from "@/services/attributeService";
+import { fetchAttributeCategories, getLibraryFromAttributeById } from "@/services/attributeService";
 import type { Attribute } from "@/types/attribute";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,10 @@ import { downloadMetricCombinationsCSV } from "@/services/metricsService";
 function FeaturesTable({ metricId }: { metricId: string }) {
   const { features, startEdit, removeFeature } = useIndicatorFeatures();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const { data: attributesCategories = [] } = useSWR(
+    swrKeys.attributesCategories,
+    fetchAttributeCategories
+  );
   const selectedAttributeKeys = useMemo(
     () =>
       Array.from(
@@ -80,7 +84,10 @@ function FeaturesTable({ metricId }: { metricId: string }) {
     const rowCategory = row.category?.trim();
     if (rowCategory) return rowCategory;
     const attributeCategory = attributeByKey[row.attributeKey]?.category?.trim();
-    if (attributeCategory) return attributeCategory;
+    const attributeTitle = attributesCategories
+      .find((item) => item.value === attributeCategory)
+      ?.title?.hy?.trim();
+    if (attributeTitle) return attributeTitle;
     return "—";
   };
 
