@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import useSWR from "swr";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
@@ -75,6 +75,8 @@ const FEATURE_SECONDARY_LABEL_LANGS = [
 const featureLabelInputClass =
   "h-9 rounded-[8.5px] border-[rgba(230,231,235,1)] bg-white text-sm text-[#2c2c2c] md:text-sm";
 
+const hasTextValue = (value?: string) => Boolean(value?.trim());
+
 export default function CreateWindow() {
   const { features, dialogOpen, editingId, setDialogOpen, startCreate, addFeature, updateFeature } =
     useIndicatorFeatures();
@@ -96,6 +98,10 @@ export default function CreateWindow() {
 
   const { control, handleSubmit, reset, setValue } = form;
   const [valuesPopoverOpenByRow, setValuesPopoverOpenByRow] = useState<Record<number, boolean>>({});
+  const [openCollapsibleId, setOpenCollapsibleId] = useState<string | null>(null);
+  const [openLastCollapsibleOnAppend, setOpenLastCollapsibleOnAppend] = useState(false);
+  const wasDialogOpenRef = useRef(false);
+  const shouldOpenFirstOnDialogOpenRef = useRef(false);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -187,6 +193,70 @@ export default function CreateWindow() {
     });
   }, [rowsWatch, attributeByKey, setValue]);
 
+  useEffect(() => {
+    if (!fields.length) {
+      setOpenCollapsibleId(null);
+      return;
+    }
+
+    if (shouldOpenFirstOnDialogOpenRef.current) {
+      setOpenCollapsibleId(fields[0].id);
+      shouldOpenFirstOnDialogOpenRef.current = false;
+      return;
+    }
+
+    if (openLastCollapsibleOnAppend) {
+      setOpenCollapsibleId(fields[fields.length - 1].id);
+      setOpenLastCollapsibleOnAppend(false);
+      return;
+    }
+
+    if (!openCollapsibleId) {
+      return;
+    }
+
+    const hasCurrentOpen = fields.some((field) => field.id === openCollapsibleId);
+    if (!hasCurrentOpen) {
+      setOpenCollapsibleId(null);
+    }
+  }, [fields, openCollapsibleId, openLastCollapsibleOnAppend]);
+
+  useEffect(() => {
+    const justOpened = dialogOpen && !wasDialogOpenRef.current;
+    if (justOpened) {
+      shouldOpenFirstOnDialogOpenRef.current = true;
+    }
+    if (!dialogOpen) shouldOpenFirstOnDialogOpenRef.current = false;
+    wasDialogOpenRef.current = dialogOpen;
+  }, [dialogOpen]);
+
+  const handleRemoveRow = (index: number) => {
+    const removedId = fields[index]?.id;
+    if (removedId && openCollapsibleId === removedId) {
+      const nextField = fields[index + 1] ?? fields[index - 1] ?? null;
+      setOpenCollapsibleId(nextField?.id ?? null);
+    }
+
+    remove(index);
+    setValuesPopoverOpenByRow((prev) => {
+      const next: Record<number, boolean> = {};
+      for (const [key, value] of Object.entries(prev)) {
+        const rowIndex = Number(key);
+        if (rowIndex < index) {
+          next[rowIndex] = value;
+        } else if (rowIndex > index) {
+          next[rowIndex - 1] = value;
+        }
+      }
+      return next;
+    });
+  };
+
+  const handleAppendRow = () => {
+    append(emptyIndicatorFeatureRow());
+    setOpenLastCollapsibleOnAppend(true);
+  };
+
   const onSubmit = (values: IndicatorFeaturesBatchFormValues) => {
     if (!attributes?.length) return;
     if (isEdit && editing) {
@@ -256,14 +326,14 @@ export default function CreateWindow() {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="no-scrollbar -mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="no-scrollbar -mx-4 h-[80vh] overflow-y-auto">
               {isLoading && (
                 <div className="flex items-center gap-2 px-6 py-4 text-sm text-zinc-600">
                   <Loader2 className="size-4 animate-spin" />
                   <span>Բեռնում…</span>
                 </div>
               )}
-              <div className="flex w-full flex-col">
+              <div className="flex w-full flex-col gap-3.5">
                 {fields.map((field, index) => {
                   const selectedCategory = rowsWatch?.[index]?.category ?? "";
                   const selectedLibrary = rowsWatch?.[index]?.libraryOption ?? "";
@@ -273,6 +343,20 @@ export default function CreateWindow() {
                     ? (attributeByKey[selectedLibrary]?.values ?? [])
                     : [];
                   const currentRow = rowsWatch?.[index];
+                  const isCollapsibleOpen = openCollapsibleId === field.id;
+                  const isRowFilled = Boolean(
+                    currentRow &&
+                    hasTextValue(currentRow.category) &&
+                    hasTextValue(currentRow.libraryOption) &&
+                    hasTextValue(currentRow.levelOption) &&
+                    currentRow.valueIds.length > 0 &&
+                    hasTextValue(currentRow.label?.hy) &&
+                    hasTextValue(currentRow.label?.en) &&
+                    hasTextValue(currentRow.label?.ru) &&
+                    hasTextValue(currentRow.secondaryLabel?.hy) &&
+                    hasTextValue(currentRow.secondaryLabel?.en) &&
+                    hasTextValue(currentRow.secondaryLabel?.ru)
+                  );
                   const selectedValueIds = currentRow?.valueIds ?? [];
                   const hasValues = levelOptions.length > 0;
                   const shouldLockLevel = hasValues;
@@ -285,10 +369,11 @@ export default function CreateWindow() {
                   return (
                     <Collapsible
                       key={field.id}
-                      defaultOpen
+                      open={isCollapsibleOpen}
+                      onOpenChange={(open) => setOpenCollapsibleId(open ? field.id : null)}
                       className="w-full rounded-none border-b border-b-[rgba(217,217,217,1)] pt-3.5"
                     >
-                      <div className="flex w-full justify-between gap-2.25 pr-10 pb-6 pl-2.5">
+                      <div className="flex w-full justify-between gap-2.25 pr-10 pb-3.5 pl-2.5">
                         <CollapsibleTrigger
                           className="group flex items-center gap-1.5"
                           type="button"
@@ -298,15 +383,20 @@ export default function CreateWindow() {
                             {`Հատկանիշ ${index + 1}`}
                           </p>
                         </CollapsibleTrigger>
-                        {!isEdit && fields.length > 1 && (
-                          <button
-                            type="button"
-                            className="text-[12px] font-medium text-[rgba(204,0,0,1)] hover:underline"
-                            onClick={() => remove(index)}
-                          >
-                            Հեռացնել
-                          </button>
-                        )}
+                        <div className="flex items-center gap-3">
+                          {!isCollapsibleOpen && isRowFilled && (
+                            <Image src="/done.svg" width={13} height={13} alt="completed" />
+                          )}
+                          {!isEdit && fields.length > 1 && (
+                            <button
+                              type="button"
+                              className="text-[12px] font-medium text-[rgba(204,0,0,1)] hover:underline"
+                              onClick={() => handleRemoveRow(index)}
+                            >
+                              Հեռացնել
+                            </button>
+                          )}
+                        </div>
                       </div>
                       <CollapsibleContent className="flex w-full flex-col gap-4 border-t border-t-[rgba(217,217,217,1)] bg-[rgba(217,217,217,0.1)] px-10 py-4.25">
                         <div className="flex w-full flex-col gap-3">
@@ -598,7 +688,7 @@ export default function CreateWindow() {
                 <div className="w-full px-10 py-9">
                   <button
                     type="button"
-                    onClick={() => append(emptyIndicatorFeatureRow())}
+                    onClick={handleAppendRow}
                     className="flex cursor-pointer items-center gap-3.25 self-center"
                   >
                     <Image src="/add.svg" width={24} height={24} alt="" />
