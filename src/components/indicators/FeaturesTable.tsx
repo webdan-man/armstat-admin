@@ -81,8 +81,6 @@ function FeaturesTable({ metricId }: { metricId: string }) {
   };
 
   const resolveCategoryLabel = (row: (typeof features)[number]): string => {
-    const rowCategory = row.category?.trim();
-    if (rowCategory) return rowCategory;
     const attributeCategory = attributeByKey[row.attributeKey]?.category?.trim();
     const attributeTitle = attributesCategories
       .find((item) => item.value === attributeCategory)
