@@ -6,22 +6,50 @@ const trimmedNonEmpty = (message: string) =>
     .transform((s) => s.trim())
     .pipe(z.string().min(1, message));
 
-export const indicatorFeatureRowSchema = z.object({
-  category: z.string().min(1, "Ընտրեք տեսակը"),
-  libraryOption: z.string().min(1, "Ընտրեք գրադարանը"),
-  levelOption: z.string().min(1, "Ընտրեք մակարդակը"),
-  valueIds: z.array(z.string().min(1)).min(1, "Ընտրեք գրադարան արժեքները"),
-  label: z.object({
-    hy: trimmedNonEmpty("Լրացրեք հայերեն պիտակը"),
-    en: trimmedNonEmpty("Լրացրեք անգլերեն պիտակը"),
-    ru: trimmedNonEmpty("Լրացրեք ռուսերեն պիտակը"),
-  }),
-  secondaryLabel: z.object({
-    hy: trimmedNonEmpty("Լրացրեք հայերեն երկրորդային պիտակը"),
-    en: trimmedNonEmpty("Լրացրեք անգլերեն երկրորդային պիտակը"),
-    ru: trimmedNonEmpty("Լրացրեք ռուսերեն երկրորդային պիտակը"),
-  }),
-});
+const trimmedString = z.string().transform((s) => s.trim());
+
+export const indicatorFeatureRowSchema = z
+  .object({
+    category: z.string().min(1, "Ընտրեք տեսակը"),
+    libraryOption: z.string().min(1, "Ընտրեք գրադարանը"),
+    levelOption: z.string().min(1, "Ընտրեք մակարդակը"),
+    valueIds: z.array(z.string().min(1)).min(1, "Ընտրեք գրադարան արժեքները"),
+    label: z.object({
+      hy: trimmedNonEmpty("Լրացրեք հայերեն պիտակը"),
+      en: trimmedNonEmpty("Լրացրեք անգլերեն պիտակը"),
+      ru: trimmedNonEmpty("Լրացրեք ռուսերեն պիտակը"),
+    }),
+    secondaryLabel: z.object({
+      hy: trimmedString,
+      en: trimmedString,
+      ru: trimmedString,
+    }),
+  })
+  .superRefine((row, ctx) => {
+    if (row.levelOption !== "secondary") return;
+
+    if (row.secondaryLabel.hy.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["secondaryLabel", "hy"],
+        message: "Լրացրեք հայերեն երկրորդային պիտակը",
+      });
+    }
+    if (row.secondaryLabel.en.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["secondaryLabel", "en"],
+        message: "Լրացրեք անգլերեն երկրորդային պիտակը",
+      });
+    }
+    if (row.secondaryLabel.ru.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["secondaryLabel", "ru"],
+        message: "Լրացրեք ռուսերեն երկրորդային պիտակը",
+      });
+    }
+  });
 
 /** @deprecated use indicatorFeatureRowSchema */
 export const indicatorFeatureFormSchema = indicatorFeatureRowSchema;

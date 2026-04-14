@@ -380,12 +380,12 @@ export default function CreateWindow() {
                       onOpenChange={(open) => setOpenCollapsibleId(open ? field.id : null)}
                       className="w-full rounded-none border-b border-b-[rgba(217,217,217,1)] pt-3.5"
                     >
-                      <div className="flex w-full justify-between gap-2.25 pr-10 pb-3.5 pl-2.5">
+                      <div className="flex w-full justify-between gap-2.25 pr-10 pb-3.5 pl-4">
                         <CollapsibleTrigger
                           className="group flex items-center gap-1.5"
                           type="button"
                         >
-                          <ChevronDownIcon className="size-5 transition-transform group-data-panel-open:rotate-90" />
+                          <ChevronDownIcon className="size-5 -rotate-90 transition-transform group-data-panel-open:rotate-0" />
                           <p className="text-start text-[16px] font-semibold text-black">
                             {`Հատկանիշ ${index + 1}`}
                           </p>
@@ -570,11 +570,7 @@ export default function CreateWindow() {
                                   f.onChange(val);
                                   setValue(`rows.${index}.valueIds`, []);
                                 }}
-                                disabled={
-                                  isLoading ||
-                                  !selectedLibrary ||
-                                  isLevelsLoading
-                                }
+                                disabled={isLoading || !selectedLibrary || isLevelsLoading}
                               >
                                 <FormControl>
                                   <SelectTrigger className="w-full">
