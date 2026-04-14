@@ -310,7 +310,7 @@ export default function CreateWindow() {
 
   const onInvalid: SubmitErrorHandler<IndicatorFeaturesBatchFormValues> = (errors) => {
     const rowErrors = errors.rows;
-    if (!rowErrors || rowErrors.length === 0) return;
+    if (!Array.isArray(rowErrors) || rowErrors.length === 0) return;
 
     const firstInvalidIndex = rowErrors.findIndex(Boolean);
     if (firstInvalidIndex < 0) return;
