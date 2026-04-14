@@ -16,8 +16,8 @@ export const indicatorFeatureRowSchema = z
     valueIds: z.array(z.string().min(1)).min(1, "Ընտրեք գրադարան արժեքները"),
     label: z.object({
       hy: trimmedNonEmpty("Լրացրեք հայերեն պիտակը"),
-      en: trimmedNonEmpty("Լրացրեք անգլերեն պիտակը"),
-      ru: trimmedNonEmpty("Լրացրեք ռուսերեն պիտակը"),
+      en: trimmedString,
+      ru: trimmedString,
     }),
     secondaryLabel: z.object({
       hy: trimmedString,
@@ -33,20 +33,6 @@ export const indicatorFeatureRowSchema = z
         code: z.ZodIssueCode.custom,
         path: ["secondaryLabel", "hy"],
         message: "Լրացրեք հայերեն երկրորդային պիտակը",
-      });
-    }
-    if (row.secondaryLabel.en.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["secondaryLabel", "en"],
-        message: "Լրացրեք անգլերեն երկրորդային պիտակը",
-      });
-    }
-    if (row.secondaryLabel.ru.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["secondaryLabel", "ru"],
-        message: "Լրացրեք ռուսերեն երկրորդային պիտակը",
       });
     }
   });

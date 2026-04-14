@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import useSWR from "swr";
-import { useFieldArray, useForm, useWatch } from "react-hook-form";
+import { useFieldArray, useForm, useWatch, type SubmitErrorHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDownIcon, Loader2 } from "lucide-react";
 
@@ -308,6 +308,49 @@ export default function CreateWindow() {
     setDialogOpen(false);
   };
 
+  const onInvalid: SubmitErrorHandler<IndicatorFeaturesBatchFormValues> = (errors) => {
+    const rowErrors = errors.rows;
+    if (!rowErrors || rowErrors.length === 0) return;
+
+    const firstInvalidIndex = rowErrors.findIndex(Boolean);
+    if (firstInvalidIndex < 0) return;
+
+    const firstInvalidField = fields[firstInvalidIndex];
+    if (!firstInvalidField) return;
+
+    setOpenCollapsibleId(firstInvalidField.id);
+
+    const rowError = rowErrors[firstInvalidIndex];
+    if (!rowError) return;
+
+    const labelErrors = rowError.label;
+    if (labelErrors?.hy) {
+      setLabelLangByRow((prev) => ({ ...prev, [firstInvalidField.id]: "hy" }));
+      return;
+    }
+    if (labelErrors?.en) {
+      setLabelLangByRow((prev) => ({ ...prev, [firstInvalidField.id]: "en" }));
+      return;
+    }
+    if (labelErrors?.ru) {
+      setLabelLangByRow((prev) => ({ ...prev, [firstInvalidField.id]: "ru" }));
+      return;
+    }
+
+    const secondaryLabelErrors = rowError.secondaryLabel;
+    if (secondaryLabelErrors?.hy) {
+      setSecondaryLabelLangByRow((prev) => ({ ...prev, [firstInvalidField.id]: "hy" }));
+      return;
+    }
+    if (secondaryLabelErrors?.en) {
+      setSecondaryLabelLangByRow((prev) => ({ ...prev, [firstInvalidField.id]: "en" }));
+      return;
+    }
+    if (secondaryLabelErrors?.ru) {
+      setSecondaryLabelLangByRow((prev) => ({ ...prev, [firstInvalidField.id]: "ru" }));
+    }
+  };
+
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <button
@@ -327,7 +370,7 @@ export default function CreateWindow() {
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form onSubmit={handleSubmit(onSubmit, onInvalid)}>
             <div className="no-scrollbar -mx-4 h-[80vh] overflow-y-auto">
               {isLoading && (
                 <div className="flex items-center gap-2 px-6 py-4 text-sm text-zinc-600">
@@ -343,6 +386,12 @@ export default function CreateWindow() {
                   const selectedLibrary = rowsWatch?.[index]?.libraryOption ?? "";
                   const selectedLevel = rowsWatch?.[index]?.levelOption ?? "";
                   const libraryOptions = buildLibraryOptions(attributes, selectedCategory);
+                  const hasSelectedCategoryInOptions = attributesCategories.some(
+                    (category) => category.value === selectedCategory
+                  );
+                  const hasSelectedLibraryInOptions = libraryOptions.some(
+                    (option) => option.value === selectedLibrary
+                  );
 
                   const levelOptions = selectedLibrary
                     ? (attributeByKey[selectedLibrary]?.values ?? []).filter((value) => {
@@ -360,11 +409,8 @@ export default function CreateWindow() {
                     hasTextValue(currentRow.levelOption) &&
                     currentRow.valueIds.length > 0 &&
                     hasTextValue(currentRow.label?.hy) &&
-                    hasTextValue(currentRow.label?.en) &&
-                    hasTextValue(currentRow.label?.ru) &&
-                    hasTextValue(currentRow.secondaryLabel?.hy) &&
-                    hasTextValue(currentRow.secondaryLabel?.en) &&
-                    hasTextValue(currentRow.secondaryLabel?.ru)
+                    (currentRow.levelOption !== "secondary" ||
+                      hasTextValue(currentRow.secondaryLabel?.hy))
                   );
                   const selectedValueIds = currentRow?.valueIds ?? [];
                   const isLevelsLoading = Boolean(
@@ -490,7 +536,9 @@ export default function CreateWindow() {
                                 Ընտրել Տեսակը
                               </FormLabel>
                               <Select
-                                value={f.value || undefined}
+                                value={
+                                  f.value && hasSelectedCategoryInOptions ? f.value : undefined
+                                }
                                 onValueChange={(val) => {
                                   f.onChange(val);
                                   setValue(`rows.${index}.libraryOption`, "");
@@ -527,7 +575,8 @@ export default function CreateWindow() {
                                 Գրադարան
                               </FormLabel>
                               <Select
-                                value={f.value || undefined}
+                                key={`library-select-${field.id}-${selectedCategory}`}
+                                value={f.value && hasSelectedLibraryInOptions ? f.value : undefined}
                                 onValueChange={(val) => {
                                   f.onChange(val);
                                   setValue(`rows.${index}.levelOption`, "");
