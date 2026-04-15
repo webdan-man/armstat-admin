@@ -26,11 +26,12 @@ import {
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { FormItem } from "@/components/ui/form";
+import { FieldLabel } from "@/components/ui/field";
 import { withToastError } from "@/lib/withToastError";
 import AttributesTable from "@/components/attributes/AttributesTable";
 
@@ -156,76 +157,85 @@ export default function AttributesList() {
   };
 
   return (
-    <div>
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Հատկանիիշների գրադարաններ</h1>
-        <Button className="bg-green-700" onClick={openCreate}>
+    <div className="flex w-full flex-col gap-5 pb-10">
+      <div className="flex min-h-11 w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">Հատկանիիշների գրադարաններ</h1>
+        <Button
+          type="button"
+          className="h-11 shrink-0 rounded-lg border-0 bg-[#004d99] px-5 text-[13px] font-medium text-white hover:bg-[#004080]"
+          onClick={openCreate}
+        >
           Նոր հատկանիշ
         </Button>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="my-8 flex flex-wrap gap-10">
-          <label className="flex flex-col gap-2 text-sm">
-            <div className="text-muted-foreground">Հատկանիշի կատեգորիա</div>
-            <select
-              className="border-input bg-background h-9 rounded-md border px-3 text-sm"
-              value={categoryFilter}
-              onChange={(e) => {
-                setCategoryFilter(e.target.value);
-                setIdFilter("__all__");
-              }}
-            >
-              <option value="__all__">Ընտրել տեսակ</option>
-              {categories.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.title.hy}
-                </option>
-              ))}
-            </select>
-          </label>
+      <div className="my-8 flex w-full flex-col gap-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-end">
+            <FormItem className="flex w-full max-w-[320px] flex-col gap-2 text-sm">
+              <FieldLabel className="text-muted-foreground">Հատկանիշի կատեգորիա</FieldLabel>
+              <Select
+                value={categoryFilter}
+                onValueChange={(value) => {
+                  setCategoryFilter(value);
+                  setIdFilter("__all__");
+                }}
+              >
+                <SelectTrigger className="h-9 w-full">
+                  <SelectValue placeholder="Ընտրել տեսակ" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Ընտրել տեսակ</SelectItem>
+                  {categories.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.title.hy}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormItem>
 
-          <label className="flex flex-col gap-2 text-sm">
-            <div className="text-muted-foreground">Գրադարան</div>
-            <select
-              className="border-input bg-background h-9 rounded-md border px-3 text-sm"
-              value={idFilter}
-              onChange={(e) => setIdFilter(e.target.value)}
-            >
-              <option value="__all__">Ընտրել գրադարան</option>
-              {attributeIds.map((id) => (
-                <option key={id} value={id}>
-                  {getAttributeLabel(id)}
-                </option>
-              ))}
-            </select>
-          </label>
+            <FormItem className="flex w-full max-w-[320px] flex-col gap-2 text-sm">
+              <FieldLabel className="text-muted-foreground">Գրադարան</FieldLabel>
+              <Select
+                value={idFilter}
+                onValueChange={(value) => setIdFilter(value)}
+                disabled={categoryFilter === "__all__" || attributeIds.length === 0}
+              >
+                <SelectTrigger className="h-9 w-full">
+                  <SelectValue placeholder="Ընտրել գրադարան" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Ընտրել գրադարան</SelectItem>
+                  {attributeIds.map((id) => (
+                    <SelectItem key={id} value={id}>
+                      {getAttributeLabel(id)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormItem>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            <AttributesExportButton
+              selectedId={selectedAttribute?._id ?? "__all__"}
+              disabled={idFilter === "__all__" || !selectedAttribute}
+            />
+
+            <ImportAttributes
+              selectedId={selectedAttribute?._id}
+              onImport={() => mutate(swrKeys.attributes)}
+            />
+
+            <Button className="h-11 bg-amber-500 px-4" onClick={onEdit} disabled={idFilter === "__all__"}>
+              Խմբագրել գրադարանը
+            </Button>
+            <Button className="bg-destructive h-11 px-4" onClick={onDelete} disabled={idFilter === "__all__"}>
+              Հեռացնել գրադարանը
+            </Button>
+          </div>
         </div>
-
-        <AttributesExportButton
-          selectedId={selectedAttribute?._id ?? "__all__"}
-          disabled={idFilter === "__all__" || !selectedAttribute}
-        />
-
-        <ImportAttributes
-          selectedId={selectedAttribute?._id}
-          onImport={() => mutate(swrKeys.attributes)}
-        />
-
-        <Button
-          className="h-15 max-w-30 bg-amber-500"
-          onClick={onEdit}
-          disabled={idFilter === "__all__"}
-        >
-          Խմբագրել գրադարանը
-        </Button>
-        <Button
-          className="bg-destructive h-15 max-w-30"
-          onClick={onDelete}
-          disabled={idFilter === "__all__"}
-        >
-          Հեռացնել գրադարանը
-        </Button>
       </div>
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
@@ -246,13 +256,11 @@ export default function AttributesList() {
                   <SelectValue placeholder="Ընտրել" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectGroup>
-                    {categories.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        {c.title.hy}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
+                  {categories.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.title.hy}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -282,7 +290,19 @@ export default function AttributesList() {
         </DialogContent>
       </Dialog>
 
-      {!!filtered.length && <AttributesTable attributes={filtered} />}
+      {!isLoading && idFilter === "__all__" && (
+        <div className="text-muted-foreground rounded-md border border-dashed p-6 text-center text-[13px]">
+          Ընտրեք գրադարան՝ տվյալները ցուցադրելու համար
+        </div>
+      )}
+
+      {!isLoading && idFilter !== "__all__" && filtered.length === 0 && (
+        <div className="text-muted-foreground rounded-md border border-dashed p-6 text-center text-[13px]">
+          Ընտրված գրադարանի համար տվյալներ չեն գտնվել
+        </div>
+      )}
+
+      {filtered.length > 0 && <AttributesTable attributes={filtered} />}
 
       {isLoading && (
         <div className="flex w-full justify-center py-2">

@@ -487,46 +487,6 @@ export default function CreateWindow() {
                             />
                           </div>
                         </div>
-                        {selectedLevel === "secondary" && (
-                          <div className="flex w-full flex-col gap-3">
-                            <div className="flex items-center justify-between gap-3">
-                              <p className="text-[12px] leading-3.5 font-semibold text-black">
-                                Երկրորդային պիտակներ
-                              </p>
-                              <LangSwitcher
-                                value={secondaryLabelLang}
-                                onChange={(nextLang) =>
-                                  setSecondaryLabelLangByRow((prev) => ({
-                                    ...prev,
-                                    [field.id]: nextLang,
-                                  }))
-                                }
-                                className="sm:shrink-0"
-                              />
-                            </div>
-                            <div className="grid w-full gap-3">
-                              <FormField
-                                control={control}
-                                name={`rows.${index}.secondaryLabel.${secondaryLabelLang}`}
-                                render={({ field: f }) => (
-                                  <FormItem className="w-full">
-                                    <FormLabel className="text-[12px] leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
-                                      {FEATURE_SECONDARY_LABEL_LANG_BY_KEY[secondaryLabelLang]}
-                                    </FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        className={featureLabelInputClass}
-                                        placeholder=""
-                                        {...f}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-                          </div>
-                        )}
                         <FormField
                           control={control}
                           name={`rows.${index}.category`}
@@ -642,6 +602,46 @@ export default function CreateWindow() {
                             </FormItem>
                           )}
                         />
+                        {selectedLevel === "secondary" && (
+                          <div className="flex w-full flex-col gap-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-[12px] leading-3.5 font-semibold text-black">
+                                Երկրորդային պիտակներ
+                              </p>
+                              <LangSwitcher
+                                value={secondaryLabelLang}
+                                onChange={(nextLang) =>
+                                  setSecondaryLabelLangByRow((prev) => ({
+                                    ...prev,
+                                    [field.id]: nextLang,
+                                  }))
+                                }
+                                className="sm:shrink-0"
+                              />
+                            </div>
+                            <div className="grid w-full gap-3">
+                              <FormField
+                                control={control}
+                                name={`rows.${index}.secondaryLabel.${secondaryLabelLang}`}
+                                render={({ field: f }) => (
+                                  <FormItem className="w-full">
+                                    <FormLabel className="text-[12px] leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
+                                      {FEATURE_SECONDARY_LABEL_LANG_BY_KEY[secondaryLabelLang]}
+                                    </FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        className={featureLabelInputClass}
+                                        placeholder=""
+                                        {...f}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          </div>
+                        )}
                         <FormField
                           control={control}
                           name={`rows.${index}.valueIds`}
