@@ -24,6 +24,14 @@ const chartBlock = z.object({
   link: z.string(),
 });
 
+const trimmedNonEmpty = (message: string) =>
+  z
+    .string()
+    .transform((s) => s.trim())
+    .pipe(z.string().min(1, message));
+
+const trimmedString = z.string().transform((s) => s.trim());
+
 export const indicatorFormSchema = z.object({
   title: perLangStrings,
   description: perLangStrings,
@@ -42,14 +50,14 @@ export const indicatorFormSchema = z.object({
       attributeId: z.string().min(1),
       valueIds: z.array(z.string().min(1)),
       label: z.object({
-        hy: z.string().min(1),
-        en: z.string().min(1),
-        ru: z.string().min(1),
+        hy: trimmedNonEmpty("Լրացրեք հայերեն պիտակը"),
+        en: trimmedString,
+        ru: trimmedString,
       }),
       secondaryLabel: z.object({
-        hy: z.string().min(1),
-        en: z.string().min(1),
-        ru: z.string().min(1),
+        hy: trimmedString,
+        en: trimmedString,
+        ru: trimmedString,
       }),
     })
   ),
