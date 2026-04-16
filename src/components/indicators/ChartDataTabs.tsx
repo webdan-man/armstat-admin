@@ -24,6 +24,7 @@ import type { IndicatorFormValues } from "@/components/indicators/indicator-form
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { getMetricCombinations } from "@/services/metricsService";
 import type { MetricCombination, MetricResponse } from "@/types/metric";
+import Chart from "@/components/indicators/charts/Chart";
 
 const fieldBorder =
   "h-9 rounded-[8.5px] border-[rgba(230,231,235,1)] bg-white text-sm text-[#2c2c2c] md:text-sm";
@@ -145,6 +146,10 @@ const ChartDataTabs = ({
 }) => {
   const { control } = useFormContext<IndicatorFormValues>();
 
+  const { data } = useSWR(metricId ? swrKeys.metricCombinations(metricId) : null, () =>
+    getMetricCombinations(metricId)
+  );
+
   return (
     <Tabs defaultValue="graph" className={cn("w-full gap-5", className)}>
       <TabsList className="flex h-11.75 w-full justify-start gap-0 rounded-none border-b border-b-[rgba(178,178,178,1)] bg-transparent p-0.5">
@@ -164,6 +169,7 @@ const ChartDataTabs = ({
       <TabsContent className="flex w-full flex-col gap-10" value="graph">
         <div className="flex flex-col gap-6">
           <p className="text-[14px] leading-3.5 font-medium text-[rgba(44,44,44,1)]">Գրաֆիկ 1</p>
+          <Chart combinations={data} />
           <div className="h-50"></div>
           <FormField
             control={control}
