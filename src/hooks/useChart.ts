@@ -7,8 +7,15 @@ import { AttributeCategory } from "@/constants/attribute-category.constants";
 import { mapCombinationsForLineGraph } from "@/utils/chart/map-combinations-for-line-graph";
 import { mapCombinationsForSemiCirclePieChart } from "@/utils/chart/map-combinations-for-semi-circle-pie-chart.util";
 import { mapCombinationsForArmeniaProvinces } from "@/utils/chart/map-combinations-for-armenia-provinces";
+import { mapCombinationsForColumnsWithRotatedLabels } from "@/utils/chart/map-combinations-for-columns-with-rotated-labels.util";
 
-type ChartType = "bar" | "line-graph" | "pie" | "semi-pie" | "armenia-map-provinces";
+type ChartType =
+  | "bar"
+  | "line-graph"
+  | "pie"
+  | "semi-pie"
+  | "armenia-map-provinces"
+  | "column-with-rotated-labels";
 
 function getUniqueAttributeIds(combinations: MetricCombination[]): string[] {
   const ids = new Set<string>();
@@ -73,6 +80,16 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
         return {
           type: "armenia-map-provinces",
+          data,
+        };
+      }
+      if (attribute.category === AttributeCategory.AGE) {
+        const data = mapCombinationsForColumnsWithRotatedLabels(combinations);
+
+        console.log("AGE 1 COLUMN WITH ROTATED LABELS", { combinations, data });
+
+        return {
+          type: "column-with-rotated-labels",
           data,
         };
       }

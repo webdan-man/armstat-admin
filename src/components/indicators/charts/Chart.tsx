@@ -3,8 +3,9 @@
 import SemiCircleChart from "@/components/indicators/charts/SemiCircleChart";
 import type { MetricCombination } from "@/types/metric";
 import { useChart } from "@/hooks/useChart";
-import LineGraphChart from "@/components/indicators/charts/LineGraph";
+import LineGraphChart from "@/components/indicators/charts/LineGraphChart";
 import ArmeniaProvincesMap from "@/components/indicators/charts/Map/MapChart";
+import ColumnWithRotatedLabelsChart from "@/components/indicators/charts/ColumnWithRotatedLabelsChart";
 
 interface ChartProps {
   combinations?: MetricCombination[];
@@ -37,9 +38,17 @@ const Chart = ({ combinations = [] }: ChartProps) => {
           <ArmeniaProvincesMap data={data} />
         </div>
       );
+    case "column-with-rotated-labels":
+      return (
+        <div>
+          ColumnWithRotatedLabelsChart
+          <ColumnWithRotatedLabelsChart data={data} />
+        </div>
+      );
+    case "bar":
+      return <div>bar</div>;
     case "pie":
       return <div>pie</div>;
-    case "bar":
     default:
       return <div>default</div>;
   }
