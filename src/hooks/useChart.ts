@@ -6,8 +6,9 @@ import { useMemo } from "react";
 import { AttributeCategory } from "@/constants/attribute-category.constants";
 import { mapCombinationsForLineGraph } from "@/utils/chart/map-combinations-for-line-graph";
 import { mapCombinationsForSemiCirclePieChart } from "@/utils/chart/map-combinations-for-semi-circle-pie-chart.util";
+import { mapCombinationsForArmeniaProvinces } from "@/utils/chart/map-combinations-for-armenia-provinces";
 
-type ChartType = "bar" | "line-graph" | "pie" | "semi-pie";
+type ChartType = "bar" | "line-graph" | "pie" | "semi-pie" | "armenia-map-provinces";
 
 function getUniqueAttributeIds(combinations: MetricCombination[]): string[] {
   const ids = new Set<string>();
@@ -61,6 +62,17 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
         return {
           type: "line-graph",
+          data,
+        };
+      }
+
+      if (attribute.category === AttributeCategory.PROVINCE) {
+        const data = mapCombinationsForArmeniaProvinces(combinations);
+
+        console.log("PROVINCE 1 MAP", { combinations, data });
+
+        return {
+          type: "armenia-map-provinces",
           data,
         };
       }
