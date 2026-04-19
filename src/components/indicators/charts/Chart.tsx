@@ -7,6 +7,7 @@ import LineGraphChart from "@/components/indicators/charts/LineGraphChart";
 import ArmeniaProvincesMap from "@/components/indicators/charts/Map/MapChart";
 import ColumnWithRotatedLabelsChart from "@/components/indicators/charts/ColumnWithRotatedLabelsChart";
 import StackedAreaChart from "@/components/indicators/charts/StackedAreaChart";
+import StackedColumnChart from "@/components/indicators/charts/StackedColumnChart";
 
 interface ChartProps {
   combinations?: MetricCombination[];
@@ -16,7 +17,7 @@ const Chart = ({ combinations = [] }: ChartProps) => {
   const {
     type: chartType,
     data,
-    xKey,
+    xAxisKey,
     seriesKeys,
   } = useChart({
     combinations,
@@ -55,7 +56,14 @@ const Chart = ({ combinations = [] }: ChartProps) => {
       return (
         <div>
           StackedAreaChart
-          <StackedAreaChart data={data} xKey={xKey} seriesKeys={seriesKeys} />
+          <StackedAreaChart data={data} xAxisKey={xAxisKey} seriesKeys={seriesKeys} />
+        </div>
+      );
+    case "stacked-column-chart":
+      return (
+        <div>
+          StackedColumnChart - xAxisKey: {xAxisKey}, seriesKeys: {JSON.stringify(seriesKeys)}
+          <StackedColumnChart data={data} xAxisKey={xAxisKey as string} seriesKeys={seriesKeys} />
         </div>
       );
     case "bar":

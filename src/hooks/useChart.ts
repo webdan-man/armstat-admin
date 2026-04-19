@@ -9,6 +9,7 @@ import { mapCombinationsForSemiCirclePieChart } from "@/utils/chart/map-combinat
 import { mapCombinationsForArmeniaProvinces } from "@/utils/chart/map-combinations-for-armenia-provinces";
 import { mapCombinationsForColumnsWithRotatedLabels } from "@/utils/chart/map-combinations-for-columns-with-rotated-labels.util";
 import { mapCombinationsForStackAreaChart } from "@/utils/chart/map-combinations-for-stack-area-chart.util";
+import { mapCombinationsForStackedColumnChart } from "@/utils/chart/map-combinations-for-stack-column-chart.util";
 
 type ChartType =
   | "bar"
@@ -17,7 +18,8 @@ type ChartType =
   | "semi-pie"
   | "armenia-map-provinces"
   | "column-with-rotated-labels"
-  | "stacked-area-chart";
+  | "stacked-area-chart"
+  | "stacked-column-chart";
 
 function getUniqueAttributeIds(combinations: MetricCombination[]): string[] {
   const ids = new Set<string>();
@@ -38,7 +40,7 @@ function getUniqueAttributeIds(combinations: MetricCombination[]): string[] {
 function useDetectChartType(combinations: MetricCombination[] | undefined = []): {
   type: ChartType;
   data: any[];
-  xKey?: string;
+  xAxisKey?: string;
   seriesKeys?: string[];
 } {
   const { data: attributes = [] } = useSWR(swrKeys.attributes, fetchAttributes);
@@ -106,7 +108,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
     if (attributeIds.length === 2) {
       const attributeMap = new Map(attributes.map((a) => [a._id, a]));
-      // const attributeMapByCategory = new Map(attributes.map((a) => [a.category, a]));
+      const attributeMapByCategory = new Map(attributes.map((a) => [a.category, a]));
 
       const first = attributeMap.get(attributeIds[0]);
       const second = attributeMap.get(attributeIds[1]);
@@ -115,15 +117,50 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
       const categories = new Set([first.category, second.category]);
 
+      // STACKED AREA CHART: X - TIME, Y - GENDER
       if (categories.has(AttributeCategory.GENDER) && categories.has(AttributeCategory.TIME)) {
-        // STACKED AREA CHART: X - TIME, Y - GENDER
         const { data, seriesKeys } = mapCombinationsForStackAreaChart({ combinations, attributes });
 
-        console.log(data);
+        console.log("STACKED AREA CHART: X - TIME, Y - GENDER", {
+          combinations,
+          data,
+          seriesKeys,
+        });
 
         return {
           type: "stacked-area-chart",
-          xKey: "year",
+          xAxisKey: "year",
+          seriesKeys,
+          data,
+        };
+      }
+
+      const stackedCategory = [AttributeCategory.AREA, AttributeCategory.OTHER].find((cat) =>
+        categories.has(cat)
+      );
+
+      if (categories.has(AttributeCategory.GENDER) && stackedCategory) {
+        const xAxisAttributeId = attributeMapByCategory.get(stackedCategory)!._id;
+        const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
+
+        const xAxisKey = "gender";
+
+        const { data, seriesKeys } = mapCombinationsForStackedColumnChart({
+          combinations,
+          xAxisAttributeId,
+          yAxisAttributeId: genderAttributeId,
+          xAxisKey,
+        });
+
+        console.log(`STACKED COLUMN CHART: X - ${stackedCategory}, Y - GENDER`, {
+          combinations,
+          data,
+          seriesKeys,
+        });
+
+        return {
+          type: "stacked-column-chart",
+          xAxisKey,
           seriesKeys,
           data,
         };

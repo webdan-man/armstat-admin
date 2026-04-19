@@ -5,15 +5,15 @@ import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 
 interface StackedAreaChartProps<T extends Record<string, string>> {
   data: T[];
-  xKey?: keyof T; // e.g. "year"
-  seriesKeys?: (keyof T)[]; // e.g. ["Արական", "Իգական"]
+  xAxisKey?: string;
+  seriesKeys?: string[]; // e.g. ["Արական", "Իգական"]
 }
 
 const containerId = "stacked-area-chartdiv";
 
 function StackedAreaChart<T extends Record<string, string>>({
   data,
-  xKey,
+  xAxisKey,
   seriesKeys = [],
 }: StackedAreaChartProps<T>) {
   useLayoutEffect(() => {
@@ -43,7 +43,7 @@ function StackedAreaChart<T extends Record<string, string>>({
     // ✅ Dynamic X axis
     const xAxis = chart.xAxes.push(
       am5xy.CategoryAxis.new(root, {
-        categoryField: String(xKey),
+        categoryField: String(xAxisKey),
         startLocation: 0.5,
         endLocation: 0.5,
         renderer: am5xy.AxisRendererX.new(root, {
@@ -73,10 +73,10 @@ function StackedAreaChart<T extends Record<string, string>>({
           yAxis,
           stacked: true,
           valueYField: String(key),
-          categoryXField: String(xKey),
+          categoryXField: String(xAxisKey),
           tooltip: am5.Tooltip.new(root, {
             pointerOrientation: "horizontal",
-            labelText: `[bold]{name}[/]\n{${String(xKey)}}: {valueY}`,
+            labelText: `[bold]{name}[/]\n{${String(xAxisKey)}}: {valueY}`,
           }),
         })
       );
@@ -102,7 +102,7 @@ function StackedAreaChart<T extends Record<string, string>>({
     return () => {
       root.dispose();
     };
-  }, [data, xKey, seriesKeys]);
+  }, [data, xAxisKey, seriesKeys]);
 
   return (
     <div>
