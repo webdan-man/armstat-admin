@@ -83,10 +83,15 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           data,
         };
       }
-      if (attribute.category === AttributeCategory.AGE) {
+
+      if (
+        [AttributeCategory.AGE, AttributeCategory.AREA, AttributeCategory.OTHER].includes(
+          attribute.category as AttributeCategory
+        )
+      ) {
         const data = mapCombinationsForColumnsWithRotatedLabels(combinations);
 
-        console.log("AGE 1 COLUMN WITH ROTATED LABELS", { combinations, data });
+        console.log("AGE or AREA or OTHER 1 COLUMN WITH ROTATED LABELS", { combinations, data });
 
         return {
           type: "column-with-rotated-labels",
