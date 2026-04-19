@@ -8,6 +8,7 @@ import { mapCombinationsForLineGraph } from "@/utils/chart/map-combinations-for-
 import { mapCombinationsForSemiCirclePieChart } from "@/utils/chart/map-combinations-for-semi-circle-pie-chart.util";
 import { mapCombinationsForArmeniaProvinces } from "@/utils/chart/map-combinations-for-armenia-provinces";
 import { mapCombinationsForColumnsWithRotatedLabels } from "@/utils/chart/map-combinations-for-columns-with-rotated-labels.util";
+import { mapCombinationsForStackAreaChart } from "@/utils/chart/map-combinations-for-stack-area-chart.util";
 
 type ChartType =
   | "bar"
@@ -15,7 +16,8 @@ type ChartType =
   | "pie"
   | "semi-pie"
   | "armenia-map-provinces"
-  | "column-with-rotated-labels";
+  | "column-with-rotated-labels"
+  | "stacked-area-chart";
 
 function getUniqueAttributeIds(combinations: MetricCombination[]): string[] {
   const ids = new Set<string>();
@@ -36,6 +38,8 @@ function getUniqueAttributeIds(combinations: MetricCombination[]): string[] {
 function useDetectChartType(combinations: MetricCombination[] | undefined = []): {
   type: ChartType;
   data: any[];
+  xKey?: string;
+  seriesKeys?: string[];
 } {
   const { data: attributes = [] } = useSWR(swrKeys.attributes, fetchAttributes);
   // const { data: categories = [] } = useSWR(swrKeys.attributesCategories, fetchAttributeCategories);
@@ -100,7 +104,31 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
       }
     }
 
-    if (attributeIds.length !== 1) return { type: "bar", data: [] };
+    if (attributeIds.length === 2) {
+      const attributeMap = new Map(attributes.map((a) => [a._id, a]));
+      // const attributeMapByCategory = new Map(attributes.map((a) => [a.category, a]));
+
+      const first = attributeMap.get(attributeIds[0]);
+      const second = attributeMap.get(attributeIds[1]);
+
+      if (!first || !second) return { type: "bar", data: [] };
+
+      const categories = new Set([first.category, second.category]);
+
+      if (categories.has(AttributeCategory.GENDER) && categories.has(AttributeCategory.TIME)) {
+        // STACKED AREA CHART: X - TIME, Y - GENDER
+        const { data, seriesKeys } = mapCombinationsForStackAreaChart({ combinations, attributes });
+
+        console.log(data);
+
+        return {
+          type: "stacked-area-chart",
+          xKey: "year",
+          seriesKeys,
+          data,
+        };
+      }
+    }
 
     return { type: "bar", data: [] };
   }, [attributes, combinations]);

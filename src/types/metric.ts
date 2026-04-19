@@ -89,5 +89,5 @@ export type MetricCombination = {
   updatedAt?: string;
   value: string;
   /** Breakdown of attribute–value pairs for this combination; may be empty. */
-  row?: MetricCombinationRowEntry[];
+  row: MetricCombinationRowEntry[];
 };
