@@ -29,50 +29,50 @@ const Chart = ({ combinations = [] }: ChartProps) => {
     case "semi-pie":
       return (
         <div>
-          Semi-Circle Pie Chart
+          {/*Semi-Circle Pie Chart*/}
           <SemiCircleChart data={data} />
         </div>
       );
     case "line-graph":
       return (
         <div>
-          Line graph Chart
+          {/*Line graph Chart*/}
           <LineGraphChart data={data} />
         </div>
       );
     case "armenia-map-provinces":
       return (
         <div>
-          ArmeniaProvincesMap
+          {/*ArmeniaProvincesMap*/}
           <ArmeniaProvincesMap data={data} />
         </div>
       );
     case "column-with-rotated-labels":
       return (
         <div>
-          ColumnWithRotatedLabelsChart
+          {/*ColumnWithRotatedLabelsChart*/}
           <ColumnWithRotatedLabelsChart data={data} />
         </div>
       );
     case "stacked-area-chart":
       return (
         <div>
-          StackedAreaChart
+          {/*StackedAreaChart*/}
           <StackedAreaChart data={data} xAxisKey={xAxisKey} seriesKeys={seriesKeys} />
         </div>
       );
     case "stacked-column-chart":
       return (
         <div>
-          StackedColumnChart - xAxisKey: {xAxisKey}, seriesKeys: {JSON.stringify(seriesKeys)}
+          {/*StackedColumnChart - xAxisKey: {xAxisKey}, seriesKeys: {JSON.stringify(seriesKeys)}*/}
           <StackedColumnChart data={data} xAxisKey={xAxisKey as string} seriesKeys={seriesKeys} />
         </div>
       );
     case "stacked-bar-chart-with-negative-values":
       return (
         <div>
-          StackedBartWithNegativeValuesChart - yAxisKey: {yAxisKey}, seriesKeys:{" "}
-          {JSON.stringify(seriesKeys)}
+          {/*StackedBartWithNegativeValuesChart - yAxisKey: {yAxisKey}, seriesKeys:{" "}*/}
+          {/*{JSON.stringify(seriesKeys)}*/}
           <StackedBartWithNegativeValuesChart
             data={data}
             yAxisKey={yAxisKey as string}
