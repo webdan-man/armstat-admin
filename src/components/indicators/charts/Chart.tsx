@@ -8,6 +8,7 @@ import ArmeniaProvincesMap from "@/components/indicators/charts/Map/MapChart";
 import ColumnWithRotatedLabelsChart from "@/components/indicators/charts/ColumnWithRotatedLabelsChart";
 import StackedAreaChart from "@/components/indicators/charts/StackedAreaChart";
 import StackedColumnChart from "@/components/indicators/charts/StackedColumnChart";
+import StackedBartWithNegativeValuesChart from "@/components/indicators/charts/StackedBartWithNegativeValuesChart";
 
 interface ChartProps {
   combinations?: MetricCombination[];
@@ -18,6 +19,7 @@ const Chart = ({ combinations = [] }: ChartProps) => {
     type: chartType,
     data,
     xAxisKey,
+    yAxisKey,
     seriesKeys,
   } = useChart({
     combinations,
@@ -64,6 +66,18 @@ const Chart = ({ combinations = [] }: ChartProps) => {
         <div>
           StackedColumnChart - xAxisKey: {xAxisKey}, seriesKeys: {JSON.stringify(seriesKeys)}
           <StackedColumnChart data={data} xAxisKey={xAxisKey as string} seriesKeys={seriesKeys} />
+        </div>
+      );
+    case "stacked-bar-chart-with-negative-values":
+      return (
+        <div>
+          StackedBartWithNegativeValuesChart - yAxisKey: {yAxisKey}, seriesKeys:{" "}
+          {JSON.stringify(seriesKeys)}
+          <StackedBartWithNegativeValuesChart
+            data={data}
+            yAxisKey={yAxisKey as string}
+            seriesKeys={seriesKeys}
+          />
         </div>
       );
     case "bar":

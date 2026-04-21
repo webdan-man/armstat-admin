@@ -10,6 +10,8 @@ import { mapCombinationsForArmeniaProvinces } from "@/utils/chart/map-combinatio
 import { mapCombinationsForColumnsWithRotatedLabels } from "@/utils/chart/map-combinations-for-columns-with-rotated-labels.util";
 import { mapCombinationsForStackAreaChart } from "@/utils/chart/map-combinations-for-stack-area-chart.util";
 import { mapCombinationsForStackedColumnChart } from "@/utils/chart/map-combinations-for-stack-column-chart.util";
+import { mapCombinationsForStackedBarWithNegativeValuesChartUtil } from "@/utils/chart/map-combinations-for-stacked-bar-with-negative-values-chart.util";
+import { createCombinationAttributesMap } from "@/utils/chart/create-combination-attributes-map.util";
 
 type ChartType =
   | "bar"
@@ -19,7 +21,8 @@ type ChartType =
   | "armenia-map-provinces"
   | "column-with-rotated-labels"
   | "stacked-area-chart"
-  | "stacked-column-chart";
+  | "stacked-column-chart"
+  | "stacked-bar-chart-with-negative-values";
 
 function getUniqueAttributeIds(combinations: MetricCombination[]): string[] {
   const ids = new Set<string>();
@@ -41,6 +44,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
   type: ChartType;
   data: any[];
   xAxisKey?: string;
+  yAxisKey?: string;
   seriesKeys?: string[];
 } {
   const { data: attributes = [] } = useSWR(swrKeys.attributes, fetchAttributes);
@@ -108,7 +112,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
     if (attributeIds.length === 2) {
       const attributeMap = new Map(attributes.map((a) => [a._id, a]));
-      const attributeMapByCategory = new Map(attributes.map((a) => [a.category, a]));
+      const attributeMapByCategory = createCombinationAttributesMap({
+        combinations,
+        attributes,
+      });
 
       const first = attributeMap.get(attributeIds[0]);
       const second = attributeMap.get(attributeIds[1]);
@@ -161,6 +168,30 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         return {
           type: "stacked-column-chart",
           xAxisKey,
+          seriesKeys,
+          data,
+        };
+      }
+
+      // STACKED BAR CHART WITH NEGATIVE VALUES: X - GENDER, Y - AGE
+      if (categories.has(AttributeCategory.GENDER) && categories.has(AttributeCategory.AGE)) {
+        const yAxisKey = "year";
+
+        const { data, seriesKeys } = mapCombinationsForStackedBarWithNegativeValuesChartUtil({
+          combinations,
+          attributeMapByCategory,
+          yAxisKey,
+        });
+
+        console.log("STACKED BAR CHART WITH NEGATIVE VALUES: X - GENDER, Y - AGE", {
+          combinations,
+          data,
+          seriesKeys,
+        });
+
+        return {
+          type: "stacked-bar-chart-with-negative-values",
+          yAxisKey,
           seriesKeys,
           data,
         };
