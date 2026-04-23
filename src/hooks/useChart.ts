@@ -12,6 +12,7 @@ import { mapCombinationsForStackAreaChart } from "@/utils/chart/map-combinations
 import { mapCombinationsForStackedColumnChart } from "@/utils/chart/map-combinations-for-stack-column-chart.util";
 import { mapCombinationsForStackedBarWithNegativeValuesChartUtil } from "@/utils/chart/map-combinations-for-stacked-bar-with-negative-values-chart.util";
 import { createCombinationAttributesMap } from "@/utils/chart/create-combination-attributes-map.util";
+import { mapCombinationsForPyramid } from "@/utils/chart/map-combinations-for-pyramid";
 
 type ChartType =
   | "bar"
@@ -22,7 +23,8 @@ type ChartType =
   | "column-with-rotated-labels"
   | "stacked-area-chart"
   | "stacked-column-chart"
-  | "stacked-bar-chart-with-negative-values";
+  | "stacked-bar-chart-with-negative-values"
+  | "historical-population-pyramid";
 
 function getUniqueAttributeIds(combinations: MetricCombination[]): string[] {
   const ids = new Set<string>();
@@ -195,6 +197,46 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           seriesKeys,
           data,
         };
+      }
+    }
+
+    if (attributeIds.length === 3) {
+      const attributeMap = new Map(attributes.map((a) => [a._id, a]));
+      const attributeMapByCategory = createCombinationAttributesMap({
+        combinations,
+        attributes,
+      });
+
+      const first = attributeMap.get(attributeIds[0]);
+      const second = attributeMap.get(attributeIds[1]);
+      const third = attributeMap.get(attributeIds[2]);
+
+      if (!first || !second || !third) return { type: "bar", data: [] };
+
+      const categories = new Set([first.category, second.category, third.category]);
+
+      const has = (cat: AttributeCategory) => categories.has(cat);
+
+      if (
+        has(AttributeCategory.GENDER) &&
+        has(AttributeCategory.AGE) &&
+        has(AttributeCategory.TIME)
+      ) {
+        const { data, seriesKeys } = mapCombinationsForPyramid({ combinations, attributeMapByCategory });
+        console.log("historical-population-pyramid", {
+          combinations,
+          data,
+        });
+
+        return { type: "historical-population-pyramid", data, seriesKeys };
+      }
+
+      if (
+        has(AttributeCategory.GENDER) &&
+        has(AttributeCategory.TIME) &&
+        has(AttributeCategory.OTHER)
+      ) {
+        // logic
       }
     }
 

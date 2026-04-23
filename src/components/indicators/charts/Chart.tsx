@@ -9,6 +9,7 @@ import ColumnWithRotatedLabelsChart from "@/components/indicators/charts/ColumnW
 import StackedAreaChart from "@/components/indicators/charts/StackedAreaChart";
 import StackedColumnChart from "@/components/indicators/charts/StackedColumnChart";
 import StackedBartWithNegativeValuesChart from "@/components/indicators/charts/StackedBartWithNegativeValuesChart";
+import HistoricalPopulationPyramidChart from "@/components/indicators/charts/HistoricalPopulationPyramidChart";
 
 interface ChartProps {
   combinations?: MetricCombination[];
@@ -78,6 +79,14 @@ const Chart = ({ combinations = [] }: ChartProps) => {
             yAxisKey={yAxisKey as string}
             seriesKeys={seriesKeys}
           />
+        </div>
+      );
+    case "historical-population-pyramid":
+      return (
+        <div>
+          HistoricalPopulationPyramidChart - yAxisKey: {yAxisKey}, seriesKeys:{" "}
+          {JSON.stringify(seriesKeys)}
+          <HistoricalPopulationPyramidChart data={data} seriesKeys={seriesKeys} />
         </div>
       );
     case "bar":
