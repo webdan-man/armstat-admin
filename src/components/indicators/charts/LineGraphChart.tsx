@@ -52,7 +52,7 @@ function LineGraphChart({ data }: SemiCircleChartProps) {
       am5xy.DateAxis.new(root, {
         maxDeviation: 0.2,
         baseInterval: {
-          timeUnit: "day",
+          timeUnit: "year",
           count: 1,
         },
         renderer: am5xy.AxisRendererX.new(root, {
