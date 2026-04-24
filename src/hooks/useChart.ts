@@ -19,6 +19,7 @@ import { aggregateByAttributeTitle } from "@/utils/chart/aggregate-by-attribute-
 import { mapCombinationsForMapAndStackedAreaChart } from "@/utils/chart/map-combinations-for-map-and-stacked-area-chart.util";
 import { mapCombinationsForMapAndStackedColumnChart } from "@/utils/chart/map-combinations-for-map-and-stacked-column-chart.util";
 import { mapCombinationsForMapAndStackedBarWithNegativeValuesChart } from "@/utils/chart/map-combinations-for-map-and-stacked-bar-with-negative-values-chart.util";
+import { mapCombinationsForMapAndClusteredColumnChart } from "@/utils/chart/map-combinations-for-map-and-clustered-column-chart.util";
 
 type ChartType =
   | "bar"
@@ -31,6 +32,7 @@ type ChartType =
   | "map-and-stacked-area-chart"
   | "map-and-stacked-column-chart"
   | "map-and-stacked-bar-with-negative-values"
+  | "map-and-clustered-column-chart"
   | "armenia-map-provinces"
   | "column-with-rotated-labels"
   | "stacked-area-chart"
@@ -434,12 +436,84 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         const { data, seriesKeys } = mapCombinationsForMapAndStackedColumnChart({
           combinations,
           stackedAttributeId,
-          genderAttributeId,
+          seriesAttributeId: genderAttributeId,
           provinceAttributeId,
           xAxisKey,
         });
 
         console.log(`GENDER+PROVINCE+${stackedCategory} MAP + STACKED COLUMN`, {
+          combinations,
+          data,
+          seriesKeys,
+        });
+
+        return {
+          type: "map-and-stacked-column-chart",
+          xAxisKey,
+          seriesKeys,
+          data,
+        };
+      }
+
+      // Map + Stacked column chart: Province + Time + (Age or Area or Other)
+      // Stacked column: X - TIME (aggregated across provinces), series - (AGE or AREA or OTHER)
+      if (
+        has(AttributeCategory.PROVINCE) &&
+        has(AttributeCategory.TIME) &&
+        (has(AttributeCategory.AGE) || has(AttributeCategory.AREA) || has(AttributeCategory.OTHER))
+      ) {
+        const stackedCategory = has(AttributeCategory.AGE)
+          ? AttributeCategory.AGE
+          : has(AttributeCategory.AREA)
+            ? AttributeCategory.AREA
+            : AttributeCategory.OTHER;
+
+        const timeAttributeId = attributeMapByCategory.get(AttributeCategory.TIME)!._id;
+        const seriesAttributeId = attributeMapByCategory.get(stackedCategory)!._id;
+        const provinceAttributeId = attributeMapByCategory.get(AttributeCategory.PROVINCE)!._id;
+
+        const xAxisKey = "time";
+
+        const { data, seriesKeys } = mapCombinationsForMapAndStackedColumnChart({
+          combinations,
+          stackedAttributeId: timeAttributeId,
+          seriesAttributeId,
+          provinceAttributeId,
+          xAxisKey,
+        });
+
+        console.log(`PROVINCE+TIME+${stackedCategory} MAP + STACKED COLUMN (X - TIME, SERIES - ${stackedCategory})`, {
+          combinations,
+          data,
+          seriesKeys,
+        });
+
+        return {
+          type: "map-and-stacked-column-chart",
+          xAxisKey,
+          seriesKeys,
+          data,
+        };
+      }
+
+      // Map + Stacked column chart: Province + Age + Area
+      // Stacked column: X - AREA (aggregated across provinces), series - AGE
+      if (has(AttributeCategory.PROVINCE) && has(AttributeCategory.AGE) && has(AttributeCategory.AREA)) {
+        const stackedAttributeId = attributeMapByCategory.get(AttributeCategory.AREA)!._id;
+        const ageAttributeId = attributeMapByCategory.get(AttributeCategory.AGE)!._id;
+        const provinceAttributeId = attributeMapByCategory.get(AttributeCategory.PROVINCE)!._id;
+
+        const xAxisKey = "area";
+
+        const { data, seriesKeys } = mapCombinationsForMapAndStackedColumnChart({
+          combinations,
+          stackedAttributeId,
+          seriesAttributeId: ageAttributeId,
+          provinceAttributeId,
+          xAxisKey,
+        });
+
+        console.log("PROVINCE+AGE+AREA MAP + STACKED COLUMN (X - AREA, SERIES - AGE)", {
           combinations,
           data,
           seriesKeys,
@@ -477,6 +551,37 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         return {
           type: "map-and-stacked-bar-with-negative-values",
           yAxisKey,
+          seriesKeys,
+          data,
+        };
+      }
+
+      // Map + Clustered column chart: Province + Age + Other
+      // Clustered column: X - OTHER, series - AGE
+      if (has(AttributeCategory.PROVINCE) && has(AttributeCategory.AGE) && has(AttributeCategory.OTHER)) {
+        const provinceAttributeId = attributeMapByCategory.get(AttributeCategory.PROVINCE)!._id;
+        const ageAttributeId = attributeMapByCategory.get(AttributeCategory.AGE)!._id;
+        const otherAttributeId = attributeMapByCategory.get(AttributeCategory.OTHER)!._id;
+
+        const xAxisKey = "other";
+
+        const { data, seriesKeys } = mapCombinationsForMapAndClusteredColumnChart({
+          combinations,
+          xAxisAttributeId: otherAttributeId,
+          yAxisAttributeId: ageAttributeId,
+          provinceAttributeId,
+          xAxisKey,
+        });
+
+        console.log("PROVINCE+AGE+OTHER MAP + CLUSTERED COLUMN (X - OTHER, SERIES - AGE)", {
+          combinations,
+          data,
+          seriesKeys,
+        });
+
+        return {
+          type: "map-and-clustered-column-chart",
+          xAxisKey,
           seriesKeys,
           data,
         };

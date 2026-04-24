@@ -4,32 +4,32 @@ import { mapCombinationsForArmeniaProvinces } from "@/utils/chart/map-combinatio
 export const mapCombinationsForMapAndStackedColumnChart = (payload: {
   combinations: MetricCombination[];
   stackedAttributeId: string;
-  genderAttributeId: string;
+  seriesAttributeId: string;
   provinceAttributeId: string;
   xAxisKey: string;
 }) => {
-  const { combinations, stackedAttributeId, genderAttributeId, provinceAttributeId, xAxisKey } = payload;
+  const { combinations, stackedAttributeId, seriesAttributeId, provinceAttributeId, xAxisKey } = payload;
 
   const resultMap = new Map<string, Record<string, number | string>>();
-  const series = new Set<string>(); // dynamic series (genders)
+  const series = new Set<string>(); // dynamic series (e.g. gender, age)
 
   for (const item of combinations) {
-    let gender: string | undefined;
+    let seriesValue: string | undefined;
     let stackedValue: string | undefined;
 
     for (const row of item.row ?? []) {
-      if (row.attributeId === genderAttributeId) {
-        gender = row.value?.title;
+      if (row.attributeId === seriesAttributeId) {
+        seriesValue = row.value?.title;
       } else if (row.attributeId === stackedAttributeId) {
         stackedValue = row.value?.title;
       }
 
-      if (gender && stackedValue) break;
+      if (seriesValue && stackedValue) break;
     }
 
-    if (!stackedValue || !gender) continue;
+    if (!stackedValue || !seriesValue) continue;
 
-    series.add(gender);
+    series.add(seriesValue);
 
     let entry = resultMap.get(stackedValue);
     if (!entry) {
@@ -37,8 +37,8 @@ export const mapCombinationsForMapAndStackedColumnChart = (payload: {
       resultMap.set(stackedValue, entry);
     }
 
-    const prev = Number(entry[gender] ?? 0) || 0;
-    entry[gender] = prev + (Number(item.value) || 0);
+    const prev = Number(entry[seriesValue] ?? 0) || 0;
+    entry[seriesValue] = prev + (Number(item.value) || 0);
   }
 
   const columnData = Array.from(resultMap.values());
