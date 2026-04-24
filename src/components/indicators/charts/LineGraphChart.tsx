@@ -48,6 +48,20 @@ function LineGraphChart({ data }: SemiCircleChartProps) {
 
     // Create axes
     // https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
+    const xRenderer = am5xy.AxisRendererX.new(root, {
+      minorGridEnabled: true,
+      // Allow more labels when the container is narrow (e.g. 2-col layouts).
+      minGridDistance: 25,
+    });
+
+    // Prevent label collisions by rotating years slightly.
+    xRenderer.labels.template.setAll({
+      rotation: -35,
+      centerY: am5.p50,
+      centerX: am5.p100,
+      paddingRight: 10,
+    });
+
     const xAxis = chart.xAxes.push(
       am5xy.DateAxis.new(root, {
         maxDeviation: 0.2,
@@ -55,9 +69,7 @@ function LineGraphChart({ data }: SemiCircleChartProps) {
           timeUnit: "year",
           count: 1,
         },
-        renderer: am5xy.AxisRendererX.new(root, {
-          minorGridEnabled: true,
-        }),
+        renderer: xRenderer,
         tooltip: am5.Tooltip.new(root, {}),
       })
     );

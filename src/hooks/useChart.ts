@@ -13,6 +13,8 @@ import { mapCombinationsForStackedColumnChart } from "@/utils/chart/map-combinat
 import { mapCombinationsForStackedBarWithNegativeValuesChartUtil } from "@/utils/chart/map-combinations-for-stacked-bar-with-negative-values-chart.util";
 import { createCombinationAttributesMap } from "@/utils/chart/create-combination-attributes-map.util";
 import { mapCombinationsForPyramid } from "@/utils/chart/map-combinations-for-pyramid";
+import { yearTotalsToLineData } from "@/utils/chart/year-totals-to-line-data";
+import { aggregateByAttributeTitle } from "@/utils/chart/aggregate-by-attribute-title";
 
 type ChartType =
   | "bar"
@@ -20,6 +22,8 @@ type ChartType =
   | "pie"
   | "semi-pie"
   | "map-and-semi-pie"
+  | "map-and-column-with-rotated-labels"
+  | "map-and-line-graph"
   | "armenia-map-provinces"
   | "column-with-rotated-labels"
   | "stacked-area-chart"
@@ -233,24 +237,15 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         };
       }
 
-      // Map + Semi-Circle PIE: X - GENDER, Y - AGE
-      if (categories.has(AttributeCategory.GENDER) && categories.has(AttributeCategory.PROVINCE)) {
-        const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
+      // Map + Semi-Circle PIE: Province + Gender
+      if (categories.has(AttributeCategory.PROVINCE) && categories.has(AttributeCategory.GENDER)) {
         const provinceAttributeId = attributeMapByCategory.get(AttributeCategory.PROVINCE)!._id;
-        // When we have 2 attributes (gender + province), each combination is a (gender, province) pair.
-        // For a semi-pie here we want totals grouped by gender across all provinces.
-        const byGender = new Map<string, number>();
-
-        for (const item of combinations) {
-          const genderEntry = (item.row ?? []).find((r) => r.attributeId === genderAttributeId);
-          const genderTitle = genderEntry?.value?.title ?? "Unknown";
-          const value = Number(item.value) || 0;
-          byGender.set(genderTitle, (byGender.get(genderTitle) ?? 0) + value);
-        }
-
-        const pieData = Array.from(byGender.entries()).map(([category, value]) => ({
-          category,
+        const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
+        const pieData = Array.from(
+          aggregateByAttributeTitle(combinations, genderAttributeId).entries()
+        ).map(([category, value]) => ({
           value,
+          category,
         }));
 
         const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
@@ -261,6 +256,49 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
         return {
           type: "map-and-semi-pie",
+          data,
+        };
+      }
+
+      // Map + Column with rotated labels: Province + AGE
+      if (categories.has(AttributeCategory.PROVINCE) && categories.has(AttributeCategory.AGE)) {
+        const ageAttributeId = attributeMapByCategory.get(AttributeCategory.AGE)!._id;
+        const provinceAttributeId = attributeMapByCategory.get(AttributeCategory.PROVINCE)!._id;
+        const columnData = Array.from(
+          aggregateByAttributeTitle(combinations, ageAttributeId).entries()
+        ).map(([xAxisKey, value]) => ({
+          value,
+          xAxisKey,
+        }));
+
+        const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
+
+        const data = { columnData, mapData };
+
+        console.log("PROVINCE+AGE MAP + COLUMN WITH ROTATED LABELS", { combinations, data });
+
+        return {
+          type: "map-and-column-with-rotated-labels",
+          data,
+        };
+      }
+
+      // Map + Line graph: Province + Time
+      if (categories.has(AttributeCategory.PROVINCE) && categories.has(AttributeCategory.TIME)) {
+        const timeAttributeId = attributeMapByCategory.get(AttributeCategory.TIME)!._id;
+        const provinceAttributeId = attributeMapByCategory.get(AttributeCategory.PROVINCE)!._id;
+        const lineData = yearTotalsToLineData(
+          aggregateByAttributeTitle(combinations, timeAttributeId)
+        );
+
+        const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
+
+        const data = { lineData, mapData };
+
+        console.log("PROVINCE+TIME MAP + LINE GRAPH", { combinations, data });
+
+        return {
+          type: "map-and-line-graph",
           data,
         };
       }
@@ -298,14 +336,6 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         });
 
         return { type: "historical-population-pyramid", data, seriesKeys };
-      }
-
-      if (
-        has(AttributeCategory.GENDER) &&
-        has(AttributeCategory.TIME) &&
-        has(AttributeCategory.OTHER)
-      ) {
-        // logic
       }
     }
 

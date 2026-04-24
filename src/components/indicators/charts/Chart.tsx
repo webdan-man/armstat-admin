@@ -29,9 +29,31 @@ const Chart = ({ combinations = [] }: ChartProps) => {
   switch (chartType) {
     case "map-and-semi-pie":
       return (
-        <div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div>
             <SemiCircleChart data={data?.pieData ?? []} />
+          </div>
+          <div>
+            <ArmeniaProvincesMap data={data?.mapData ?? []} />
+          </div>
+        </div>
+      );
+    case "map-and-line-graph":
+      return (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div>
+            <LineGraphChart data={data?.lineData ?? []} />
+          </div>
+          <div>
+            <ArmeniaProvincesMap data={data?.mapData ?? []} />
+          </div>
+        </div>
+      );
+    case "map-and-column-with-rotated-labels":
+      return (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div>
+            <ColumnWithRotatedLabelsChart data={data?.columnData ?? []} />
           </div>
           <div>
             <ArmeniaProvincesMap data={data?.mapData ?? []} />
