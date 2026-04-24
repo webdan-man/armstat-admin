@@ -10,6 +10,7 @@ import { mapCombinationsForArmeniaProvinces } from "@/utils/chart/map-combinatio
 import { mapCombinationsForColumnsWithRotatedLabels } from "@/utils/chart/map-combinations-for-columns-with-rotated-labels.util";
 import { mapCombinationsForStackAreaChart } from "@/utils/chart/map-combinations-for-stack-area-chart.util";
 import { mapCombinationsForStackedColumnChart } from "@/utils/chart/map-combinations-for-stack-column-chart.util";
+import { mapCombinationsForClusteredColumnChart } from "../utils/chart/map-combinations-for-clustered-column-chart.util";
 import { mapCombinationsForStackedBarWithNegativeValuesChartUtil } from "@/utils/chart/map-combinations-for-stacked-bar-with-negative-values-chart.util";
 import { createCombinationAttributesMap } from "@/utils/chart/create-combination-attributes-map.util";
 import { mapCombinationsForPyramid } from "@/utils/chart/map-combinations-for-pyramid";
@@ -29,7 +30,8 @@ type ChartType =
   | "stacked-area-chart"
   | "stacked-column-chart"
   | "stacked-bar-chart-with-negative-values"
-  | "historical-population-pyramid";
+  | "historical-population-pyramid"
+  | "clustered-column-chart";
 
 function getUniqueAttributeIds(combinations: MetricCombination[]): string[] {
   const ids = new Set<string>();
@@ -328,6 +330,33 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
         return {
           type: "map-and-line-graph",
+          data,
+        };
+      }
+
+      if (categories.has(AttributeCategory.AREA) && categories.has(AttributeCategory.OTHER)) {
+        const areaAttributeId = attributeMapByCategory.get(AttributeCategory.AREA)!._id;
+        const otherAttributeId = attributeMapByCategory.get(AttributeCategory.OTHER)!._id;
+
+        const xAxisKey = "other";
+
+        const { data, seriesKeys } = mapCombinationsForClusteredColumnChart({
+          combinations,
+          xAxisAttributeId: otherAttributeId,
+          yAxisAttributeId: areaAttributeId,
+          xAxisKey,
+        });
+
+        console.log(`CLUSTERED COLUMN CHART: X - OTHER, Y - AREA`, {
+          combinations,
+          data,
+          seriesKeys,
+        });
+
+        return {
+          type: "clustered-column-chart",
+          xAxisKey,
+          seriesKeys,
           data,
         };
       }

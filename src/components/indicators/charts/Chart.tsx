@@ -10,6 +10,7 @@ import StackedAreaChart from "@/components/indicators/charts/StackedAreaChart";
 import StackedColumnChart from "@/components/indicators/charts/StackedColumnChart";
 import StackedBartWithNegativeValuesChart from "@/components/indicators/charts/StackedBartWithNegativeValuesChart";
 import HistoricalPopulationPyramidChart from "@/components/indicators/charts/HistoricalPopulationPyramidChart";
+import ClusteredColumnChart from "@/components/indicators/charts/ClusteredColumnChart";
 
 interface ChartProps {
   combinations?: MetricCombination[];
@@ -120,6 +121,12 @@ const Chart = ({ combinations = [] }: ChartProps) => {
           HistoricalPopulationPyramidChart - yAxisKey: {yAxisKey}, seriesKeys:{" "}
           {JSON.stringify(seriesKeys)}
           <HistoricalPopulationPyramidChart data={data} seriesKeys={seriesKeys} />
+        </div>
+      );
+    case "clustered-column-chart":
+      return (
+        <div>
+          <ClusteredColumnChart xAxisKey={xAxisKey as string} data={data} seriesKeys={seriesKeys} />
         </div>
       );
     case "bar":
