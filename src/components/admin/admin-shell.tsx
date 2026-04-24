@@ -29,8 +29,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <SwrProvider>
-      <div className="flex min-h-screen bg-[#f9fafb]">
-        <aside className="w-60 border-r border-[#e6e7eb] bg-white px-4 pt-5">
+      <div className="flex h-screen overflow-hidden bg-[#f9fafb]">
+        <aside className="w-60 shrink-0 overflow-y-auto border-r border-[#e6e7eb] bg-white px-4 pt-5">
           <div className="mb-6">
             <Link href="/" className="flex items-center gap-[5px]">
               <Image width={47} height={34} src="/logo.png" alt={"Logo"} />
@@ -58,13 +58,13 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </Button>
         </aside>
 
-        <div className="flex flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col">
           {/*<header className="flex h-[84px] items-center justify-between bg-[#f9fafb] px-[44px]">*/}
           {/*  <div>*/}
           {/*    <p className="text-[20px] font-medium leading-[24px] text-[#2c2c2c]">Ցուցանիշ</p>*/}
           {/*  </div>*/}
           {/*</header>*/}
-          <main className="max-h-screen overflow-y-auto px-11 py-7">{children}</main>
+          <main className="min-h-0 flex-1 overflow-y-auto px-11 py-7">{children}</main>
         </div>
       </div>
     </SwrProvider>
