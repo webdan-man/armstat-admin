@@ -21,6 +21,7 @@ import { mapCombinationsForMapAndStackedColumnChart } from "@/utils/chart/map-co
 import { mapCombinationsForMapAndStackedBarWithNegativeValuesChart } from "@/utils/chart/map-combinations-for-map-and-stacked-bar-with-negative-values-chart.util";
 import { mapCombinationsForMapAndClusteredColumnChart } from "@/utils/chart/map-combinations-for-map-and-clustered-column-chart.util";
 import { mapCombinationsForClusteredColumnChartStacked } from "@/utils/chart/map-combinations-for-clustered-column-chart-stacked.util";
+import { mapCombinationsForPyramidByFrameCategory } from "@/utils/chart/map-combinations-for-pyramid";
 
 type ChartType =
   | "bar"
@@ -687,6 +688,32 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           attributeMapByCategory,
         });
         console.log("historical-population-pyramid", {
+          combinations,
+          data,
+        });
+
+        return { type: "historical-population-pyramid", data, seriesKeys };
+      }
+
+      // Historical Population Pyramid:
+      // GENDER: X1, AGE: Y1, AREA or OTHER: X2 (frames)
+      if (
+        has(AttributeCategory.GENDER) &&
+        has(AttributeCategory.AGE) &&
+        (has(AttributeCategory.AREA) || has(AttributeCategory.OTHER))
+      ) {
+        const frameCategory = has(AttributeCategory.AREA)
+          ? AttributeCategory.AREA
+          : AttributeCategory.OTHER;
+        const frameAttributeId = attributeMapByCategory.get(frameCategory)!._id;
+
+        const { data, seriesKeys } = mapCombinationsForPyramidByFrameCategory({
+          combinations,
+          attributeMapByCategory,
+          frameAttributeId,
+        });
+
+        console.log(`historical-population-pyramid (frame: ${frameCategory})`, {
           combinations,
           data,
         });

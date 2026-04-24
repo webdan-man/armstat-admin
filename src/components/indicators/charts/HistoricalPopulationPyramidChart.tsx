@@ -74,6 +74,15 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
 
     let currentYear: number = years.length > 0 ? Math.max(...years) : new Date().getFullYear();
 
+    const frameLabelByYear = new Map<number, string>();
+    for (const d of data as any[]) {
+      const y = new Date(d?.col3).getFullYear();
+      const label = d?.col7;
+      if (Number.isFinite(y) && typeof label === "string" && label.trim()) {
+        frameLabelByYear.set(y, label);
+      }
+    }
+
     const leftLabelText = seriesKeys[0] ?? "Series 1";
     const rightLabelText = seriesKeys[1] ?? "Series 2";
 
@@ -156,7 +165,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       }
 
       // Set title
-      pyramidTitle.set("text", currentYear + "");
+      pyramidTitle.set("text", frameLabelByYear.get(currentYear) ?? (currentYear + ""));
     }
 
     // ==========================================
@@ -187,7 +196,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
 
     const pyramidTitle = pyramidChart.children.unshift(
       am5.Label.new(root, {
-        text: currentYear + "",
+        text: frameLabelByYear.get(currentYear) ?? (currentYear + ""),
         fontSize: 20,
         x: am5.p50,
         centerX: am5.p50,
