@@ -130,6 +130,11 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
       if (!first || !second) return { type: "bar", data: [] };
 
       const categories = new Set([first.category, second.category]);
+      const ageOrAreaOrOther = [
+        AttributeCategory.AGE,
+        AttributeCategory.AREA,
+        AttributeCategory.OTHER,
+      ].find((cat) => categories.has(cat));
 
       // STACKED AREA CHART: X - TIME, Y - GENDER
       if (categories.has(AttributeCategory.GENDER) && categories.has(AttributeCategory.TIME)) {
@@ -180,15 +185,9 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         };
       }
 
-      const timeOrAreaOrOther = [
-        AttributeCategory.AGE,
-        AttributeCategory.AREA,
-        AttributeCategory.OTHER,
-      ].find((cat) => categories.has(cat));
-
-      if (categories.has(AttributeCategory.TIME) && timeOrAreaOrOther) {
+      if (categories.has(AttributeCategory.TIME) && ageOrAreaOrOther) {
         const timeAttributeId = attributeMapByCategory.get(AttributeCategory.TIME)!._id;
-        const yAxisAttributeId = attributeMapByCategory.get(timeOrAreaOrOther)!._id;
+        const yAxisAttributeId = attributeMapByCategory.get(ageOrAreaOrOther)!._id;
 
         const xAxisKey = "time";
 
@@ -200,6 +199,33 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         });
 
         console.log(`STACKED COLUMN CHART: X - TIME, Y - AGE`, {
+          combinations,
+          data,
+          seriesKeys,
+        });
+
+        return {
+          type: "stacked-column-chart",
+          xAxisKey,
+          seriesKeys,
+          data,
+        };
+      }
+
+      if (categories.has(AttributeCategory.AGE) && categories.has(AttributeCategory.OTHER)) {
+        const ageAttributeId = attributeMapByCategory.get(AttributeCategory.AGE)!._id;
+        const otherAttributeId = attributeMapByCategory.get(AttributeCategory.OTHER)!._id;
+
+        const xAxisKey = "age";
+
+        const { data, seriesKeys } = mapCombinationsForStackedColumnChart({
+          combinations,
+          xAxisAttributeId: otherAttributeId,
+          yAxisAttributeId: ageAttributeId,
+          xAxisKey,
+        });
+
+        console.log(`STACKED COLUMN CHART: X - OTHER, Y - AGE`, {
           combinations,
           data,
           seriesKeys,
@@ -260,10 +286,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         };
       }
 
-      // Map + Column with rotated labels: Province + AGE
-      if (categories.has(AttributeCategory.PROVINCE) && categories.has(AttributeCategory.AGE)) {
-        const ageAttributeId = attributeMapByCategory.get(AttributeCategory.AGE)!._id;
+      // Map + Column with rotated labels: Province + AGE or AREA or OTHER
+      if (categories.has(AttributeCategory.PROVINCE) && ageOrAreaOrOther) {
         const provinceAttributeId = attributeMapByCategory.get(AttributeCategory.PROVINCE)!._id;
+        const ageAttributeId = attributeMapByCategory.get(ageOrAreaOrOther)!._id;
         const columnData = Array.from(
           aggregateByAttributeTitle(combinations, ageAttributeId).entries()
         ).map(([xAxisKey, value]) => ({
@@ -275,7 +301,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
         const data = { columnData, mapData };
 
-        console.log("PROVINCE+AGE MAP + COLUMN WITH ROTATED LABELS", { combinations, data });
+        console.log("PROVINCE+AGE or AREA or OTHER MAP + COLUMN WITH ROTATED LABELS", {
+          combinations,
+          data,
+        });
 
         return {
           type: "map-and-column-with-rotated-labels",
