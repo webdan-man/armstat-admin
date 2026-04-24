@@ -1,17 +1,24 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ImageIcon, Plus, X } from "lucide-react";
+import z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { LangSwitcher } from "@/components/main/LangSwitcher";
 import {
-  MOCK_MAIN_PAGE,
+  EMPTY_MAIN_PAGE,
+  fromApiHomePage,
+  type HomePageLocalizedText,
   type MainHomeBlock,
   type MainLangCode,
   type MainPageMock,
+  type MainUsefulLink,
 } from "@/components/main/main-mock-data";
 import { Button } from "@/components/ui/button";
+import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -22,9 +29,38 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import {
+  fetchHomePage,
+  updateHomePageFeaturedBlocks,
+  updateHomePageHero,
+  updateHomePageNews,
+  updateHomePageUsefulLinks,
+} from "@/services/mainPageService";
+import { fetchSections } from "@/services/sectionsService";
+import type { Section } from "@/types/section";
 
 const fieldBorder =
   "rounded-[9px] border border-[#e6e7eb] bg-white text-[14px] text-[#2c2c2c] placeholder:text-[#646464] shadow-none";
+
+const heroFormSchema = z.object({
+  heroTitle: z.object({
+    hy: z.string().min(1, "Վերնագիրը պարտադիր է"),
+    en: z.string().optional(),
+    ru: z.string().optional(),
+  }),
+  heroShortDescription: z.object({
+    hy: z.string().min(1, "Կարճ նկարագրությունը պարտադիր է"),
+    en: z.string().optional(),
+    ru: z.string().optional(),
+  }),
+  heroTextContent: z.object({
+    hy: z.string().min(1, "Տեքստը պարտադիր է"),
+    en: z.string().optional(),
+    ru: z.string().optional(),
+  }),
+  heroImage: z.string(),
+});
+type HeroFormValues = z.infer<typeof heroFormSchema>;
 
 function ContentCard({
   children,
@@ -46,28 +82,14 @@ function ContentCard({
 }
 
 function KeyRow({
-  keyValue,
-  onKeyChange,
   lang,
   onLangChange,
 }: {
-  keyValue: string;
-  onKeyChange: (v: string) => void;
   lang: MainLangCode;
   onLangChange: (v: MainLangCode) => void;
 }) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-4">
-      <div className="flex min-w-0 flex-1 flex-col gap-2 sm:max-w-[575px]">
-        <span className="text-[14px] font-medium text-[#2c2c2c]">Key</span>
-        <div className="flex min-w-0 items-center gap-3">
-          <Input
-            value={keyValue}
-            onChange={(e) => onKeyChange(e.target.value)}
-            className={cn("h-9 min-h-9 flex-1", fieldBorder)}
-          />
-        </div>
-      </div>
+    <div className="flex justify-end">
       <LangSwitcher value={lang} onChange={onLangChange} className="sm:shrink-0" />
     </div>
   );
@@ -114,15 +136,96 @@ function UploadStub({ compact }: { compact?: boolean }) {
   );
 }
 
+function HeroImageControl({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  async function onFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Խնդրում ենք ընտրել նկարի ֆայլ։");
+      return;
+    }
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result;
+          if (typeof result !== "string") {
+            reject(new Error("Invalid image data"));
+            return;
+          }
+          resolve(result);
+        };
+        reader.onerror = () => reject(reader.error ?? new Error("Failed to read file"));
+        reader.readAsDataURL(file);
+      });
+      onChange(base64);
+    } catch {
+      toast.error("Չհաջողվեց բեռնել նկարը։");
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="sr-only"
+        onChange={(event) => void onFileSelected(event)}
+      />
+      <div className="flex items-end gap-4">
+        <div className="flex h-[69px] w-[68px] shrink-0 items-center justify-center overflow-hidden rounded border border-[#e6e7eb] bg-[#f3f4f6]">
+          {value ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={value} alt="Hero" className="h-full w-full object-cover" />
+          ) : (
+            <ImageIcon className="size-6 text-[#c8c8c8]" />
+          )}
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-[13px] text-[#2c2c2c]">Նկար</span>
+          <button
+            type="button"
+            className="w-fit text-left text-[13px] font-medium text-[#275199] hover:underline"
+            onClick={() => inputRef.current?.click()}
+          >
+            {value ? "Փոխարինել" : "Վերբեռնել"}
+          </button>
+          {value ? (
+            <button
+              type="button"
+              className="w-fit text-left text-[13px] font-medium text-[#c00] hover:underline"
+              onClick={() => onChange("")}
+            >
+              Ջնջել
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function BlockCard({
   block,
   lang,
   onLangChange,
+  availableSections,
   onChange,
 }: {
   block: MainHomeBlock;
   lang: MainLangCode;
   onLangChange: (v: MainLangCode) => void;
+  availableSections: Section[];
   onChange: (next: MainHomeBlock) => void;
 }) {
   return (
@@ -137,26 +240,51 @@ function BlockCard({
       </div>
 
       <div className="flex flex-col gap-4">
-        <KeyRow
-          keyValue={block.key}
-          onKeyChange={(key) => onChange({ ...block, key })}
-          lang={lang}
-          onLangChange={onLangChange}
-        />
+        <KeyRow lang={lang} onLangChange={onLangChange} />
+
+        <div className="flex flex-col gap-1">
+          <span className="text-[12px] text-[#575757]">Title key</span>
+          <Input
+            value={block.titleKey}
+            onChange={(e) => onChange({ ...block, titleKey: e.target.value })}
+            className={cn("h-9", fieldBorder)}
+          />
+        </div>
 
         <Input
-          value={block.title}
-          onChange={(e) => onChange({ ...block, title: e.target.value })}
+          value={readLocalizedByLang(block.title, lang)}
+          onChange={(e) =>
+            onChange({
+              ...block,
+              title: writeLocalizedByLang(block.title, e.target.value, lang),
+            })
+          }
           className={cn("h-9", fieldBorder)}
+          placeholder="Վերնագիր"
         />
 
         <Input
-          value={block.subtitle}
-          onChange={(e) => onChange({ ...block, subtitle: e.target.value })}
-          className={cn("min-h-[35px]", fieldBorder)}
+          value={readLocalizedByLang(block.subtitle, lang)}
+          onChange={(e) =>
+            onChange({
+              ...block,
+              subtitle: writeLocalizedByLang(block.subtitle, e.target.value, lang),
+            })
+          }
+          className={cn("h-9", fieldBorder)}
+          placeholder="Ենթավերնագիր"
         />
 
-        <Select>
+        <Select
+          value=""
+          onValueChange={(id) => {
+            if (block.sectionIds.includes(id)) return;
+            onChange({
+              ...block,
+              sectionIds: [...block.sectionIds, id],
+            });
+          }}
+        >
           <SelectTrigger
             className={cn(
               "h-9 w-full max-w-[306px] sm:w-[306px]",
@@ -164,72 +292,294 @@ function BlockCard({
               "text-[#2c2c2c]"
             )}
           >
-            <SelectValue placeholder={block.categoryPlaceholder} />
+            <SelectValue placeholder="Ընտրել բաժինները" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="c1">Կատեգորիա 1</SelectItem>
-            <SelectItem value="c2">Կատեգորիա 2</SelectItem>
+            {availableSections
+              .filter((s) => !block.sectionIds.includes(s._id))
+              .map((s) => (
+                <SelectItem key={s._id} value={s._id}>
+                  {s.name}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
 
         <div className="flex flex-wrap gap-3">
-          {block.tags.map((tag, i) => (
-            <TagChip
-              key={`${block.id}-tag-${i}`}
-              label={tag}
-              onRemove={() =>
-                onChange({
-                  ...block,
-                  tags: block.tags.filter((_, j) => j !== i),
-                })
-              }
-            />
-          ))}
+          {block.sectionIds.map((sid) => {
+            const fromAvail = availableSections.find((s) => s._id === sid);
+            const fromEmbedded = block.sections.find((s) => s._id === sid);
+            const label = fromAvail?.name ?? fromEmbedded?.name ?? sid;
+            return (
+              <TagChip
+                key={sid}
+                label={label}
+                onRemove={() =>
+                  onChange({
+                    ...block,
+                    sectionIds: block.sectionIds.filter((x) => x !== sid),
+                  })
+                }
+              />
+            );
+          })}
         </div>
 
-        <UploadStub compact />
+        <HeroImageControl
+          value={block.image}
+          onChange={(image) => onChange({ ...block, image })}
+        />
       </div>
     </ContentCard>
   );
 }
 
-export function MainPageEditor() {
-  const initialJson = useRef(JSON.stringify(MOCK_MAIN_PAGE));
-  const [lang, setLang] = useState<MainLangCode>("hy");
-  const [data, setData] = useState<MainPageMock>(() =>
-    structuredClone(MOCK_MAIN_PAGE)
-  );
+function UsefulLinkRow({
+  link,
+  lang,
+  onChange,
+  onRemove,
+}: {
+  link: MainUsefulLink;
+  lang: MainLangCode;
+  onChange: (next: MainUsefulLink) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3 rounded-[9px] border border-[#e6e7eb] bg-white p-4">
+      <div className="flex flex-col gap-1">
+        <span className="text-[12px] text-[#575757]">Անվանում</span>
+        <Input
+          value={readLocalizedByLang(link.name, lang)}
+          onChange={(e) =>
+            onChange({
+              ...link,
+              name: writeLocalizedByLang(link.name, e.target.value, lang),
+            })
+          }
+          className={cn("h-9", fieldBorder)}
+        />
+      </div>
 
+      <div className="flex flex-col gap-1">
+        <span className="text-[12px] text-[#575757]">Նկարագրություն</span>
+        <Textarea
+          value={readLocalizedByLang(link.description, lang)}
+          onChange={(e) =>
+            onChange({
+              ...link,
+              description: writeLocalizedByLang(link.description, e.target.value, lang),
+            })
+          }
+          className={cn("min-h-[70px] resize-y", fieldBorder)}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <span className="text-[12px] text-[#575757]">Հղում</span>
+        <Input
+          value={link.url}
+          placeholder="https://"
+          onChange={(e) => onChange({ ...link, url: e.target.value })}
+          className={cn("h-9", fieldBorder)}
+        />
+      </div>
+
+      <HeroImageControl
+        value={link.image}
+        onChange={(image) => onChange({ ...link, image })}
+      />
+
+      <div className="flex justify-end">
+        <button
+          type="button"
+          className="text-[13px] font-medium text-[#c00] hover:underline"
+          onClick={onRemove}
+        >
+          Ջնջել
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ensureHyLocalized(localized: HomePageLocalizedText): HomePageLocalizedText {
+  return { ...localized, hy: localized.hy ?? "" };
+}
+
+function readLocalizedByLang(localized: HomePageLocalizedText, lang: MainLangCode): string {
+  if (lang === "hy") return localized.hy ?? "";
+  return localized[lang] ?? "";
+}
+
+function writeLocalizedByLang(
+  current: HomePageLocalizedText,
+  value: string,
+  lang: MainLangCode
+): HomePageLocalizedText {
+  const next: HomePageLocalizedText =
+    lang === "hy" ? { ...current, hy: value } : { ...current, [lang]: value };
+  return ensureHyLocalized(next);
+}
+
+export function MainPageEditor() {
+  const initialJson = useRef(JSON.stringify(EMPTY_MAIN_PAGE));
+  const [heroLang, setHeroLang] = useState<MainLangCode>("hy");
+  const [usefulLinksLang, setUsefulLinksLang] = useState<MainLangCode>("hy");
+  const [blockLangById, setBlockLangById] = useState<Record<string, MainLangCode>>({});
+  const [availableSections, setAvailableSections] = useState<Section[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [data, setData] = useState<MainPageMock>(() =>
+    structuredClone(EMPTY_MAIN_PAGE)
+  );
+  const form = useForm<HeroFormValues>({
+    resolver: zodResolver(heroFormSchema),
+    defaultValues: {
+      heroTitle: EMPTY_MAIN_PAGE.heroTitle,
+      heroShortDescription: EMPTY_MAIN_PAGE.heroShortDescription,
+      heroTextContent: EMPTY_MAIN_PAGE.heroTextContent,
+      heroImage: EMPTY_MAIN_PAGE.heroImage,
+    },
+    mode: "onSubmit",
+  });
   const dirty = JSON.stringify(data) !== initialJson.current;
 
-  function handleSave() {
+  function getBlockLang(blockId: string): MainLangCode {
+    return blockLangById[blockId] ?? "hy";
+  }
+
+  function setBlockLang(blockId: string, nextLang: MainLangCode) {
+    setBlockLangById((prev) => ({ ...prev, [blockId]: nextLang }));
+  }
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadHomePage() {
+      try {
+        const [homeResponse, sectionsResponse] = await Promise.all([
+          fetchHomePage(),
+          fetchSections().catch((error) => {
+            console.warn("Failed to load sections", error);
+            return [] as Section[];
+          }),
+        ]);
+        if (isCancelled) return;
+        const mapped = fromApiHomePage(homeResponse, "hy");
+        initialJson.current = JSON.stringify(mapped);
+        setData(mapped);
+        setAvailableSections(sectionsResponse);
+        form.reset({
+          heroTitle: mapped.heroTitle,
+          heroShortDescription: mapped.heroShortDescription,
+          heroTextContent: mapped.heroTextContent,
+          heroImage: mapped.heroImage,
+        });
+      } catch (error) {
+        if (isCancelled) return;
+        toast.error("Չհաջողվեց բեռնել գլխավոր էջի տվյալները։");
+      }
+    }
+
+    loadHomePage();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  function readLocalized(localized: HomePageLocalizedText): string {
+    return readLocalizedByLang(localized, heroLang);
+  }
+
+  function writeLocalized(
+    current: HomePageLocalizedText,
+    value: string
+  ): HomePageLocalizedText {
+    return writeLocalizedByLang(current, value, heroLang);
+  }
+
+  function toFeaturedBlocksPayload() {
+    return {
+      featuredBlocks: data.blocks.map((block) => ({
+        titleKey: block.titleKey,
+        sectionIds: block.sectionIds,
+        image: block.image,
+      })),
+    };
+  }
+
+  function toUsefulLinksPayload() {
+    const usefulLinks = data.usefulLinks.links.map((link) => ({
+      url: link.url,
+      image: link.image,
+      name: ensureHyLocalized(link.name),
+      description: ensureHyLocalized(link.description),
+    }));
+
+    return {
+      usefulLinks,
+    };
+  }
+
+  function toNewsPayload() {
+    return {
+      newsIds: data.news.selectedIds,
+    };
+  }
+
+  async function handleSave() {
     if (!dirty) {
       toast.message("Փոփոխություններ չկան։");
       return;
     }
-    initialJson.current = JSON.stringify(data);
-    setData((d) => structuredClone(d));
-    toast.success("Պահպանված է (մոկ)։");
+    try {
+      setIsSaving(true);
+      await updateHomePageHero({
+        heroTitle: ensureHyLocalized(data.heroTitle),
+        heroShortDescription: ensureHyLocalized(data.heroShortDescription),
+        heroTextContent: ensureHyLocalized(data.heroTextContent),
+        heroImage: data.heroImage,
+      });
+      await updateHomePageFeaturedBlocks(toFeaturedBlocksPayload());
+      await updateHomePageNews(toNewsPayload());
+      await updateHomePageUsefulLinks(toUsefulLinksPayload());
+      initialJson.current = JSON.stringify(data);
+      setData((d) => structuredClone(d));
+      toast.success("Պահպանված է։");
+    } catch {
+      toast.error("Չհաջողվեց պահպանել գլխավոր էջի տվյալները։");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
-    <div className="flex w-full flex-col gap-5 pb-10">
+    <Form {...form}>
+      <form
+        className="flex w-full flex-col gap-5 pb-10"
+        onSubmit={form.handleSubmit(
+          async () => {
+            await handleSave();
+          },
+          () => toast.error("Hero բաժնի պարտադիր դաշտերը լրացված չեն։")
+        )}
+      >
       <div className="flex min-h-11 w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">
           Գլխավոր էջի Փոփոխություններ
         </h1>
         <Button
-          type="button"
-          disabled={!dirty}
+          type="submit"
+          disabled={!dirty || isSaving}
           className={cn(
             "h-11 min-w-[256px] rounded-lg px-6 text-[13px] font-medium",
             dirty
               ? "border-0 bg-[#004d99] text-white hover:bg-[#004080]"
               : "cursor-not-allowed border-0 bg-[#ededed] text-[#8b8b8b] hover:bg-[#ededed]"
           )}
-          onClick={handleSave}
         >
-          Պահպանել Փոփոխությունները
+          {isSaving ? "Պահպանվում է..." : "Պահպանել Փոփոխությունները"}
         </Button>
       </div>
 
@@ -237,34 +587,67 @@ export function MainPageEditor() {
         <h2 className="mb-4 text-[14px] font-medium text-[#2c2c2c]">Վերնագրեր</h2>
         <div className="flex flex-col gap-4">
           <KeyRow
-            keyValue={data.headers.key}
-            onKeyChange={(key) =>
-              setData((d) => ({ ...d, headers: { ...d.headers, key } }))
-            }
-            lang={lang}
-            onLangChange={setLang}
+            lang={heroLang}
+            onLangChange={setHeroLang}
           />
           <Input
-            value={data.headers.title}
+            value={readLocalized(data.heroTitle)}
             onChange={(e) =>
-              setData((d) => ({
-                ...d,
-                headers: { ...d.headers, title: e.target.value },
-              }))
+              setData((d) => {
+                const heroTitle = writeLocalized(d.heroTitle, e.target.value);
+                form.setValue("heroTitle", ensureHyLocalized(heroTitle), { shouldValidate: true });
+                return {
+                  ...d,
+                  heroTitle,
+                };
+              })
             }
             className={cn("h-9", fieldBorder)}
           />
           <Textarea
-            value={data.headers.description}
+            value={readLocalized(data.heroShortDescription)}
             onChange={(e) =>
-              setData((d) => ({
-                ...d,
-                headers: { ...d.headers, description: e.target.value },
-              }))
+              setData((d) => {
+                const heroShortDescription = writeLocalized(d.heroShortDescription, e.target.value);
+                form.setValue("heroShortDescription", ensureHyLocalized(heroShortDescription), {
+                  shouldValidate: true,
+                });
+                return {
+                  ...d,
+                  heroShortDescription,
+                };
+              })
             }
             className={cn("min-h-[70px] resize-y", fieldBorder)}
           />
-          <UploadStub />
+          <Textarea
+            value={readLocalized(data.heroTextContent)}
+            onChange={(e) =>
+              setData((d) => {
+                const heroTextContent = writeLocalized(d.heroTextContent, e.target.value);
+                form.setValue("heroTextContent", ensureHyLocalized(heroTextContent), {
+                  shouldValidate: true,
+                });
+                return {
+                  ...d,
+                  heroTextContent,
+                };
+              })
+            }
+            className={cn("min-h-[70px] resize-y", fieldBorder)}
+          />
+          <HeroImageControl
+            value={data.heroImage}
+            onChange={(heroImage) =>
+              setData((d) => {
+                form.setValue("heroImage", heroImage, { shouldValidate: true });
+                return {
+                  ...d,
+                  heroImage,
+                };
+              })
+            }
+          />
         </div>
       </ContentCard>
 
@@ -272,8 +655,9 @@ export function MainPageEditor() {
         <BlockCard
           key={block.id}
           block={block}
-          lang={lang}
-          onLangChange={setLang}
+          lang={getBlockLang(block.id)}
+          onLangChange={(nextLang) => setBlockLang(block.id, nextLang)}
+          availableSections={availableSections}
           onChange={(next) =>
             setData((d) => ({
               ...d,
@@ -286,72 +670,55 @@ export function MainPageEditor() {
       <ContentCard>
         <h2 className="mb-4 text-[14px] font-medium text-[#2c2c2c]">Նորություններ</h2>
         <div className="flex flex-col gap-4">
-          <KeyRow
-            keyValue={data.news.key}
-            onKeyChange={(key) =>
-              setData((d) => ({ ...d, news: { ...d.news, key } }))
+          <Select
+            value=""
+            onValueChange={(id) =>
+              setData((d) =>
+                d.news.selectedIds.includes(id)
+                  ? d
+                  : {
+                      ...d,
+                      news: {
+                        ...d.news,
+                        selectedIds: [...d.news.selectedIds, id],
+                      },
+                    }
+              )
             }
-            lang={lang}
-            onLangChange={setLang}
-          />
-          <Select>
+          >
             <SelectTrigger className={cn("h-9 w-full", fieldBorder)}>
-              <SelectValue placeholder={data.news.placeholder} />
+              <SelectValue placeholder="Ընտրել նորությունները" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="n1">Նորություն 1</SelectItem>
-              <SelectItem value="n2">Նորություն 2</SelectItem>
+              {data.news.availableItems
+                .filter((item) => !data.news.selectedIds.includes(item._id))
+                .map((item) => (
+                  <SelectItem key={item._id} value={item._id}>
+                    {item.title}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
           <div className="flex flex-wrap gap-3">
-            {data.news.selectedTitles.map((title, i) => (
-              <TagChip
-                key={`news-${i}`}
-                label={title}
-                onRemove={() =>
-                  setData((d) => ({
-                    ...d,
-                    news: {
-                      ...d.news,
-                      selectedTitles: d.news.selectedTitles.filter((_, j) => j !== i),
-                    },
-                  }))
-                }
-              />
-            ))}
+            {data.news.selectedIds.map((id) => {
+              const item = data.news.availableItems.find((n) => n._id === id);
+              return (
+                <TagChip
+                  key={id}
+                  label={item?.title ?? id}
+                  onRemove={() =>
+                    setData((d) => ({
+                      ...d,
+                      news: {
+                        ...d.news,
+                        selectedIds: d.news.selectedIds.filter((x) => x !== id),
+                      },
+                    }))
+                  }
+                />
+              );
+            })}
           </div>
-        </div>
-      </ContentCard>
-
-      <ContentCard>
-        <h2 className="mb-4 text-[14px] font-medium text-[#2c2c2c]">Գովազդային Բաժին</h2>
-        <div className="flex flex-col gap-4">
-          <KeyRow
-            keyValue={data.ad.key}
-            onKeyChange={(key) =>
-              setData((d) => ({ ...d, ad: { ...d.ad, key } }))
-            }
-            lang={lang}
-            onLangChange={setLang}
-          />
-          <Input
-            value={data.ad.title}
-            onChange={(e) =>
-              setData((d) => ({ ...d, ad: { ...d.ad, title: e.target.value } }))
-            }
-            className={cn("h-9", fieldBorder)}
-          />
-          <Textarea
-            value={data.ad.description}
-            onChange={(e) =>
-              setData((d) => ({
-                ...d,
-                ad: { ...d.ad, description: e.target.value },
-              }))
-            }
-            className={cn("min-h-[70px] resize-y", fieldBorder)}
-          />
-          <UploadStub />
         </div>
       </ContentCard>
 
@@ -361,7 +728,7 @@ export function MainPageEditor() {
           <Button
             type="button"
             variant="ghost"
-            className="h-auto gap-2 p-0 text-[14px] font-medium text-[#275199] hover:bg-transparent hover:text-[#275199] hover:underline"
+            className="h-auto gap-2 p-0 text-[14px] flex items-center font-medium text-[#275199] hover:bg-transparent hover:text-[#275199] hover:underline"
             onClick={() =>
               setData((d) => ({
                 ...d,
@@ -371,7 +738,10 @@ export function MainPageEditor() {
                     ...d.usefulLinks.links,
                     {
                       id: `l-${Date.now()}`,
-                      title: "Վերնագրիրը այստեղ",
+                      url: "",
+                      name: { hy: "Վերնագրիրը այստեղ" },
+                      description: { hy: "" },
+                      image: "",
                     },
                   ],
                 },
@@ -386,54 +756,39 @@ export function MainPageEditor() {
         </div>
         <div className="flex flex-col gap-4">
           <KeyRow
-            keyValue={data.usefulLinks.key}
-            onKeyChange={(key) =>
-              setData((d) => ({
-                ...d,
-                usefulLinks: { ...d.usefulLinks, key },
-              }))
-            }
-            lang={lang}
-            onLangChange={setLang}
+            lang={usefulLinksLang}
+            onLangChange={setUsefulLinksLang}
           />
           <div className="flex flex-col gap-3">
             {data.usefulLinks.links.map((link) => (
-              <div
+              <UsefulLinkRow
                 key={link.id}
-                className="flex min-h-[54px] items-center justify-between gap-4 rounded-[9px] bg-[#f8f8f8] px-4 py-3"
-              >
-                <span className="min-w-0 flex-1 text-[13px] text-[#1a1a1a]">
-                  {link.title}
-                </span>
-                <div className="flex shrink-0 items-center gap-6">
-                  <button
-                    type="button"
-                    className="text-[13px] font-medium text-[#275199] hover:underline"
-                    onClick={() => toast.message("Խմբագրումը կկապվի API-ի հետ։")}
-                  >
-                    Խմբագրել
-                  </button>
-                  <button
-                    type="button"
-                    className="text-[13px] font-medium text-[#c00] hover:underline"
-                    onClick={() =>
-                      setData((d) => ({
-                        ...d,
-                        usefulLinks: {
-                          ...d.usefulLinks,
-                          links: d.usefulLinks.links.filter((l) => l.id !== link.id),
-                        },
-                      }))
-                    }
-                  >
-                    Ջնջել
-                  </button>
-                </div>
-              </div>
+                link={link}
+                lang={usefulLinksLang}
+                onChange={(next) =>
+                  setData((d) => ({
+                    ...d,
+                    usefulLinks: {
+                      ...d.usefulLinks,
+                      links: d.usefulLinks.links.map((l) => (l.id === link.id ? next : l)),
+                    },
+                  }))
+                }
+                onRemove={() =>
+                  setData((d) => ({
+                    ...d,
+                    usefulLinks: {
+                      ...d.usefulLinks,
+                      links: d.usefulLinks.links.filter((l) => l.id !== link.id),
+                    },
+                  }))
+                }
+              />
             ))}
           </div>
         </div>
       </ContentCard>
-    </div>
+      </form>
+    </Form>
   );
 }

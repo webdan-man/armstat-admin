@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${notoSansArmenian.className} h-full antialiased`}
+      className={`${notoSansArmenian.className} overflow-hidden antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}
