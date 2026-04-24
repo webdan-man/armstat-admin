@@ -7,6 +7,7 @@ interface ClusteredColumnChartProps<T extends Record<string, string | number>> {
   data: T[];
   xAxisKey: string; // e.g. xAxisKey
   seriesKeys?: string[];
+  stacked?: boolean;
 }
 
 const containerId = "clustered-column-chartdiv";
@@ -15,6 +16,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
   data,
   xAxisKey,
   seriesKeys = [],
+  stacked = false,
 }: ClusteredColumnChartProps<T>) {
   useLayoutEffect(() => {
     const root = am5.Root.new(containerId);
@@ -94,6 +96,8 @@ function ClusteredColumnChart<T extends Record<string, string>>({
           yAxis: yAxis,
           valueYField: fieldName,
           categoryXField: xAxisKey,
+          stacked,
+          clustered: !stacked,
         })
       );
 
@@ -134,7 +138,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
     return () => {
       root.dispose();
     };
-  }, [data, xAxisKey, seriesKeys]);
+  }, [data, xAxisKey, seriesKeys, stacked]);
 
   return (
     <div>

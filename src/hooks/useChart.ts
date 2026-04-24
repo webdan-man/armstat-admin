@@ -22,6 +22,7 @@ import { mapCombinationsForMapAndStackedBarWithNegativeValuesChart } from "@/uti
 import { mapCombinationsForMapAndClusteredColumnChart } from "@/utils/chart/map-combinations-for-map-and-clustered-column-chart.util";
 import { mapCombinationsForClusteredColumnChartStacked } from "@/utils/chart/map-combinations-for-clustered-column-chart-stacked.util";
 import { mapCombinationsForPyramidByFrameCategory } from "@/utils/chart/map-combinations-for-pyramid";
+import { mapCombinationsForClusteredColumnChartStacked3D } from "@/utils/chart/map-combinations-for-clustered-column-chart-stacked-3d.util";
 
 type ChartType =
   | "bar"
@@ -418,6 +419,47 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
       const categories = new Set([first.category, second.category, third.category]);
 
       const has = (cat: AttributeCategory) => categories.has(cat);
+
+      // Clustered Column chart (stacked): TIME + AGE + (AREA or OTHER)
+      // CYGX rule: choose grouping dimension by fewer options; series = next; aggregate over last.
+      if (
+        has(AttributeCategory.TIME) &&
+        has(AttributeCategory.AGE) &&
+        (has(AttributeCategory.AREA) || has(AttributeCategory.OTHER)) &&
+        !has(AttributeCategory.GENDER) &&
+        !has(AttributeCategory.PROVINCE)
+      ) {
+        const timeAttributeId = attributeMapByCategory.get(AttributeCategory.TIME)!._id;
+        const ageAttributeId = attributeMapByCategory.get(AttributeCategory.AGE)!._id;
+        const thirdCategory = has(AttributeCategory.AREA) ? AttributeCategory.AREA : AttributeCategory.OTHER;
+        const thirdAttributeId = attributeMapByCategory.get(thirdCategory)!._id;
+
+        const { data, seriesKeys, xAxisKey, groupedBy, seriesBy, aggregatedOver } =
+          mapCombinationsForClusteredColumnChartStacked3D({
+            combinations,
+            attributes: [
+              { id: timeAttributeId, key: "time" },
+              { id: ageAttributeId, key: "age" },
+              { id: thirdAttributeId, key: thirdCategory === AttributeCategory.AREA ? "area" : "other" },
+            ],
+          });
+
+        console.log("TIME+AGE+(AREA|OTHER) CLUSTERED COLUMN (STACKED) CYGX", {
+          combinations,
+          groupedBy,
+          seriesBy,
+          aggregatedOver,
+          data,
+          seriesKeys,
+        });
+
+        return {
+          type: "clustered-column-chart-stacked",
+          xAxisKey,
+          seriesKeys,
+          data,
+        };
+      }
 
       // Clustered Column chart (stacked): Gender + Time + (Area or Other)
       // CXG rule: choose TIME vs (AREA/OTHER) based on which has fewer options.

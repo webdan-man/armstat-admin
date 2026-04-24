@@ -186,7 +186,12 @@ const Chart = ({ combinations = [] }: ChartProps) => {
     case "clustered-column-chart":
       return (
         <div>
-          <ClusteredColumnChart xAxisKey={xAxisKey as string} data={data} seriesKeys={seriesKeys} />
+          <ClusteredColumnChart
+            xAxisKey={xAxisKey as string}
+            data={data}
+            seriesKeys={seriesKeys}
+            stacked={false}
+          />
         </div>
       );
     case "clustered-column-chart-stacked":
@@ -196,6 +201,7 @@ const Chart = ({ combinations = [] }: ChartProps) => {
             xAxisKey={xAxisKey as string}
             data={data}
             seriesKeys={seriesKeys}
+            stacked
           />
         </div>
       );
