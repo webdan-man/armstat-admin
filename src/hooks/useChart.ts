@@ -461,6 +461,47 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         };
       }
 
+      // Clustered Column chart (stacked): TIME + AREA + OTHER
+      // CYGX rule: choose grouping dimension by fewer options; series = next; aggregate over last.
+      if (
+        has(AttributeCategory.TIME) &&
+        has(AttributeCategory.AREA) &&
+        has(AttributeCategory.OTHER) &&
+        !has(AttributeCategory.GENDER) &&
+        !has(AttributeCategory.PROVINCE) &&
+        !has(AttributeCategory.AGE)
+      ) {
+        const timeAttributeId = attributeMapByCategory.get(AttributeCategory.TIME)!._id;
+        const areaAttributeId = attributeMapByCategory.get(AttributeCategory.AREA)!._id;
+        const otherAttributeId = attributeMapByCategory.get(AttributeCategory.OTHER)!._id;
+
+        const { data, seriesKeys, xAxisKey, groupedBy, seriesBy, aggregatedOver } =
+          mapCombinationsForClusteredColumnChartStacked3D({
+            combinations,
+            attributes: [
+              { id: timeAttributeId, key: "time" },
+              { id: areaAttributeId, key: "area" },
+              { id: otherAttributeId, key: "other" },
+            ],
+          });
+
+        console.log("TIME+AREA+OTHER CLUSTERED COLUMN (STACKED) CYGX", {
+          combinations,
+          groupedBy,
+          seriesBy,
+          aggregatedOver,
+          data,
+          seriesKeys,
+        });
+
+        return {
+          type: "clustered-column-chart-stacked",
+          xAxisKey,
+          seriesKeys,
+          data,
+        };
+      }
+
       // Clustered Column chart (stacked): Gender + Time + (Area or Other)
       // CXG rule: choose TIME vs (AREA/OTHER) based on which has fewer options.
       // Gender is the series; the non-chosen CXG dimension is aggregated over.
