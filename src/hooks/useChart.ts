@@ -17,6 +17,7 @@ import { mapCombinationsForPyramid } from "@/utils/chart/map-combinations-for-py
 import { yearTotalsToLineData } from "@/utils/chart/year-totals-to-line-data";
 import { aggregateByAttributeTitle } from "@/utils/chart/aggregate-by-attribute-title";
 import { mapCombinationsForMapAndStackedAreaChart } from "@/utils/chart/map-combinations-for-map-and-stacked-area-chart.util";
+import { mapCombinationsForMapAndStackedColumnChart } from "@/utils/chart/map-combinations-for-map-and-stacked-column-chart.util";
 
 type ChartType =
   | "bar"
@@ -27,6 +28,7 @@ type ChartType =
   | "map-and-column-with-rotated-labels"
   | "map-and-line-graph"
   | "map-and-stacked-area-chart"
+  | "map-and-stacked-column-chart"
   | "armenia-map-provinces"
   | "column-with-rotated-labels"
   | "stacked-area-chart"
@@ -407,6 +409,43 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         return {
           type: "map-and-stacked-area-chart",
           xAxisKey: "year",
+          seriesKeys,
+          data,
+        };
+      }
+
+      // Map + Stacked column chart: Gender + Province + (Area or Other)
+      // Stacked column: X - (AREA or OTHER) (aggregated across provinces), series - GENDER
+      if (
+        has(AttributeCategory.GENDER) &&
+        has(AttributeCategory.PROVINCE) &&
+        (has(AttributeCategory.AREA) || has(AttributeCategory.OTHER))
+      ) {
+        const stackedCategory = has(AttributeCategory.AREA) ? AttributeCategory.AREA : AttributeCategory.OTHER;
+        const stackedAttributeId = attributeMapByCategory.get(stackedCategory)!._id;
+        const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
+        const provinceAttributeId = attributeMapByCategory.get(AttributeCategory.PROVINCE)!._id;
+
+        // Keep the existing stacked-column shape used elsewhere in this hook.
+        const xAxisKey = "gender";
+
+        const { data, seriesKeys } = mapCombinationsForMapAndStackedColumnChart({
+          combinations,
+          stackedAttributeId,
+          genderAttributeId,
+          provinceAttributeId,
+          xAxisKey,
+        });
+
+        console.log(`GENDER+PROVINCE+${stackedCategory} MAP + STACKED COLUMN`, {
+          combinations,
+          data,
+          seriesKeys,
+        });
+
+        return {
+          type: "map-and-stacked-column-chart",
+          xAxisKey,
           seriesKeys,
           data,
         };
