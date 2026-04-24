@@ -20,6 +20,7 @@ import { mapCombinationsForMapAndStackedAreaChart } from "@/utils/chart/map-comb
 import { mapCombinationsForMapAndStackedColumnChart } from "@/utils/chart/map-combinations-for-map-and-stacked-column-chart.util";
 import { mapCombinationsForMapAndStackedBarWithNegativeValuesChart } from "@/utils/chart/map-combinations-for-map-and-stacked-bar-with-negative-values-chart.util";
 import { mapCombinationsForMapAndClusteredColumnChart } from "@/utils/chart/map-combinations-for-map-and-clustered-column-chart.util";
+import { mapCombinationsForClusteredColumnChartStacked } from "@/utils/chart/map-combinations-for-clustered-column-chart-stacked.util";
 
 type ChartType =
   | "bar"
@@ -39,7 +40,8 @@ type ChartType =
   | "stacked-column-chart"
   | "stacked-bar-chart-with-negative-values"
   | "historical-population-pyramid"
-  | "clustered-column-chart";
+  | "clustered-column-chart"
+  | "clustered-column-chart-stacked";
 
 function getUniqueAttributeIds(combinations: MetricCombination[]): string[] {
   const ids = new Set<string>();
@@ -386,6 +388,46 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
       const categories = new Set([first.category, second.category, third.category]);
 
       const has = (cat: AttributeCategory) => categories.has(cat);
+
+      // Clustered Column chart (stacked): Gender + Time + (Area or Other)
+      // CXG rule: choose TIME vs (AREA/OTHER) based on which has fewer options.
+      // Gender is the series; the non-chosen CXG dimension is aggregated over.
+      if (
+        has(AttributeCategory.GENDER) &&
+        has(AttributeCategory.TIME) &&
+        (has(AttributeCategory.AREA) || has(AttributeCategory.OTHER))
+      ) {
+        const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
+        const timeAttributeId = attributeMapByCategory.get(AttributeCategory.TIME)!._id;
+        const stackedCategory = has(AttributeCategory.AREA) ? AttributeCategory.AREA : AttributeCategory.OTHER;
+        const secondAttributeId = attributeMapByCategory.get(stackedCategory)!._id;
+
+        const { data, seriesKeys, xAxisKey, groupedBy, aggregatedOver } =
+          mapCombinationsForClusteredColumnChartStacked({
+            combinations,
+            genderAttributeId,
+            firstCtgAttribute: { id: timeAttributeId, key: "time" },
+            secondCtgAttribute: {
+              id: secondAttributeId,
+              key: stackedCategory === AttributeCategory.AREA ? "area" : "other",
+            },
+          });
+
+        console.log("GENDER+TIME+(AREA|OTHER) CLUSTERED COLUMN (STACKED) CXG", {
+          combinations,
+          groupedBy,
+          aggregatedOver,
+          data,
+          seriesKeys,
+        });
+
+        return {
+          type: "clustered-column-chart-stacked",
+          xAxisKey,
+          seriesKeys,
+          data,
+        };
+      }
 
       // Stacked area chart + Armenia map:
       // Stacked area: X - TIME, series - GENDER (aggregated across provinces)
