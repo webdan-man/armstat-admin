@@ -23,6 +23,7 @@ import { mapCombinationsForMapAndClusteredColumnChart } from "@/utils/chart/map-
 import { mapCombinationsForClusteredColumnChartStacked } from "@/utils/chart/map-combinations-for-clustered-column-chart-stacked.util";
 import { mapCombinationsForPyramidByFrameCategory } from "@/utils/chart/map-combinations-for-pyramid";
 import { mapCombinationsForClusteredColumnChartStacked3D } from "@/utils/chart/map-combinations-for-clustered-column-chart-stacked-3d.util";
+import { mapCombinationsForMapAndClusteredColumnChartCXG } from "@/utils/chart/map-combinations-for-map-and-clustered-column-chart-cxg.util";
 
 type ChartType =
   | "bar"
@@ -425,13 +426,13 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
       if (
         has(AttributeCategory.TIME) &&
         has(AttributeCategory.AGE) &&
-        (has(AttributeCategory.AREA) || has(AttributeCategory.OTHER)) &&
-        !has(AttributeCategory.GENDER) &&
-        !has(AttributeCategory.PROVINCE)
+        (has(AttributeCategory.AREA) || has(AttributeCategory.OTHER))
       ) {
         const timeAttributeId = attributeMapByCategory.get(AttributeCategory.TIME)!._id;
         const ageAttributeId = attributeMapByCategory.get(AttributeCategory.AGE)!._id;
-        const thirdCategory = has(AttributeCategory.AREA) ? AttributeCategory.AREA : AttributeCategory.OTHER;
+        const thirdCategory = has(AttributeCategory.AREA)
+          ? AttributeCategory.AREA
+          : AttributeCategory.OTHER;
         const thirdAttributeId = attributeMapByCategory.get(thirdCategory)!._id;
 
         const { data, seriesKeys, xAxisKey, groupedBy, seriesBy, aggregatedOver } =
@@ -440,7 +441,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
             attributes: [
               { id: timeAttributeId, key: "time" },
               { id: ageAttributeId, key: "age" },
-              { id: thirdAttributeId, key: thirdCategory === AttributeCategory.AREA ? "area" : "other" },
+              {
+                id: thirdAttributeId,
+                key: thirdCategory === AttributeCategory.AREA ? "area" : "other",
+              },
             ],
           });
 
@@ -466,10 +470,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
       if (
         has(AttributeCategory.TIME) &&
         has(AttributeCategory.AREA) &&
-        has(AttributeCategory.OTHER) &&
-        !has(AttributeCategory.GENDER) &&
-        !has(AttributeCategory.PROVINCE) &&
-        !has(AttributeCategory.AGE)
+        has(AttributeCategory.OTHER)
       ) {
         const timeAttributeId = attributeMapByCategory.get(AttributeCategory.TIME)!._id;
         const areaAttributeId = attributeMapByCategory.get(AttributeCategory.AREA)!._id;
@@ -749,6 +750,41 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
         console.log("PROVINCE+AGE+OTHER MAP + CLUSTERED COLUMN (X - OTHER, SERIES - AGE)", {
           combinations,
+          data,
+          seriesKeys,
+        });
+
+        return {
+          type: "map-and-clustered-column-chart",
+          xAxisKey,
+          seriesKeys,
+          data,
+        };
+      }
+
+      // Map + Clustered column chart: Province + Area + Other
+      // CXG rule: choose whether AREA/OTHER goes on X based on fewer options.
+      if (
+        has(AttributeCategory.PROVINCE) &&
+        has(AttributeCategory.AREA) &&
+        has(AttributeCategory.OTHER)
+      ) {
+        const provinceAttributeId = attributeMapByCategory.get(AttributeCategory.PROVINCE)!._id;
+        const areaAttributeId = attributeMapByCategory.get(AttributeCategory.AREA)!._id;
+        const otherAttributeId = attributeMapByCategory.get(AttributeCategory.OTHER)!._id;
+
+        const { data, seriesKeys, xAxisKey, groupedBy, seriesBy } =
+          mapCombinationsForMapAndClusteredColumnChartCXG({
+            combinations,
+            provinceAttributeId,
+            areaAttributeId,
+            otherAttributeId,
+          });
+
+        console.log("PROVINCE+AREA+OTHER MAP + CLUSTERED COLUMN CXG", {
+          combinations,
+          groupedBy,
+          seriesBy,
           data,
           seriesKeys,
         });
