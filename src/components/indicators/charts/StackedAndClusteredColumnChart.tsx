@@ -11,7 +11,7 @@ interface StackedAndClusteredColumnChartProps<T extends Record<string, string | 
 
 const containerId = "stacked-and-clustered-column-chartdiv";
 
-function StackedAndClusteredColumnChart<T extends Record<string, string>>({
+function StackedAndClusteredColumnChart<T extends Record<string, string | number>>({
   data,
   xAxisKey,
   seriesKeys = [],
@@ -76,7 +76,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string>>({
 
     // Add series
     // https://www.amcharts.com/docs/v5/charts/xy-chart/series/
-    function makeSeries(name, fieldName, stacked) {
+    function makeSeries(name: string, fieldName: string, stacked = false) {
       const series = chart.series.push(
         am5xy.ColumnSeries.new(root, {
           stacked: stacked,
@@ -115,7 +115,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string>>({
       legend.data.push(series);
     }
 
-    seriesKeys?.map((key) => makeSeries(key, key));
+    seriesKeys?.forEach((key) => makeSeries(key, key));
 
     // Make stuff animate on load
     // https://www.amcharts.com/docs/v5/concepts/animations/
