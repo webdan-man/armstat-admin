@@ -40,7 +40,7 @@ export default function ArmeniaMapChart({ data }: ArmeniaMapChartProps) {
     );
 
     polygonSeries.mapPolygons.template.setAll({
-      tooltipText: "{name}", // TODO: all translations
+      tooltipText: "{name} {value}", // TODO: all translations
       interactive: true,
     });
 

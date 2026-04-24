@@ -19,6 +19,7 @@ type ChartType =
   | "line-graph"
   | "pie"
   | "semi-pie"
+  | "map-and-semi-pie"
   | "armenia-map-provinces"
   | "column-with-rotated-labels"
   | "stacked-area-chart"
@@ -44,7 +45,7 @@ function getUniqueAttributeIds(combinations: MetricCombination[]): string[] {
 
 function useDetectChartType(combinations: MetricCombination[] | undefined = []): {
   type: ChartType;
-  data: any[];
+  data: any;
   xAxisKey?: string;
   yAxisKey?: string;
   seriesKeys?: string[];
@@ -175,6 +176,39 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         };
       }
 
+      const timeOrAreaOrOther = [
+        AttributeCategory.AGE,
+        AttributeCategory.AREA,
+        AttributeCategory.OTHER,
+      ].find((cat) => categories.has(cat));
+
+      if (categories.has(AttributeCategory.TIME) && timeOrAreaOrOther) {
+        const timeAttributeId = attributeMapByCategory.get(AttributeCategory.TIME)!._id;
+        const yAxisAttributeId = attributeMapByCategory.get(timeOrAreaOrOther)!._id;
+
+        const xAxisKey = "time";
+
+        const { data, seriesKeys } = mapCombinationsForStackedColumnChart({
+          combinations,
+          xAxisAttributeId: timeAttributeId,
+          yAxisAttributeId,
+          xAxisKey,
+        });
+
+        console.log(`STACKED COLUMN CHART: X - TIME, Y - AGE`, {
+          combinations,
+          data,
+          seriesKeys,
+        });
+
+        return {
+          type: "stacked-column-chart",
+          xAxisKey,
+          seriesKeys,
+          data,
+        };
+      }
+
       // STACKED BAR CHART WITH NEGATIVE VALUES: X - GENDER, Y - AGE
       if (categories.has(AttributeCategory.GENDER) && categories.has(AttributeCategory.AGE)) {
         const yAxisKey = "year";
@@ -195,6 +229,38 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           type: "stacked-bar-chart-with-negative-values",
           yAxisKey,
           seriesKeys,
+          data,
+        };
+      }
+
+      // Map + Semi-Circle PIE: X - GENDER, Y - AGE
+      if (categories.has(AttributeCategory.GENDER) && categories.has(AttributeCategory.PROVINCE)) {
+        const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
+        const provinceAttributeId = attributeMapByCategory.get(AttributeCategory.PROVINCE)!._id;
+        // When we have 2 attributes (gender + province), each combination is a (gender, province) pair.
+        // For a semi-pie here we want totals grouped by gender across all provinces.
+        const byGender = new Map<string, number>();
+
+        for (const item of combinations) {
+          const genderEntry = (item.row ?? []).find((r) => r.attributeId === genderAttributeId);
+          const genderTitle = genderEntry?.value?.title ?? "Unknown";
+          const value = Number(item.value) || 0;
+          byGender.set(genderTitle, (byGender.get(genderTitle) ?? 0) + value);
+        }
+
+        const pieData = Array.from(byGender.entries()).map(([category, value]) => ({
+          category,
+          value,
+        }));
+
+        const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
+
+        const data = { pieData, mapData };
+
+        console.log("GENDER+PROVINCE MAP + SEMI-PIE", { combinations, data });
+
+        return {
+          type: "map-and-semi-pie",
           data,
         };
       }
@@ -222,7 +288,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         has(AttributeCategory.AGE) &&
         has(AttributeCategory.TIME)
       ) {
-        const { data, seriesKeys } = mapCombinationsForPyramid({ combinations, attributeMapByCategory });
+        const { data, seriesKeys } = mapCombinationsForPyramid({
+          combinations,
+          attributeMapByCategory,
+        });
         console.log("historical-population-pyramid", {
           combinations,
           data,

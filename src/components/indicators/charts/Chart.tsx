@@ -27,6 +27,17 @@ const Chart = ({ combinations = [] }: ChartProps) => {
   });
 
   switch (chartType) {
+    case "map-and-semi-pie":
+      return (
+        <div>
+          <div>
+            <SemiCircleChart data={data?.pieData ?? []} />
+          </div>
+          <div>
+            <ArmeniaProvincesMap data={data?.mapData ?? []} />
+          </div>
+        </div>
+      );
     case "semi-pie":
       return (
         <div>
