@@ -16,6 +16,7 @@ import { createCombinationAttributesMap } from "@/utils/chart/create-combination
 import { mapCombinationsForPyramid } from "@/utils/chart/map-combinations-for-pyramid";
 import { yearTotalsToLineData } from "@/utils/chart/year-totals-to-line-data";
 import { aggregateByAttributeTitle } from "@/utils/chart/aggregate-by-attribute-title";
+import { mapCombinationsForMapAndStackedAreaChart } from "@/utils/chart/map-combinations-for-map-and-stacked-area-chart.util";
 
 type ChartType =
   | "bar"
@@ -25,6 +26,7 @@ type ChartType =
   | "map-and-semi-pie"
   | "map-and-column-with-rotated-labels"
   | "map-and-line-graph"
+  | "map-and-stacked-area-chart"
   | "armenia-map-provinces"
   | "column-with-rotated-labels"
   | "stacked-area-chart"
@@ -378,6 +380,37 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
       const categories = new Set([first.category, second.category, third.category]);
 
       const has = (cat: AttributeCategory) => categories.has(cat);
+
+      // Stacked area chart + Armenia map:
+      // Stacked area: X - TIME, series - GENDER (aggregated across provinces)
+      if (
+        has(AttributeCategory.PROVINCE) &&
+        has(AttributeCategory.TIME) &&
+        has(AttributeCategory.GENDER)
+      ) {
+        const timeAttributeId = attributeMapByCategory.get(AttributeCategory.TIME)!._id;
+        const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
+        const provinceAttributeId = attributeMapByCategory.get(AttributeCategory.PROVINCE)!._id;
+        const { data, seriesKeys } = mapCombinationsForMapAndStackedAreaChart({
+          combinations,
+          timeAttributeId,
+          genderAttributeId,
+          provinceAttributeId,
+        });
+
+        console.log("PROVINCE+TIME+GENDER MAP + STACKED AREA (TIME X, GENDER SERIES)", {
+          combinations,
+          data,
+          seriesKeys,
+        });
+
+        return {
+          type: "map-and-stacked-area-chart",
+          xAxisKey: "year",
+          seriesKeys,
+          data,
+        };
+      }
 
       if (
         has(AttributeCategory.GENDER) &&

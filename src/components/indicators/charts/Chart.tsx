@@ -50,6 +50,21 @@ const Chart = ({ combinations = [] }: ChartProps) => {
           </div>
         </div>
       );
+    case "map-and-stacked-area-chart":
+      return (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div>
+            <StackedAreaChart
+              data={data?.stackedAreaData ?? []}
+              xAxisKey={xAxisKey}
+              seriesKeys={seriesKeys}
+            />
+          </div>
+          <div>
+            <ArmeniaProvincesMap data={data?.mapData ?? []} />
+          </div>
+        </div>
+      );
     case "map-and-column-with-rotated-labels":
       return (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
