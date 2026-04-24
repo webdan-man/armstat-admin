@@ -80,6 +80,21 @@ const Chart = ({ combinations = [] }: ChartProps) => {
           </div>
         </div>
       );
+    case "map-and-stacked-bar-with-negative-values":
+      return (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div>
+            <StackedBartWithNegativeValuesChart
+              data={data?.barData ?? []}
+              yAxisKey={yAxisKey as string}
+              seriesKeys={seriesKeys}
+            />
+          </div>
+          <div>
+            <ArmeniaProvincesMap data={data?.mapData ?? []} />
+          </div>
+        </div>
+      );
     case "map-and-column-with-rotated-labels":
       return (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

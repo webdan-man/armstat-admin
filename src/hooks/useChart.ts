@@ -18,6 +18,7 @@ import { yearTotalsToLineData } from "@/utils/chart/year-totals-to-line-data";
 import { aggregateByAttributeTitle } from "@/utils/chart/aggregate-by-attribute-title";
 import { mapCombinationsForMapAndStackedAreaChart } from "@/utils/chart/map-combinations-for-map-and-stacked-area-chart.util";
 import { mapCombinationsForMapAndStackedColumnChart } from "@/utils/chart/map-combinations-for-map-and-stacked-column-chart.util";
+import { mapCombinationsForMapAndStackedBarWithNegativeValuesChart } from "@/utils/chart/map-combinations-for-map-and-stacked-bar-with-negative-values-chart.util";
 
 type ChartType =
   | "bar"
@@ -29,6 +30,7 @@ type ChartType =
   | "map-and-line-graph"
   | "map-and-stacked-area-chart"
   | "map-and-stacked-column-chart"
+  | "map-and-stacked-bar-with-negative-values"
   | "armenia-map-provinces"
   | "column-with-rotated-labels"
   | "stacked-area-chart"
@@ -446,6 +448,35 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         return {
           type: "map-and-stacked-column-chart",
           xAxisKey,
+          seriesKeys,
+          data,
+        };
+      }
+
+      // Map + Stacked bar chart with negative values: Province + Gender + Age
+      // Stacked bar (negative values): X - GENDER, Y - AGE
+      if (has(AttributeCategory.PROVINCE) && has(AttributeCategory.GENDER) && has(AttributeCategory.AGE)) {
+        const provinceAttributeId = attributeMapByCategory.get(AttributeCategory.PROVINCE)!._id;
+
+        // This util uses "year" as the label key for the Y axis buckets (age groups).
+        const yAxisKey = "year";
+
+        const { data, seriesKeys } = mapCombinationsForMapAndStackedBarWithNegativeValuesChart({
+          combinations,
+          attributeMapByCategory,
+          provinceAttributeId,
+          yAxisKey,
+        });
+
+        console.log("PROVINCE+GENDER+AGE MAP + STACKED BAR (NEGATIVE VALUES)", {
+          combinations,
+          data,
+          seriesKeys,
+        });
+
+        return {
+          type: "map-and-stacked-bar-with-negative-values",
+          yAxisKey,
           seriesKeys,
           data,
         };
