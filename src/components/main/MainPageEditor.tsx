@@ -36,6 +36,7 @@ import {
   updateHomePageNews,
   updateHomePageUsefulLinks,
 } from "@/services/mainPageService";
+import { fetchNews } from "@/services/newsService";
 import { fetchSections } from "@/services/sectionsService";
 import type { Section } from "@/types/section";
 
@@ -136,6 +137,82 @@ function UploadStub({ compact }: { compact?: boolean }) {
   );
 }
 
+function resolveHomePageImageSrc(value: string): string {
+  if (!value) return "";
+  if (value.startsWith("blob:") || value.startsWith("data:")) return value;
+  if (value.startsWith("http://") || value.startsWith("https://")) return value;
+  const base = (process.env.NEXT_PUBLIC_IMAGE_STORAGE_URL ?? "").replace(/\/$/, "");
+  return `${base}${value.startsWith("/") ? "" : "/"}${value}`;
+}
+
+function HeroImageFileControl({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (next: { previewUrl: string; file: File | null }) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const resolvedImageSrc = resolveHomePageImageSrc(value);
+
+  async function onFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Խնդրում ենք ընտրել նկարի ֆայլ։");
+      return;
+    }
+    const previewUrl = URL.createObjectURL(file);
+    if (value.startsWith("blob:")) URL.revokeObjectURL(value);
+    onChange({ previewUrl, file });
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="sr-only"
+        onChange={(event) => void onFileSelected(event)}
+      />
+      <div className="flex items-end gap-4">
+        <div className="flex h-[69px] w-[68px] shrink-0 items-center justify-center overflow-hidden rounded border border-[#e6e7eb] bg-[#f3f4f6]">
+          {value ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={resolvedImageSrc} alt="Hero" className="h-full w-full object-cover" />
+          ) : (
+            <ImageIcon className="size-6 text-[#c8c8c8]" />
+          )}
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-[13px] text-[#2c2c2c]">Նկար</span>
+          <button
+            type="button"
+            className="w-fit text-left text-[13px] font-medium text-[#275199] hover:underline"
+            onClick={() => inputRef.current?.click()}
+          >
+            {value ? "Փոխարինել" : "Վերբեռնել"}
+          </button>
+          {value ? (
+            <button
+              type="button"
+              className="w-fit text-left text-[13px] font-medium text-[#c00] hover:underline"
+              onClick={() => {
+                if (value.startsWith("blob:")) URL.revokeObjectURL(value);
+                onChange({ previewUrl: "", file: null });
+              }}
+            >
+              Ջնջել
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function HeroImageControl({
   value,
   onChange,
@@ -144,6 +221,7 @@ function HeroImageControl({
   onChange: (next: string) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const resolvedImageSrc = resolveHomePageImageSrc(value);
 
   async function onFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -186,7 +264,7 @@ function HeroImageControl({
         <div className="flex h-[69px] w-[68px] shrink-0 items-center justify-center overflow-hidden rounded border border-[#e6e7eb] bg-[#f3f4f6]">
           {value ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={value} alt="Hero" className="h-full w-full object-cover" />
+            <img src={resolvedImageSrc} alt="Hero" className="h-full w-full object-cover" />
           ) : (
             <ImageIcon className="size-6 text-[#c8c8c8]" />
           )}
@@ -217,16 +295,20 @@ function HeroImageControl({
 
 function BlockCard({
   block,
+  index,
   lang,
   onLangChange,
   availableSections,
   onChange,
+  onImageFileChange,
 }: {
   block: MainHomeBlock;
+  index: number;
   lang: MainLangCode;
   onLangChange: (v: MainLangCode) => void;
   availableSections: Section[];
   onChange: (next: MainHomeBlock) => void;
+  onImageFileChange: (index: number, file: File | null) => void;
 }) {
   return (
     <ContentCard>
@@ -325,9 +407,12 @@ function BlockCard({
           })}
         </div>
 
-        <HeroImageControl
+        <HeroImageFileControl
           value={block.image}
-          onChange={(image) => onChange({ ...block, image })}
+          onChange={({ previewUrl, file }) => {
+            onImageFileChange(index, file);
+            onChange({ ...block, image: previewUrl });
+          }}
         />
       </div>
     </ContentCard>
@@ -338,11 +423,13 @@ function UsefulLinkRow({
   link,
   lang,
   onChange,
+  onImageFileChange,
   onRemove,
 }: {
   link: MainUsefulLink;
   lang: MainLangCode;
   onChange: (next: MainUsefulLink) => void;
+  onImageFileChange: (file: File | null) => void;
   onRemove: () => void;
 }) {
   return (
@@ -385,9 +472,12 @@ function UsefulLinkRow({
         />
       </div>
 
-      <HeroImageControl
+      <HeroImageFileControl
         value={link.image}
-        onChange={(image) => onChange({ ...link, image })}
+        onChange={({ previewUrl, file }) => {
+          onImageFileChange(file);
+          onChange({ ...link, image: previewUrl });
+        }}
       />
 
       <div className="flex justify-end">
@@ -429,6 +519,13 @@ export function MainPageEditor() {
   const [blockLangById, setBlockLangById] = useState<Record<string, MainLangCode>>({});
   const [availableSections, setAvailableSections] = useState<Section[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
+  const [featuredBlockFiles, setFeaturedBlockFiles] = useState<Array<File | null>>([
+    null,
+    null,
+    null,
+  ]);
+  const [usefulLinkFiles, setUsefulLinkFiles] = useState<Array<File | null>>([]);
   const [data, setData] = useState<MainPageMock>(() =>
     structuredClone(EMPTY_MAIN_PAGE)
   );
@@ -457,16 +554,24 @@ export function MainPageEditor() {
 
     async function loadHomePage() {
       try {
-        const [homeResponse, sectionsResponse] = await Promise.all([
+        const [homeResponse, sectionsResponse, newsResponse] = await Promise.all([
           fetchHomePage(),
           fetchSections().catch((error) => {
             console.warn("Failed to load sections", error);
             return [] as Section[];
           }),
+          fetchNews().catch((error) => {
+            console.warn("Failed to load news", error);
+            return [];
+          }),
         ]);
         if (isCancelled) return;
         const mapped = fromApiHomePage(homeResponse, "hy");
+        mapped.news.availableItems = Array.isArray(newsResponse) ? newsResponse : [];
         initialJson.current = JSON.stringify(mapped);
+        setHeroImageFile(null);
+        setFeaturedBlockFiles([null, null, null]);
+        setUsefulLinkFiles(mapped.usefulLinks.links.map(() => null));
         setData(mapped);
         setAvailableSections(sectionsResponse);
         form.reset({
@@ -504,8 +609,8 @@ export function MainPageEditor() {
       featuredBlocks: data.blocks.map((block) => ({
         titleKey: block.titleKey,
         sectionIds: block.sectionIds,
-        image: block.image,
       })),
+      featuredBlockImages: featuredBlockFiles,
     };
   }
 
@@ -519,6 +624,7 @@ export function MainPageEditor() {
 
     return {
       usefulLinks,
+      usefulLinkImages: usefulLinkFiles,
     };
   }
 
@@ -539,13 +645,15 @@ export function MainPageEditor() {
         heroTitle: ensureHyLocalized(data.heroTitle),
         heroShortDescription: ensureHyLocalized(data.heroShortDescription),
         heroTextContent: ensureHyLocalized(data.heroTextContent),
-        heroImage: data.heroImage,
+        heroImage: heroImageFile,
       });
       await updateHomePageFeaturedBlocks(toFeaturedBlocksPayload());
       await updateHomePageNews(toNewsPayload());
       await updateHomePageUsefulLinks(toUsefulLinksPayload());
       initialJson.current = JSON.stringify(data);
       setData((d) => structuredClone(d));
+      setHeroImageFile(null);
+      setFeaturedBlockFiles([null, null, null]);
       toast.success("Պահպանված է։");
     } catch {
       toast.error("Չհաջողվեց պահպանել գլխավոր էջի տվյալները։");
@@ -636,17 +744,18 @@ export function MainPageEditor() {
             }
             className={cn("min-h-[70px] resize-y", fieldBorder)}
           />
-          <HeroImageControl
+          <HeroImageFileControl
             value={data.heroImage}
-            onChange={(heroImage) =>
+            onChange={({ previewUrl, file }) => {
+              setHeroImageFile(file);
               setData((d) => {
-                form.setValue("heroImage", heroImage, { shouldValidate: true });
+                form.setValue("heroImage", previewUrl, { shouldValidate: true });
                 return {
                   ...d,
-                  heroImage,
+                  heroImage: previewUrl,
                 };
-              })
-            }
+              });
+            }}
           />
         </div>
       </ContentCard>
@@ -655,6 +764,7 @@ export function MainPageEditor() {
         <BlockCard
           key={block.id}
           block={block}
+          index={index}
           lang={getBlockLang(block.id)}
           onLangChange={(nextLang) => setBlockLang(block.id, nextLang)}
           availableSections={availableSections}
@@ -663,6 +773,13 @@ export function MainPageEditor() {
               ...d,
               blocks: d.blocks.map((b, i) => (i === index ? next : b)),
             }))
+          }
+          onImageFileChange={(i, file) =>
+            setFeaturedBlockFiles((prev) => {
+              const next = prev.slice();
+              next[i] = file;
+              return next;
+            })
           }
         />
       ))}
@@ -729,7 +846,8 @@ export function MainPageEditor() {
             type="button"
             variant="ghost"
             className="h-auto gap-2 p-0 text-[14px] flex items-center font-medium text-[#275199] hover:bg-transparent hover:text-[#275199] hover:underline"
-            onClick={() =>
+            onClick={() => {
+              setUsefulLinkFiles((prev) => [...prev, null]);
               setData((d) => ({
                 ...d,
                 usefulLinks: {
@@ -745,8 +863,8 @@ export function MainPageEditor() {
                     },
                   ],
                 },
-              }))
-            }
+              }));
+            }}
           >
             <span className="flex size-6 items-center justify-center rounded-full bg-[#275199] text-white">
               <Plus className="size-3.5" strokeWidth={2.5} />
@@ -774,15 +892,30 @@ export function MainPageEditor() {
                     },
                   }))
                 }
-                onRemove={() =>
+                onImageFileChange={(file) => {
+                  setUsefulLinkFiles((prev) => {
+                    const index = data.usefulLinks.links.findIndex((l) => l.id === link.id);
+                    if (index < 0) return prev;
+                    const next = prev.slice();
+                    next[index] = file;
+                    return next;
+                  });
+                }}
+                onRemove={() => {
+                  const index = data.usefulLinks.links.findIndex((l) => l.id === link.id);
+                  if (index >= 0) {
+                    const currentValue = data.usefulLinks.links[index]?.image ?? "";
+                    if (currentValue.startsWith("blob:")) URL.revokeObjectURL(currentValue);
+                    setUsefulLinkFiles((prev) => prev.filter((_, i) => i !== index));
+                  }
                   setData((d) => ({
                     ...d,
                     usefulLinks: {
                       ...d.usefulLinks,
                       links: d.usefulLinks.links.filter((l) => l.id !== link.id),
                     },
-                  }))
-                }
+                  }));
+                }}
               />
             ))}
           </div>

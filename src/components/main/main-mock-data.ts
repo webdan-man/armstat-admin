@@ -121,59 +121,6 @@ export type HomePageNewsItem = {
   updatedAt: string;
 };
 
-export const MOCK_NEWS_ITEMS: HomePageNewsItem[] = [
-  {
-    _id: "mock-news-1",
-    title: "Վիճակագրական տարեգիրք 2025",
-    content: "Հրապարակվել է ամենամյա վիճակագրական տարեգիրքը։",
-    url: "https://example.com/news/1",
-    image: "",
-    publishedAt: "2026-01-15T10:00:00.000Z",
-    createdAt: "2026-01-15T10:00:00.000Z",
-    updatedAt: "2026-01-15T10:00:00.000Z",
-  },
-  {
-    _id: "mock-news-2",
-    title: "Գնաճի ցուցանիշը մարտ ամսին",
-    content: "Գնաճը կազմել է 3.1% նախորդ տարվա մարտի համեմատ։",
-    url: "https://example.com/news/2",
-    image: "",
-    publishedAt: "2026-04-05T09:30:00.000Z",
-    createdAt: "2026-04-05T09:30:00.000Z",
-    updatedAt: "2026-04-05T09:30:00.000Z",
-  },
-  {
-    _id: "mock-news-3",
-    title: "Գործազրկության մակարդակը նվազել է",
-    content: "Գործազրկության մակարդակը նվազել է 1.2 տոկոսային կետով։",
-    url: "https://example.com/news/3",
-    image: "",
-    publishedAt: "2026-03-20T12:00:00.000Z",
-    createdAt: "2026-03-20T12:00:00.000Z",
-    updatedAt: "2026-03-20T12:00:00.000Z",
-  },
-  {
-    _id: "mock-news-4",
-    title: "Արտահանման ցուցանիշներ 2026 Q1",
-    content: "Առաջին եռամսյակի արտահանման ցուցանիշները աճել են 8.4%-ով։",
-    url: "https://example.com/news/4",
-    image: "",
-    publishedAt: "2026-04-10T08:00:00.000Z",
-    createdAt: "2026-04-10T08:00:00.000Z",
-    updatedAt: "2026-04-10T08:00:00.000Z",
-  },
-  {
-    _id: "mock-news-5",
-    title: "Բնակչության թվաքանակի վերջին տվյալները",
-    content: "Հրապարակվել են բնակչության վերջին գրանցված ցուցանիշները։",
-    url: "https://example.com/news/5",
-    image: "",
-    publishedAt: "2026-02-28T14:45:00.000Z",
-    createdAt: "2026-02-28T14:45:00.000Z",
-    updatedAt: "2026-02-28T14:45:00.000Z",
-  },
-];
-
 export type HomePageUsefulLink = {
   url: string;
   image: string;
@@ -226,10 +173,7 @@ export function fromApiHomePage(
     heroImage: apiData.heroImage ?? "",
     blocks: mappedBlocks,
     news: {
-      availableItems:
-        apiData.newsItems && apiData.newsItems.length > 0
-          ? apiData.newsItems
-          : MOCK_NEWS_ITEMS,
+      availableItems: apiData.newsItems ?? [],
       selectedIds: apiData.newsIds ?? [],
     },
     usefulLinks: {

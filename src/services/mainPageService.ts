@@ -13,13 +13,20 @@ export type UpdateHomePageHeroPayload = {
   heroTitle: HomePageLocalizedText;
   heroShortDescription: HomePageLocalizedText;
   heroTextContent: HomePageLocalizedText;
-  heroImage: string;
+  heroImage?: File | null;
 };
 
 export async function updateHomePageHero(payload: UpdateHomePageHeroPayload) {
-  return apiClient<HomePageApiResponse>("/home-page/hero", {
+  const formData = new FormData();
+  formData.append("heroTitle", JSON.stringify(payload.heroTitle));
+  formData.append("heroShortDescription", JSON.stringify(payload.heroShortDescription));
+  formData.append("heroTextContent", JSON.stringify(payload.heroTextContent));
+  if (payload.heroImage) {
+    formData.append("heroImage", payload.heroImage);
+  }
+  return apiClient<HomePageApiResponse>("/api/home-page/hero", {
     method: "PUT",
-    body: JSON.stringify(payload),
+    body: formData,
   });
 }
 
@@ -27,27 +34,55 @@ export type UpdateHomePageFeaturedBlocksPayload = {
   featuredBlocks: Array<{
     titleKey: string;
     sectionIds: string[];
-    image: string;
   }>;
+  featuredBlockImages: Array<File | null | undefined>;
 };
 
-export async function updateHomePageFeaturedBlocks(
-  payload: UpdateHomePageFeaturedBlocksPayload
-) {
-  return apiClient<HomePageApiResponse>("/home-page/featured-blocks", {
+export async function updateHomePageFeaturedBlocks(payload: UpdateHomePageFeaturedBlocksPayload) {
+  const blocks = payload.featuredBlocks.slice(0, 3);
+  const images = payload.featuredBlockImages.slice(0, 3);
+  const formData = new FormData();
+
+  formData.append(
+    "featuredBlocks",
+    JSON.stringify(
+      blocks.map((b) => ({
+        titleKey: b.titleKey,
+        sectionIds: b.sectionIds,
+      }))
+    )
+  );
+
+  if (images[0]) formData.append("featuredBlockImage0", images[0]);
+  if (images[1]) formData.append("featuredBlockImage1", images[1]);
+  if (images[2]) formData.append("featuredBlockImage2", images[2]);
+
+  return apiClient<HomePageApiResponse>("/api/home-page/featured-blocks", {
     method: "PUT",
-    body: JSON.stringify(payload),
+    body: formData,
   });
 }
 
 export type UpdateHomePageUsefulLinksPayload = {
   usefulLinks: HomePageUsefulLink[];
+  usefulLinkImages: Array<File | null | undefined>;
 };
 
 export async function updateHomePageUsefulLinks(payload: UpdateHomePageUsefulLinksPayload) {
-  return apiClient<HomePageApiResponse>("/home-page/useful-links", {
+  const links = payload.usefulLinks;
+  const images = payload.usefulLinkImages.slice(0, links.length);
+
+  const formData = new FormData();
+  formData.append("usefulLinks", JSON.stringify(links));
+
+  images.forEach((file, index) => {
+    if (!file) return;
+    formData.append(`usefulLinkImage${index}`, file);
+  });
+
+  return apiClient<HomePageApiResponse>("/api/home-page/useful-links", {
     method: "PUT",
-    body: JSON.stringify(payload),
+    body: formData,
   });
 }
 
@@ -56,7 +91,7 @@ export type UpdateHomePageNewsPayload = {
 };
 
 export async function updateHomePageNews(payload: UpdateHomePageNewsPayload) {
-  return apiClient<HomePageApiResponse>("/home-page/news", {
+  return apiClient<HomePageApiResponse>("/api/home-page/news", {
     method: "PUT",
     body: JSON.stringify(payload),
   });
