@@ -3,6 +3,12 @@ import apiClient from "@/lib/api/api-client";
 
 export type LocalizedText = Partial<Record<MainLangCode, string>> & { hy?: string };
 
+export type ContactUsSocialLink = {
+  type: string;
+  name: string;
+  link: string;
+};
+
 export type ContactUsSectionAddress = {
   type: "address";
   value: string;
@@ -27,8 +33,10 @@ export type ContactUsApiResponse = {
   _id: string;
   title: LocalizedText;
   description: LocalizedText;
+  notificationsEmailRow?: LocalizedText;
   sections: ContactUsSection[];
   mapSection: ContactUsMapSection;
+  socialLinks?: ContactUsSocialLink[];
   createdAt?: string;
   updatedAt?: string;
 };
@@ -40,8 +48,10 @@ export async function fetchContactUs(): Promise<ContactUsApiResponse> {
 export type UpdateContactUsPayload = {
   title: LocalizedText;
   description: LocalizedText;
+  notificationsEmailRow?: LocalizedText;
   sections: ContactUsSection[];
   mapSection: ContactUsMapSection;
+  socialLinks?: ContactUsSocialLink[];
 };
 
 export async function updateContactUs(payload: UpdateContactUsPayload): Promise<ContactUsApiResponse> {

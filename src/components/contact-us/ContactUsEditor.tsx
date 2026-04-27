@@ -22,6 +22,7 @@ import {
   updateContactUs,
   type ContactUsApiResponse,
   type ContactUsSection,
+  type ContactUsSocialLink,
   type LocalizedText,
 } from "@/services/contactUsService";
 
@@ -80,15 +81,29 @@ function LabeledField({
 
 type ContactUsEditorSection = ContactUsSection & { id: string };
 
+const SOCIAL_LINK_PRESETS: Array<{
+  type: string;
+  name: string;
+  label: string;
+}> = [
+  { type: "facebook", name: "Facebook", label: "Facebook" },
+  { type: "instagram", name: "Instagram", label: "Instagram" },
+  { type: "telegram", name: "Telegram", label: "Telegram" },
+  { type: "youtube", name: "Youtube", label: "Youtube" },
+  { type: "x", name: "X / Twitter", label: "X / Twitter" },
+];
+
 type ContactUsEditorState = {
   _id: string;
   title: LocalizedText;
   description: LocalizedText;
+  notificationsEmailRow: LocalizedText;
   sections: ContactUsEditorSection[];
   mapSection: {
     title: string;
     value: string;
   };
+  socialLinks: ContactUsSocialLink[];
 };
 
 function ensureHyLocalized(localized: LocalizedText): LocalizedText {
@@ -199,8 +214,10 @@ export function ContactUsEditor() {
     _id: "",
     title: { hy: "" },
     description: { hy: "" },
+    notificationsEmailRow: { hy: "" },
     sections: [],
     mapSection: { title: "", value: "" },
+    socialLinks: SOCIAL_LINK_PRESETS.map((p) => ({ type: p.type, name: p.name, link: "" })),
   }));
 
   const dirty = JSON.stringify(data) !== initialJson.current;
@@ -248,11 +265,17 @@ export function ContactUsEditor() {
       await updateContactUs({
         title: ensureHyLocalized(data.title),
         description: ensureHyLocalized(data.description),
+        notificationsEmailRow: ensureHyLocalized(data.notificationsEmailRow),
         sections: data.sections.map(({ id: _id, ...s }) => s),
         mapSection: {
           title: data.mapSection.title ?? "",
           value: data.mapSection.value ?? "",
         },
+        socialLinks: data.socialLinks.map((s) => ({
+          type: s.type ?? "",
+          name: s.name ?? "",
+          link: s.link ?? "",
+        })),
       });
 
       initialJson.current = JSON.stringify(data);
@@ -316,6 +339,21 @@ export function ContactUsEditor() {
 
       <ContentCard>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-[14px] font-medium text-[#2c2c2c]">Ծանուցումների էլ․ հասցե</h2>
+          <LangSwitcher value={lang} onChange={setLang} />
+        </div>
+        <Input
+          value={readLocalized(data.notificationsEmailRow)}
+          onChange={(e) =>
+            setData((d) => ({ ...d, notificationsEmailRow: writeLocalized(d.notificationsEmailRow, e.target.value) }))
+          }
+          className={cn("h-9", fieldBorder)}
+          placeholder="example@domain.com"
+        />
+      </ContentCard>
+
+      <ContentCard>
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-[14px] font-medium text-[#2c2c2c]">Բաժիններ</h2>
           <Button
             type="button"
@@ -360,6 +398,41 @@ export function ContactUsEditor() {
       </ContentCard>
 
       <ContentCard>
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-[14px] font-medium text-[#2c2c2c]">Սոցիալական հղումներ</h2>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          {SOCIAL_LINK_PRESETS.map((preset) => {
+            const value = data.socialLinks.find((s) => s.type === preset.type)?.link ?? "";
+            return (
+              <div key={preset.type} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
+                <span className="w-24 shrink-0 text-[12px] font-medium text-[#575757]">
+                  {preset.label}
+                </span>
+                <Input
+                  value={value}
+                  onChange={(e) => {
+                    const link = e.target.value;
+                    setData((d) => ({
+                      ...d,
+                      socialLinks: SOCIAL_LINK_PRESETS.map((p) => {
+                        const existing = d.socialLinks.find((s) => s.type === p.type);
+                        const nextLink = p.type === preset.type ? link : (existing?.link ?? "");
+                        return { type: p.type, name: p.name, link: nextLink };
+                      }),
+                    }));
+                  }}
+                  className={cn("h-9 flex-1 sm:max-w-[507px]", fieldBorder)}
+                  placeholder="https://"
+                />
+              </div>
+            );
+          })}
+        </div>
+      </ContentCard>
+
+      <ContentCard>
         <h2 className="mb-4 text-[14px] font-medium text-[#2c2c2c]">Քարտեզ</h2>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
@@ -387,10 +460,12 @@ export function ContactUsEditor() {
 }
 
 function fromApiContactUs(api: ContactUsApiResponse): ContactUsEditorState {
+  const incomingLinks = Array.isArray(api.socialLinks) ? api.socialLinks : [];
   return {
     _id: api._id ?? "",
     title: ensureHyLocalized(api.title ?? {}),
     description: ensureHyLocalized(api.description ?? {}),
+    notificationsEmailRow: ensureHyLocalized(api.notificationsEmailRow ?? {}),
     sections: Array.isArray(api.sections)
       ? api.sections.map((s, index) => ({
           id: `section-${index}-${Date.now()}`,
@@ -409,5 +484,13 @@ function fromApiContactUs(api: ContactUsApiResponse): ContactUsEditorState {
       title: api.mapSection?.title ?? "",
       value: api.mapSection?.value ?? "",
     },
+    socialLinks: SOCIAL_LINK_PRESETS.map((preset) => {
+      const existing = incomingLinks.find((s) => s.type === preset.type);
+      return {
+        type: preset.type,
+        name: preset.name,
+        link: existing?.link ?? "",
+      };
+    }),
   };
 }
