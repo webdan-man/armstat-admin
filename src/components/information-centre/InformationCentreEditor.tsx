@@ -30,7 +30,7 @@ type InformationCenterEditorState = {
     title: LocalizedText;
     description: LocalizedText;
     link: string;
-    image: string;
+    file: string;
   }>;
 };
 
@@ -96,7 +96,7 @@ function ImageFileControl({
     event.target.value = "";
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      toast.error("Խնդրում ենք ընտրել նկարի ֆայլ։");
+      toast.error("Խնդրում ենք ընտրել ֆայլ։");
       return;
     }
     const previewUrl = URL.createObjectURL(file);
@@ -216,11 +216,11 @@ function SectionEditor({
       </div>
 
       <ImageFileControl
-        value={section.image}
-        label="Նկար"
+        value={section.file}
+        label="Ֆայլ"
         onChange={({ previewUrl, file }) => {
           onImageFileChange(file);
-          onChange({ ...section, image: previewUrl });
+          onChange({ ...section, file: previewUrl });
         }}
       />
     </div>
@@ -290,7 +290,7 @@ export function InformationCentreEditor() {
         title: ensureHyLocalized(s.title),
         description: ensureHyLocalized(s.description),
         link: s.link,
-        image: s.image,
+        file: s.file,
       }));
 
       await updateInformationCenter({
@@ -324,7 +324,7 @@ export function InformationCentreEditor() {
           title: { hy: "" },
           description: { hy: "" },
           link: "",
-          image: "",
+          file: "",
         },
       ],
     }));
@@ -373,7 +373,7 @@ export function InformationCentreEditor() {
           />
           <ImageFileControl
             value={data.image}
-            label="Նկար"
+            label="Ֆայլ"
             onChange={({ previewUrl, file }) => {
               setPageImageFile(file);
               setData((d) => ({ ...d, image: previewUrl }));
@@ -425,7 +425,7 @@ export function InformationCentreEditor() {
                 })
               }
               onRemove={() => {
-                const currentValue = data.sections[index]?.image ?? "";
+                const currentValue = data.sections[index]?.file ?? "";
                 if (currentValue.startsWith("blob:")) URL.revokeObjectURL(currentValue);
                 setSectionImageFiles((prev) => prev.filter((_, i) => i !== index));
                 setData((d) => ({
@@ -453,7 +453,7 @@ function fromApiInformationCenter(api: InformationCenterApiResponse): Informatio
           title: ensureHyLocalized(s.title ?? {}),
           description: ensureHyLocalized(s.description ?? {}),
           link: s.link ?? "",
-          image: s.image ?? "",
+          file: s.file ?? "",
         }))
       : [],
   };

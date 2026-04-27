@@ -7,7 +7,7 @@ export type InformationCenterSection = {
   title: LocalizedText;
   description: LocalizedText;
   link: string;
-  image: string;
+  file: string;
 };
 
 export type InformationCenterApiResponse = {
@@ -32,7 +32,7 @@ export type UpdateInformationCenterPayload = {
     title: LocalizedText;
     description: LocalizedText;
     link: string;
-    image: string;
+    file: string;
   }>;
   sectionImages: Array<File | null | undefined>;
 };
@@ -48,7 +48,7 @@ export async function updateInformationCenter(payload: UpdateInformationCenterPa
         title: s.title,
         description: s.description,
         link: s.link,
-        image: s.image,
+        file: s.file,
       }))
     )
   );
