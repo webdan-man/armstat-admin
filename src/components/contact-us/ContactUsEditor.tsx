@@ -1,16 +1,9 @@
 "use client";
 
-import React, { useRef, useState } from "react";
-import { Plus, Search } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  CONTACT_TYPE_LABEL,
-  MOCK_CONTACT_US,
-  type ContactUsBlock,
-  type ContactUsBlockType,
-  type ContactUsMock,
-} from "@/components/contact-us/contact-us-mock-data";
 import { LangSwitcher } from "@/components/main/LangSwitcher";
 import type { MainLangCode } from "@/components/main/main-mock-data";
 import { Button } from "@/components/ui/button";
@@ -24,12 +17,24 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import {
+  fetchContactUs,
+  updateContactUs,
+  type ContactUsApiResponse,
+  type ContactUsSection,
+  type LocalizedText,
+} from "@/services/contactUsService";
 
 const fieldBorder =
   "rounded-[9px] border border-[#e6e7eb] bg-white text-[14px] text-[#2c2c2c] placeholder:text-[#646464] shadow-none";
 
 const selectTypeClass =
   "h-9 w-full max-w-[249px] rounded-[9px] border-[#c8c8c8] bg-white text-[13px] text-[#2c2c2c] shadow-none";
+
+const CONTACT_TYPE_LABEL: Record<ContactUsSection["type"], string> = {
+  address: "Տեսակ: Հասցե",
+  info: "Տեսակ: Տվյալներ",
+};
 
 function ContentCard({
   children,
@@ -46,32 +51,6 @@ function ContentCard({
       )}
     >
       {children}
-    </div>
-  );
-}
-
-function KeyRow({
-  keyValue,
-  onKeyChange,
-  lang,
-  onLangChange,
-}: {
-  keyValue: string;
-  onKeyChange: (v: string) => void;
-  lang: MainLangCode;
-  onLangChange: (v: MainLangCode) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-4">
-      <div className="flex min-w-0 flex-1 flex-col gap-2 sm:max-w-[575px]">
-        <span className="text-[14px] font-medium text-[#2c2c2c]">Key</span>
-        <Input
-          value={keyValue}
-          onChange={(e) => onKeyChange(e.target.value)}
-          className={cn("h-9 min-h-9", fieldBorder)}
-        />
-      </div>
-      <LangSwitcher value={lang} onChange={onLangChange} className="sm:shrink-0" />
     </div>
   );
 }
@@ -99,117 +78,197 @@ function LabeledField({
   );
 }
 
-function ContactBlockCard({
-  block,
+type ContactUsEditorSection = ContactUsSection & { id: string };
+
+type ContactUsEditorState = {
+  _id: string;
+  title: LocalizedText;
+  description: LocalizedText;
+  sections: ContactUsEditorSection[];
+  mapSection: {
+    title: string;
+    value: string;
+  };
+};
+
+function ensureHyLocalized(localized: LocalizedText): LocalizedText {
+  return { ...localized, hy: localized.hy ?? "" };
+}
+
+function readLocalizedByLang(localized: LocalizedText, lang: MainLangCode): string {
+  if (lang === "hy") return localized.hy ?? "";
+  return localized[lang] ?? "";
+}
+
+function writeLocalizedByLang(current: LocalizedText, value: string, lang: MainLangCode): LocalizedText {
+  const next: LocalizedText = lang === "hy" ? { ...current, hy: value } : { ...current, [lang]: value };
+  return ensureHyLocalized(next);
+}
+
+function SectionCard({
+  section,
+  index,
   lang,
   onLangChange,
   onChange,
+  onRemove,
 }: {
-  block: ContactUsBlock;
+  section: ContactUsEditorSection;
+  index: number;
   lang: MainLangCode;
   onLangChange: (v: MainLangCode) => void;
-  onChange: (next: ContactUsBlock) => void;
+  onChange: (next: ContactUsEditorSection) => void;
+  onRemove: () => void;
 }) {
+  const indexLabel = index + 1 < 10 ? `0${index + 1}` : String(index + 1);
   return (
     <div className="space-y-4 rounded-[9px] border border-[#dbdbdc] p-5">
+              <p className="mb-2 text-[15px] font-medium text-[#2c2c2c]">{indexLabel}</p>
+
       <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <Select
-          value={block.type}
-          onValueChange={(v) =>
-            onChange({ ...block, type: v as ContactUsBlockType })
-          }
+          value={section.type}
+          onValueChange={(v) => {
+            if (v === "address") {
+              onChange({ id: section.id, type: "address", value: "" });
+              return;
+            }
+            onChange({ id: section.id, type: "info", title: "", phone: "", email: "", link: "" });
+          }}
         >
           <SelectTrigger className={selectTypeClass}>
-            <SelectValue placeholder={CONTACT_TYPE_LABEL[block.type]} />
+            <SelectValue placeholder={CONTACT_TYPE_LABEL[section.type]} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="address">{CONTACT_TYPE_LABEL.address}</SelectItem>
-            <SelectItem value="data">{CONTACT_TYPE_LABEL.data}</SelectItem>
-            <SelectItem value="phone">{CONTACT_TYPE_LABEL.phone}</SelectItem>
+            <SelectItem value="info">{CONTACT_TYPE_LABEL.info}</SelectItem>
           </SelectContent>
         </Select>
         <LangSwitcher value={lang} onChange={onLangChange} />
       </div>
 
-      {block.type === "address" ? (
+      {section.type === "address" ? (
         <div className="flex flex-col gap-3">
           <Input
-            value={block.addressShort ?? ""}
-            onChange={(e) =>
-              onChange({ ...block, addressShort: e.target.value })
-            }
+            value={section.value ?? ""}
+            onChange={(e) => onChange({ ...section, value: e.target.value })}
             className={cn("h-9 w-full", fieldBorder)}
             placeholder="Հասցե"
-          />
-          <Input
-            value={block.addressFull ?? ""}
-            onChange={(e) =>
-              onChange({ ...block, addressFull: e.target.value })
-            }
-            className={cn("h-9 w-full", fieldBorder)}
           />
         </div>
       ) : (
         <div className="flex flex-col gap-4">
           <Input
-            value={block.departmentTitle ?? ""}
-            onChange={(e) =>
-              onChange({ ...block, departmentTitle: e.target.value })
-            }
+            value={section.title ?? ""}
+            onChange={(e) => onChange({ ...section, title: e.target.value })}
             className={cn("min-h-9 w-full", fieldBorder)}
+            placeholder="Վերնագիր"
           />
           <LabeledField
             label="Հեռախոս"
-            value={block.phone ?? ""}
-            onChange={(phone) => onChange({ ...block, phone })}
+            value={section.phone ?? ""}
+            onChange={(phone) => onChange({ ...section, phone })}
           />
           <LabeledField
             label="Հղում"
-            value={block.link ?? ""}
-            onChange={(link) => onChange({ ...block, link })}
+            value={section.link ?? ""}
+            onChange={(link) => onChange({ ...section, link })}
           />
           <LabeledField
             label="Էլ. հասցե"
-            value={block.email ?? ""}
-            onChange={(email) => onChange({ ...block, email })}
+            value={section.email ?? ""}
+            onChange={(email) => onChange({ ...section, email })}
           />
         </div>
       )}
+
+      <div className="flex justify-end">
+        <button type="button" className="text-[13px] font-medium text-[#c00] hover:underline" onClick={onRemove}>
+          Ջնջել
+        </button>
+      </div>
     </div>
   );
 }
 
 export function ContactUsEditor() {
-  const initialJson = useRef(JSON.stringify(MOCK_CONTACT_US));
+  const initialJson = useRef(JSON.stringify({}));
   const [lang, setLang] = useState<MainLangCode>("hy");
-  const [data, setData] = useState<ContactUsMock>(() =>
-    structuredClone(MOCK_CONTACT_US)
-  );
+  const [isSaving, setIsSaving] = useState(false);
+  const [data, setData] = useState<ContactUsEditorState>(() => ({
+    _id: "",
+    title: { hy: "" },
+    description: { hy: "" },
+    sections: [],
+    mapSection: { title: "", value: "" },
+  }));
 
   const dirty = JSON.stringify(data) !== initialJson.current;
 
-  function handleSave() {
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadContactUs() {
+      try {
+        const res = await fetchContactUs();
+        if (isCancelled) return;
+        const mapped = fromApiContactUs(res);
+        initialJson.current = JSON.stringify(mapped);
+        setData(mapped);
+      } catch {
+        if (isCancelled) return;
+        toast.error("Չհաջողվեց բեռնել «Հետադարձ կապ» տվյալները։");
+      }
+    }
+
+    loadContactUs();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  function readLocalized(localized: LocalizedText): string {
+    return readLocalizedByLang(localized, lang);
+  }
+
+  function writeLocalized(current: LocalizedText, value: string): LocalizedText {
+    return writeLocalizedByLang(current, value, lang);
+  }
+
+  async function handleSave() {
     if (!dirty) {
       toast.message("Փոփոխություններ չկան։");
       return;
     }
-    initialJson.current = JSON.stringify(data);
-    setData((d) => structuredClone(d));
-    toast.success("Պահպանված է (մոկ)։");
+
+    try {
+      setIsSaving(true);
+
+      await updateContactUs({
+        title: ensureHyLocalized(data.title),
+        description: ensureHyLocalized(data.description),
+        sections: data.sections.map(({ id: _id, ...s }) => s),
+        mapSection: {
+          title: data.mapSection.title ?? "",
+          value: data.mapSection.value ?? "",
+        },
+      });
+
+      initialJson.current = JSON.stringify(data);
+      setData((d) => structuredClone(d));
+      toast.success("Պահպանված է։");
+    } catch {
+      toast.error("Չհաջողվեց պահպանել «Հետադարձ կապ» տվյալները։");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
-  function addBlock() {
+  function addSection() {
     setData((d) => ({
       ...d,
-      blocks: [
-        ...d.blocks,
-        {
-          id: `c-${Date.now()}`,
-          type: "address",
-          addressShort: "Հասցե",
-          addressFull: "",
-        },
-      ],
+      sections: [...d.sections, { id: `section-${Date.now()}`, type: "address", value: "" }],
     }));
   }
 
@@ -221,7 +280,7 @@ export function ContactUsEditor() {
         </h1>
         <Button
           type="button"
-          disabled={!dirty}
+          disabled={!dirty || isSaving}
           className={cn(
             "h-11 min-w-[256px] rounded-lg px-6 text-[13px] font-medium",
             dirty
@@ -230,40 +289,39 @@ export function ContactUsEditor() {
           )}
           onClick={handleSave}
         >
-          Պահպանել Փոփոխությունները
+          {isSaving ? "Պահպանվում է..." : "Պահպանել Փոփոխությունները"}
         </Button>
       </div>
 
       <ContentCard>
-        <h2 className="mb-4 text-[14px] font-medium text-[#2c2c2c]">Վերնագրեր</h2>
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-[14px] font-medium text-[#2c2c2c]">Վերնագիր</h2>
+          <LangSwitcher value={lang} onChange={setLang} />
+        </div>
         <div className="flex flex-col gap-4">
-          <KeyRow
-            keyValue={data.key}
-            onKeyChange={(key) => setData((d) => ({ ...d, key }))}
-            lang={lang}
-            onLangChange={setLang}
-          />
           <Input
-            value={data.title}
-            onChange={(e) => setData((d) => ({ ...d, title: e.target.value }))}
+            value={readLocalized(data.title)}
+            onChange={(e) => setData((d) => ({ ...d, title: writeLocalized(d.title, e.target.value) }))}
             className={cn("h-9", fieldBorder)}
+            placeholder="Վերնագիր"
           />
           <Textarea
-            value={data.body}
-            onChange={(e) => setData((d) => ({ ...d, body: e.target.value }))}
-            className={cn("min-h-[137px] resize-y whitespace-pre-line", fieldBorder)}
+            value={readLocalized(data.description)}
+            onChange={(e) => setData((d) => ({ ...d, description: writeLocalized(d.description, e.target.value) }))}
+            className={cn("min-h-[137px] resize-y", fieldBorder)}
+            placeholder="Նկարագրություն"
           />
         </div>
       </ContentCard>
 
       <ContentCard>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-[14px] font-medium text-[#2c2c2c]">Վերնագրեր</h2>
+          <h2 className="text-[14px] font-medium text-[#2c2c2c]">Բաժիններ</h2>
           <Button
             type="button"
             variant="ghost"
             className="h-auto gap-2 p-0 text-[14px] font-medium text-[#275199] hover:bg-transparent hover:text-[#275199] hover:underline"
-            onClick={addBlock}
+            onClick={addSection}
           >
             <span className="flex size-6 items-center justify-center rounded-full bg-[#275199] text-white">
               <Plus className="size-3.5" strokeWidth={2.5} />
@@ -272,16 +330,28 @@ export function ContactUsEditor() {
           </Button>
         </div>
         <div className="flex flex-col gap-6">
-          {data.blocks.map((block, index) => (
-            <ContactBlockCard
-              key={block.id}
-              block={block}
+          {data.sections.length === 0 ? (
+            <div className="rounded-[9px] border border-[#e6e7eb] bg-white p-4 text-[13px] text-[#575757]">
+              Բաժիններ չկան։ Սեղմեք “Ավելացնել”։
+            </div>
+          ) : null}
+          {data.sections.map((section, index) => (
+            <SectionCard
+              key={section.id}
+              section={section}
+              index={index}
               lang={lang}
               onLangChange={setLang}
               onChange={(next) =>
                 setData((d) => ({
                   ...d,
-                  blocks: d.blocks.map((b, i) => (i === index ? next : b)),
+                  sections: d.sections.map((s, i) => (i === index ? next : s)),
+                }))
+              }
+              onRemove={() =>
+                setData((d) => ({
+                  ...d,
+                  sections: d.sections.filter((_, i) => i !== index),
                 }))
               }
             />
@@ -292,32 +362,52 @@ export function ContactUsEditor() {
       <ContentCard>
         <h2 className="mb-4 text-[14px] font-medium text-[#2c2c2c]">Քարտեզ</h2>
         <div className="flex flex-col gap-4">
-          <div className="relative w-full max-w-[1028px]">
-            <Search
-              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#646464]"
-              aria-hidden
-            />
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
+            <span className="w-24 shrink-0 text-[12px] font-medium text-[#575757]">Վերնագիր</span>
             <Input
-              value={data.map.searchQuery}
-              onChange={(e) =>
-                setData((d) => ({
-                  ...d,
-                  map: { ...d.map, searchQuery: e.target.value },
-                }))
-              }
-              className={cn("h-9 pl-10", fieldBorder)}
+              value={data.mapSection.title}
+              onChange={(e) => setData((d) => ({ ...d, mapSection: { ...d.mapSection, title: e.target.value } }))}
+              className={cn("h-9 flex-1 sm:max-w-[507px]", fieldBorder)}
+              placeholder="Map"
             />
           </div>
-          <div className="overflow-hidden rounded-[30px] border border-[#e6e7eb]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={data.map.previewSrc}
-              alt=""
-              className="h-[178px] w-full max-w-[439px] object-cover"
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
+            <span className="w-24 shrink-0 text-[12px] font-medium text-[#575757]">Կոորդինատներ</span>
+            <Input
+              value={data.mapSection.value}
+              onChange={(e) => setData((d) => ({ ...d, mapSection: { ...d.mapSection, value: e.target.value } }))}
+              className={cn("h-9 flex-1 sm:max-w-[507px]", fieldBorder)}
+              placeholder="40.1772, 44.5035"
             />
           </div>
         </div>
       </ContentCard>
     </div>
   );
+}
+
+function fromApiContactUs(api: ContactUsApiResponse): ContactUsEditorState {
+  return {
+    _id: api._id ?? "",
+    title: ensureHyLocalized(api.title ?? {}),
+    description: ensureHyLocalized(api.description ?? {}),
+    sections: Array.isArray(api.sections)
+      ? api.sections.map((s, index) => ({
+          id: `section-${index}-${Date.now()}`,
+          ...(s.type === "address"
+            ? { type: "address" as const, value: s.value ?? "" }
+            : {
+                type: "info" as const,
+                title: s.title ?? "",
+                phone: s.phone ?? "",
+                email: s.email ?? "",
+                link: s.link ?? "",
+              }),
+        }))
+      : [],
+    mapSection: {
+      title: api.mapSection?.title ?? "",
+      value: api.mapSection?.value ?? "",
+    },
+  };
 }
