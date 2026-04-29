@@ -4,4 +4,5 @@ export const mapCombinationsForColumnsWithRotatedLabels = (combinations: MetricC
   combinations.map((item) => ({
     value: Number(item.value),
     xAxisKey: item.row?.[0]?.value?.title ?? "Unknown",
+    label: item.row?.[0]?.label ?? "Unknown",
   }));

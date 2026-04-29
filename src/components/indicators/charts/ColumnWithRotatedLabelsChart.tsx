@@ -6,6 +6,7 @@ import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 interface DataItem {
   xAxisKey: string;
   value: number;
+  label: string;
 }
 
 interface ColumnWithRotatedLabelsChartProps {
@@ -20,6 +21,10 @@ function ColumnWithRotatedLabelsChart({ data }: ColumnWithRotatedLabelsChartProp
 
     root.setThemes([am5themes_Animated.new(root)]);
 
+    // Root layout
+    root.container.set("layout", root.verticalLayout);
+
+    // Chart
     const chart = root.container.children.push(
       am5xy.XYChart.new(root, {
         panX: true,
@@ -29,31 +34,28 @@ function ColumnWithRotatedLabelsChart({ data }: ColumnWithRotatedLabelsChartProp
         pinchZoomX: true,
         paddingLeft: 0,
         paddingRight: 1,
+        height: am5.percent(90),
       })
     );
 
-    // Add cursor
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/cursor/
+    // Cursor
     const cursor = chart.set("cursor", am5xy.XYCursor.new(root, {}));
     cursor.lineY.set("visible", false);
 
-    // Create axes
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
+    // X Axis
     const xRenderer = am5xy.AxisRendererX.new(root, {
       minGridDistance: 30,
       minorGridEnabled: true,
     });
 
     xRenderer.labels.template.setAll({
-      rotation: -90,
+      rotation: -75,
       centerY: am5.p50,
       centerX: am5.p100,
       paddingRight: 15,
     });
 
-    xRenderer.grid.template.setAll({
-      location: 1,
-    });
+    xRenderer.grid.template.setAll({ location: 1 });
 
     const xAxis = chart.xAxes.push(
       am5xy.CategoryAxis.new(root, {
@@ -64,6 +66,7 @@ function ColumnWithRotatedLabelsChart({ data }: ColumnWithRotatedLabelsChartProp
       })
     );
 
+    // Y Axis
     const yRenderer = am5xy.AxisRendererY.new(root, {
       strokeOpacity: 0.1,
     });
@@ -75,15 +78,13 @@ function ColumnWithRotatedLabelsChart({ data }: ColumnWithRotatedLabelsChartProp
       })
     );
 
-    // Create series
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/series/
+    // Series
     const series = chart.series.push(
       am5xy.ColumnSeries.new(root, {
         name: "Series 1",
-        xAxis: xAxis,
-        yAxis: yAxis,
+        xAxis,
+        yAxis,
         valueYField: "value",
-        sequencedInterpolation: true,
         categoryXField: "xAxisKey",
         tooltip: am5.Tooltip.new(root, {
           labelText: "{valueY}",
@@ -91,22 +92,122 @@ function ColumnWithRotatedLabelsChart({ data }: ColumnWithRotatedLabelsChartProp
       })
     );
 
-    series.columns.template.setAll({ cornerRadiusTL: 5, cornerRadiusTR: 5, strokeOpacity: 0 });
-    series.columns.template.adapters.add("fill", function (fill, target) {
-      // @ts-ignore
-      return chart.get("colors").getIndex(series.columns.indexOf(target));
+    series.columns.template.setAll({
+      cornerRadiusTL: 5,
+      cornerRadiusTR: 5,
+      strokeOpacity: 0,
     });
 
-    series.columns.template.adapters.add("stroke", function (stroke, target) {
-      // @ts-ignore
-      return chart.get("colors").getIndex(series.columns.indexOf(target));
-    });
+    // Color adapters
+    series.columns.template.adapters.add("fill", (fill, target) =>
+      chart.get("colors")?.getIndex(series.columns.indexOf(target))
+    );
+
+    series.columns.template.adapters.add("stroke", (stroke, target) =>
+      chart.get("colors")?.getIndex(series.columns.indexOf(target))
+    );
 
     xAxis.data.setAll(data);
     series.data.setAll(data);
 
-    // Make stuff animate on load
-    // https://www.amcharts.com/docs/v5/concepts/animations/
+    const greyColor = am5.color(0xaaaaaa);
+
+    // Legend bar container
+    const legendBar = root.container.children.push(
+      am5.Container.new(root, {
+        layout: root.horizontalLayout,
+        width: am5.percent(100),
+        paddingTop: 10,
+        paddingBottom: 10,
+        paddingLeft: 20,
+        paddingRight: 20,
+        height: am5.percent(10),
+      })
+    );
+
+    // Label
+    legendBar.children.push(
+      am5.Label.new(root, {
+        text: data[0]?.label || "Հատկանիշ",
+        centerY: am5.p50,
+        paddingRight: 15,
+        fontSize: 14,
+      })
+    );
+
+    // Legend
+    const legend = legendBar.children.push(
+      am5.Legend.new(root, {
+        centerY: am5.p50,
+        layout: am5.GridLayout.new(root, {
+          fixedWidthGrid: false,
+          maxColumns: 100,
+        }),
+        width: am5.percent(100),
+      })
+    );
+
+    // Hide text labels
+    legend.labels.template.set("forceHidden", true);
+    legend.valueLabels.template.set("forceHidden", true);
+
+    // Marker styling
+    legend.markers.template.setAll({
+      width: 22,
+      height: 22,
+    });
+
+    legend.markerRectangles.template.setAll({
+      cornerRadiusTL: 4,
+      cornerRadiusTR: 4,
+      cornerRadiusBL: 4,
+      cornerRadiusBR: 4,
+    });
+
+    // Fill adapter
+    legend.markerRectangles.template.adapters.add("fill", (fill, target) => {
+      const legendDataItem = target.dataItem;
+      if (!legendDataItem) return fill;
+
+      const seriesDataItem = legendDataItem.dataContext as any;
+      const index = series.dataItems.indexOf(seriesDataItem);
+
+      if (index >= 0) {
+        return seriesDataItem.isHidden() ? greyColor : chart.get("colors")?.getIndex(index);
+      }
+
+      return fill;
+    });
+
+    // Stroke adapter
+    legend.markerRectangles.template.adapters.add("stroke", (stroke, target) => {
+      const legendDataItem = target.dataItem;
+      if (!legendDataItem) return stroke;
+
+      const seriesDataItem = legendDataItem.dataContext as any;
+      const index = series.dataItems.indexOf(seriesDataItem);
+
+      if (index >= 0) {
+        return seriesDataItem.isHidden() ? greyColor : chart.get("colors")?.getIndex(index);
+      }
+
+      return stroke;
+    });
+
+    // Legend data
+    legend.data.setAll(series.dataItems);
+
+    // Force repaint on click
+    legend.itemContainers.each((itemContainer, index) => {
+      itemContainer.events.on("click", () => {
+        setTimeout(() => {
+          const rect = legend.markerRectangles.getIndex(index);
+          if (rect) rect.markDirty();
+        }, 0);
+      });
+    });
+
+    // Animations
     series.appear(1000);
     chart.appear(1000, 100);
 
