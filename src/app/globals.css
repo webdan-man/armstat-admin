@@ -46,6 +46,29 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+@theme {
+  --color-blue1000: rgba(32, 55, 84, 1);
+  --color-blue800: rgba(53, 92, 140, 1);
+  --color-blue600: rgba(128, 153, 184, 1);
+  --color-blue500: rgba(165, 183, 205, 1);
+  --color-blue200: rgba(221, 229, 238, 1);
+  --color-lightTone1: rgba(254, 254, 254, 1);
+  --color-link: rgba(0, 77, 153, 1);
+  --color-textBlack800: rgba(26, 26, 26, 1);
+  --color-textBlack700: rgba(69, 69, 69, 1);
+  --color-textBlack600: rgba(116, 116, 116, 1);
+  --color-textBlack300: rgba(220, 220, 220, 1);
+  --color-textBlack100: rgba(255, 255, 255, 1);
+  --color-warning: rgba(254, 187, 48, 1);
+  --leading-fontLine-heightMD: 24px;
+  --leading-fontLine-heightXS: 16px;
+  --leading-fontLine-heightLG: 32px;
+  --text-fontSizeL: 20px;
+  --text-fontSizeM: 16px;
+  --text-fontSizeS: 14px;
+  --text-fontSizeXS: 13px;
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

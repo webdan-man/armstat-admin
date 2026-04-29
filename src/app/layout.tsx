@@ -20,11 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${notoSansArmenian.className} overflow-hidden antialiased`}
-    >
-      <body className="min-h-full flex flex-col">
+    <html lang="en" className={`${notoSansArmenian.className} antialiased`}>
+      <body className="min-h-screen">
         {children}
         <Toaster richColors position="top-right" />
       </body>
