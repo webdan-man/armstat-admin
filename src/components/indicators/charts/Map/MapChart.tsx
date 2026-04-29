@@ -5,6 +5,29 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5map from "@amcharts/amcharts5/map";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 
+type MainLangCode = "hy" | "ru" | "en";
+
+const PROVINCE_NAMES_BY_ID: Record<string, { hy: string; en: string; ru: string }> = {
+  "AM-AG": { hy: "Արագածոտն", en: "Aragatsotn", ru: "Арагацотн" },
+  "AM-AR": { hy: "Արարատ", en: "Ararat", ru: "Арарат" },
+  "AM-AV": { hy: "Արմավիր", en: "Armavir", ru: "Армавир" },
+  "AM-ER": { hy: "Երևան", en: "Yerevan", ru: "Ереван" },
+  "AM-GR": { hy: "Գեղարքունիք", en: "Gegharkunik", ru: "Гегаркуник" },
+  "AM-KT": { hy: "Կոտայք", en: "Kotayk", ru: "Котайк" },
+  "AM-LO": { hy: "Լոռի", en: "Lori", ru: "Лори" },
+  "AM-SH": { hy: "Շիրակ", en: "Shirak", ru: "Ширак" },
+  "AM-SU": { hy: "Սյունիք", en: "Syunik", ru: "Сюник" },
+  "AM-TV": { hy: "Տավուշ", en: "Tavush", ru: "Тавуш" },
+  "AM-VD": { hy: "Վայոց Ձոր", en: "Vayots Dzor", ru: "Вайоц Дзор" },
+};
+
+function normalizeToMainLangCode(locale: string | undefined): MainLangCode {
+  const lower = (locale ?? "").toLowerCase();
+  if (lower.startsWith("en")) return "en";
+  if (lower.startsWith("ru")) return "ru";
+  return "hy";
+}
+
 interface ArmeniaMapChartProps {
   data: {
     id: string;
@@ -225,7 +248,7 @@ export default function ArmeniaMapChart({ data }: ArmeniaMapChartProps) {
     polygonSeries.mapPolygons.template.events.on("pointerover", (ev: any) => {
       const dataItem = ev?.target?.dataItem as any;
       const value = dataItem?.get?.("value") as number | undefined;
-      const name = (dataItem?.dataContext as any)?.name || "Region";
+      const name = (dataItem?.dataContext as any)?.name ?? "Region";
 
       if (value !== undefined) {
         showHoverIndicator(value, name);
@@ -245,7 +268,7 @@ export default function ArmeniaMapChart({ data }: ArmeniaMapChartProps) {
           });
 
           lockedValue = dataItem.get("value");
-          lockedName = (dataItem.dataContext as any)?.name || "Region";
+          lockedName = (dataItem.dataContext as any)?.name ?? "Region";
 
           pinnedLabel.set("text", `${lockedValue} - ${lockedName}`);
           markerGroup.set("y", getMarkerPosition(lockedValue as number));
@@ -262,8 +285,12 @@ export default function ArmeniaMapChart({ data }: ArmeniaMapChartProps) {
     am5.net.load("/api/chart/map").then(({ response }: any) => {
       const geoData = am5.JSONParser.parse(response) as any;
 
-      const mapData = geoData.features.map(({ id }: any) => ({
+      const lang = normalizeToMainLangCode(
+        typeof navigator !== "undefined" ? navigator.language : undefined
+      );
+      const mapData = geoData.features.map(({ id, properties }: any) => ({
         id,
+        name: PROVINCE_NAMES_BY_ID[id]?.[lang] ?? properties?.name ?? id,
         value: Math.round(Math.random() * 1000),
       }));
 
