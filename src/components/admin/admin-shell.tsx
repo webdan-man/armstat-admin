@@ -11,20 +11,20 @@ import { ShellLink } from "@/components/ui/ShellLink";
 import { SwrProvider } from "@/lib/swr/swr-provider";
 
 const navItems = [
-  { href: "/main", label: "Գլխավոր էջ" },
-  { href: "/groups", label: "Բաժիններ" },
-  { href: "/indicators", label: "Ցուցանիշ" },
-  { href: "/information-centre", label: "Տեղեկատվական կենտրոն" },
-  { href: "/contact-us", label: "Հետադարձ կապ" },
-  { href: "/news", label: "Նորություններ" },
-  { href: "/attributes", label: "Հատկանիշներ" },
+  { href: "/admin/main", label: "Գլխավոր էջ" },
+  { href: "/admin/groups", label: "Բաժիններ" },
+  { href: "/admin/indicators", label: "Ցուցանիշ" },
+  { href: "/admin/information-centre", label: "Տեղեկատվական կենտրոն" },
+  { href: "/admin/contact-us", label: "Հետադարձ կապ" },
+  { href: "/admin/news", label: "Նորություններ" },
+  { href: "/admin/attributes", label: "Հատկանիշներ" },
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   function handleLogout() {
-    router.push("/logout");
+    router.push("/admin/logout");
   }
 
   return (
@@ -32,7 +32,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <div className="flex h-screen overflow-hidden bg-[#f9fafb]">
         <aside className="w-60 shrink-0 overflow-y-auto border-r border-[#e6e7eb] bg-white px-4 pt-5">
           <div className="mb-6">
-            <Link href="/" className="flex items-center gap-[5px]">
+            <Link href="/admin" className="flex items-center gap-[5px]">
               <Image width={47} height={34} src="/logo.png" alt={"Logo"} />
               <div className={"flex flex-col"}>
                 <h2 className="text-[12px] leading-[14px] font-bold tracking-[-0.12px] text-[#2c2c2c]">

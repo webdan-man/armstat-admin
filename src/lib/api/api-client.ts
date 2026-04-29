@@ -20,9 +20,9 @@ async function apiClient<T>(
 
     if (res.status === 401) {
       if (typeof window !== "undefined") {
-        window.location.href = "/logout";
+        window.location.href = "/admin/logout";
       } else {
-        redirect("/logout");
+        redirect("/admin/logout");
       }
     }
 
