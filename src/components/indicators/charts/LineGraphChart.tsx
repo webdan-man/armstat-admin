@@ -106,6 +106,11 @@ function LineGraphChart({ data }: SemiCircleChartProps) {
     //   })
     // );
 
+    series.strokes.template.setAll({
+      strokeWidth: 2, // Change this to 1 or 1.5 for a very thin line
+      strokeOpacity: 1, // Optional: ensures the line remains fully visible
+    });
+
     // Set data
     series.data.setAll(data);
 

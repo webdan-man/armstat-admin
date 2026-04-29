@@ -46,6 +46,7 @@ function SemiCircleChart({ data }: SemiCircleChartProps) {
 
     series.slices.template.setAll({
       cornerRadius: 5,
+      tooltipText: "{category} - {value}",
     });
 
     series.ticks.template.setAll({
@@ -53,9 +54,7 @@ function SemiCircleChart({ data }: SemiCircleChartProps) {
     });
 
     series.labels.template.setAll({
-      text: "{category}: {value}",
-      radius: 10,
-      oversizedBehavior: "wrap",
+      text: "{category} - {valuePercentTotal.formatNumber('0.0')}%",
     });
 
     series.data.setAll(data);

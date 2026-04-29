@@ -22,95 +22,266 @@ export default function ArmeniaMapChart({ data }: ArmeniaMapChartProps) {
 
     root.setThemes([am5themes_Animated.new(root)]);
 
-    const chart = root.container.children.push(
-      am5map.MapChart.new(root, {
-        panX: "rotateX",
-        projection: am5map.geoMercator(),
+    const mainContainer = root.container.children.push(
+      am5.Container.new(root, {
         layout: root.horizontalLayout,
+        width: am5.p100,
+        height: am5.p100,
+        paddingRight: 220,
+        paddingLeft: 20,
       })
     );
 
-    // Create polygon series for continents
-    // https://www.amcharts.com/docs/v5/charts/map-chart/map-polygon-series/
+    const chart = mainContainer.children.push(
+      am5map.MapChart.new(root, {
+        projection: am5map.geoMercator(),
+        width: am5.percent(70),
+      })
+    );
+
+    // 3. SERIES
     const polygonSeries = chart.series.push(
       am5map.MapPolygonSeries.new(root, {
-        calculateAggregates: true,
         valueField: "value",
+        calculateAggregates: true,
       })
     );
 
+    const COLORS = {
+      low: 0x8ab7ff,
+      high: 0x25529a,
+      selected: 0xffd700,
+    };
+
     polygonSeries.mapPolygons.template.setAll({
-      tooltipText: "{name} {value}", // TODO: all translations
+      tooltipText: "{name} - {value}",
       interactive: true,
+      toggleKey: "active",
+      fill: am5.color(0xaaaaaa),
     });
 
-    polygonSeries.mapPolygons.template.states.create("hover", {
-      fill: am5.color(0x677935),
+    polygonSeries.mapPolygons.template.states.create("active", {
+      fill: am5.color(COLORS.selected),
+      stroke: am5.color(0x000000),
+      strokeWidth: 2,
     });
 
+    // 4. HEAT RULES
     polygonSeries.set("heatRules", [
       {
         target: polygonSeries.mapPolygons.template,
         dataField: "value",
-        min: am5.color(0x8ab7ff),
-        max: am5.color(0x25529a),
+        min: am5.color(COLORS.low),
+        max: am5.color(COLORS.high),
         key: "fill",
       },
     ]);
 
-    polygonSeries.mapPolygons.template.events.on("pointerover", function (ev) {
-      // @ts-ignore
-      heatLegend.showValue(ev.target.dataItem?.get("value") + "test");
-    });
-
-    chart.set("projection", am5map.geoMercator());
-
-    am5.net.load("/api/chart/map", chart).then(function (result) {
-      const geodata = am5.JSONParser.parse(result.response as string);
-
-      polygonSeries.set("geoJSON", geodata);
-      polygonSeries.data.setAll(data);
-    });
-
-    chart.seriesContainer.children.push(
-      am5.Label.new(root, {
-        x: 5,
-        y: 5,
-        text: "",
-        background: am5.RoundedRectangle.new(root, {
-          fill: am5.color(0xffffff),
-          fillOpacity: 0.2,
-        }),
-      })
-    );
-
-    const heatLegend = chart.children.push(
+    // 5. LEGEND
+    const heatLegend = mainContainer.children.push(
       am5.HeatLegend.new(root, {
         orientation: "vertical",
-        startColor: am5.color(0x8ab7ff),
-        endColor: am5.color(0x25529a),
-        startText: "Lowest",
-        endText: "Highest",
-        stepCount: 5,
-        startOpacity: 0,
-        endOpacity: 0,
+        startColor: am5.color(COLORS.low),
+        endColor: am5.color(COLORS.high),
+        startOpacity: 1,
+        endOpacity: 1,
+        startText: "Min",
+        endText: "Max",
+        centerY: am5.p50,
+        y: am5.p50,
+        height: am5.percent(80),
+        marginLeft: 40,
       })
     );
 
     heatLegend.startLabel.setAll({
-      fontSize: 12,
-      fill: heatLegend.get("startColor"),
+      centerX: am5.p50,
+      x: am5.p50,
+      centerY: am5.p100,
+      dy: 30,
+      isMeasured: false,
+      fill: am5.color(COLORS.low),
+      fontWeight: "bold",
     });
 
     heatLegend.endLabel.setAll({
-      fontSize: 12,
-      fill: heatLegend.get("endColor"),
+      centerX: am5.p50,
+      x: am5.p50,
+      centerY: 0,
+      dy: -30,
+      isMeasured: false,
+      fill: am5.color(COLORS.high),
+      fontWeight: "bold",
     });
 
-    // change this to template when possible
-    polygonSeries.events.on("datavalidated", function () {
-      heatLegend.set("startValue", polygonSeries.getPrivate("valueLow"));
-      heatLegend.set("endValue", polygonSeries.getPrivate("valueHigh"));
+    // 6. MARKER CONTAINER
+    const markerContainer = heatLegend.children.push(
+      am5.Container.new(root, {
+        width: am5.p100,
+        height: am5.p100,
+        isMeasured: false,
+        position: "absolute",
+        x: 0,
+        y: 0,
+      })
+    );
+
+    // 7a. PINNED MARKER
+    const markerGroup = markerContainer.children.push(
+      am5.Container.new(root, {
+        layout: root.horizontalLayout,
+        centerX: 0,
+        centerY: am5.p50,
+        x: am5.p100,
+        dx: 15,
+        visible: false,
+      })
+    );
+
+    markerGroup.children.push(
+      am5.Triangle.new(root, {
+        width: 10,
+        height: 10,
+        fill: am5.color(0xccac00),
+        stroke: am5.color(0xffffff),
+        strokeWidth: 1,
+        rotation: 270,
+        centerY: am5.p50,
+      })
+    );
+
+    const pinnedLabel = markerGroup.children.push(
+      am5.Label.new(root, {
+        text: "",
+        fill: am5.color(0xccac00),
+        fontWeight: "bold",
+        fontSize: 14,
+        paddingLeft: 8,
+        centerY: am5.p50,
+      })
+    );
+
+    // 7b. HOVER MARKER
+    const hoverGroup = markerContainer.children.push(
+      am5.Container.new(root, {
+        layout: root.horizontalLayout,
+        centerX: am5.p100,
+        centerY: am5.p50,
+        x: 0,
+        dx: -10,
+        visible: false,
+      })
+    );
+
+    const hoverLabel = hoverGroup.children.push(
+      am5.Label.new(root, {
+        text: "",
+        fill: am5.color(COLORS.high),
+        fontWeight: "bold",
+        fontSize: 14,
+        paddingRight: 8,
+        centerY: am5.p50,
+      })
+    );
+
+    hoverGroup.children.push(
+      am5.Triangle.new(root, {
+        width: 10,
+        height: 10,
+        fill: am5.color(COLORS.high),
+        stroke: am5.color(0xffffff),
+        strokeWidth: 1,
+        rotation: 90,
+        centerY: am5.p50,
+      })
+    );
+
+    // 8. HELPERS
+    const getMarkerPosition = (value: number) => {
+      const low = heatLegend.get("startValue") as number | undefined;
+      const high = heatLegend.get("endValue") as number | undefined;
+
+      if (!low || !high || low === high) return 0;
+
+      const ratio = (value - low) / (high - low);
+      return am5.percent((1 - ratio) * 100);
+    };
+
+    const showHoverIndicator = (value: number, name: string) => {
+      hoverLabel.set("text", `${name} - ${value}`);
+      hoverGroup.set("y", getMarkerPosition(value));
+      hoverGroup.set("visible", true);
+    };
+
+    const hideHoverIndicator = () => {
+      hoverGroup.set("visible", false);
+    };
+
+    // STATE
+    let lockedValue = null;
+    let lockedName = "";
+
+    // 9. EVENTS
+    polygonSeries.mapPolygons.template.events.on("pointerover", (ev: any) => {
+      const dataItem = ev?.target?.dataItem as any;
+      const value = dataItem?.get?.("value") as number | undefined;
+      const name = (dataItem?.dataContext as any)?.name || "Region";
+
+      if (value !== undefined) {
+        showHoverIndicator(value, name);
+      }
+    });
+
+    polygonSeries.mapPolygons.template.events.on("pointerout", hideHoverIndicator);
+
+    polygonSeries.mapPolygons.template.events.on("click", (ev: any) => {
+      const target = ev?.target as any;
+      const dataItem = target?.dataItem as any;
+
+      setTimeout(() => {
+        if (target.get("active")) {
+          polygonSeries.mapPolygons.each((p) => {
+            if (p !== target) p.set("active", false);
+          });
+
+          lockedValue = dataItem.get("value");
+          lockedName = (dataItem.dataContext as any)?.name || "Region";
+
+          pinnedLabel.set("text", `${lockedValue} - ${lockedName}`);
+          markerGroup.set("y", getMarkerPosition(lockedValue as number));
+          markerGroup.set("visible", true);
+        } else {
+          lockedValue = null;
+          lockedName = "";
+          markerGroup.set("visible", false);
+        }
+      }, 10);
+    });
+
+    // 10. DATA
+    am5.net.load("/api/chart/map").then(({ response }: any) => {
+      const geoData = am5.JSONParser.parse(response) as any;
+
+      const mapData = geoData.features.map(({ id }: any) => ({
+        id,
+        value: Math.round(Math.random() * 1000),
+      }));
+
+      polygonSeries.set("geoJSON", geoData);
+      polygonSeries.data.setAll(mapData);
+    });
+
+    // 11. LEGEND VALUES
+    polygonSeries.events.on("datavalidated", () => {
+      const low = polygonSeries.getPrivate("valueLow") as number;
+      const high = polygonSeries.getPrivate("valueHigh") as number;
+
+      heatLegend.setAll({
+        startValue: low,
+        endValue: high,
+        startText: `${low}`,
+        endText: `${high}`,
+      });
     });
 
     return () => {
