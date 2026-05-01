@@ -36,13 +36,13 @@ import {
 import { ApiError } from "@/lib/api/api-error";
 import { useIndicatorFeatures } from "@/components/indicators/indicator-features-context";
 import type { IndicatorFeature } from "@/types/indicator-feature";
-import type { MetricAttribute } from "@/types/metric";
+import type { MetricAttribute, MetricResponse, MetricSelectOption } from "@/types/metric";
 
 const cardSurface =
   "ring-0 rounded-[10px] border-0 bg-white text-[#2c2c2c] shadow-[0_6px_14px_rgba(0,0,0,0.05)]";
 
 export default function IndicatorsForm() {
-  const { selectedFilter, resolvedTopicId, formMode } = useIndicatorFilters();
+  const { selectedFilter, resolvedTopicId, formMode, markIndicatorEdit } = useIndicatorFilters();
   const { features, replaceFeatures } = useIndicatorFeatures();
   const { mutate } = useSWRConfig();
   const committedRef = useRef<IndicatorFormValues>(emptyIndicatorFormValues());
@@ -64,6 +64,7 @@ export default function IndicatorsForm() {
   const [featuresDirty, setFeaturesDirty] = useState(false);
   const csvInputRef = useRef<HTMLInputElement>(null);
   const [csvUploading, setCsvUploading] = useState(false);
+  const initializedForIndicatorIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!indicatorId) {
@@ -73,9 +74,12 @@ export default function IndicatorsForm() {
       setFeaturesDirty(false);
       reset(empty);
       replaceFeatures([]);
+      initializedForIndicatorIdRef.current = null;
       return;
     }
+    if (initializedForIndicatorIdRef.current === indicatorId) return;
     if (!loadedMetricData) return;
+    initializedForIndicatorIdRef.current = indicatorId;
     const metricAttributeKeys = mapFeaturesToMetricAttributeKeys(loadedMetricData.features);
     committedRef.current = {
       ...loadedMetricData.form,
@@ -110,29 +114,62 @@ export default function IndicatorsForm() {
       return;
     }
     try {
-      if (formMode === "edit" && selectedFilter.indicator) {
+      const isEditing = formMode === "edit" && Boolean(selectedFilter.indicator);
+      let finalIndicatorId: string;
+
+      let createdMetric: MetricResponse | null = null;
+      if (isEditing) {
         const patchBody = mapIndicatorFormToUpdateMetric(values, metricAttributeKeys);
         await patchMetric(selectedFilter.indicator, patchBody);
+        finalIndicatorId = selectedFilter.indicator;
       } else {
         const createBody = mapIndicatorFormToCreateMetric(
           resolvedTopicId,
           values,
           metricAttributeKeys
         );
-        await createMetric(createBody);
+        createdMetric = await createMetric(createBody);
+        finalIndicatorId = createdMetric._id;
       }
-      await mutate(swrKeys.metrics);
-      await mutate(swrKeys.metricsByTopic(resolvedTopicId));
-      if (selectedFilter.indicator) {
-        await mutate(swrKeys.metricForm(selectedFilter.indicator));
-        await mutate(swrKeys.metricCombinations(selectedFilter.indicator));
-      }
-      toast.success("Պահպանված է");
+
       const committedValues = { ...values, attributes: metricAttributeKeys };
       committedRef.current = committedValues;
       committedFeaturesRef.current = features;
       setFeaturesDirty(false);
       form.reset(committedValues);
+
+      initializedForIndicatorIdRef.current = finalIndicatorId;
+      if (!isEditing && createdMetric) {
+        // Inject the new indicator into the topic's list cache before changing the
+        // selected indicator. Otherwise Filters' "auto-clear if missing" effect
+        // would immediately reset selectedFilter.indicator and wipe the form.
+        const newOption: MetricSelectOption = {
+          id: createdMetric._id,
+          label:
+            values.title.hy?.trim() ||
+            values.title.ru?.trim() ||
+            values.title.en?.trim() ||
+            "—",
+          updatedAt: createdMetric.updatedAt ?? createdMetric.createdAt ?? null,
+        };
+        await mutate(
+          swrKeys.metricsByTopic(resolvedTopicId),
+          (current: MetricSelectOption[] | undefined) => {
+            const list = current ?? [];
+            if (list.some((option) => option.id === newOption.id)) return list;
+            return [...list, newOption];
+          },
+          { revalidate: false }
+        );
+        markIndicatorEdit(finalIndicatorId);
+      }
+
+      toast.success("Պահպանված է");
+
+      void mutate(swrKeys.metrics);
+      void mutate(swrKeys.metricsByTopic(resolvedTopicId));
+      void mutate(swrKeys.metricForm(finalIndicatorId));
+      void mutate(swrKeys.metricCombinations(finalIndicatorId));
     } catch (e) {
       const message = e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Սխալ";
       toast.error(message);

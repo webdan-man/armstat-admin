@@ -29,6 +29,7 @@ type IndicatorFilterStateContextValue = {
   canSelectIndicator: boolean;
   openCreateForm: () => void;
   closeForm: () => void;
+  markIndicatorEdit: (indicatorId: string) => void;
   selectedSection: Section | undefined;
   rootTopics: Topic[];
   childTopics: Topic[];
@@ -92,6 +93,10 @@ export function IndicatorFiltersProvider({ children }: { children: React.ReactNo
     setFormMode("create");
   };
   const closeForm = () => setFormMode("closed");
+  const markIndicatorEdit = (indicatorId: string) => {
+    setSelectedFilter((prev) => ({ ...prev, indicator: indicatorId }));
+    setFormMode("edit");
+  };
 
   React.useEffect(() => {
     if (formMode === "create") {
@@ -115,6 +120,7 @@ export function IndicatorFiltersProvider({ children }: { children: React.ReactNo
       canSelectIndicator,
       openCreateForm,
       closeForm,
+      markIndicatorEdit,
       selectedSection,
       rootTopics,
       childTopics,
@@ -135,6 +141,7 @@ export function IndicatorFiltersProvider({ children }: { children: React.ReactNo
       resolvedTopicId,
       openCreateForm,
       closeForm,
+      markIndicatorEdit,
     ]
   );
 
