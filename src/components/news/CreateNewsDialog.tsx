@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import { ImageIcon, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import z from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -75,13 +76,35 @@ const createNewsSchema = z
 
 export type CreateNewsFormValues = z.infer<typeof createNewsSchema>;
 
+export type NewsDialogMode = "create" | "edit";
+
+export type NewsImageSubmitInfo = {
+  /** New file selected by the user (null if image was untouched or removed). */
+  file: File | null;
+  /** True when the user explicitly removed an existing image. */
+  removed: boolean;
+};
+
 type CreateNewsDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmitNews: (values: CreateNewsFormValues) => Promise<void> | void;
+  onSubmitNews: (
+    values: CreateNewsFormValues,
+    image: NewsImageSubmitInfo
+  ) => Promise<void> | void;
+  mode?: NewsDialogMode;
+  initialValues?: CreateNewsFormValues;
+  initialImageUrl?: string;
 };
 
 const defaultLocalized: LocalizedText = { hy: "", ru: "", en: "" };
+
+const defaultFormValues: CreateNewsFormValues = {
+  title: defaultLocalized,
+  content: defaultLocalized,
+  link: "",
+  publishedAt: "",
+};
 
 const fieldLabels: Record<LangCode, { title: string; content: string }> = {
   hy: { title: "Վերնագիր", content: "Բովանդակություն" },
@@ -95,36 +118,94 @@ const fieldPlaceholders: Record<LangCode, { title: string; content: string }> = 
   en: { title: "Enter title", content: "Enter content" },
 };
 
-export function CreateNewsDialog({ open, onOpenChange, onSubmitNews }: CreateNewsDialogProps) {
+function resolveImageSrc(value: string): string {
+  if (!value) return "";
+  if (value.startsWith("blob:") || value.startsWith("data:")) return value;
+  if (value.startsWith("http://") || value.startsWith("https://")) return value;
+  const base = (process.env.NEXT_PUBLIC_BASE_URL ?? "").replace(/\/$/, "");
+  return `${base}${value.startsWith("/") ? "" : "/"}${value}`;
+}
+
+export function CreateNewsDialog({
+  open,
+  onOpenChange,
+  onSubmitNews,
+  mode = "create",
+  initialValues,
+  initialImageUrl,
+}: CreateNewsDialogProps) {
   const [activeLang, setActiveLang] = useState<LangCode>("hy");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const [imageDirty, setImageDirty] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const blobUrlRef = useRef<string | null>(null);
 
   const form = useForm<CreateNewsFormValues>({
     resolver: zodResolver(createNewsSchema),
-    defaultValues: {
-      title: defaultLocalized,
-      content: defaultLocalized,
-      link: "",
-      publishedAt: "",
-    },
+    defaultValues: defaultFormValues,
   });
 
-  useEffect(() => {
-    if (!open) {
-      setActiveLang("hy");
-      form.reset({
-        title: defaultLocalized,
-        content: defaultLocalized,
-        link: "",
-        publishedAt: "",
-      });
+  const releaseBlobUrl = () => {
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
     }
-  }, [open, form]);
+  };
+
+  useEffect(() => {
+    setActiveLang("hy");
+    setImageFile(null);
+    setImageDirty(false);
+    releaseBlobUrl();
+    if (open) {
+      form.reset(initialValues ?? defaultFormValues);
+      setImagePreview(initialImageUrl ?? "");
+    } else {
+      form.reset(defaultFormValues);
+      setImagePreview("");
+    }
+  }, [open, initialValues, initialImageUrl, form]);
+
+  useEffect(() => {
+    return () => {
+      releaseBlobUrl();
+    };
+  }, []);
+
+  const handlePickImage = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Խնդրում ենք ընտրել նկարի ֆայլ։");
+      return;
+    }
+    releaseBlobUrl();
+    const previewUrl = URL.createObjectURL(file);
+    blobUrlRef.current = previewUrl;
+    setImageFile(file);
+    setImagePreview(previewUrl);
+    setImageDirty(true);
+  };
+
+  const handleRemoveImage = () => {
+    releaseBlobUrl();
+    setImageFile(null);
+    setImagePreview("");
+    setImageDirty(true);
+  };
 
   const handleSubmit = async (values: CreateNewsFormValues) => {
     setIsSubmitting(true);
     try {
-      await onSubmitNews(values);
+      const removed = imageDirty && !imageFile;
+      await onSubmitNews(values, { file: imageFile, removed });
       onOpenChange(false);
     } finally {
       setIsSubmitting(false);
@@ -139,7 +220,7 @@ export function CreateNewsDialog({ open, onOpenChange, onSubmitNews }: CreateNew
       >
         <DialogHeader className="px-6 py-5">
           <DialogTitle className="text-[18px] leading-3.5 font-semibold text-[#2c2c2c]">
-            Ստեղծել նորություն
+            {mode === "edit" ? "Խմբագրել նորություն" : "Ստեղծել նորություն"}
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
@@ -253,6 +334,51 @@ export function CreateNewsDialog({ open, onOpenChange, onSubmitNews }: CreateNew
                   </FormItem>
                 )}
               />
+
+              <div className="flex flex-col gap-2">
+                <span className="text-[12px] font-semibold text-[#575757]">
+                  Նկար
+                </span>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={handleImageSelected}
+                />
+                <div className="flex items-end gap-4">
+                  <div className="flex h-[69px] w-[68px] shrink-0 items-center justify-center overflow-hidden rounded-[9px] border border-[#e6e7eb] bg-[#f3f4f6]">
+                    {imagePreview ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={resolveImageSrc(imagePreview)}
+                        alt="Նկար"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <ImageIcon className="size-6 text-[#c8c8c8]" aria-hidden />
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <button
+                      type="button"
+                      className="w-fit text-left text-[13px] font-medium text-[#275199] hover:underline"
+                      onClick={handlePickImage}
+                    >
+                      {imagePreview ? "Փոխարինել" : "Վերբեռնել"}
+                    </button>
+                    {imagePreview ? (
+                      <button
+                        type="button"
+                        className="w-fit text-left text-[13px] font-medium text-[#c00] hover:underline"
+                        onClick={handleRemoveImage}
+                      >
+                        Ջնջել
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <DialogFooter className="mt-8 border-none bg-white">

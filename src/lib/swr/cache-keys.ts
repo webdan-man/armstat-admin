@@ -18,4 +18,6 @@ export const swrKeys = {
   /** useSWRMutation key for CSV export (not a GET cache). */
   attributesExportCsv: ["attributes", "export-csv"] as const,
   sections: "sections",
+  /** Base prefix for paginated news list (used by useSWRInfinite). */
+  newsList: ["news", "list"] as const,
 } as const;

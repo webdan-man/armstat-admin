@@ -1,45 +1,129 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
+import useSWRInfinite from "swr/infinite";
 
 import {
   CreateNewsDialog,
   type CreateNewsFormValues,
+  type NewsImageSubmitInfo,
 } from "@/components/news/CreateNewsDialog";
-import {
-  MOCK_NEWS_ITEMS,
-  type NewsItem,
-} from "@/components/news/news-mock-data";
+import type { HomePageNewsItem } from "@/components/main/main-mock-data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ApiError } from "@/lib/api/api-error";
+import { swrKeys } from "@/lib/swr/cache-keys";
 import { cn } from "@/lib/utils";
+import {
+  createNews,
+  deleteNews,
+  fetchNewsById,
+  fetchNewsList,
+  updateNews,
+  type CreateNewsPayload,
+  type NewsListResponse,
+} from "@/services/newsService";
+
+const PAGE_SIZE = 10;
 
 const fieldBorder =
   "h-9 w-full rounded-[9px] border border-[#c8c8c8] bg-white pl-10 pr-3 text-[13px] text-[#2c2c2c] placeholder:text-[#646464] shadow-none";
 
-function filterByTitle(items: NewsItem[], query: string): NewsItem[] {
+type NewsListKey = readonly [...typeof swrKeys.newsList, number, number];
+
+function formatPublishedLabel(publishedAt: string | undefined | null): string {
+  if (!publishedAt) return "—";
+  const date = new Date(publishedAt);
+  if (Number.isNaN(date.getTime())) return publishedAt;
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  const yyyy = date.getFullYear();
+  return `${mm}/${dd}/${yyyy}`;
+}
+
+function filterByTitle(items: HomePageNewsItem[], query: string): HomePageNewsItem[] {
   const q = query.trim().toLowerCase();
   if (!q) return items;
-  return items.filter((n) => n.title.toLowerCase().includes(q));
+  return items.filter((n) => (n.title ?? "").toLowerCase().includes(q));
 }
 
 export function NewsPageEditor() {
   const [search, setSearch] = useState("");
-  const [items, setItems] = useState<NewsItem[]>(() => [...MOCK_NEWS_ITEMS]);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingValues, setEditingValues] = useState<CreateNewsFormValues | null>(null);
+  const [editingImageUrl, setEditingImageUrl] = useState<string>("");
+  const [editLoadingId, setEditLoadingId] = useState<string | null>(null);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(() => new Set());
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => new Set());
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  const filtered = useMemo(
-    () => filterByTitle(items, search),
-    [items, search]
+  const getKey = (
+    pageIndex: number,
+    previousPageData: NewsListResponse | null
+  ): NewsListKey | null => {
+    if (previousPageData && previousPageData.data.length === 0) return null;
+    return [...swrKeys.newsList, pageIndex + 1, PAGE_SIZE] as NewsListKey;
+  };
+
+  const {
+    data: pages,
+    size,
+    setSize,
+    isLoading,
+    isValidating,
+    error,
+    mutate: mutateNewsList,
+  } = useSWRInfinite<NewsListResponse, Error, typeof getKey>(
+    getKey,
+    (key) => {
+      const [, , page, limit] = key;
+      return fetchNewsList({ page, limit });
+    },
+    { revalidateOnFocus: false, revalidateFirstPage: false }
   );
 
-  const formatPublishedLabel = (publishedAt: string): string => {
-    const [year, month, day] = publishedAt.split("-");
-    if (!year || !month || !day) return publishedAt;
-    return `${month}/${day}/${year}`;
-  };
+  const apiItems = useMemo(
+    () => pages?.flatMap((p) => p.data) ?? [],
+    [pages]
+  );
+
+  const total = pages?.[0]?.total ?? 0;
+  const loadedCount = apiItems.length;
+  const hasMore = loadedCount < total;
+  const isLoadingMore =
+    isValidating && pages !== undefined && size > pages.length;
+
+  const allItems = useMemo<HomePageNewsItem[]>(() => {
+    return apiItems.filter((item) => !hiddenIds.has(item._id));
+  }, [apiItems, hiddenIds]);
+
+  const filtered = useMemo(
+    () => filterByTitle(allItems, search),
+    [allItems, search]
+  );
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node) return;
+    if (!hasMore) return;
+    if (typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (!entry?.isIntersecting) return;
+        if (isLoading || isValidating) return;
+        setSize((current) => current + 1);
+      },
+      { rootMargin: "200px" }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore, isLoading, isValidating, setSize, filtered.length]);
 
   const resolveTitleForList = (values: CreateNewsFormValues): string => {
     return (
@@ -49,35 +133,135 @@ export function NewsPageEditor() {
     );
   };
 
-  const createNews = (values: CreateNewsFormValues) => {
-    const listTitle = resolveTitleForList(values);
-    const publishedLabel = formatPublishedLabel(values.publishedAt);
-    const id =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : `${Date.now()}`;
-
-    const nextItem: NewsItem = {
-      id,
-      title: listTitle,
-      publishedLabel,
-      link: values.link.trim(),
-      publishedAt: values.publishedAt,
-      titleTranslations: {
-        hy: values.title.hy.trim(),
-        ru: values.title.ru.trim(),
-        en: values.title.en.trim(),
-      },
-      contentTranslations: {
-        hy: values.content.hy.trim(),
-        ru: values.content.ru.trim(),
-        en: values.content.en.trim(),
-      },
-    };
-
-    setItems((prev) => [nextItem, ...prev]);
-    toast.success("Նորությունը ստեղծվել է (մոկ)։");
+  const resolveContentForList = (values: CreateNewsFormValues): string => {
+    return (
+      values.content.hy.trim() ||
+      values.content.ru.trim() ||
+      values.content.en.trim()
+    );
   };
+
+  const buildPayload = (values: CreateNewsFormValues): CreateNewsPayload => ({
+    title: resolveTitleForList(values),
+    content: resolveContentForList(values),
+    url: values.link.trim(),
+    publishedAt: new Date(values.publishedAt).toISOString(),
+  });
+
+  const describeError = (e: unknown, fallback: string) =>
+    e instanceof ApiError ? e.message || "Սերվերի սխալ։" : fallback;
+
+  const handleSaveNews = async (
+    values: CreateNewsFormValues,
+    image: NewsImageSubmitInfo
+  ) => {
+    const payload = buildPayload(values);
+    const isEdit = editingId !== null;
+    const imageInput = { file: image.file, remove: image.removed };
+
+    try {
+      if (isEdit) {
+        await updateNews(editingId!, payload, imageInput);
+        toast.success("Նորությունը թարմացվել է։");
+      } else {
+        await createNews(payload, imageInput);
+        toast.success("Նորությունը ստեղծվել է։");
+      }
+      await mutateNewsList();
+    } catch (e) {
+      const description = describeError(
+        e,
+        isEdit
+          ? "Չհաջողվեց թարմացնել նորությունը։"
+          : "Չհաջողվեց ստեղծել նորությունը։"
+      );
+      toast.error("Սխալ!", { description });
+      throw e;
+    }
+  };
+
+  const handleCreateClick = () => {
+    setEditingId(null);
+    setEditingValues(null);
+    setEditingImageUrl("");
+    setDialogOpen(true);
+  };
+
+  const handleEditClick = async (id: string) => {
+    setEditLoadingId(id);
+    try {
+      const news = await fetchNewsById(id);
+      setEditingId(id);
+      setEditingValues({
+        title: { hy: news.title ?? "", ru: "", en: "" },
+        content: { hy: news.content ?? "", ru: "", en: "" },
+        link: news.url ?? "",
+        publishedAt: news.publishedAt ? news.publishedAt.slice(0, 10) : "",
+      });
+      setEditingImageUrl(news.image ?? "");
+      setDialogOpen(true);
+    } catch (e) {
+      toast.error("Սխալ!", {
+        description: describeError(e, "Չհաջողվեց բեռնել նորությունը։"),
+      });
+    } finally {
+      setEditLoadingId(null);
+    }
+  };
+
+  const handleDialogChange = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      setEditingId(null);
+      setEditingValues(null);
+      setEditingImageUrl("");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (deletingIds.has(id)) return;
+
+    setDeletingIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+    setHiddenIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+
+    try {
+      await deleteNews(id);
+      toast.success("Ջնջված է։");
+      await mutateNewsList();
+      setHiddenIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    } catch (e) {
+      setHiddenIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      toast.error("Սխալ!", {
+        description: describeError(e, "Չհաջողվեց ջնջել նորությունը։"),
+      });
+    } finally {
+      setDeletingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  };
+
+  const showInitialLoader = isLoading && !pages;
+  const showError = error && !pages;
+  const showEmpty = !showInitialLoader && !showError && filtered.length === 0;
 
   return (
     <div className="flex w-full flex-col gap-4 pb-10">
@@ -88,7 +272,7 @@ export function NewsPageEditor() {
         <Button
           type="button"
           className="h-11 shrink-0 rounded-lg border-0 bg-[#004d99] px-5 text-[13px] font-medium text-white hover:bg-[#004080]"
-          onClick={() => setCreateDialogOpen(true)}
+          onClick={handleCreateClick}
         >
           Ավելացնել Լուր
         </Button>
@@ -125,7 +309,21 @@ export function NewsPageEditor() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {showInitialLoader ? (
+                <tr>
+                  <td colSpan={3} className="px-4 py-10 text-center">
+                    <div className="flex items-center justify-center">
+                      <Loader2 className="size-6 animate-spin text-[#646464]" />
+                    </div>
+                  </td>
+                </tr>
+              ) : showError ? (
+                <tr>
+                  <td colSpan={3} className="px-4 py-8 text-center text-[#c00]">
+                    Չհաջողվեց բեռնել նորությունները։
+                  </td>
+                </tr>
+              ) : showEmpty ? (
                 <tr>
                   <td
                     colSpan={3}
@@ -137,14 +335,14 @@ export function NewsPageEditor() {
               ) : (
                 filtered.map((row) => (
                   <tr
-                    key={row.id}
+                    key={row._id}
                     className="border-b border-[#e6e7eb] last:border-b-0"
                   >
                     <td className="max-w-0 px-4 py-3 align-middle text-[#2c2c2c]">
                       <span className="line-clamp-2">{row.title}</span>
                     </td>
                     <td className="px-4 py-3 align-middle whitespace-nowrap text-[#2c2c2c]">
-                      {row.publishedLabel}
+                      {formatPublishedLabel(row.publishedAt)}
                     </td>
                     <td className="px-4 py-3 align-middle">
                       <div className="flex flex-wrap items-center gap-2">
@@ -152,28 +350,31 @@ export function NewsPageEditor() {
                           type="button"
                           variant="outline"
                           size="sm"
+                          disabled={editLoadingId === row._id}
                           className={cn(
                             "h-8 rounded-md border-[#e6e7eb] bg-white text-[13px] font-normal text-[#2c2c2c] hover:bg-[#f9fafb]"
                           )}
-                          onClick={() =>
-                            toast.message("Խմբագրումը կկապվի API-ի հետ։")
-                          }
+                          onClick={() => handleEditClick(row._id)}
                         >
-                          Դիտել և խմբագրել
+                          {editLoadingId === row._id ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            "Դիտել և խմբագրել"
+                          )}
                         </Button>
                         <Button
                           type="button"
                           variant="destructive"
                           size="sm"
+                          disabled={deletingIds.has(row._id)}
                           className="h-8 rounded-md bg-[#c00] text-[13px] font-normal text-white hover:bg-[#a00]"
-                          onClick={() => {
-                            setItems((list) =>
-                              list.filter((n) => n.id !== row.id)
-                            );
-                            toast.success("Ջնջված է (մոկ)։");
-                          }}
+                          onClick={() => handleDelete(row._id)}
                         >
-                          Ջնջել
+                          {deletingIds.has(row._id) ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            "Ջնջել"
+                          )}
                         </Button>
                       </div>
                     </td>
@@ -183,11 +384,28 @@ export function NewsPageEditor() {
             </tbody>
           </table>
         </div>
+
+        {hasMore && !showInitialLoader && !showError && (
+          <div
+            ref={sentinelRef}
+            className="flex h-12 items-center justify-center text-[12px] text-[#646464]"
+          >
+            {isLoadingMore ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              "Բեռնում..."
+            )}
+          </div>
+        )}
       </div>
+
       <CreateNewsDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-        onSubmitNews={createNews}
+        open={dialogOpen}
+        onOpenChange={handleDialogChange}
+        onSubmitNews={handleSaveNews}
+        mode={editingId ? "edit" : "create"}
+        initialValues={editingValues ?? undefined}
+        initialImageUrl={editingImageUrl}
       />
     </div>
   );
