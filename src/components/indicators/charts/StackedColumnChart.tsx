@@ -93,7 +93,7 @@ function StackedColumnChart<T extends Record<string, string>>({
       );
 
       series.columns.template.setAll({
-        tooltipText: "{name}: {valueY}",
+        tooltipText: "{name} - {valueY}",
         tooltipY: am5.percent(10),
       });
       series.data.setAll(data);
@@ -112,6 +112,18 @@ function StackedColumnChart<T extends Record<string, string>>({
             populateText: true,
           }),
         });
+      });
+
+      legend.labels.template.setAll({
+        maxWidth: 300, // wrap when label exceeds this width (in pixels)
+        width: 300, // give it a fixed width so wrapping triggers consistently
+        oversizedBehavior: "wrap",
+      });
+
+      // Keep each legend item on its own row so wrapped text doesn't crowd neighbors
+      legend.itemContainers.template.setAll({
+        paddingTop: 2,
+        paddingBottom: 2,
       });
 
       legend.data.push(series);
