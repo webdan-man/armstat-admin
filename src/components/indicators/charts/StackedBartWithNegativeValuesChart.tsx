@@ -41,7 +41,7 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
     // Use only absolute numbers
     chart.getNumberFormatter().set("numberFormat", "#.#s");
 
-    const [leftKey, rightKey] = seriesKeys;
+    const [rightKey, leftKey] = seriesKeys;
 
     // Match the example palette (left: darker, right: lighter)
     const leftColor = am5.color(0x60a5fa);
@@ -97,7 +97,7 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
     // Top labels like the screenshot (MALE / FEMALE)
     chart.plotContainer.children.push(
       am5.Label.new(root, {
-        text: (leftKey ?? "").toUpperCase(),
+        text: leftKey ?? "",
         fontSize: "1.1em",
         fill: leftColor,
         x: am5.percent(25),
@@ -109,7 +109,7 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
     );
     chart.plotContainer.children.push(
       am5.Label.new(root, {
-        text: (rightKey ?? "").toUpperCase(),
+        text: rightKey ?? "",
         fontSize: "1.1em",
         fill: rightColor,
         x: am5.percent(75),
@@ -125,8 +125,7 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
     function createSeries(
       field: string,
       labelCenterX: number | am5.Percent,
-      pointerOrientation: "left" | "right",
-      rangeValue: number
+      pointerOrientation: "left" | "right"
     ) {
       const series = chart.series.push(
         am5xy.ColumnSeries.new(root, {
@@ -139,7 +138,7 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
           name: field,
           tooltip: am5.Tooltip.new(root, {
             pointerOrientation: pointerOrientation,
-            labelText: `${field}: {valueX.formatNumber('#.###')}`,
+            labelText: `${field} - {valueX.formatNumber('#.###')}`,
           }),
         })
       );
@@ -168,7 +167,12 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
         return am5.Bullet.new(root, {
           locationX: 1,
           locationY: 0.5,
-          sprite: valueLabel,
+          sprite: am5.Label.new(root, {
+            centerY: am5.p50,
+            text: "{valueX}",
+            populateText: true,
+            centerX: labelCenterX,
+          }),
         });
       });
 
@@ -180,12 +184,12 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
 
     // Left series (negative) and right series (positive)
     if (rightKey) {
-      const s = createSeries(rightKey, am5.p0, "left", 0);
+      const s = createSeries(rightKey, am5.p0, "left");
       s.setAll({ fill: rightColor, stroke: rightColor });
       s.columns.template.setAll({ fill: rightColor, stroke: rightColor });
     }
     if (leftKey) {
-      const s = createSeries(leftKey, am5.p100, "right", 0);
+      const s = createSeries(leftKey, am5.p100, "right");
       s.setAll({ fill: leftColor, stroke: leftColor });
       s.columns.template.setAll({ fill: leftColor, stroke: leftColor });
     }
