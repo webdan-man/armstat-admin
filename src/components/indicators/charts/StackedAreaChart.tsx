@@ -29,21 +29,16 @@ function StackedAreaChart<T extends Record<string, string>>({
         wheelY: "zoomX",
         pinchZoomX: true,
         paddingLeft: 0,
+        layout: root.verticalLayout,
       })
     );
 
-    const cursor = chart.set(
-      "cursor",
-      am5xy.XYCursor.new(root, {
-        behavior: "none",
-      })
-    );
+    const cursor = chart.set("cursor", am5xy.XYCursor.new(root, { behavior: "none" }));
     cursor.lineY.set("visible", false);
 
-    // ✅ Dynamic X axis
     const xAxis = chart.xAxes.push(
       am5xy.CategoryAxis.new(root, {
-        categoryField: String(xAxisKey),
+        categoryField: "year",
         startLocation: 0.5,
         endLocation: 0.5,
         renderer: am5xy.AxisRendererX.new(root, {
@@ -58,9 +53,7 @@ function StackedAreaChart<T extends Record<string, string>>({
 
     const yAxis = chart.yAxes.push(
       am5xy.ValueAxis.new(root, {
-        renderer: am5xy.AxisRendererY.new(root, {
-          pan: "zoom",
-        }),
+        renderer: am5xy.AxisRendererY.new(root, { pan: "zoom" }),
       })
     );
 
@@ -76,7 +69,7 @@ function StackedAreaChart<T extends Record<string, string>>({
           categoryXField: String(xAxisKey),
           tooltip: am5.Tooltip.new(root, {
             pointerOrientation: "horizontal",
-            labelText: `[bold]{name}[/]\n{${String(xAxisKey)}}: {valueY}`,
+            labelText: `[bold]{name}[/]\n{${String(xAxisKey)}} - {valueY}`,
           }),
         })
       );
@@ -88,14 +81,33 @@ function StackedAreaChart<T extends Record<string, string>>({
 
       series.data.setAll(data);
       series.appear(1000);
+
+      return series;
     });
 
-    chart.set(
-      "scrollbarX",
-      am5.Scrollbar.new(root, {
-        orientation: "horizontal",
+    chart.set("scrollbarX", am5.Scrollbar.new(root, { orientation: "horizontal" }));
+
+    const legend = chart.children.push(
+      am5.Legend.new(root, {
+        centerX: am5.p50,
+        x: am5.p50,
+        marginTop: 15,
+        marginBottom: 15,
+        useDefaultMarker: true,
       })
     );
+
+    legend.markers.template.setAll({ width: 22, height: 22 });
+
+    legend.markerRectangles.template.setAll({
+      cornerRadiusTL: 4,
+      cornerRadiusTR: 4,
+      cornerRadiusBL: 4,
+      cornerRadiusBR: 4,
+      strokeOpacity: 0,
+    });
+
+    legend.data.setAll(chart.series.values);
 
     chart.appear(1000, 100);
 
