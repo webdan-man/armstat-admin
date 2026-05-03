@@ -11,6 +11,7 @@ import StackedColumnChart from "@/components/indicators/charts/StackedColumnChar
 import StackedBartWithNegativeValuesChart from "@/components/indicators/charts/StackedBartWithNegativeValuesChart";
 import HistoricalPopulationPyramidChart from "@/components/indicators/charts/HistoricalPopulationPyramidChart";
 import ClusteredColumnChart from "@/components/indicators/charts/ClusteredColumnChart";
+import MapAndSemiPieChart from "@/components/indicators/charts/MapAndSemiPieChart";
 
 interface ChartProps {
   combinations?: MetricCombination[];
@@ -29,16 +30,7 @@ const Chart = ({ combinations = [] }: ChartProps) => {
 
   switch (chartType) {
     case "map-and-semi-pie":
-      return (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div>
-            <SemiCircleChart data={data?.pieData ?? []} />
-          </div>
-          <div>
-            <ArmeniaProvincesMap data={data?.mapData ?? []} />
-          </div>
-        </div>
-      );
+      return <MapAndSemiPieChart combinations={combinations} data={data} />;
     case "map-and-line-graph":
       return (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

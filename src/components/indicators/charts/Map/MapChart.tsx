@@ -33,13 +33,17 @@ interface ArmeniaMapChartProps {
     id: string;
     value: number;
   }[];
+  /** Fired when a province polygon is toggled; `null` when the selection is cleared. */
+  onPolygonSelect?: (provinceMapId: string | null) => void;
 }
 
-export default function ArmeniaMapChart({ data }: ArmeniaMapChartProps) {
+export default function ArmeniaMapChart({ data, onPolygonSelect }: ArmeniaMapChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const onPolygonSelectRef = useRef(onPolygonSelect);
 
   useLayoutEffect(() => {
     if (!containerRef.current) return;
+    onPolygonSelectRef.current = onPolygonSelect;
 
     const root = am5.Root.new(containerRef.current);
 
@@ -50,7 +54,7 @@ export default function ArmeniaMapChart({ data }: ArmeniaMapChartProps) {
         layout: root.horizontalLayout,
         width: am5.p100,
         height: am5.p100,
-        paddingRight: 220,
+        paddingRight: 150,
         paddingLeft: 20,
       })
     );
@@ -58,7 +62,7 @@ export default function ArmeniaMapChart({ data }: ArmeniaMapChartProps) {
     const chart = mainContainer.children.push(
       am5map.MapChart.new(root, {
         projection: am5map.geoMercator(),
-        width: am5.percent(70),
+        width: am5.percent(100),
       })
     );
 
@@ -76,15 +80,26 @@ export default function ArmeniaMapChart({ data }: ArmeniaMapChartProps) {
       selected: 0xffd700,
     };
 
+    const hexFlat = 0x8ab7ff;
+    const hexHover = 0x5d96e8;
+    const hexSelected = 0xffd700;
+
     polygonSeries.mapPolygons.template.setAll({
-      tooltipText: "{name} - {value}",
+      tooltipText: "{name}",
       interactive: true,
       toggleKey: "active",
-      fill: am5.color(0xaaaaaa),
+      fill: am5.color(hexFlat),
+      stroke: am5.color(0xffffff),
+      strokeWidth: 1,
+      cursorOverStyle: "pointer",
+    });
+
+    polygonSeries.mapPolygons.template.states.create("hover", {
+      fill: am5.color(hexHover),
     });
 
     polygonSeries.mapPolygons.template.states.create("active", {
-      fill: am5.color(COLORS.selected),
+      fill: am5.color(hexSelected),
       stroke: am5.color(0x000000),
       strokeWidth: 2,
     });
@@ -273,15 +288,21 @@ export default function ArmeniaMapChart({ data }: ArmeniaMapChartProps) {
           pinnedLabel.set("text", `${lockedValue} - ${lockedName}`);
           markerGroup.set("y", getMarkerPosition(lockedValue as number));
           markerGroup.set("visible", true);
+
+          const mapId = (dataItem.dataContext as any)?.id as string | undefined;
+          onPolygonSelectRef.current?.(mapId ?? null);
         } else {
           lockedValue = null;
           lockedName = "";
           markerGroup.set("visible", false);
+          onPolygonSelectRef.current?.(null);
         }
       }, 10);
     });
 
     // 10. DATA
+    const valueByProvinceId = new Map(data.map((d) => [d.id, d.value]));
+
     am5.net.load("/api/chart/map").then(({ response }: any) => {
       const geoData = am5.JSONParser.parse(response) as any;
 
@@ -291,7 +312,7 @@ export default function ArmeniaMapChart({ data }: ArmeniaMapChartProps) {
       const mapData = geoData.features.map(({ id, properties }: any) => ({
         id,
         name: PROVINCE_NAMES_BY_ID[id]?.[lang] ?? properties?.name ?? id,
-        value: Math.round(Math.random() * 1000),
+        value: valueByProvinceId.get(id) ?? 0,
       }));
 
       polygonSeries.set("geoJSON", geoData);

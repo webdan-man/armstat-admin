@@ -307,20 +307,14 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         };
       }
 
-      // Map + Semi-Circle PIE: Province + Gender
+      // Map + Semi-Circle PIE: Province + Gender (pie slices are derived in MapAndSemiPieChart from selected province)
       if (categories.has(AttributeCategory.PROVINCE) && categories.has(AttributeCategory.GENDER)) {
         const provinceAttributeId = attributeMapByCategory.get(AttributeCategory.PROVINCE)!._id;
         const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
-        const pieData = Array.from(
-          aggregateByAttributeTitle(combinations, genderAttributeId).entries()
-        ).map(([category, value]) => ({
-          value,
-          category,
-        }));
 
         const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
 
-        const data = { pieData, mapData };
+        const data = { mapData, provinceAttributeId, genderAttributeId };
 
         console.log("GENDER+PROVINCE MAP + SEMI-PIE", { combinations, data });
 

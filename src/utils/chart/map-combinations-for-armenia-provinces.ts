@@ -15,6 +15,26 @@ const provinces = [
 ];
 
 const provinceIdByHyTitle = new Map(provinces.map((p) => [p.title, p.id]));
+const provinceHyTitleById = new Map(provinces.map((p) => [p.id, p.title]));
+
+/** ISO-style map id (e.g. AM-ER) → Armenian province title as stored on combination rows. */
+export function getArmenianProvinceHyTitleByMapId(mapId: string): string | undefined {
+  return provinceHyTitleById.get(mapId);
+}
+
+export function filterCombinationsByProvinceMapId(
+  combinations: MetricCombination[],
+  provinceAttributeId: string,
+  provinceMapId: string | null
+): MetricCombination[] {
+  if (!provinceMapId) return combinations;
+  const hyTitle = getArmenianProvinceHyTitleByMapId(provinceMapId);
+  if (!hyTitle) return combinations;
+  return combinations.filter((item) => {
+    const provinceEntry = (item.row ?? []).find((r) => r.attributeId === provinceAttributeId);
+    return provinceEntry?.value?.title === hyTitle;
+  });
+}
 
 export const mapCombinationsForArmeniaProvinces = (
   combinations: MetricCombination[],

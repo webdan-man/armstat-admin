@@ -10,11 +10,13 @@ interface DataItem {
 
 interface SemiCircleChartProps {
   data: DataItem[];
+  /** Shown above the chart (e.g. selected marz); defaults to whole-country label. */
+  chartTitle?: string;
 }
 
 const containerId = "semi-pie-chartdiv";
 
-function SemiCircleChart({ data }: SemiCircleChartProps) {
+function SemiCircleChart({ data, chartTitle = "Հայաստան" }: SemiCircleChartProps) {
   useLayoutEffect(() => {
     const root = am5.Root.new(containerId);
 
@@ -24,8 +26,9 @@ function SemiCircleChart({ data }: SemiCircleChartProps) {
       am5percent.PieChart.new(root, {
         startAngle: 180,
         endAngle: 360,
-        layout: root.verticalLayout,
         innerRadius: am5.percent(50),
+        paddingLeft: 50,
+        paddingRight: 50,
       })
     );
 
@@ -39,9 +42,10 @@ function SemiCircleChart({ data }: SemiCircleChartProps) {
       })
     );
 
-    series.states.create("hidden", {
-      startAngle: 180,
-      endAngle: 180,
+    series.labels.template.setAll({
+      text: "{category} - {valuePercentTotal.formatNumber('0.0')}%",
+      inside: false,
+      radius: 10,
     });
 
     series.slices.template.setAll({
@@ -49,13 +53,15 @@ function SemiCircleChart({ data }: SemiCircleChartProps) {
       tooltipText: "{category} - {value}",
     });
 
-    series.ticks.template.setAll({
-      forceHidden: true,
-    });
-
-    series.labels.template.setAll({
-      text: "{category} - {valuePercentTotal.formatNumber('0.0')}%",
-    });
+    chart.children.unshift(
+      am5.Label.new(root, {
+        text: chartTitle,
+        fontSize: 16,
+        fontWeight: "500",
+        centerX: am5.p50,
+        x: am5.p50,
+      })
+    );
 
     series.data.setAll(data);
 
@@ -64,7 +70,7 @@ function SemiCircleChart({ data }: SemiCircleChartProps) {
     return () => {
       root.dispose();
     };
-  }, [data]);
+  }, [data, chartTitle]);
 
   return (
     <div>
