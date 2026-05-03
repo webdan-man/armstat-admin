@@ -14,7 +14,6 @@ import { mapCombinationsForClusteredColumnChart } from "../utils/chart/map-combi
 import { mapCombinationsForStackedBarWithNegativeValuesChartUtil } from "@/utils/chart/map-combinations-for-stacked-bar-with-negative-values-chart.util";
 import { createCombinationAttributesMap } from "@/utils/chart/create-combination-attributes-map.util";
 import { mapCombinationsForPyramid } from "@/utils/chart/map-combinations-for-pyramid";
-import { yearTotalsToLineData } from "@/utils/chart/year-totals-to-line-data";
 import { aggregateByAttributeTitle } from "@/utils/chart/aggregate-by-attribute-title";
 import { mapCombinationsForMapAndStackedAreaChart } from "@/utils/chart/map-combinations-for-map-and-stacked-area-chart.util";
 import { mapCombinationsForMapAndStackedColumnChart } from "@/utils/chart/map-combinations-for-map-and-stacked-column-chart.util";
@@ -350,17 +349,14 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         };
       }
 
-      // Map + Line graph: Province + Time
+      // Map + Line graph: Province + Time (line series is derived in MapAndLineGraphChart from selected province)
       if (categories.has(AttributeCategory.PROVINCE) && categories.has(AttributeCategory.TIME)) {
         const timeAttributeId = attributeMapByCategory.get(AttributeCategory.TIME)!._id;
         const provinceAttributeId = attributeMapByCategory.get(AttributeCategory.PROVINCE)!._id;
-        const lineData = yearTotalsToLineData(
-          aggregateByAttributeTitle(combinations, timeAttributeId)
-        );
 
         const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
 
-        const data = { lineData, mapData };
+        const data = { mapData, provinceAttributeId, timeAttributeId };
 
         console.log("PROVINCE+TIME MAP + LINE GRAPH", { combinations, data });
 

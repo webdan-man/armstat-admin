@@ -5,17 +5,19 @@ import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 
 interface DataItem {
-  date: string;
+  date: number;
   value: number;
 }
 
-interface SemiCircleChartProps {
+interface LineGraphChartProps {
   data: DataItem[];
+  /** Shown above the chart (e.g. selected marz); defaults to whole-country label. */
+  chartTitle?: string;
 }
 
 const containerId = "line-graph-chartdiv";
 
-function LineGraphChart({ data }: SemiCircleChartProps) {
+function LineGraphChart({ data, chartTitle = "Հայաստան" }: LineGraphChartProps) {
   useLayoutEffect(() => {
     const root = am5.Root.new(containerId);
 
@@ -33,6 +35,17 @@ function LineGraphChart({ data }: SemiCircleChartProps) {
         wheelY: "zoomX",
         pinchZoomX: true,
         paddingLeft: 0,
+        layout: root.verticalLayout,
+      })
+    );
+
+    chart.children.unshift(
+      am5.Label.new(root, {
+        text: chartTitle,
+        fontSize: 16,
+        fontWeight: "500",
+        centerX: am5.p50,
+        x: am5.p50,
       })
     );
 
@@ -117,7 +130,7 @@ function LineGraphChart({ data }: SemiCircleChartProps) {
     return () => {
       root.dispose();
     };
-  }, [data]);
+  }, [data, chartTitle]);
 
   return (
     <div>
