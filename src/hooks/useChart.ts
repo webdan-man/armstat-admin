@@ -323,20 +323,14 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         };
       }
 
-      // Map + Column with rotated labels: Province + AGE or AREA or OTHER
+      // Map + Column with rotated labels: Province + AGE or AREA or OTHER (columns derived in MapAndColumnWithRotatedLabelsChart from selected province)
       if (categories.has(AttributeCategory.PROVINCE) && ageOrAreaOrOther) {
         const provinceAttributeId = attributeMapByCategory.get(AttributeCategory.PROVINCE)!._id;
-        const ageAttributeId = attributeMapByCategory.get(ageOrAreaOrOther)!._id;
-        const columnData = Array.from(
-          aggregateByAttributeTitle(combinations, ageAttributeId).entries()
-        ).map(([xAxisKey, value]) => ({
-          value,
-          xAxisKey,
-        }));
+        const breakdownAttributeId = attributeMapByCategory.get(ageOrAreaOrOther)!._id;
 
         const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
 
-        const data = { columnData, mapData };
+        const data = { mapData, provinceAttributeId, breakdownAttributeId };
 
         console.log("PROVINCE+AGE or AREA or OTHER MAP + COLUMN WITH ROTATED LABELS", {
           combinations,

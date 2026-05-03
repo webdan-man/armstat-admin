@@ -13,6 +13,7 @@ import HistoricalPopulationPyramidChart from "@/components/indicators/charts/His
 import ClusteredColumnChart from "@/components/indicators/charts/ClusteredColumnChart";
 import MapAndSemiPieChart from "@/components/indicators/charts/MapAndSemiPieChart";
 import MapAndLineGraphChart from "@/components/indicators/charts/MapAndLineGraphChart";
+import MapAndColumnWithRotatedLabelsChart from "@/components/indicators/charts/MapAndColumnWithRotatedLabelsChart";
 
 interface ChartProps {
   combinations?: MetricCombination[];
@@ -95,16 +96,7 @@ const Chart = ({ combinations = [] }: ChartProps) => {
         </div>
       );
     case "map-and-column-with-rotated-labels":
-      return (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div>
-            <ColumnWithRotatedLabelsChart data={data?.columnData ?? []} />
-          </div>
-          <div>
-            <ArmeniaProvincesMap data={data?.mapData ?? []} />
-          </div>
-        </div>
-      );
+      return <MapAndColumnWithRotatedLabelsChart combinations={combinations} data={data} />;
     case "semi-pie":
       return (
         <div>
