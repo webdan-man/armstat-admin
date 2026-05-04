@@ -1,4 +1,4 @@
-import { useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
@@ -21,15 +21,26 @@ function ColumnWithRotatedLabelsChart({
   data,
   chartTitle = "Հայաստան",
 }: ColumnWithRotatedLabelsChartProps) {
+  const rootRef = useRef<am5.Root | null>(null);
+  const titleLabelRef = useRef<am5.Label | null>(null);
+  const xAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
+  const seriesRef = useRef<am5xy.ColumnSeries | null>(null);
+  const legendRef = useRef<am5.Legend | null>(null);
+  const legendLabelRef = useRef<am5.Label | null>(null);
+
   useLayoutEffect(() => {
+    // Create chart once; otherwise amCharts replays intro animations on every data update.
+    if (rootRef.current) return;
+
     const root = am5.Root.new(containerId);
+    rootRef.current = root;
 
     root.setThemes([am5themes_Animated.new(root)]);
 
     // Root layout
     root.container.set("layout", root.verticalLayout);
 
-    root.container.children.unshift(
+    const titleLabel = root.container.children.unshift(
       am5.Label.new(root, {
         text: chartTitle,
         fontSize: 16,
@@ -38,6 +49,7 @@ function ColumnWithRotatedLabelsChart({
         x: am5.p50,
       })
     );
+    titleLabelRef.current = titleLabel;
 
     // Chart
     const chart = root.container.children.push(
@@ -80,6 +92,7 @@ function ColumnWithRotatedLabelsChart({
         tooltip: am5.Tooltip.new(root, {}),
       })
     );
+    xAxisRef.current = xAxis;
 
     // Y Axis
     const yRenderer = am5xy.AxisRendererY.new(root, {
@@ -90,6 +103,7 @@ function ColumnWithRotatedLabelsChart({
       am5xy.ValueAxis.new(root, {
         maxDeviation: 0.3,
         renderer: yRenderer,
+        min: 0,
       })
     );
 
@@ -106,6 +120,7 @@ function ColumnWithRotatedLabelsChart({
         }),
       })
     );
+    seriesRef.current = series;
 
     series.columns.template.setAll({
       cornerRadiusTL: 5,
@@ -141,7 +156,7 @@ function ColumnWithRotatedLabelsChart({
     );
 
     // Label
-    legendBar.children.push(
+    const legendLabel = legendBar.children.push(
       am5.Label.new(root, {
         text: data[0]?.label || "Հատկանիշ",
         centerY: am5.p50,
@@ -149,6 +164,7 @@ function ColumnWithRotatedLabelsChart({
         fontSize: 14,
       })
     );
+    legendLabelRef.current = legendLabel;
 
     // Legend
     const legend = legendBar.children.push(
@@ -161,6 +177,7 @@ function ColumnWithRotatedLabelsChart({
         width: am5.percent(100),
       })
     );
+    legendRef.current = legend;
 
     // Hide text labels
     legend.labels.template.set("forceHidden", true);
@@ -227,9 +244,34 @@ function ColumnWithRotatedLabelsChart({
     chart.appear(1000, 100);
 
     return () => {
+      rootRef.current = null;
+      titleLabelRef.current = null;
+      xAxisRef.current = null;
+      seriesRef.current = null;
+      legendRef.current = null;
+      legendLabelRef.current = null;
       root.dispose();
     };
-  }, [data, chartTitle]);
+  }, []);
+
+  useEffect(() => {
+    const xAxis = xAxisRef.current;
+    const series = seriesRef.current;
+    if (!xAxis || !series) return;
+
+    xAxis.data.setAll(data);
+    series.data.setAll(data);
+
+    // Legend binds to series dataItems; refresh after data update.
+    legendRef.current?.data.setAll(series.dataItems);
+
+    // Update legend descriptor label (e.g. "Հատկանիշ") based on data.
+    legendLabelRef.current?.set("text", data[0]?.label || "Հատկանիշ");
+  }, [data]);
+
+  useEffect(() => {
+    titleLabelRef.current?.set("text", chartTitle);
+  }, [chartTitle]);
 
   return (
     <div>

@@ -366,12 +366,15 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
         const xAxisKey = "other";
 
-        const { data, seriesKeys } = mapCombinationsForClusteredColumnChart({
+        const mapped = mapCombinationsForClusteredColumnChart({
           combinations,
           xAxisAttributeId: otherAttributeId,
           yAxisAttributeId: areaAttributeId,
           xAxisKey,
         });
+
+        const { data, seriesKeys } = mapped;
+        const resolvedXAxisKey = "xAxisKey" in mapped ? mapped.xAxisKey : xAxisKey;
 
         console.log(`CLUSTERED COLUMN CHART: X - OTHER, Y - AREA`, {
           combinations,
@@ -381,7 +384,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
         return {
           type: "clustered-column-chart",
-          xAxisKey,
+          xAxisKey: resolvedXAxisKey,
           seriesKeys,
           data,
         };

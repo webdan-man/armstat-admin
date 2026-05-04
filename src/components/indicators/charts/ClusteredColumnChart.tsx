@@ -23,71 +23,80 @@ function ClusteredColumnChart<T extends Record<string, string>>({
 
     root.setThemes([am5themes_Animated.new(root)]);
 
-    // Create chart
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/
+    root.container.set("layout", root.verticalLayout);
+
     const chart = root.container.children.push(
       am5xy.XYChart.new(root, {
-        panX: false,
+        panX: true,
         panY: false,
-        paddingLeft: 0,
-        paddingBottom: 40,
         wheelX: "panX",
         wheelY: "zoomX",
-        layout: root.verticalLayout,
+        pinchZoomX: true,
+        paddingLeft: 0,
+        paddingRight: 1,
+        height: am5.percent(70),
       })
     );
 
-    // Add legend
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/legend-xy-series/
-    const legend = chart.children.push(
-      am5.Legend.new(root, {
-        centerX: am5.p50,
-        x: am5.p50,
-      })
-    );
+    chart.set("scrollbarX", am5.Scrollbar.new(root, { orientation: "horizontal" }));
 
-    // Create axes
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
+    // ========== AXES ==========
     const xRenderer = am5xy.AxisRendererX.new(root, {
+      minGridDistance: 30,
+      minorGridEnabled: true,
       cellStartLocation: 0.1,
       cellEndLocation: 0.9,
-      minorGridEnabled: true,
-    });
-
-    // Prevent long labels from overlapping
-    xRenderer.labels.template.setAll({
-      rotation: 0,
-      centerY: am5.p50,
-      centerX: am5.p50,
-      oversizedBehavior: "wrap",
-      maxWidth: 180,
-      textAlign: "center",
     });
 
     const xAxis = chart.xAxes.push(
       am5xy.CategoryAxis.new(root, {
+        maxDeviation: 0.3,
         categoryField: xAxisKey,
         renderer: xRenderer,
-        tooltip: am5.Tooltip.new(root, {}),
       })
     );
 
-    xRenderer.grid.template.setAll({
-      location: 1,
+    xRenderer.labels.template.setAll({
+      rotation: 0,
+      centerY: am5.p50,
+      centerX: am5.p100,
+      paddingRight: 15,
+      maxWidth: 300,
+      oversizedBehavior: "wrap",
     });
+
+    xRenderer.grid.template.setAll({ location: 1 });
 
     xAxis.data.setAll(data);
 
     const yAxis = chart.yAxes.push(
       am5xy.ValueAxis.new(root, {
-        renderer: am5xy.AxisRendererY.new(root, {
-          strokeOpacity: 0.1,
-        }),
+        min: 0,
+        maxDeviation: 0.3,
+        renderer: am5xy.AxisRendererY.new(root, { strokeOpacity: 0.1 }),
       })
     );
 
-    // Add series
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/series/
+    // ========== LEGEND ==========
+    const legend = root.container.children.push(
+      am5.Legend.new(root, {
+        centerX: am5.p50,
+        x: am5.p50,
+        marginTop: 15,
+        marginBottom: 15,
+        width: am5.percent(95),
+        height: am5.percent(30),
+        layout: root.gridLayout,
+        verticalScrollbar: am5.Scrollbar.new(root, { orientation: "vertical" }),
+      })
+    );
+
+    legend.labels.template.setAll({
+      maxWidth: 300,
+      oversizedBehavior: "wrap",
+    });
+
+    // ========== SERIES ==========
     function makeSeries(name: string, fieldName: string) {
       const series = chart.series.push(
         am5xy.ColumnSeries.new(root, {
@@ -96,43 +105,28 @@ function ClusteredColumnChart<T extends Record<string, string>>({
           yAxis: yAxis,
           valueYField: fieldName,
           categoryXField: xAxisKey,
-          stacked,
-          clustered: !stacked,
         })
       );
 
       series.columns.template.setAll({
-        tooltipText: "{categoryX}:{valueY}",
-        width: am5.percent(90),
-        tooltipY: 0,
+        cornerRadiusTL: 5,
+        cornerRadiusTR: 5,
         strokeOpacity: 0,
+        width: am5.percent(90),
+        tooltipText: "{valueY}",
       });
 
       series.data.setAll(data);
-
-      // Make stuff animate on load
-      // https://www.amcharts.com/docs/v5/concepts/animations/
       series.appear();
 
-      series.bullets.push(function () {
-        return am5.Bullet.new(root, {
-          sprite: am5.Label.new(root, {
-            text: "{valueY}",
-            fill: root.interfaceColors.get("alternativeText"),
-            centerY: am5.p50,
-            centerX: am5.p50,
-            populateText: true,
-          }),
-        });
-      });
-
       legend.data.push(series);
+      return series;
     }
 
-    seriesKeys?.map((key) => makeSeries(key, key));
+    seriesKeys.forEach(function (def) {
+      makeSeries(def, def);
+    });
 
-    // Make stuff animate on load
-    // https://www.amcharts.com/docs/v5/concepts/animations/
     chart.appear(1000, 100);
 
     return () => {
