@@ -40,6 +40,10 @@ function ClusteredColumnChart<T extends Record<string, string>>({
 
     chart.set("scrollbarX", am5.Scrollbar.new(root, { orientation: "horizontal" }));
 
+    const cursor = chart.set("cursor", am5xy.XYCursor.new(root, { behavior: "none" }));
+    cursor.lineY.set("visible", false);
+    cursor.lineX.set("visible", false);
+
     // ========== AXES ==========
     const xRenderer = am5xy.AxisRendererX.new(root, {
       minGridDistance: 30,
@@ -47,6 +51,8 @@ function ClusteredColumnChart<T extends Record<string, string>>({
       cellStartLocation: 0.1,
       cellEndLocation: 0.9,
     });
+
+    xRenderer.grid.template.setAll({ location: 1 });
 
     const xAxis = chart.xAxes.push(
       am5xy.CategoryAxis.new(root, {
@@ -59,10 +65,8 @@ function ClusteredColumnChart<T extends Record<string, string>>({
     xRenderer.labels.template.setAll({
       rotation: 0,
       centerY: am5.p50,
-      centerX: am5.p100,
-      paddingRight: 15,
-      maxWidth: 300,
-      oversizedBehavior: "wrap",
+      centerX: am5.p50,
+      paddingTop: 10,
     });
 
     xRenderer.grid.template.setAll({ location: 1 });
@@ -71,7 +75,6 @@ function ClusteredColumnChart<T extends Record<string, string>>({
 
     const yAxis = chart.yAxes.push(
       am5xy.ValueAxis.new(root, {
-        min: 0,
         maxDeviation: 0.3,
         renderer: am5xy.AxisRendererY.new(root, { strokeOpacity: 0.1 }),
       })
@@ -97,14 +100,20 @@ function ClusteredColumnChart<T extends Record<string, string>>({
     });
 
     // ========== SERIES ==========
-    function makeSeries(name: string, fieldName: string) {
+    const seriesByItem: Record<string, am5xy.ColumnSeries[]> = {};
+
+    const makeSeries = (name: string, fieldName: string, index: number) => {
+      seriesByItem[name] = [];
+
       const series = chart.series.push(
         am5xy.ColumnSeries.new(root, {
-          name: name,
-          xAxis: xAxis,
-          yAxis: yAxis,
+          name,
+          xAxis,
+          yAxis,
           valueYField: fieldName,
           categoryXField: xAxisKey,
+          stacked,
+          clustered: !stacked,
         })
       );
 
@@ -121,10 +130,24 @@ function ClusteredColumnChart<T extends Record<string, string>>({
 
       legend.data.push(series);
       return series;
-    }
+    };
 
-    seriesKeys.forEach(function (def) {
-      makeSeries(def, def);
+    seriesKeys.forEach((def, index) => makeSeries(def, def, index));
+
+    // Sync legend visibility across stacked series
+    chart.series.values.forEach((s) => {
+      s.on("visible", (visible) => {
+        const itemField = s.get("valueYField")?.replace(/_y\d{4}$/, "");
+        const siblings = seriesByItem[itemField as string];
+
+        if (!siblings) return;
+
+        siblings.forEach((sib) => {
+          if (sib !== s && sib.get("visible") !== visible) {
+            sib.set("visible", visible);
+          }
+        });
+      });
     });
 
     chart.appear(1000, 100);
@@ -136,6 +159,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
 
   return (
     <div>
+      {JSON.stringify(data, null, 2)}
       <div id={containerId} style={{ width: "100%", height: "500px" }} />
     </div>
   );

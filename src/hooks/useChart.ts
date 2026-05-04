@@ -180,12 +180,15 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
         const xAxisKey = stackedCategory === AttributeCategory.AREA ? "area" : "other";
 
-        const { data, seriesKeys } = mapCombinationsForClusteredColumnChart({
+        const mapped = mapCombinationsForClusteredColumnChart({
           combinations,
           xAxisAttributeId,
           yAxisAttributeId: genderAttributeId,
           xAxisKey,
         });
+
+        const { data, seriesKeys } = mapped;
+        const resolvedXAxisKey = "xAxisKey" in mapped ? mapped.xAxisKey : xAxisKey;
 
         console.log(`CLUSTERED COLUMN CHART (STACKED): X - ${stackedCategory}, SERIES - GENDER`, {
           combinations,
@@ -195,7 +198,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
         return {
           type: "clustered-column-chart-stacked",
-          xAxisKey,
+          xAxisKey: resolvedXAxisKey,
           seriesKeys,
           data,
         };
