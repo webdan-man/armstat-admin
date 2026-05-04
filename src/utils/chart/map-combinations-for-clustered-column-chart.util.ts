@@ -9,6 +9,15 @@ export const mapCombinationsForClusteredColumnChart = (payload: {
 }) => {
   const { combinations, xAxisAttributeId, yAxisAttributeId, xAxisKey } = payload;
 
+  // Default orientation produced by this mapper:
+  // - X axis: many categories (e.g. `other`)
+  // - Series: few keys (e.g. "Քաղաք"/"Գյուղ")
+  //
+  // For some indicators we need the opposite:
+  // - X axis: the few keys (e.g. "Քաղաք"/"Գյուղ") => 2 columns/groups
+  // - Series: the many categories (e.g. each "other" label)
+  //
+  // So we build the default map, then auto-transpose when it matches that pattern.
   const resultMap: Record<string, Record<string, string | number>> = {};
   const seriesKeys: string[] = [];
 
@@ -34,8 +43,48 @@ export const mapCombinationsForClusteredColumnChart = (payload: {
     resultMap[xAxisTitle][seriesKey] = Math.round(value);
   }
 
+  const data = Object.values(resultMap);
+
+  // If we have many x categories but only a few series keys (typically 2),
+  // transpose so the chart shows 2 grouped columns with many inner columns.
+  const uniqueX = new Set(data.map((d) => d?.[xAxisKey]).filter(Boolean));
+  if (uniqueX.size > seriesKeys.length && seriesKeys.length >= 2) {
+    const categories: string[] = [];
+    const seen = new Set<string>();
+
+    for (const row of data) {
+      const label = row?.[xAxisKey];
+      if (typeof label !== "string" || !label.trim()) continue;
+      if (seen.has(label)) continue;
+      seen.add(label);
+      categories.push(label);
+    }
+
+    const newXAxisKey = "__group__";
+
+    const transposed = seriesKeys.map((groupKey) => {
+      const out: Record<string, string | number> = { [newXAxisKey]: groupKey };
+
+      for (const row of data) {
+        const category = row?.[xAxisKey];
+        if (typeof category !== "string" || !category.trim()) continue;
+
+        const v = row?.[groupKey];
+        out[category] = typeof v === "number" ? v : Number(v ?? 0);
+      }
+
+      return out;
+    });
+
+    return {
+      data: transposed,
+      seriesKeys: categories,
+      xAxisKey: newXAxisKey,
+    };
+  }
+
   return {
-    data: Object.values(resultMap),
+    data,
     seriesKeys,
   };
 };
