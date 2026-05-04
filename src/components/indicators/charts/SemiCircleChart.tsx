@@ -1,4 +1,4 @@
-import { useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5percent from "@amcharts/amcharts5/percent";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
@@ -17,8 +17,16 @@ interface SemiCircleChartProps {
 const containerId = "semi-pie-chartdiv";
 
 function SemiCircleChart({ data, chartTitle = "Հայաստան" }: SemiCircleChartProps) {
+  const rootRef = useRef<am5.Root | null>(null);
+  const seriesRef = useRef<am5percent.PieSeries | null>(null);
+  const titleLabelRef = useRef<am5.Label | null>(null);
+
   useLayoutEffect(() => {
+    // Create chart once; otherwise amCharts replays intro animations on every data update.
+    if (rootRef.current) return;
+
     const root = am5.Root.new(containerId);
+    rootRef.current = root;
 
     root.setThemes([am5themes_Animated.new(root)]);
 
@@ -27,8 +35,8 @@ function SemiCircleChart({ data, chartTitle = "Հայաստան" }: SemiCircleCh
         startAngle: 180,
         endAngle: 360,
         innerRadius: am5.percent(50),
-        paddingLeft: 50,
-        paddingRight: 50,
+        paddingLeft: 100,
+        paddingRight: 100,
       })
     );
 
@@ -41,6 +49,7 @@ function SemiCircleChart({ data, chartTitle = "Հայաստան" }: SemiCircleCh
         alignLabels: false,
       })
     );
+    seriesRef.current = series;
 
     series.labels.template.setAll({
       text: "{category} - {valuePercentTotal.formatNumber('0.0')}%",
@@ -53,7 +62,7 @@ function SemiCircleChart({ data, chartTitle = "Հայաստան" }: SemiCircleCh
       tooltipText: "{category} - {value}",
     });
 
-    chart.children.unshift(
+    titleLabelRef.current = chart.children.unshift(
       am5.Label.new(root, {
         text: chartTitle,
         fontSize: 16,
@@ -63,14 +72,25 @@ function SemiCircleChart({ data, chartTitle = "Հայաստան" }: SemiCircleCh
       })
     );
 
+    // Run the intro animation only once on mount.
     series.data.setAll(data);
-
-    series.appear(1000, 100);
+    series.appear();
 
     return () => {
+      rootRef.current = null;
+      seriesRef.current = null;
+      titleLabelRef.current = null;
       root.dispose();
     };
-  }, [data, chartTitle]);
+  }, []);
+
+  useEffect(() => {
+    seriesRef.current?.data.setAll(data);
+  }, [data]);
+
+  useEffect(() => {
+    titleLabelRef.current?.set("text", chartTitle);
+  }, [chartTitle]);
 
   return (
     <div>

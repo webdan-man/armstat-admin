@@ -48,9 +48,14 @@ const MapAndLineGraphChart = ({ combinations, data }: MapAndLineGraphChartProps)
   }, [selectedProvinceMapId]);
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[35fr_65fr]">
       <div>
-        <ArmeniaProvincesMap data={mapData} onPolygonSelect={onPolygonSelect} />
+        <ArmeniaProvincesMap
+          data={mapData}
+          onPolygonSelect={onPolygonSelect}
+          onPolygonHover={onPolygonSelect}
+          showRightColumn={false}
+        />
       </div>
       <div>
         <LineGraphChart data={lineData} chartTitle={chartTitle} />

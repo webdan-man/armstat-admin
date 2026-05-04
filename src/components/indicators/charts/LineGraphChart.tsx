@@ -1,5 +1,4 @@
-import React from "react";
-import { useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
@@ -18,8 +17,16 @@ interface LineGraphChartProps {
 const containerId = "line-graph-chartdiv";
 
 function LineGraphChart({ data, chartTitle = "Հայաստան" }: LineGraphChartProps) {
+  const rootRef = useRef<am5.Root | null>(null);
+  const seriesRef = useRef<am5xy.LineSeries | null>(null);
+  const titleLabelRef = useRef<am5.Label | null>(null);
+
   useLayoutEffect(() => {
+    // Create chart once; otherwise amCharts replays intro animations on every data update.
+    if (rootRef.current) return;
+
     const root = am5.Root.new(containerId);
+    rootRef.current = root;
 
     // Set themes
     // https://www.amcharts.com/docs/v5/concepts/themes/
@@ -39,7 +46,7 @@ function LineGraphChart({ data, chartTitle = "Հայաստան" }: LineGraphChar
       })
     );
 
-    chart.children.unshift(
+    const titleLabel = chart.children.unshift(
       am5.Label.new(root, {
         text: chartTitle,
         fontSize: 16,
@@ -48,6 +55,7 @@ function LineGraphChart({ data, chartTitle = "Հայաստան" }: LineGraphChar
         x: am5.p50,
       })
     );
+    titleLabelRef.current = titleLabel;
 
     // Add cursor
     // https://www.amcharts.com/docs/v5/charts/xy-chart/cursor/
@@ -109,6 +117,7 @@ function LineGraphChart({ data, chartTitle = "Հայաստան" }: LineGraphChar
         }),
       })
     );
+    seriesRef.current = series;
 
     // // Add scrollbar
     // // https://www.amcharts.com/docs/v5/charts/xy-chart/scrollbars/
@@ -128,9 +137,20 @@ function LineGraphChart({ data, chartTitle = "Հայաստան" }: LineGraphChar
     series.data.setAll(data);
 
     return () => {
+      rootRef.current = null;
+      seriesRef.current = null;
+      titleLabelRef.current = null;
       root.dispose();
     };
-  }, [data, chartTitle]);
+  }, []);
+
+  useEffect(() => {
+    seriesRef.current?.data.setAll(data);
+  }, [data]);
+
+  useEffect(() => {
+    titleLabelRef.current?.set("text", chartTitle);
+  }, [chartTitle]);
 
   return (
     <div>

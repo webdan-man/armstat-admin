@@ -33,17 +33,28 @@ interface ArmeniaMapChartProps {
     id: string;
     value: number;
   }[];
+  /** Shows the right-side legend/marker column. */
+  showRightColumn?: boolean;
   /** Fired when a province polygon is toggled; `null` when the selection is cleared. */
   onPolygonSelect?: (provinceMapId: string | null) => void;
+  /** Fired on polygon hover; `null` when pointer leaves the map polygon. */
+  onPolygonHover?: (provinceMapId: string | null) => void;
 }
 
-export default function ArmeniaMapChart({ data, onPolygonSelect }: ArmeniaMapChartProps) {
+export default function ArmeniaMapChart({
+  data,
+  showRightColumn = true,
+  onPolygonSelect,
+  onPolygonHover,
+}: ArmeniaMapChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const onPolygonSelectRef = useRef(onPolygonSelect);
+  const onPolygonHoverRef = useRef(onPolygonHover);
 
   useLayoutEffect(() => {
     if (!containerRef.current) return;
     onPolygonSelectRef.current = onPolygonSelect;
+    onPolygonHoverRef.current = onPolygonHover;
 
     const root = am5.Root.new(containerRef.current);
 
@@ -54,7 +65,7 @@ export default function ArmeniaMapChart({ data, onPolygonSelect }: ArmeniaMapCha
         layout: root.horizontalLayout,
         width: am5.p100,
         height: am5.p100,
-        paddingRight: 150,
+        paddingRight: showRightColumn ? 150 : 20,
         paddingLeft: 20,
       })
     );
@@ -115,127 +126,135 @@ export default function ArmeniaMapChart({ data, onPolygonSelect }: ArmeniaMapCha
       },
     ]);
 
-    // 5. LEGEND
-    const heatLegend = mainContainer.children.push(
-      am5.HeatLegend.new(root, {
-        orientation: "vertical",
-        startColor: am5.color(COLORS.low),
-        endColor: am5.color(COLORS.high),
-        startOpacity: 1,
-        endOpacity: 1,
-        startText: "Min",
-        endText: "Max",
-        centerY: am5.p50,
-        y: am5.p50,
-        height: am5.percent(80),
-        marginLeft: 40,
-      })
-    );
+    // 5-7. OPTIONAL RIGHT COLUMN (legend + markers)
+    let heatLegend: am5.HeatLegend | null = null;
+    let markerGroup: am5.Container | null = null;
+    let pinnedLabel: am5.Label | null = null;
+    let hoverGroup: am5.Container | null = null;
+    let hoverLabel: am5.Label | null = null;
 
-    heatLegend.startLabel.setAll({
-      centerX: am5.p50,
-      x: am5.p50,
-      centerY: am5.p100,
-      dy: 30,
-      isMeasured: false,
-      fill: am5.color(COLORS.low),
-      fontWeight: "bold",
-    });
+    if (showRightColumn) {
+      heatLegend = mainContainer.children.push(
+        am5.HeatLegend.new(root, {
+          orientation: "vertical",
+          startColor: am5.color(COLORS.low),
+          endColor: am5.color(COLORS.high),
+          startOpacity: 1,
+          endOpacity: 1,
+          startText: "Min",
+          endText: "Max",
+          centerY: am5.p50,
+          y: am5.p50,
+          height: am5.percent(80),
+          marginLeft: 40,
+        })
+      );
 
-    heatLegend.endLabel.setAll({
-      centerX: am5.p50,
-      x: am5.p50,
-      centerY: 0,
-      dy: -30,
-      isMeasured: false,
-      fill: am5.color(COLORS.high),
-      fontWeight: "bold",
-    });
-
-    // 6. MARKER CONTAINER
-    const markerContainer = heatLegend.children.push(
-      am5.Container.new(root, {
-        width: am5.p100,
-        height: am5.p100,
+      heatLegend.startLabel.setAll({
+        centerX: am5.p50,
+        x: am5.p50,
+        centerY: am5.p100,
+        dy: 30,
         isMeasured: false,
-        position: "absolute",
-        x: 0,
-        y: 0,
-      })
-    );
-
-    // 7a. PINNED MARKER
-    const markerGroup = markerContainer.children.push(
-      am5.Container.new(root, {
-        layout: root.horizontalLayout,
-        centerX: 0,
-        centerY: am5.p50,
-        x: am5.p100,
-        dx: 15,
-        visible: false,
-      })
-    );
-
-    markerGroup.children.push(
-      am5.Triangle.new(root, {
-        width: 10,
-        height: 10,
-        fill: am5.color(0xccac00),
-        stroke: am5.color(0xffffff),
-        strokeWidth: 1,
-        rotation: 270,
-        centerY: am5.p50,
-      })
-    );
-
-    const pinnedLabel = markerGroup.children.push(
-      am5.Label.new(root, {
-        text: "",
-        fill: am5.color(0xccac00),
+        fill: am5.color(COLORS.low),
         fontWeight: "bold",
-        fontSize: 14,
-        paddingLeft: 8,
-        centerY: am5.p50,
-      })
-    );
+      });
 
-    // 7b. HOVER MARKER
-    const hoverGroup = markerContainer.children.push(
-      am5.Container.new(root, {
-        layout: root.horizontalLayout,
-        centerX: am5.p100,
-        centerY: am5.p50,
-        x: 0,
-        dx: -10,
-        visible: false,
-      })
-    );
-
-    const hoverLabel = hoverGroup.children.push(
-      am5.Label.new(root, {
-        text: "",
+      heatLegend.endLabel.setAll({
+        centerX: am5.p50,
+        x: am5.p50,
+        centerY: 0,
+        dy: -30,
+        isMeasured: false,
         fill: am5.color(COLORS.high),
         fontWeight: "bold",
-        fontSize: 14,
-        paddingRight: 8,
-        centerY: am5.p50,
-      })
-    );
+      });
 
-    hoverGroup.children.push(
-      am5.Triangle.new(root, {
-        width: 10,
-        height: 10,
-        fill: am5.color(COLORS.high),
-        stroke: am5.color(0xffffff),
-        strokeWidth: 1,
-        rotation: 90,
-        centerY: am5.p50,
-      })
-    );
+      const markerContainer = heatLegend.children.push(
+        am5.Container.new(root, {
+          width: am5.p100,
+          height: am5.p100,
+          isMeasured: false,
+          position: "absolute",
+          x: 0,
+          y: 0,
+        })
+      );
+
+      // 7a. PINNED MARKER
+      markerGroup = markerContainer.children.push(
+        am5.Container.new(root, {
+          layout: root.horizontalLayout,
+          centerX: 0,
+          centerY: am5.p50,
+          x: am5.p100,
+          dx: 15,
+          visible: false,
+        })
+      );
+
+      markerGroup.children.push(
+        am5.Triangle.new(root, {
+          width: 10,
+          height: 10,
+          fill: am5.color(0xccac00),
+          stroke: am5.color(0xffffff),
+          strokeWidth: 1,
+          rotation: 270,
+          centerY: am5.p50,
+        })
+      );
+
+      pinnedLabel = markerGroup.children.push(
+        am5.Label.new(root, {
+          text: "",
+          fill: am5.color(0xccac00),
+          fontWeight: "bold",
+          fontSize: 14,
+          paddingLeft: 8,
+          centerY: am5.p50,
+        })
+      );
+
+      // 7b. HOVER MARKER
+      hoverGroup = markerContainer.children.push(
+        am5.Container.new(root, {
+          layout: root.horizontalLayout,
+          centerX: am5.p100,
+          centerY: am5.p50,
+          x: 0,
+          dx: -10,
+          visible: false,
+        })
+      );
+
+      hoverLabel = hoverGroup.children.push(
+        am5.Label.new(root, {
+          text: "",
+          fill: am5.color(COLORS.high),
+          fontWeight: "bold",
+          fontSize: 14,
+          paddingRight: 8,
+          centerY: am5.p50,
+        })
+      );
+
+      hoverGroup.children.push(
+        am5.Triangle.new(root, {
+          width: 10,
+          height: 10,
+          fill: am5.color(COLORS.high),
+          stroke: am5.color(0xffffff),
+          strokeWidth: 1,
+          rotation: 90,
+          centerY: am5.p50,
+        })
+      );
+    }
 
     // 8. HELPERS
     const getMarkerPosition = (value: number) => {
+      if (!heatLegend) return 0;
       const low = heatLegend.get("startValue") as number | undefined;
       const high = heatLegend.get("endValue") as number | undefined;
 
@@ -246,12 +265,14 @@ export default function ArmeniaMapChart({ data, onPolygonSelect }: ArmeniaMapCha
     };
 
     const showHoverIndicator = (value: number, name: string) => {
+      if (!hoverLabel || !hoverGroup) return;
       hoverLabel.set("text", `${name} - ${value}`);
       hoverGroup.set("y", getMarkerPosition(value));
       hoverGroup.set("visible", true);
     };
 
     const hideHoverIndicator = () => {
+      if (!hoverGroup) return;
       hoverGroup.set("visible", false);
     };
 
@@ -264,13 +285,19 @@ export default function ArmeniaMapChart({ data, onPolygonSelect }: ArmeniaMapCha
       const dataItem = ev?.target?.dataItem as any;
       const value = dataItem?.get?.("value") as number | undefined;
       const name = (dataItem?.dataContext as any)?.name ?? "Region";
+      const id = (dataItem?.dataContext as any)?.id as string | undefined;
 
       if (value !== undefined) {
         showHoverIndicator(value, name);
       }
+
+      onPolygonHoverRef.current?.(id ?? null);
     });
 
-    polygonSeries.mapPolygons.template.events.on("pointerout", hideHoverIndicator);
+    polygonSeries.mapPolygons.template.events.on("pointerout", () => {
+      hideHoverIndicator();
+      onPolygonHoverRef.current?.(null);
+    });
 
     polygonSeries.mapPolygons.template.events.on("click", (ev: any) => {
       const target = ev?.target as any;
@@ -285,16 +312,18 @@ export default function ArmeniaMapChart({ data, onPolygonSelect }: ArmeniaMapCha
           lockedValue = dataItem.get("value");
           lockedName = (dataItem.dataContext as any)?.name ?? "Region";
 
+        if (pinnedLabel && markerGroup) {
           pinnedLabel.set("text", `${lockedValue} - ${lockedName}`);
           markerGroup.set("y", getMarkerPosition(lockedValue as number));
           markerGroup.set("visible", true);
+        }
 
           const mapId = (dataItem.dataContext as any)?.id as string | undefined;
           onPolygonSelectRef.current?.(mapId ?? null);
         } else {
           lockedValue = null;
           lockedName = "";
-          markerGroup.set("visible", false);
+        markerGroup?.set("visible", false);
           onPolygonSelectRef.current?.(null);
         }
       }, 10);
@@ -324,7 +353,7 @@ export default function ArmeniaMapChart({ data, onPolygonSelect }: ArmeniaMapCha
       const low = polygonSeries.getPrivate("valueLow") as number;
       const high = polygonSeries.getPrivate("valueHigh") as number;
 
-      heatLegend.setAll({
+      heatLegend?.setAll({
         startValue: low,
         endValue: high,
         startText: `${low}`,
@@ -335,7 +364,7 @@ export default function ArmeniaMapChart({ data, onPolygonSelect }: ArmeniaMapCha
     return () => {
       root.dispose(); // cleanup
     };
-  }, [data]);
+  }, [data, showRightColumn]);
 
   return <div ref={containerRef} style={{ width: "100%", height: "500px" }} />;
 }
