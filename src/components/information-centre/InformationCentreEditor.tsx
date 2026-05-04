@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { ImageIcon, Plus } from "lucide-react";
+import { FileText, ImageIcon, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { LangSwitcher } from "@/components/main/LangSwitcher";
@@ -34,13 +34,7 @@ type InformationCenterEditorState = {
   }>;
 };
 
-function ContentCard({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
+function ContentCard({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div
       className={cn(
@@ -67,7 +61,8 @@ function writeLocalizedByLang(
   value: string,
   lang: MainLangCode
 ): LocalizedText {
-  const next: LocalizedText = lang === "hy" ? { ...current, hy: value } : { ...current, [lang]: value };
+  const next: LocalizedText =
+    lang === "hy" ? { ...current, hy: value } : { ...current, [lang]: value };
   return ensureHyLocalized(next);
 }
 
@@ -89,14 +84,14 @@ function ImageFileControl({
   onChange: (next: { previewUrl: string; file: File | null }) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const resolvedImageSrc = resolveImageSrc(value);
+  const resolvedSrc = resolveImageSrc(value);
 
-  async function onFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
+  function onFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      toast.error("Խնդրում ենք ընտրել ֆայլ։");
+      toast.error("Խնդրում ենք ընտրել նկարի ֆայլ։");
       return;
     }
     const previewUrl = URL.createObjectURL(file);
@@ -111,13 +106,13 @@ function ImageFileControl({
         type="file"
         accept="image/*"
         className="sr-only"
-        onChange={(event) => void onFileSelected(event)}
+        onChange={onFileSelected}
       />
       <div className="flex items-end gap-4">
         <div className="flex h-[69px] w-[68px] shrink-0 items-center justify-center overflow-hidden rounded border border-[#e6e7eb] bg-[#f3f4f6]">
           {value ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={resolvedImageSrc} alt={label} className="h-full w-full object-cover" />
+            <img src={resolvedSrc} alt={label} className="h-full w-full object-cover" />
           ) : (
             <ImageIcon className="size-6 text-[#c8c8c8]" />
           )}
@@ -149,35 +144,114 @@ function ImageFileControl({
   );
 }
 
+const ACCEPTED_DOCUMENT_TYPES = ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.odt,.ods,.odp";
+
+function resolveFileName(value: string): string {
+  if (!value) return "";
+  if (value.startsWith("blob:")) return "Ընտրված ֆայլ";
+  try {
+    const url = new URL(value, "http://x");
+    const parts = url.pathname.split("/");
+    return decodeURIComponent(parts[parts.length - 1] ?? "");
+  } catch {
+    return value.split("/").pop() ?? value;
+  }
+}
+
+function DocumentFileControl({
+  value,
+  label,
+  onChange,
+}: {
+  value: string;
+  label: string;
+  onChange: (next: { previewUrl: string; file: File | null }) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const fileName = resolveFileName(value);
+
+  function onFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    const previewUrl = URL.createObjectURL(file);
+    if (value.startsWith("blob:")) URL.revokeObjectURL(value);
+    onChange({ previewUrl, file });
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <input
+        ref={inputRef}
+        type="file"
+        accept={ACCEPTED_DOCUMENT_TYPES}
+        className="sr-only"
+        onChange={onFileSelected}
+      />
+      <div className="flex items-center gap-4">
+        <div className="flex h-[69px] w-[68px] shrink-0 items-center justify-center overflow-hidden rounded border border-[#e6e7eb] bg-[#f3f4f6]">
+          <FileText className={value ? "size-6 text-[#275199]" : "size-6 text-[#c8c8c8]"} />
+        </div>
+        <div className="flex min-w-0 flex-col gap-1">
+          <span className="text-[13px] text-[#2c2c2c]">{label}</span>
+          {value ? (
+            <span className="max-w-[220px] truncate text-[12px] text-[#575757]" title={fileName}>
+              {fileName}
+            </span>
+          ) : null}
+          <button
+            type="button"
+            className="w-fit text-left text-[13px] font-medium text-[#275199] hover:underline"
+            onClick={() => inputRef.current?.click()}
+          >
+            {value ? "Փոխարինել" : "Վերբեռնել"}
+          </button>
+          {value ? (
+            <button
+              type="button"
+              className="w-fit text-left text-[13px] font-medium text-[#c00] hover:underline"
+              onClick={() => {
+                if (value.startsWith("blob:")) URL.revokeObjectURL(value);
+                onChange({ previewUrl: "", file: null });
+              }}
+            >
+              Ջնջել
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SectionEditor({
   index,
   section,
-  lang,
-  onLangChange,
   onChange,
-  onImageFileChange,
+  onDocumentFileChange,
   onRemove,
 }: {
   index: number;
   section: InformationCenterEditorState["sections"][number];
-  lang: MainLangCode;
-  onLangChange: (v: MainLangCode) => void;
   onChange: (next: InformationCenterEditorState["sections"][number]) => void;
-  onImageFileChange: (file: File | null) => void;
+  onDocumentFileChange: (file: File | null) => void;
   onRemove: () => void;
 }) {
+  const [lang, setLang] = useState<MainLangCode>("hy");
   const indexLabel = index + 1 < 10 ? `0${index + 1}` : String(index + 1);
 
   return (
     <div className="space-y-4 rounded-[9px] border border-[#dbdbdc] p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <span className="text-[15px] font-medium text-[#2c2c2c]">{indexLabel}</span>
-        <LangSwitcher value={lang} onChange={onLangChange} />
+        <LangSwitcher value={lang} onChange={setLang} />
       </div>
 
       <Input
         value={readLocalizedByLang(section.title, lang)}
-        onChange={(e) => onChange({ ...section, title: writeLocalizedByLang(section.title, e.target.value, lang) })}
+        onChange={(e) =>
+          onChange({ ...section, title: writeLocalizedByLang(section.title, e.target.value, lang) })
+        }
         className={cn("min-h-[61px] w-full py-2", fieldBorder)}
         placeholder="Վերնագիր"
       />
@@ -215,11 +289,11 @@ function SectionEditor({
         </div>
       </div>
 
-      <ImageFileControl
+      <DocumentFileControl
         value={section.file}
         label="Ֆայլ"
         onChange={({ previewUrl, file }) => {
-          onImageFileChange(file);
+          onDocumentFileChange(file);
           onChange({ ...section, file: previewUrl });
         }}
       />
@@ -229,10 +303,10 @@ function SectionEditor({
 
 export function InformationCentreEditor() {
   const initialJson = useRef(JSON.stringify({}));
-  const [lang, setLang] = useState<MainLangCode>("hy");
+  const [headerLang, setHeaderLang] = useState<MainLangCode>("hy");
   const [isSaving, setIsSaving] = useState(false);
   const [pageImageFile, setPageImageFile] = useState<File | null>(null);
-  const [sectionImageFiles, setSectionImageFiles] = useState<Array<File | null>>([]);
+  const [sectionFiles, setSectionFiles] = useState<Array<File | null>>([]);
   const [data, setData] = useState<InformationCenterEditorState>(() => ({
     _id: "",
     title: { hy: "" },
@@ -253,7 +327,7 @@ export function InformationCentreEditor() {
         const mapped: InformationCenterEditorState = fromApiInformationCenter(res);
         initialJson.current = JSON.stringify(mapped);
         setPageImageFile(null);
-        setSectionImageFiles(mapped.sections.map(() => null));
+        setSectionFiles(mapped.sections.map(() => null));
         setData(mapped);
       } catch {
         if (isCancelled) return;
@@ -269,11 +343,11 @@ export function InformationCentreEditor() {
   }, []);
 
   function readLocalized(localized: LocalizedText): string {
-    return readLocalizedByLang(localized, lang);
+    return readLocalizedByLang(localized, headerLang);
   }
 
   function writeLocalized(current: LocalizedText, value: string): LocalizedText {
-    return writeLocalizedByLang(current, value, lang);
+    return writeLocalizedByLang(current, value, headerLang);
   }
 
   async function handleSave() {
@@ -298,13 +372,13 @@ export function InformationCentreEditor() {
         description: nextDescription,
         image: pageImageFile,
         sections,
-        sectionImages: sectionImageFiles,
+        sectionFiles,
       });
 
       initialJson.current = JSON.stringify(data);
       setData((d) => structuredClone(d));
       setPageImageFile(null);
-      setSectionImageFiles((prev) => prev.map(() => null));
+      setSectionFiles((prev) => prev.map(() => null));
       toast.success("Պահպանված է։");
     } catch {
       toast.error("Չհաջողվեց պահպանել տեղեկատվական կենտրոնի տվյալները։");
@@ -314,7 +388,7 @@ export function InformationCentreEditor() {
   }
 
   function addSection() {
-    setSectionImageFiles((prev) => [...prev, null]);
+    setSectionFiles((prev) => [...prev, null]);
     setData((d) => ({
       ...d,
       sections: [
@@ -332,10 +406,8 @@ export function InformationCentreEditor() {
 
   return (
     <div className="flex w-full flex-col gap-5 pb-10">
-      <div className="flex min-h-11 w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">
-          Տեղեկատվական կենտրոն
-        </h1>
+      <div className="sticky top-0 z-10 flex min-h-11 w-full flex-col gap-4 bg-[#f9fafb] pt-7 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">Տեղեկատվական կենտրոն</h1>
         <Button
           type="button"
           disabled={!dirty || isSaving}
@@ -354,12 +426,14 @@ export function InformationCentreEditor() {
       <ContentCard>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-[14px] font-medium text-[#2c2c2c]">Վերնագիր</h2>
-          <LangSwitcher value={lang} onChange={setLang} />
+          <LangSwitcher value={headerLang} onChange={setHeaderLang} />
         </div>
         <div className="flex flex-col gap-4">
           <Input
             value={readLocalized(data.title)}
-            onChange={(e) => setData((d) => ({ ...d, title: writeLocalized(d.title, e.target.value) }))}
+            onChange={(e) =>
+              setData((d) => ({ ...d, title: writeLocalized(d.title, e.target.value) }))
+            }
             className={cn("h-9", fieldBorder)}
             placeholder="Վերնագիր"
           />
@@ -373,7 +447,7 @@ export function InformationCentreEditor() {
           />
           <ImageFileControl
             value={data.image}
-            label="Ֆայլ"
+            label="Նկար"
             onChange={({ previewUrl, file }) => {
               setPageImageFile(file);
               setData((d) => ({ ...d, image: previewUrl }));
@@ -409,16 +483,14 @@ export function InformationCentreEditor() {
               key={section.id}
               index={index}
               section={section}
-              lang={lang}
-              onLangChange={setLang}
               onChange={(next) =>
                 setData((d) => ({
                   ...d,
                   sections: d.sections.map((s, i) => (i === index ? next : s)),
                 }))
               }
-              onImageFileChange={(file) =>
-                setSectionImageFiles((prev) => {
+              onDocumentFileChange={(file) =>
+                setSectionFiles((prev) => {
                   const next = prev.slice();
                   next[index] = file;
                   return next;
@@ -427,7 +499,7 @@ export function InformationCentreEditor() {
               onRemove={() => {
                 const currentValue = data.sections[index]?.file ?? "";
                 if (currentValue.startsWith("blob:")) URL.revokeObjectURL(currentValue);
-                setSectionImageFiles((prev) => prev.filter((_, i) => i !== index));
+                setSectionFiles((prev) => prev.filter((_, i) => i !== index));
                 setData((d) => ({
                   ...d,
                   sections: d.sections.filter((_, i) => i !== index),

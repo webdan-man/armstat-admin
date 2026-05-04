@@ -20,8 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${notoSansArmenian.className} antialiased`}>
-      <body className="min-h-screen">
+    <html lang="en">
+      <body className={`${notoSansArmenian.className} antialiased`}>
         {children}
         <Toaster richColors position="top-right" />
       </body>
