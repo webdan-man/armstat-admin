@@ -18,7 +18,7 @@ const items = [
   },
   {
     title: "Հրապարակումներ",
-    href: "/blog",
+    href: "/news",
   },
   {
     title: "Տեղեկատվական կենտրոն",

@@ -12,6 +12,8 @@ export default function Hero({
   textContent?: string;
   imageSrc?: string;
 }) {
+  console.log(imageSrc);
+
   return (
     <div className="flex w-full flex-col items-center">
       <section className="bg-blue1000 flex w-full flex-col items-center rounded-br-[56px]">

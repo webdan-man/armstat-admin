@@ -34,7 +34,7 @@ export type UpdateInformationCenterPayload = {
     link: string;
     file: string;
   }>;
-  sectionImages: Array<File | null | undefined>;
+  sectionFiles: Array<File | null | undefined>;
 };
 
 export async function updateInformationCenter(payload: UpdateInformationCenterPayload) {
@@ -48,23 +48,21 @@ export async function updateInformationCenter(payload: UpdateInformationCenterPa
         title: s.title,
         description: s.description,
         link: s.link,
-        file: s.file,
+        file: s.file.startsWith("blob:") ? "" : s.file,
       }))
     )
   );
 
-  if (payload.image) {
+  if (payload.image instanceof File) {
     formData.append("image", payload.image);
   }
 
-  payload.sectionImages.slice(0, payload.sections.length).forEach((file, index) => {
+  payload.sectionFiles.slice(0, payload.sections.length).forEach((file, index) => {
     if (!file) return;
-    formData.append(`sectionImage${index}`, file);
+    formData.append(`sectionFile${index}`, file);
   });
-
   return apiClient<InformationCenterApiResponse>("/api/information-center", {
     method: "PUT",
     body: formData,
   });
 }
-

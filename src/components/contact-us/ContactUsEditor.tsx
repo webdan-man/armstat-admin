@@ -37,13 +37,7 @@ const CONTACT_TYPE_LABEL: Record<ContactUsSection["type"], string> = {
   info: "Տեսակ: Տվյալներ",
 };
 
-function ContentCard({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
+function ContentCard({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div
       className={cn(
@@ -67,9 +61,7 @@ function LabeledField({
 }) {
   return (
     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
-      <span className="w-24 shrink-0 text-[12px] font-medium text-[#575757]">
-        {label}
-      </span>
+      <span className="w-24 shrink-0 text-[12px] font-medium text-[#575757]">{label}</span>
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -115,30 +107,32 @@ function readLocalizedByLang(localized: LocalizedText, lang: MainLangCode): stri
   return localized[lang] ?? "";
 }
 
-function writeLocalizedByLang(current: LocalizedText, value: string, lang: MainLangCode): LocalizedText {
-  const next: LocalizedText = lang === "hy" ? { ...current, hy: value } : { ...current, [lang]: value };
+function writeLocalizedByLang(
+  current: LocalizedText,
+  value: string,
+  lang: MainLangCode
+): LocalizedText {
+  const next: LocalizedText =
+    lang === "hy" ? { ...current, hy: value } : { ...current, [lang]: value };
   return ensureHyLocalized(next);
 }
 
 function SectionCard({
   section,
   index,
-  lang,
-  onLangChange,
   onChange,
   onRemove,
 }: {
   section: ContactUsEditorSection;
   index: number;
-  lang: MainLangCode;
-  onLangChange: (v: MainLangCode) => void;
   onChange: (next: ContactUsEditorSection) => void;
   onRemove: () => void;
 }) {
+  const [lang, setLang] = useState<MainLangCode>("hy");
   const indexLabel = index + 1 < 10 ? `0${index + 1}` : String(index + 1);
   return (
     <div className="space-y-4 rounded-[9px] border border-[#dbdbdc] p-5">
-              <p className="mb-2 text-[15px] font-medium text-[#2c2c2c]">{indexLabel}</p>
+      <p className="mb-2 text-[15px] font-medium text-[#2c2c2c]">{indexLabel}</p>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <Select
@@ -159,7 +153,7 @@ function SectionCard({
             <SelectItem value="info">{CONTACT_TYPE_LABEL.info}</SelectItem>
           </SelectContent>
         </Select>
-        <LangSwitcher value={lang} onChange={onLangChange} />
+        <LangSwitcher value={lang} onChange={setLang} />
       </div>
 
       {section.type === "address" ? (
@@ -198,7 +192,11 @@ function SectionCard({
       )}
 
       <div className="flex justify-end">
-        <button type="button" className="text-[13px] font-medium text-[#c00] hover:underline" onClick={onRemove}>
+        <button
+          type="button"
+          className="text-[13px] font-medium text-[#c00] hover:underline"
+          onClick={onRemove}
+        >
           Ջնջել
         </button>
       </div>
@@ -208,7 +206,8 @@ function SectionCard({
 
 export function ContactUsEditor() {
   const initialJson = useRef(JSON.stringify({}));
-  const [lang, setLang] = useState<MainLangCode>("hy");
+  const [titleLang, setTitleLang] = useState<MainLangCode>("hy");
+  const [notificationsLang, setNotificationsLang] = useState<MainLangCode>("hy");
   const [isSaving, setIsSaving] = useState(false);
   const [data, setData] = useState<ContactUsEditorState>(() => ({
     _id: "",
@@ -244,14 +243,6 @@ export function ContactUsEditor() {
       isCancelled = true;
     };
   }, []);
-
-  function readLocalized(localized: LocalizedText): string {
-    return readLocalizedByLang(localized, lang);
-  }
-
-  function writeLocalized(current: LocalizedText, value: string): LocalizedText {
-    return writeLocalizedByLang(current, value, lang);
-  }
 
   async function handleSave() {
     if (!dirty) {
@@ -297,10 +288,8 @@ export function ContactUsEditor() {
 
   return (
     <div className="flex w-full flex-col gap-5 pb-10">
-      <div className="flex min-h-11 w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">
-          Հետադարձ կապ
-        </h1>
+      <div className="sticky top-0 z-10 flex min-h-11 w-full flex-col gap-4 bg-[#f9fafb] pt-7 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">Հետադարձ կապ</h1>
         <Button
           type="button"
           disabled={!dirty || isSaving}
@@ -319,18 +308,28 @@ export function ContactUsEditor() {
       <ContentCard>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-[14px] font-medium text-[#2c2c2c]">Վերնագիր</h2>
-          <LangSwitcher value={lang} onChange={setLang} />
+          <LangSwitcher value={titleLang} onChange={setTitleLang} />
         </div>
         <div className="flex flex-col gap-4">
           <Input
-            value={readLocalized(data.title)}
-            onChange={(e) => setData((d) => ({ ...d, title: writeLocalized(d.title, e.target.value) }))}
+            value={readLocalizedByLang(data.title, titleLang)}
+            onChange={(e) =>
+              setData((d) => ({
+                ...d,
+                title: writeLocalizedByLang(d.title, e.target.value, titleLang),
+              }))
+            }
             className={cn("h-9", fieldBorder)}
             placeholder="Վերնագիր"
           />
           <Textarea
-            value={readLocalized(data.description)}
-            onChange={(e) => setData((d) => ({ ...d, description: writeLocalized(d.description, e.target.value) }))}
+            value={readLocalizedByLang(data.description, titleLang)}
+            onChange={(e) =>
+              setData((d) => ({
+                ...d,
+                description: writeLocalizedByLang(d.description, e.target.value, titleLang),
+              }))
+            }
             className={cn("min-h-[137px] resize-y", fieldBorder)}
             placeholder="Նկարագրություն"
           />
@@ -340,12 +339,19 @@ export function ContactUsEditor() {
       <ContentCard>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-[14px] font-medium text-[#2c2c2c]">Ծանուցումների էլ․ հասցե</h2>
-          <LangSwitcher value={lang} onChange={setLang} />
+          <LangSwitcher value={notificationsLang} onChange={setNotificationsLang} />
         </div>
         <Input
-          value={readLocalized(data.notificationsEmailRow)}
+          value={readLocalizedByLang(data.notificationsEmailRow, notificationsLang)}
           onChange={(e) =>
-            setData((d) => ({ ...d, notificationsEmailRow: writeLocalized(d.notificationsEmailRow, e.target.value) }))
+            setData((d) => ({
+              ...d,
+              notificationsEmailRow: writeLocalizedByLang(
+                d.notificationsEmailRow,
+                e.target.value,
+                notificationsLang
+              ),
+            }))
           }
           className={cn("h-9", fieldBorder)}
           placeholder="example@domain.com"
@@ -378,8 +384,6 @@ export function ContactUsEditor() {
               key={section.id}
               section={section}
               index={index}
-              lang={lang}
-              onLangChange={setLang}
               onChange={(next) =>
                 setData((d) => ({
                   ...d,
@@ -406,7 +410,10 @@ export function ContactUsEditor() {
           {SOCIAL_LINK_PRESETS.map((preset) => {
             const value = data.socialLinks.find((s) => s.type === preset.type)?.link ?? "";
             return (
-              <div key={preset.type} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
+              <div
+                key={preset.type}
+                className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4"
+              >
                 <span className="w-24 shrink-0 text-[12px] font-medium text-[#575757]">
                   {preset.label}
                 </span>
@@ -439,16 +446,22 @@ export function ContactUsEditor() {
             <span className="w-24 shrink-0 text-[12px] font-medium text-[#575757]">Վերնագիր</span>
             <Input
               value={data.mapSection.title}
-              onChange={(e) => setData((d) => ({ ...d, mapSection: { ...d.mapSection, title: e.target.value } }))}
+              onChange={(e) =>
+                setData((d) => ({ ...d, mapSection: { ...d.mapSection, title: e.target.value } }))
+              }
               className={cn("h-9 flex-1 sm:max-w-[507px]", fieldBorder)}
               placeholder="Map"
             />
           </div>
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
-            <span className="w-24 shrink-0 text-[12px] font-medium text-[#575757]">Կոորդինատներ</span>
+            <span className="w-24 shrink-0 text-[12px] font-medium text-[#575757]">
+              Կոորդինատներ
+            </span>
             <Input
               value={data.mapSection.value}
-              onChange={(e) => setData((d) => ({ ...d, mapSection: { ...d.mapSection, value: e.target.value } }))}
+              onChange={(e) =>
+                setData((d) => ({ ...d, mapSection: { ...d.mapSection, value: e.target.value } }))
+              }
               className={cn("h-9 flex-1 sm:max-w-[507px]", fieldBorder)}
               placeholder="40.1772, 44.5035"
             />

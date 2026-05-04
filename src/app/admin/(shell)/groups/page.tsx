@@ -36,9 +36,11 @@ export default function GroupsPage() {
   const showAccordion = filteredSections.length > 0;
 
   return (
-    <div className="flex w-full flex-col gap-2.5 overflow-y-auto">
-      <GroupsHeader onAddClick={() => setCreateDialogOpen(true)} />
-      <GroupsSearchField value={search} onChange={setSearch} />
+    <div className="flex w-full flex-col gap-2.5">
+      <div className="sticky top-0 z-10 flex w-full flex-col gap-2.5 bg-[#f9fafb] pt-7 pb-4">
+        <GroupsHeader onAddClick={() => setCreateDialogOpen(true)} />
+        <GroupsSearchField value={search} onChange={setSearch} />
+      </div>
       {isLoading && <p className="text-sm text-[#646464]">Բեռնվում է…</p>}
       {isEmpty && <p className="text-sm text-[#646464]">Բաժիններ չկան։</p>}
       {isNoResults && <p className="text-sm text-[#646464]">Ոչինչ չի գտնվել։</p>}
