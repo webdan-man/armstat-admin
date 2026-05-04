@@ -103,6 +103,7 @@ function ColumnWithRotatedLabelsChart({
       am5xy.ValueAxis.new(root, {
         maxDeviation: 0.3,
         renderer: yRenderer,
+        min: 0,
       })
     );
 
