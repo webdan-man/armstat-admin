@@ -65,9 +65,15 @@ const MapAndColumnWithRotatedLabelsChart = ({
   }, [selectedProvinceMapId]);
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[35fr_65fr]">
       <div>
-        <ArmeniaProvincesMap data={mapData} onPolygonSelect={onPolygonSelect} />
+        <ArmeniaProvincesMap
+          data={[]}
+          onPolygonSelect={onPolygonSelect}
+          onPolygonHover={onPolygonSelect}
+          showRightColumn={false}
+          useHeatRules={false}
+        />
       </div>
       <div>
         <ColumnWithRotatedLabelsChart data={columnData} chartTitle={chartTitle} />

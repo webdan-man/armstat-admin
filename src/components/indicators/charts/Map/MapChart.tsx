@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5map from "@amcharts/amcharts5/map";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
@@ -35,6 +35,8 @@ interface ArmeniaMapChartProps {
   }[];
   /** Shows the right-side legend/marker column. */
   showRightColumn?: boolean;
+  /** Enables value-based polygon coloring (heat rules). */
+  useHeatRules?: boolean;
   /** Fired when a province polygon is toggled; `null` when the selection is cleared. */
   onPolygonSelect?: (provinceMapId: string | null) => void;
   /** Fired on polygon hover; `null` when pointer leaves the map polygon. */
@@ -44,19 +46,27 @@ interface ArmeniaMapChartProps {
 export default function ArmeniaMapChart({
   data,
   showRightColumn = true,
+  useHeatRules = true,
   onPolygonSelect,
   onPolygonHover,
 }: ArmeniaMapChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const onPolygonSelectRef = useRef(onPolygonSelect);
   const onPolygonHoverRef = useRef(onPolygonHover);
+  const dataRef = useRef<ArmeniaMapChartProps["data"]>(data);
+
+  const rootRef = useRef<am5.Root | null>(null);
+  const polygonSeriesRef = useRef<am5map.MapPolygonSeries | null>(null);
+  const heatLegendRef = useRef<am5.HeatLegend | null>(null);
+  const geoJsonRef = useRef<any | null>(null);
+  const pendingMapDataRef = useRef<any[] | null>(null);
 
   useLayoutEffect(() => {
     if (!containerRef.current) return;
-    onPolygonSelectRef.current = onPolygonSelect;
-    onPolygonHoverRef.current = onPolygonHover;
+    if (rootRef.current) return;
 
     const root = am5.Root.new(containerRef.current);
+    rootRef.current = root;
 
     root.setThemes([am5themes_Animated.new(root)]);
 
@@ -116,15 +126,17 @@ export default function ArmeniaMapChart({
     });
 
     // 4. HEAT RULES
-    polygonSeries.set("heatRules", [
-      {
-        target: polygonSeries.mapPolygons.template,
-        dataField: "value",
-        min: am5.color(COLORS.low),
-        max: am5.color(COLORS.high),
-        key: "fill",
-      },
-    ]);
+    if (useHeatRules) {
+      polygonSeries.set("heatRules", [
+        {
+          target: polygonSeries.mapPolygons.template,
+          dataField: "value",
+          min: am5.color(COLORS.low),
+          max: am5.color(COLORS.high),
+          key: "fill",
+        },
+      ]);
+    }
 
     // 5-7. OPTIONAL RIGHT COLUMN (legend + markers)
     let heatLegend: am5.HeatLegend | null = null;
@@ -149,6 +161,7 @@ export default function ArmeniaMapChart({
           marginLeft: 40,
         })
       );
+      heatLegendRef.current = heatLegend;
 
       heatLegend.startLabel.setAll({
         centerX: am5.p50,
@@ -254,9 +267,10 @@ export default function ArmeniaMapChart({
 
     // 8. HELPERS
     const getMarkerPosition = (value: number) => {
-      if (!heatLegend) return 0;
-      const low = heatLegend.get("startValue") as number | undefined;
-      const high = heatLegend.get("endValue") as number | undefined;
+      const legend = heatLegendRef.current;
+      if (!legend) return 0;
+      const low = legend.get("startValue") as number | undefined;
+      const high = legend.get("endValue") as number | undefined;
 
       if (!low || !high || low === high) return 0;
 
@@ -277,7 +291,7 @@ export default function ArmeniaMapChart({
     };
 
     // STATE
-    let lockedValue = null;
+    let lockedValue: number | null = null;
     let lockedName = "";
 
     // 9. EVENTS
@@ -309,32 +323,30 @@ export default function ArmeniaMapChart({
             if (p !== target) p.set("active", false);
           });
 
-          lockedValue = dataItem.get("value");
+          lockedValue = dataItem.get("value") as number | null;
           lockedName = (dataItem.dataContext as any)?.name ?? "Region";
 
-        if (pinnedLabel && markerGroup) {
-          pinnedLabel.set("text", `${lockedValue} - ${lockedName}`);
-          markerGroup.set("y", getMarkerPosition(lockedValue as number));
-          markerGroup.set("visible", true);
-        }
+          if (pinnedLabel && markerGroup && lockedValue !== null) {
+            pinnedLabel.set("text", `${lockedValue} - ${lockedName}`);
+            markerGroup.set("y", getMarkerPosition(lockedValue));
+            markerGroup.set("visible", true);
+          }
 
           const mapId = (dataItem.dataContext as any)?.id as string | undefined;
           onPolygonSelectRef.current?.(mapId ?? null);
         } else {
           lockedValue = null;
           lockedName = "";
-        markerGroup?.set("visible", false);
+          markerGroup?.set("visible", false);
           onPolygonSelectRef.current?.(null);
         }
       }, 10);
     });
 
-    // 10. DATA
-    const valueByProvinceId = new Map(data.map((d) => [d.id, d.value]));
+    polygonSeriesRef.current = polygonSeries;
 
-    am5.net.load("/api/chart/map").then(({ response }: any) => {
-      const geoData = am5.JSONParser.parse(response) as any;
-
+    const buildAndSetMapData = (geoData: any, valueData: ArmeniaMapChartProps["data"]) => {
+      const valueByProvinceId = new Map(valueData.map((d) => [d.id, d.value]));
       const lang = normalizeToMainLangCode(
         typeof navigator !== "undefined" ? navigator.language : undefined
       );
@@ -346,6 +358,15 @@ export default function ArmeniaMapChart({
 
       polygonSeries.set("geoJSON", geoData);
       polygonSeries.data.setAll(mapData);
+    };
+
+    am5.net.load("/api/chart/map").then(({ response }: any) => {
+      const geoData = am5.JSONParser.parse(response) as any;
+      geoJsonRef.current = geoData;
+
+      const nextData = pendingMapDataRef.current ?? dataRef.current;
+      pendingMapDataRef.current = null;
+      buildAndSetMapData(geoData, nextData);
     });
 
     // 11. LEGEND VALUES
@@ -362,9 +383,42 @@ export default function ArmeniaMapChart({
     });
 
     return () => {
+      rootRef.current = null;
+      polygonSeriesRef.current = null;
+      heatLegendRef.current = null;
+      geoJsonRef.current = null;
+      pendingMapDataRef.current = null;
       root.dispose(); // cleanup
     };
-  }, [data, showRightColumn]);
+  }, [showRightColumn, useHeatRules]);
+
+  useEffect(() => {
+    onPolygonSelectRef.current = onPolygonSelect;
+    onPolygonHoverRef.current = onPolygonHover;
+  }, [onPolygonSelect, onPolygonHover]);
+
+  useEffect(() => {
+    dataRef.current = data;
+    const geoData = geoJsonRef.current;
+    const polygonSeries = polygonSeriesRef.current;
+
+    if (!polygonSeries) return;
+    if (!geoData) {
+      pendingMapDataRef.current = data;
+      return;
+    }
+
+    const valueByProvinceId = new Map(data.map((d) => [d.id, d.value]));
+    const lang = normalizeToMainLangCode(
+      typeof navigator !== "undefined" ? navigator.language : undefined
+    );
+    const mapData = geoData.features.map(({ id, properties }: any) => ({
+      id,
+      name: PROVINCE_NAMES_BY_ID[id]?.[lang] ?? properties?.name ?? id,
+      value: valueByProvinceId.get(id) ?? 0,
+    }));
+    polygonSeries.data.setAll(mapData);
+  }, [data]);
 
   return <div ref={containerRef} style={{ width: "100%", height: "500px" }} />;
 }

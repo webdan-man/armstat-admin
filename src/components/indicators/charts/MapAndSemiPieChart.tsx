@@ -56,10 +56,11 @@ const MapAndSemiPieChart = ({ combinations, data }: MapAndSemiPieChartProps) => 
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[35fr_65fr]">
       <div>
         <ArmeniaProvincesMap
-          data={mapData}
+          data={[]}
           onPolygonSelect={onPolygonSelect}
           onPolygonHover={onPolygonSelect}
           showRightColumn={false}
+          useHeatRules={false}
         />
       </div>
       <div>
