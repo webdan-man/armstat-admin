@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import useSWR from 'swr';
 import { fetchSections } from '@/services/sectionsService';
@@ -27,6 +27,28 @@ function buildMenu(sections: Section[]): MenuItem[] {
       })),
     })),
   }));
+}
+
+/** Returns the expandedPath needed to make activeSlug visible in the tree. */
+function findExpandedPath(items: MenuItem[], activeSlug: string, depth = 0): string[] {
+  for (const item of items) {
+    if (!item.children?.length) continue;
+    for (const child of item.children) {
+      if (child.id === activeSlug) {
+        // child is directly inside item — we only need to expand item
+        return [item.id];
+      }
+      // recurse into grandchildren
+      if (child.children?.length) {
+        for (const grand of child.children) {
+          if (grand.id === activeSlug) {
+            return [item.id, child.id];
+          }
+        }
+      }
+    }
+  }
+  return [];
 }
 
 function hasActiveDescendant(item: MenuItem, activeSlug: string): boolean {
@@ -114,6 +136,13 @@ export default function Sidebar() {
   const menu = buildMenu(sections);
 
   const [expandedPath, setExpandedPath] = useState<string[]>([]);
+
+  // Auto-expand the tree to reveal the active slug whenever sections load or the URL changes.
+  useEffect(() => {
+    if (!menu.length || !activeSlug) return;
+    const path = findExpandedPath(menu, activeSlug);
+    if (path.length) setExpandedPath(path);
+  }, [sections, activeSlug]);
 
   const toggleExpand = (id: string, level: number) => {
     setExpandedPath((prev) => {

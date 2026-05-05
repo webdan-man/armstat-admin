@@ -159,7 +159,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
 
   return (
     <div>
-      {JSON.stringify(data, null, 2)}
+      <p className={"text-textBlack600"}>{JSON.stringify(data, null, 2)}</p>
       <div id={containerId} style={{ width: "100%", height: "500px" }} />
     </div>
   );

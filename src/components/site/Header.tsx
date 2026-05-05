@@ -9,25 +9,16 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import useSWR from "swr";
+import { fetchSections } from "@/services/sectionsService";
+import { swrKeys } from "@/lib/swr/cache-keys";
+import { isRootTopic } from "@/lib/section-topic-utils";
 
-const items = [
-  {
-    title: "Կատալոգ",
-    href: "/stat/1",
-  },
-  {
-    title: "Հրապարակումներ",
-    href: "/news",
-  },
-  {
-    title: "Տեղեկատվական կենտրոն",
-    href: "/information-center",
-  },
-  {
-    title: "Հետադարձ կապ",
-    href: "/feedback",
-  },
+const staticItems = [
+  { title: "Հրապարակումներ", href: "/news" },
+  { title: "Տեղեկատվական կենտրոն", href: "/information-center" },
+  { title: "Հետադարձ կապ", href: "/feedback" },
 ];
 
 const languages = [
@@ -38,6 +29,20 @@ const languages = [
 
 export default function Header() {
   const [activeLang, setActiveLang] = useState("hy");
+  const { data: sections = [] } = useSWR(swrKeys.sections, fetchSections);
+
+  const catalogHref = useMemo(() => {
+    for (const section of sections) {
+      const first = section.topics.find(isRootTopic);
+      if (first) return `/stat/${first._id}`;
+    }
+    return "/stat";
+  }, [sections]);
+
+  const items = useMemo(
+    () => [{ title: "Կատալոգ", href: catalogHref }, ...staticItems],
+    [catalogHref]
+  );
 
   return (
     <header className="bg-blue1000 flex w-full flex-col items-center">

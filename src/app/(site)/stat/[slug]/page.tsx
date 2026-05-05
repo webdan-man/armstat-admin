@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -14,12 +15,17 @@ import {
 import ChartTab from '@/components/site/stat/ChartTab';
 import SearchInput from '@/components/site/stat/SearchInput';
 import TableTab from '@/components/site/stat/TableTab';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import { getMetricById, getMetricCombinations, fetchMetricsByTopicId } from '@/services/metricsService';
 import { swrKeys } from '@/lib/swr/cache-keys';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  headerForColumnIndex,
+  maxRowLength,
+  valueAtColumnIndex,
+} from '@/components/indicators/metric-combinations-table-utils';
 
 export default function StatPage() {
   const params = useParams();
@@ -42,6 +48,44 @@ export default function StatPage() {
   );
 
   const isLoading = !metric && !!slug;
+
+  const [columnSelectedValues, setColumnSelectedValues] = useState<(string | null)[]>([]);
+
+  const columnCount = useMemo(() => maxRowLength(combinations), [combinations]);
+  const columnIndexes = useMemo(
+    () => Array.from({ length: columnCount }, (_, i) => i),
+    [columnCount]
+  );
+
+  const ensureLength = (next: (string | null)[]) =>
+    next.length >= columnCount
+      ? next
+      : Array.from({ length: columnCount }, (_, i) => next[i] ?? null);
+
+  const activeFilterCount = useMemo(
+    () => columnSelectedValues.reduce((sum, v) => sum + (v ? 1 : 0), 0),
+    [columnSelectedValues]
+  );
+
+  const columnValueOptions = useMemo(() => {
+    if (columnCount === 0) return [];
+    return Array.from({ length: columnCount }, (_, ci) => {
+      const uniq = new Set<string>();
+      for (const combo of combinations) uniq.add(valueAtColumnIndex(combo, ci));
+      return Array.from(uniq).sort((a, b) => a.localeCompare(b));
+    });
+  }, [columnCount, combinations]);
+
+  const filteredCombinations = useMemo(() => {
+    if (columnCount === 0) return combinations;
+    const active = columnSelectedValues
+      .map((v, i) => ({ i, v }))
+      .filter(({ v }) => Boolean(v));
+    if (active.length === 0) return combinations;
+    return combinations.filter((combo) =>
+      active.every(({ i, v }) => valueAtColumnIndex(combo, i) === v)
+    );
+  }, [columnCount, columnSelectedValues, combinations]);
 
   const [data, setData] = useState([]);
   const [query, setQuery] = useState<string>('');
@@ -120,47 +164,59 @@ export default function StatPage() {
               </TypographyP>
             </>
           )}
-          <div className="bg-[rgba(241,245,248,1)] px-3 border-t border-[rgba(15,104,192,1)] pt-4.25 pb-4.75 mt-10 flex gap-4">
-            <Select defaultValue="1">
-              <SelectTrigger className="border-none text-[rgba(44,44,44,1)] bg-transparent shadow-none px-2 h-9">
-                <SelectValue placeholder="Select option" />
-              </SelectTrigger>
-
-              <SelectContent>
-                <SelectItem value="1">Ժամանակային շարք</SelectItem>
-                <SelectItem value="2">Ժամանակային շարք 2</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select defaultValue="1">
-              <SelectTrigger className="border-none text-[rgba(44,44,44,1)] bg-transparent shadow-none px-2 h-9">
-                <SelectValue placeholder="Select option" />
-              </SelectTrigger>
-
-              <SelectContent>
-                <SelectItem value="1">Տարիք</SelectItem>
-                <SelectItem value="2">Տարիք 2</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select defaultValue="1">
-              <SelectTrigger className="border-none text-[rgba(44,44,44,1)] bg-transparent shadow-none px-2 h-9">
-                <SelectValue placeholder="Select option" />
-              </SelectTrigger>
-
-              <SelectContent>
-                <SelectItem value="1">Մարզեր</SelectItem>
-                <SelectItem value="2">Մարզեր 2</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select defaultValue="1">
-              <SelectTrigger className="border-none text-[rgba(44,44,44,1)] bg-transparent shadow-none px-2 h-9">
-                <SelectValue placeholder="Select option" />
-              </SelectTrigger>
-
-              <SelectContent>
-                <SelectItem value="1">Սեռ</SelectItem>
-                <SelectItem value="2">Սեռ 2</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="bg-[rgba(241,245,248,1)] px-3 border-t border-[rgba(15,104,192,1)] pt-4.25 pb-4.75 mt-10">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-3">
+                <span className="text-[14px] leading-3.5 text-[rgba(44,44,44,0.65)]">
+                  {activeFilterCount > 0 ? `Ֆիլտրեր (${activeFilterCount})` : 'Ֆիլտրեր'}
+                </span>
+                <button
+                  type="button"
+                  className="text-xs font-medium text-[rgba(39,81,153,1)] hover:underline disabled:opacity-50"
+                  disabled={activeFilterCount === 0}
+                  onClick={() =>
+                    setColumnSelectedValues(Array.from({ length: columnCount }, () => null))
+                  }
+                >
+                  Մաքրել բոլորը
+                </button>
+              </div>
+              <span className="text-[14px] leading-3.5 text-[rgba(44,44,44,0.65)]">
+                {filteredCombinations.length} / {combinations.length}
+              </span>
+            </div>
+            <div className="flex overflow-x-auto gap-4">
+              {columnIndexes.map((ci) => {
+                const options = columnValueOptions[ci] ?? [];
+                const selected = columnSelectedValues[ci] ?? null;
+                const label = headerForColumnIndex(combinations, ci);
+                return (
+                  <Select
+                    key={ci}
+                    value={selected ?? '__all__'}
+                    onValueChange={(val) =>
+                      setColumnSelectedValues((prev) => {
+                        const copy = ensureLength([...prev]);
+                        copy[ci] = val === '__all__' ? null : val;
+                        return copy;
+                      })
+                    }
+                  >
+                    <SelectTrigger className="border-none text-[rgba(44,44,44,1)] bg-transparent shadow-none px-2 h-9">
+                      <SelectValue placeholder={label} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value="__all__">{label}</SelectItem>
+                        {options.map((opt) => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                );
+              })}
+            </div>
           </div>
           <div className="border border-[rgba(178,178,178,1)] rounded-2xl mt-6 overflow-hidden">
             <Tabs defaultValue="diagram" className="w-full">
@@ -177,7 +233,7 @@ export default function StatPage() {
               </TabsList>
               <TabsContent value="diagram">
                 <div className="p-7.5">
-                  <ChartTab combinations={combinations} isLoading={isLoading} />
+                  <ChartTab combinations={filteredCombinations} isLoading={isLoading} />
                 </div>
               </TabsContent>
               <TabsContent value="data">
