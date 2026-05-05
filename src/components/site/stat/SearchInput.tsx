@@ -3,27 +3,27 @@
 import {
   Combobox,
   ComboboxContent,
+  ComboboxEmpty,
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
 } from '@/components/ui/combobox';
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import useSWR from 'swr';
+import { fetchSections } from '@/services/sectionsService';
+import { swrKeys } from '@/lib/swr/cache-keys';
+import { isRootTopic } from '@/lib/section-topic-utils';
+import type { Topic } from '@/types/section';
 
-const frameworks = [
-  'ՀՀ կացության կարգավիճակ ստացած օտարերկրացիների բաշխումն  ըստ կարգավիճակի տեսակի և տարիքային խմբերի',
-  'ՀՀ մշտական կացության կարգավիճակ ստացած օտարերկրացիներ',
-  'ՀՀ կացության կարգավիճակ ստացած օտարերկրացիների բաշխումն  ըստ կարգավիճակի տեսակի և տարիքային խմբերի',
-  'ՀՀ մշտական կացության կարգավիճակ ստացած օտարերկրացիներ',
-  'ՀՀ մշտական կացության կարգավիճակ ստացած օտարերկրացիներ',
-  'ՀՀ կացության կարգավիճակ ստացած օտարերկրացիների բաշխումն  ըստ կարգավիճակի տեսակի և տարիքային խմբերի',
-  'ՀՀ մշտական կացության կարգավիճակ ստացած օտարերկրացիներ',
-  'ՀՀ մշտական կացության կարգավիճակ ստացած օտարերկրացիներ',
-];
+type SearchOption = {
+  id: string;
+  label: string;
+};
 
-const options = frameworks.map((label, index) => ({
-  label,
-  value: index,
-}));
+function flattenTopics(topics: Topic[]): Topic[] {
+  return topics.flatMap((t) => [t, ...flattenTopics(t.subtopics ?? [])]);
+}
 
 export default function SearchInput({
   query,
@@ -31,23 +31,32 @@ export default function SearchInput({
   setData,
 }: {
   query: string;
-  setQuery: any;
-  setData: any;
+  setQuery: (v: string) => void;
+  setData: (v: any) => void;
 }) {
-  const filteredItems = useMemo(() => {
-    if (!query) return frameworks;
+  const router = useRouter();
+  const { data: sections = [] } = useSWR(swrKeys.sections, fetchSections);
 
-    return frameworks.filter((item) => item.toLowerCase().includes(query.toLowerCase()));
-  }, [query]);
-
-  useEffect(() => {
-    if (query && filteredItems.length === 0) {
-      setData(null);
-    }
-  }, [filteredItems, setData, query]);
+  const options = useMemo<SearchOption[]>(() => {
+    return sections.flatMap((section) => {
+      const rootTopics = section.topics.filter(isRootTopic);
+      const allTopics = flattenTopics(rootTopics);
+      return allTopics.map((t) => ({ id: t._id, label: t.title }));
+    });
+  }, [sections]);
 
   return (
-    <Combobox items={options} itemToStringValue={(framework: { label: string }) => framework.label}>
+    <Combobox
+      items={options}
+      itemToStringValue={(item: SearchOption) => item.label}
+      onValueChange={(item: SearchOption | null) => {
+        if (item) {
+          setQuery('');
+          setData([]);
+          router.push(`/stat/${item.id}`);
+        }
+      }}
+    >
       <ComboboxInput
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -56,12 +65,13 @@ export default function SearchInput({
       />
       <ComboboxContent>
         <ComboboxList>
-          {(item) => (
-            <ComboboxItem key={item.value} value={item}>
+          {(item: SearchOption) => (
+            <ComboboxItem key={item.id} value={item}>
               {item.label}
             </ComboboxItem>
           )}
         </ComboboxList>
+        <ComboboxEmpty>Որոնման արդյունքները կտեսնեք այստեղ</ComboboxEmpty>
       </ComboboxContent>
     </Combobox>
   );

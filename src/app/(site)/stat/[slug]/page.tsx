@@ -15,14 +15,44 @@ import ChartTab from '@/components/site/stat/ChartTab';
 import SearchInput from '@/components/site/stat/SearchInput';
 import TableTab from '@/components/site/stat/TableTab';
 import React, { useState } from 'react';
+import { useParams } from 'next/navigation';
+import useSWR from 'swr';
+import { getMetricById, getMetricCombinations, fetchMetricsByTopicId } from '@/services/metricsService';
+import { swrKeys } from '@/lib/swr/cache-keys';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function StatPage() {
+  const params = useParams();
+  const slug = params.slug as string;
+
+  const { data: topicMetrics = [] } = useSWR(
+    slug ? swrKeys.metricsByTopic(slug) : null,
+    () => fetchMetricsByTopicId(slug),
+  );
+
+  const selectedMetricId = topicMetrics[0]?.id ?? null;
+
+  const { data: metric } = useSWR(
+    selectedMetricId ? swrKeys.metricForm(selectedMetricId) : null,
+    () => getMetricById(selectedMetricId!),
+  );
+  const { data: combinations = [] } = useSWR(
+    selectedMetricId ? swrKeys.metricCombinations(selectedMetricId) : null,
+    () => getMetricCombinations(selectedMetricId!),
+  );
+
+  const isLoading = !metric && !!slug;
+
   const [data, setData] = useState([]);
   const [query, setQuery] = useState<string>('');
 
   return (
     <div className="w-full pt-7.5 pl-16.75 flex flex-col pb-10">
-      <TypographyH3 className="text-[rgba(40,40,40,1)]">Ենթաթեմա 1 անվանումը</TypographyH3>
+      {isLoading ? (
+        <Skeleton className="h-8 w-96 mt-1" />
+      ) : (
+        <TypographyH3 className="text-[rgba(40,40,40,1)]">{metric?.title?.hy}</TypographyH3>
+      )}
       <div className="flex gap-3 mt-5">
         <SearchInput query={query} setQuery={setQuery} setData={setData} />
         <Button
@@ -74,16 +104,22 @@ export default function StatPage() {
               </Button>
             </div>
           </div>
-          <h5 className="text-[rgba(0,0,0,1)] mt-7.5 text-[18px]">
-            ՀՀ կացության կարգավիճակ ստացած օտարերկրացիների բաշխումն  ըստ կարգավիճակի տեսակի և
-            տարիքային խմբերի
-          </h5>
-          <TypographyP className="text-fontSizeS leading-4.75 text-[rgba(125,125,125,1)] mt-3">
-            Լորեմ իպսում դոլոր սիթ ամեթ, կոնսեկթեթուր ադիպիսցինգ էլիթ. Ուտ էլիթ էլիթ, ֆասիլիսի սեդ
-            պորտտիթոր աք, ֆաուցիբուս վել լիգուլա. Սեդ ալիքուեթ լորեմ աք օդիո ուլտրիչիես, վել աուքթոր
-            պուրուս ալիքուեթ. Մաուրիս նոն ինթերդում իպսում. Պրոին էլիթ նունկ, բլանդիթ եու ֆաուցիբուս
-            վել, ուլտրիսիս ուտ նունկ. Պելլենտեսքուե.
-          </TypographyP>
+          {isLoading ? (
+            <>
+              <Skeleton className="h-6 w-3/4 mt-7.5" />
+              <Skeleton className="h-4 w-full mt-3" />
+              <Skeleton className="h-4 w-5/6 mt-2" />
+            </>
+          ) : (
+            <>
+              <h5 className="text-[rgba(0,0,0,1)] mt-7.5 text-[18px]">
+                {metric?.title?.hy}
+              </h5>
+              <TypographyP className="text-fontSizeS leading-4.75 text-[rgba(125,125,125,1)] mt-3">
+                {metric?.description?.hy}
+              </TypographyP>
+            </>
+          )}
           <div className="bg-[rgba(241,245,248,1)] px-3 border-t border-[rgba(15,104,192,1)] pt-4.25 pb-4.75 mt-10 flex gap-4">
             <Select defaultValue="1">
               <SelectTrigger className="border-none text-[rgba(44,44,44,1)] bg-transparent shadow-none px-2 h-9">
@@ -141,7 +177,7 @@ export default function StatPage() {
               </TabsList>
               <TabsContent value="diagram">
                 <div className="p-7.5">
-                  <ChartTab />
+                  <ChartTab combinations={combinations} isLoading={isLoading} />
                 </div>
               </TabsContent>
               <TabsContent value="data">
