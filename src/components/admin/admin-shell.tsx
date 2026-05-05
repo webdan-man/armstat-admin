@@ -30,7 +30,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <SwrProvider>
-      <div className="flex h-screen overflow-hidden bg-[#f9fafb]">
+      <div className="flex min-h-screen bg-[#f9fafb]">
         <aside className="w-60 shrink-0 border-r border-[#e6e7eb] bg-white px-4 pt-5">
           <div className="mb-6">
             <Link href="/admin" className="flex items-center gap-[5px]">
@@ -59,7 +59,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </Button>
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+        <div className="flex min-w-0 flex-1 flex-col">
           <main className="flex-1 px-11 pb-7">{children}</main>
         </div>
       </div>
