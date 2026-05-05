@@ -4,6 +4,9 @@ import LinksClient from "@/components/site/home/LinksClient";
 import Interesting from "@/components/site/home/Interesting";
 import Statistics from "@/components/site/home/Statistics";
 import Footer from "@/components/site/Footer";
+import { cookies } from "next/headers";
+import { LANG_COOKIE } from "@/providers/LangProvider";
+import { locales, defaultLocale, type Locale } from "@/lib/i18n";
 
 type Localized = Record<string, string | undefined>;
 
@@ -38,9 +41,15 @@ type HomePageResponse = {
   updatedAt?: string;
 };
 
-function pickLocale(value?: Localized, locale: string = "hy") {
+function pickLocale(value?: Localized, locale: Locale = defaultLocale) {
   if (!value) return undefined;
-  return value[locale] ?? value.hy ?? value.ru ?? Object.values(value).find(Boolean);
+  return value[locale] ?? "";
+}
+
+async function getActiveLang(): Promise<Locale> {
+  const cookieStore = await cookies();
+  const lang = cookieStore.get(LANG_COOKIE)?.value;
+  return lang && locales.includes(lang as Locale) ? (lang as Locale) : defaultLocale;
 }
 
 function absolutizeUrl(pathOrUrl: string | undefined, baseUrl: string) {
@@ -62,13 +71,13 @@ async function getHomePageData(): Promise<HomePageResponse | null> {
 
 export default async function Home() {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "";
-  const data = await getHomePageData();
+  const [data, lang] = await Promise.all([getHomePageData(), getActiveLang()]);
 
   return (
     <>
       <Hero
-        title={pickLocale(data?.heroTitle)}
-        shortDescription={pickLocale(data?.heroShortDescription)}
+        title={pickLocale(data?.heroTitle, lang)}
+        shortDescription={pickLocale(data?.heroShortDescription, lang)}
         imageSrc={absolutizeUrl(data?.heroImage, baseUrl)}
       />
       <Statistics
@@ -96,8 +105,8 @@ export default async function Home() {
         links={(data?.usefulLinks ?? []).map((link) => ({
           url: link.url ?? "",
           image: absolutizeUrl(link.image, baseUrl) ?? "",
-          name: pickLocale(link.name) ?? "",
-          description: pickLocale(link.description) ?? "",
+          name: pickLocale(link.name, lang) ?? "",
+          description: pickLocale(link.description, lang) ?? "",
         }))}
       />
       <Footer />

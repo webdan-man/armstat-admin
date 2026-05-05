@@ -18,6 +18,7 @@ import TableTab from '@/components/site/stat/TableTab';
 import React, { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
+import { useLang } from '@/providers/LangProvider';
 import { getMetricById, getMetricCombinations, fetchMetricsByTopicId } from '@/services/metricsService';
 import { swrKeys } from '@/lib/swr/cache-keys';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -30,6 +31,7 @@ import {
 export default function StatPage() {
   const params = useParams();
   const slug = params.slug as string;
+  const { activeLang } = useLang();
 
   const { data: topicMetrics = [] } = useSWR(
     slug ? swrKeys.metricsByTopic(slug) : null,
@@ -95,7 +97,7 @@ export default function StatPage() {
       {isLoading ? (
         <Skeleton className="h-8 w-96 mt-1" />
       ) : (
-        <TypographyH3 className="text-[rgba(40,40,40,1)]">{metric?.title?.hy}</TypographyH3>
+        <TypographyH3 className="text-[rgba(40,40,40,1)]">{metric?.title?.[activeLang] ?? ""}</TypographyH3>
       )}
       <div className="flex gap-3 mt-5">
         <SearchInput query={query} setQuery={setQuery} setData={setData} />
@@ -157,10 +159,10 @@ export default function StatPage() {
           ) : (
             <>
               <h5 className="text-[rgba(0,0,0,1)] mt-7.5 text-[18px]">
-                {metric?.title?.hy}
+                {metric?.title?.[activeLang] ?? ""}
               </h5>
               <TypographyP className="text-fontSizeS leading-4.75 text-[rgba(125,125,125,1)] mt-3">
-                {metric?.description?.hy}
+                {metric?.description?.[activeLang] ?? ""}
               </TypographyP>
             </>
           )}
@@ -238,60 +240,65 @@ export default function StatPage() {
               </TabsContent>
               <TabsContent value="data">
                 <div className="px-7.5 py-5 w-full">
-                  <TableTab />
+                  <TableTab
+                    combinations={combinations}
+                    filteredCombinations={filteredCombinations}
+                    metricUnit={metric?.unit?.[activeLang] ?? ""}
+                    isLoading={isLoading}
+                  />
                 </div>
               </TabsContent>
               <TabsContent value="metadata">
-                <div className="p-6 h-200 w-full">
-                  <h4 className="text-fontSizeM text-[rgba(0,0,0,1)]">
-                    Այստեղ պետք է լինի վերնագիր, կարող է լինել նաև երկու տող
-                  </h4>
-                  <p className="mt-4 text-fontSizeS leading-4.75 text-[rgba(125,125,125,1)]">
-                    Լորեմ իպսում դոլոր սիթ ամեթ, կոնսեկթեթուր ադիպիսցինգ էլիթ. Ուտ էլիթ էլիթ,
-                    ֆասիլիսի սեդ պորտտիթոր աք, ֆաուցիբուս վել լիգուլա. Սեդ ալիքուեթ լորեմ աք օդիո
-                    ուլտրիչիես, վել աուքթոր պուրուս ալիքուեթ. Մաուրիս նոն ինթերդում իպսում. Պրոին
-                    էլիթ նունկ, բլանդիթ եու ֆաուցիբուս վել, ուլտրիսիս ուտ նունկ. Պելլենտեսքուե.
-                    Լորեմ իպսում դոլոր սիթ ամեթ, կոնսեկթեթուր ադիպիսցինգ էլիթ. Ուտ էլիթ էլիթ,
-                    ֆասիլիսի սեդ պորտտիթոր աք, ֆաուցիբուս վել լիգուլա. Սեդ ալիքուեթ լորեմ աք օդիո
-                    ուլտրիչիես, վել աուքթոր պուրուս ալիքուեթ. Մաուրիս նոն ինթերդում իպսում. Պրոին
-                    էլիթ նունկ, բլանդիթ եու ֆաուցիբուս վել, ուլտրիսիս ուտ նունկ. Պելլենտեսքուե.
-                  </p>
-                  <h4 className="text-fontSizeM text-[rgba(0,0,0,1)] mt-7.5">
-                    Այստեղ պետք է լինի վերնագիր, կարող է լինել նաև երկու տող, ՀՀ կացության
-                    կարգավիճակ ստացած օտարերկրացիների բաշխումն ըստ կարգավիճա։
-                  </h4>
-                  <p className="mt-4 text-fontSizeS leading-4.75 text-[rgba(125,125,125,1)]">
-                    Լորեմ իպսում դոլոր սիթ ամեթ, կոնսեկթեթուր ադիպիսցինգ էլիթ. Ուտ էլիթ էլիթ,
-                    ֆասիլիսի սեդ պորտտիթոր աք, ֆաուցիբուս վել լիգուլա. Սեդ ալիքուեթ լորեմ աք օդիո
-                    ուլտրիչիես, վել աուքթոր պուրուս ալիքուեթ. Մաուրիս նոն ինթերդում իպսում. Պրոին
-                    էլիթ նունկ, բլանդիթ եու ֆաուցիբուս վել, ուլտրիսիս ուտ նունկ. Պելլենտեսքուե.
-                    Լորեմ իպսում դոլոր սիթ ամեթ, կոնսեկթեթուր ադիպիսցինգ էլիթ. Ուտ էլիթ էլիթ,
-                    ֆասիլիսի սեդ պորտտիթոր աք, ֆաուցիբուս վել լիգուլա. Սեդ ալիքուեթ լորեմ աք օդիո
-                    ուլտրիչիես, վել աուքթոր պուրուս ալիքուեթ. Մաուրիս նոն ինթերդում իպսում. Պրոին
-                    էլիթ նունկ, բլանդիթ եու ֆաուցիբուս վել, ուլտրիսիս ուտ նունկ. Պելլենտեսքուե.
-                  </p>
-                  <p className="mt-5 text-fontSizeS leading-4.75 text-[rgba(125,125,125,1)]">
-                    Լորեմ իպսում դոլոր սիթ ամեթ, կոնսեկթեթուր ադիպիսցինգ էլիթ. Ուտ էլիթ էլիթ,
-                    ֆասիլիսի սեդ պորտտիթոր աք, ֆաուցիբուս վել լիգուլա. Սեդ ալիքուեթ լորեմ աք օդիո
-                    ուլտրիչիես, վել աուքթոր պուրուս ալիքուեթ. Մաուրիս նոն ինթերդում իպսում. Պրոին
-                    էլիթ նունկ, բլանդիթ եու ֆաուցիբուս վել, ուլտրիսիս ուտ նունկ. Պելլենտեսքուե.
-                    Լորեմ իպսում դոլոր սիթ ամեթ, կոնսեկթեթուր ադիպիսցինգ էլիթ. Ուտ էլիթ էլիթ,
-                    ֆասիլիսի սեդ պորտտիթոր աք, ֆաուցիբուս վել լիգուլա. Սեդ ալիքուեթ լորեմ աք օդիո
-                    ուլտրիչիես, վել աուքթոր պուրուս ալիքուեթ. Մաուրիս նոն ինթերդում իպսում. Պրոին
-                    էլիթ նունկ, բլանդիթ եու ֆաուցիբուս վել, ուլտրիսիս ուտ նունկ. Պելլենտեսքուե.
-                  </p>
-                  <div className="flex justify-between gap-5 mt-5">
-                    <div className="flex gap-5">
-                      <p className="text-[rgba(110,127,136,1)] text-[11px]">
-                        Թարմացված է՝ 20/05/2024, 16:43
-                      </p>
-                      <p className="text-[rgba(110,127,136,1)] text-[11px]">
-                        Աղբյուրը՝{' '}
-                        <span className="text-[rgba(39,81,153,1)]">Հղման անվանումը կարճ</span>
-                      </p>
+                <div className="p-6 w-full">
+                  {isLoading ? (
+                    <div className="flex flex-col gap-3">
+                      <Skeleton className="h-6 w-2/3" />
+                      <Skeleton className="h-4 w-full mt-2" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-5/6" />
                     </div>
-                    <p className="text-[rgba(110,127,136,1)] text-[11px]">Դիտված է 1,343 անգամ</p>
-                  </div>
+                  ) : (
+                    <>
+                      <h4 className="text-fontSizeM text-[rgba(0,0,0,1)]">
+                        {metric?.title?.[activeLang] ?? ""}
+                      </h4>
+                      {(metric?.metadata as any)?.[activeLang]?.body && (
+                        <p className="mt-4 text-fontSizeS leading-4.75 text-[rgba(125,125,125,1)] whitespace-pre-line">
+                          {(metric.metadata as any)[activeLang].body}
+                        </p>
+                      )}
+                      {metric?.description?.[activeLang] && (
+                        <p className="mt-4 text-fontSizeS leading-4.75 text-[rgba(125,125,125,1)]">
+                          {metric.description[activeLang]}
+                        </p>
+                      )}
+                      <div className="flex gap-5 mt-7.5">
+                        {metric?.updatedAt && (
+                          <p className="text-[rgba(110,127,136,1)] text-[11px]">
+                            Թարմացված է՝{' '}
+                            {new Date(metric.updatedAt).toLocaleDateString('hy-AM', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                            })}
+                          </p>
+                        )}
+                        {((metric?.metadata as any)?.[activeLang]?.sourceUrl || metric?.link?.[activeLang]) && (
+                          <p className="text-[rgba(110,127,136,1)] text-[11px]">
+                            Աղբյուրը՝{' '}
+                            <a
+                              href={(metric?.metadata as any)?.[activeLang]?.sourceUrl ?? metric?.link?.[activeLang]}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[rgba(39,81,153,1)] hover:underline"
+                            >
+                              {(metric?.metadata as any)?.[activeLang]?.sourceUrl ?? metric?.link?.[activeLang]}
+                            </a>
+                          </p>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
               </TabsContent>
             </Tabs>

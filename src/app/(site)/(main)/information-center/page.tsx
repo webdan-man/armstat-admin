@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { TypographyH2 } from "@/components/ui/typography";
-import { defaultLocale, type Locale } from "@/lib/i18n";
+import { cookies } from "next/headers";
+import { LANG_COOKIE } from "@/providers/LangProvider";
+import { defaultLocale, locales, type Locale } from "@/lib/i18n";
 
 type Localized = Record<string, string | undefined>;
 
@@ -24,7 +26,7 @@ type InformationCenterResponse = {
 
 function pickLocale(value?: Localized, locale: Locale = defaultLocale) {
   if (!value) return undefined;
-  return value[locale] ?? value.hy ?? value.ru ?? Object.values(value).find(Boolean);
+  return value[locale] ?? "";
 }
 
 function absolutizeUrl(pathOrUrl: string | undefined, baseUrl: string) {
@@ -51,13 +53,19 @@ async function getInformationCenterData(): Promise<InformationCenterResponse | n
   return (await res.json()) as InformationCenterResponse;
 }
 
+async function getActiveLang(): Promise<Locale> {
+  const cookieStore = await cookies();
+  const lang = cookieStore.get(LANG_COOKIE)?.value;
+  return lang && locales.includes(lang as Locale) ? (lang as Locale) : defaultLocale;
+}
+
 export default async function InformationCenterPage() {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "";
   const assetBaseUrl = getOrigin(baseUrl);
-  const data = await getInformationCenterData();
+  const [data, lang] = await Promise.all([getInformationCenterData(), getActiveLang()]);
 
-  const title = pickLocale(data?.title) ?? "Տեղեկատվական կենտրոն";
-  const description = pickLocale(data?.description);
+  const title = pickLocale(data?.title, lang) ?? "Տեղեկատվական կենտրոն";
+  const description = pickLocale(data?.description, lang);
   const heroImageSrc = absolutizeUrl(data?.image, assetBaseUrl) ?? "/images/legal-acts.jpg";
 
   return (
@@ -87,8 +95,8 @@ export default async function InformationCenterPage() {
           </h3>
 
           {(data?.sections ?? []).map((section, index) => {
-            const sectionTitle = pickLocale(section.title) ?? "";
-            const sectionDescription = pickLocale(section.description) ?? "";
+            const sectionTitle = pickLocale(section.title, lang) ?? "";
+            const sectionDescription = pickLocale(section.description, lang) ?? "";
             const link = section.link ?? "";
             const fileLink = section.file ?? "";
 

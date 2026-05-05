@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { TypographyH2 } from "@/components/ui/typography";
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type NewsItem = {
   _id: string;
@@ -43,6 +44,7 @@ async function fetchNewsPage(page: number): Promise<{ data: NewsItem[]; total: n
 }
 
 export default function NewsPage() {
+  const { t } = useTranslation();
   const [items, setItems] = useState<NewsItem[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -79,14 +81,14 @@ export default function NewsPage() {
 
   return (
     <div className="flex w-full max-w-295 flex-col pt-12 pb-40">
-      <TypographyH2 className="text-textBlack800">Նորություններ</TypographyH2>
+      <TypographyH2 className="text-textBlack800">{t("news.title", "Նորություններ")}</TypographyH2>
 
       {loading ? (
         <div className="mt-11 flex items-center justify-center py-20">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
         </div>
       ) : error ? (
-        <p className="text-textBlack600 mt-11 text-center">Չհաջողվեց բեռնել նորությունները։</p>
+        <p className="text-textBlack600 mt-11 text-center">{t("news.load_error", "Չհաջողվեց բեռնել նորությունները։")}</p>
       ) : (
         <>
           <div className="mt-11.25 grid grid-cols-3 gap-10 max-md:flex max-md:flex-col">
@@ -119,7 +121,7 @@ export default function NewsPage() {
                     href={`/news/${item._id}`}
                     className="bg-link border-blue600 mt-auto w-full rounded-sm border-2 p-2 text-center"
                   >
-                    Կարդալ ավելին
+                    {t("news.read_more", "Կարդալ ավելին")}
                   </Link>
                 </div>
               </div>
@@ -135,10 +137,10 @@ export default function NewsPage() {
               {loadingMore ? (
                 <span className="flex items-center gap-2">
                   <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Բեռնում...
+                  {t("news.loading", "Բեռնում...")}
                 </span>
               ) : (
-                "Տեսնել ավելին"
+                t("news.see_more", "Տեսնել ավելին")
               )}
             </button>
           )}

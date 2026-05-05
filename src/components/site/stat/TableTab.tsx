@@ -1,44 +1,68 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import type { MetricCombination } from '@/types/metric';
+import {
+  headerForColumnIndex,
+  maxRowLength,
+  valueAtColumnIndex,
+} from '@/components/indicators/metric-combinations-table-utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const PAGE_SIZE = 20;
 
-const generateData = () =>
-  Array.from({ length: 200 }).map((_, i) => ({
-    time: 1990 + (i % 30),
-    age: `${i % 10}-${(i % 10) + 5}`,
-    region: ['Արարատ', 'Լոռի', 'Շիրակ'][i % 3],
-    gender: i % 2 === 0 ? 'Տղամարդ' : 'Կին',
-    count: Math.floor(Math.random() * 50000),
-  }));
+type SortKey = number | 'value';
 
-const headers = [
-  { label: 'Ժամանակային Շարք', key: 'time' },
-  { label: 'Տարիք', key: 'age' },
-  { label: 'Մարզեր', key: 'region' },
-  { label: 'Սեռ', key: 'gender' },
-  { label: 'Քանակ', key: 'count' },
-];
+interface TableTabProps {
+  combinations?: MetricCombination[];
+  filteredCombinations?: MetricCombination[];
+  metricUnit?: string;
+  isLoading?: boolean;
+}
 
-const TableTab = () => {
-  const allData = useMemo(() => generateData(), []);
+const TableTab = ({
+  combinations = [],
+  filteredCombinations = [],
+  metricUnit,
+  isLoading = false,
+}: TableTabProps) => {
+  const columnCount = useMemo(() => maxRowLength(combinations), [combinations]);
+  const columnIndexes = useMemo(
+    () => Array.from({ length: columnCount }, (_, i) => i),
+    [columnCount],
+  );
+
+  const headers = useMemo(
+    () => [
+      ...columnIndexes.map((i) => ({
+        label: headerForColumnIndex(combinations, i),
+        key: i as SortKey,
+      })),
+      { label: metricUnit ?? 'Արժեք', key: 'value' as SortKey },
+    ],
+    [columnIndexes, combinations, metricUnit],
+  );
 
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const [sortBy, setSortBy] = useState<keyof (typeof allData)[0]>('time');
+  const [sortKey, setSortKey] = useState<SortKey>(0);
   const [order, setOrder] = useState<'asc' | 'desc'>('asc');
-
   const observerRef = useRef<HTMLDivElement | null>(null);
 
-  const sortedData = useMemo(() => {
-    const sorted = [...allData].sort((a, b) => {
-      if (a[sortBy] < b[sortBy]) return order === 'asc' ? -1 : 1;
-      if (a[sortBy] > b[sortBy]) return order === 'asc' ? 1 : -1;
-      return 0;
-    });
+  // Reset pagination when filtered data changes
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [filteredCombinations]);
 
-    return sorted;
-  }, [allData, sortBy, order]);
+  const sortedData = useMemo(() => {
+    return [...filteredCombinations].sort((a, b) => {
+      const aVal =
+        sortKey === 'value' ? (a.value ?? '') : valueAtColumnIndex(a, sortKey as number);
+      const bVal =
+        sortKey === 'value' ? (b.value ?? '') : valueAtColumnIndex(b, sortKey as number);
+      const cmp = aVal.localeCompare(bVal, undefined, { numeric: true });
+      return order === 'asc' ? cmp : -cmp;
+    });
+  }, [filteredCombinations, sortKey, order]);
 
   const visibleData = sortedData.slice(0, visibleCount);
 
@@ -48,52 +72,73 @@ const TableTab = () => {
         setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, sortedData.length));
       }
     });
-
     if (observerRef.current) observer.observe(observerRef.current);
-
     return () => observer.disconnect();
   }, [sortedData.length]);
 
-  const handleSort = (field: typeof sortBy) => {
-    const newOrder = sortBy === field && order === 'asc' ? 'desc' : 'asc';
-
-    setSortBy(field);
+  const handleSort = (key: SortKey) => {
+    const newOrder = sortKey === key && order === 'asc' ? 'desc' : 'asc';
+    setSortKey(key);
     setOrder(newOrder);
     setVisibleCount(PAGE_SIZE);
   };
 
+  const gridCols = `repeat(${headers.length}, minmax(120px, 1fr))`;
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-3">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Skeleton key={i} className="h-9 w-full" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!combinations.length) {
+    return (
+      <p className="text-[14px] text-[rgba(44,44,44,0.65)]">Տվյալներ չկան</p>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-5">
       <div className="w-full overflow-y-auto h-200 relative">
-        <div className="grid grid-cols-[3fr_2fr_2fr_2fr_2fr] border-b py-3 sticky top-0 bg-white z-10">
+        <div
+          className="grid border-b py-3 sticky top-0 bg-white z-10"
+          style={{ gridTemplateColumns: gridCols }}
+        >
           {headers.map((h) => (
             <button
-              key={h.key}
-              onClick={() => handleSort(h.key as any)}
-              className="text-left text-[12px] font-medium pr-5 flex items-center justify-between gap-[4px] text-[rgba(40,40,40,1)]"
+              key={String(h.key)}
+              onClick={() => handleSort(h.key)}
+              className="text-left text-[12px] font-medium pr-5 flex items-center gap-[4px] text-[rgba(40,40,40,1)]"
             >
-              {h.label}{' '}
-              {sortBy === h.key ? (
+              {h.label}
+              {sortKey === h.key ? (
                 order === 'asc' ? (
                   <img src="/arrowTop.svg" alt="sort up" />
                 ) : (
                   <img src="/arrowTop.svg" className="rotate-180" alt="sort down" />
                 )
-              ) : (
-                ''
-              )}
+              ) : null}
             </button>
           ))}
         </div>
 
-        {visibleData.map((row, i) => (
-          <div key={i} className="grid grid-cols-[3fr_2fr_2fr_2fr_2fr] border-b">
-            <p className="text-[12px] pt-3.75 pb-4.5 text-[rgba(40,40,40,1)]">{row.time}</p>
-            <p className="text-[12px] pt-3.75 pb-4.5 text-[rgba(40,40,40,1)]">{row.age}</p>
-            <p className="text-[12px] pt-3.75 pb-4.5 text-[rgba(40,40,40,1)]">{row.region}</p>
-            <p className="text-[12px] pt-3.75 pb-4.5 text-[rgba(40,40,40,1)]">{row.gender}</p>
-            <p className="text-[12px] pt-3.75 pb-4.5 text-[rgba(40,40,40,1)]">
-              {row.count.toLocaleString()}
+        {visibleData.map((combo, i) => (
+          <div
+            key={combo._id}
+            className="grid border-b"
+            style={{ gridTemplateColumns: gridCols }}
+          >
+            {columnIndexes.map((ci) => (
+              <p key={ci} className="text-[12px] pt-3.75 pb-4.5 pr-5 text-[rgba(40,40,40,1)]">
+                {valueAtColumnIndex(combo, ci)}
+              </p>
+            ))}
+            <p className="text-[12px] pt-3.75 pb-4.5 pr-5 text-[rgba(40,40,40,1)]">
+              {combo.value}
             </p>
           </div>
         ))}
@@ -103,10 +148,11 @@ const TableTab = () => {
             ref={observerRef}
             className="h-10 flex items-center justify-center text-xs text-gray-400"
           >
-            Loading more...
+            Բեռնվում է…
           </div>
         )}
       </div>
+
       <div className="flex justify-between gap-5">
         <div className="flex gap-5">
           <p className="text-[rgba(110,127,136,1)] text-[11px]">Թարմացված է՝ 20/05/2024, 16:43</p>

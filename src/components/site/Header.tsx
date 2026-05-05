@@ -9,26 +9,35 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import useSWR from "swr";
 import { fetchSections } from "@/services/sectionsService";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { isRootTopic } from "@/lib/section-topic-utils";
+import { useLang } from "@/providers/LangProvider";
+import { useTranslation } from "@/hooks/useTranslation";
+import type { ContentLangCode } from "@/types/content-entries";
 
-const staticItems = [
-  { title: "Հրապարակումներ", href: "/news" },
-  { title: "Տեղեկատվական կենտրոն", href: "/information-center" },
-  { title: "Հետադարձ կապ", href: "/feedback" },
+const languages: { labelKey: string; code: ContentLangCode; fallback: string }[] = [
+  { labelKey: "language.hy", code: "hy", fallback: "Armenian" },
+  { labelKey: "language.en", code: "en", fallback: "English" },
+  // { labelKey: "language.ru", code: "ru", fallback: "Russian" },
 ];
 
-const languages = [
-  { label: "Հայերեն", code: "hy" },
-  { label: "English", code: "en" },
-  // { label: 'Русский', code: 'ru' },
+const navItems = [
+  { key: "navigation.catalog", href: "catalog", fallback: "Catalog" },
+  { key: "navigation.news", href: "/news", fallback: "Publications" },
+  {
+    key: "navigation.information_center",
+    href: "/information-center",
+    fallback: "Information Center",
+  },
+  { key: "navigation.feedback", href: "/feedback", fallback: "Feedback" },
 ];
 
 export default function Header() {
-  const [activeLang, setActiveLang] = useState("hy");
+  const { activeLang, setActiveLang } = useLang();
+  const { t } = useTranslation();
   const { data: sections = [] } = useSWR(swrKeys.sections, fetchSections);
 
   const catalogHref = useMemo(() => {
@@ -40,9 +49,14 @@ export default function Header() {
   }, [sections]);
 
   const items = useMemo(
-    () => [{ title: "Կատալոգ", href: catalogHref }, ...staticItems],
+    () =>
+      navItems.map((item) =>
+        item.href === "catalog" ? { ...item, href: catalogHref } : item
+      ),
     [catalogHref]
   );
+
+  const activeLangLabel = languages.find((l) => l.code === activeLang);
 
   return (
     <header className="bg-blue1000 flex w-full flex-col items-center">
@@ -50,13 +64,13 @@ export default function Header() {
         <Link href="/">
           <Image src={"/logo.svg"} alt={"Logo"} width={506} height={58} />
           <TypographyH1 className="hidden">
-            Հայաստանի Հանրապետության Վիճակագրական Կոմիտե ԱՐՄՍՏԱՏ
+            {t("header.site_title", "Statistical Committee of the Republic of Armenia ARMSTAT")}
           </TypographyH1>
         </Link>
         {/*<div className="border-blue800 flex rounded-sm border">*/}
         {/*  <input*/}
         {/*    type="text"*/}
-        {/*    placeholder={"Որոնել"}*/}
+        {/*    placeholder={"Search"}*/}
         {/*    className="placeholder:text-blue500/30 px-4 py-2 outline-none"*/}
         {/*  />*/}
         {/*  <button className="border-l-blue800 flex w-13.5 cursor-pointer items-center justify-center border-l">*/}
@@ -67,9 +81,9 @@ export default function Header() {
       <div className="bg-blue800/30 flex w-full justify-center py-4 max-md:hidden">
         <nav className="flex w-full max-w-295 items-center justify-between">
           <ul className="flex gap-6">
-            {items.map((item, i) => (
+            {items.map((item) => (
               <li key={item.href}>
-                <Link href={item.href}>{item.title}</Link>
+                <Link href={item.href}>{t(item.key, item.fallback)}</Link>
               </li>
             ))}
           </ul>
@@ -80,7 +94,11 @@ export default function Header() {
                 className="flex cursor-pointer items-center gap-1 p-[3px] outline-none"
               >
                 <Image src="/icons/earth.svg" alt="Earth" width={24} height={24} />
-                <span>{languages.find((l) => l.code === activeLang)?.label}</span>
+                <span>
+                  {activeLangLabel
+                    ? t(activeLangLabel.labelKey, activeLangLabel.fallback)
+                    : ""}
+                </span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
@@ -90,7 +108,7 @@ export default function Header() {
                   onClick={() => setActiveLang(lang.code)}
                   className={lang.code === activeLang ? "font-bold" : ""}
                 >
-                  {lang.label}
+                  {t(lang.labelKey, lang.fallback)}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>

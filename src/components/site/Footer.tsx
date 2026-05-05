@@ -1,26 +1,23 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslation } from "@/hooks/useTranslation";
 
-const items = [
+const navItems = [
+  { key: "navigation.catalog", href: "/catalogue", fallback: "Catalog" },
+  { key: "navigation.news", href: "/publications", fallback: "Publications" },
   {
-    title: "Կատալոգ",
-    href: "/catalogue",
-  },
-  {
-    title: "Հրապարակումներ",
-    href: "/publications",
-  },
-  {
-    title: "Տեղեկատվական կենտրոն",
+    key: "navigation.information_center",
     href: "/information-center",
+    fallback: "Information Center",
   },
-  {
-    title: "Հետադարձ կապ",
-    href: "/feedback",
-  },
+  { key: "navigation.feedback", href: "/feedback", fallback: "Feedback" },
 ];
 
 export default function Footer() {
+  const { t } = useTranslation();
+
   return (
     <footer className="border-t-warning flex w-full flex-col items-center border-t-4 pt-12 pb-10">
       <div className="flex w-full max-w-295 flex-col">
@@ -34,10 +31,10 @@ export default function Footer() {
         </div>
         <nav className="mt-18 flex w-full max-w-295 items-center justify-between max-md:hidden">
           <ul className="flex gap-6">
-            {items.map((item, i) => (
+            {navItems.map((item) => (
               <li key={item.href}>
                 <Link className="text-textBlack800" href={item.href}>
-                  {item.title}
+                  {t(item.key, item.fallback)}
                 </Link>
               </li>
             ))}
@@ -45,35 +42,39 @@ export default function Footer() {
         </nav>
         <address className="mt-10 flex w-full gap-17.5 not-italic max-md:flex-col">
           <div className="flex flex-col gap-2">
-            <p className="text-fontSizeS font-semibold text-[rgba(122,122,122,1)]">Թեժ գիծ՝</p>
-            <a
-              className="text-[26px] text-[rgba(37,37,37,1)]"
-              target="_blank"
-              href="tel:+374 60 510 610"
-            >
-              +374 60 510 610
-            </a>
-          </div>
-          <div className="flex flex-col gap-2">
-            <p className="text-fontSizeS font-semibold text-[rgba(122,122,122,1)]">Հեռախոս`</p>
-            <a
-              className="text-[26px] text-[rgba(37,37,37,1)]"
-              target="_blank"
-              href="tel:+374 11 524 213"
-            >
-              +374 11 524 213
-            </a>
-          </div>
-          <div className="flex flex-col gap-2">
             <p className="text-fontSizeS font-semibold text-[rgba(122,122,122,1)]">
-              Պաշտոնական էլ. փոստ`
+              {t("footer.hotline.label", "Hotline:")}
             </p>
             <a
               className="text-[26px] text-[rgba(37,37,37,1)]"
               target="_blank"
-              href="mailto:info@armstat.am"
+              href={`tel:${t("footer.hotline.phone", "+374 60 510 610")}`}
             >
-              info@armstat.am
+              {t("footer.hotline.phone", "+374 60 510 610")}
+            </a>
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-fontSizeS font-semibold text-[rgba(122,122,122,1)]">
+              {t("footer.phone.label", "Phone:")}
+            </p>
+            <a
+              className="text-[26px] text-[rgba(37,37,37,1)]"
+              target="_blank"
+              href={`tel:${t("footer.phone.number", "+374 11 524 213")}`}
+            >
+              {t("footer.phone.number", "+374 11 524 213")}
+            </a>
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-fontSizeS font-semibold text-[rgba(122,122,122,1)]">
+              {t("footer.email.label", "Official e-mail:")}
+            </p>
+            <a
+              className="text-[26px] text-[rgba(37,37,37,1)]"
+              target="_blank"
+              href={`mailto:${t("footer.email.address", "info@armstat.am")}`}
+            >
+              {t("footer.email.address", "info@armstat.am")}
             </a>
           </div>
         </address>
@@ -82,7 +83,7 @@ export default function Footer() {
             <li>
               <a
                 rel="noopener noreferrer"
-                href="./"
+                href={t("footer.social.facebook")}
                 target="_blank"
                 className="bg-link flex size-10.5 items-center justify-center rounded-lg"
               >
@@ -92,7 +93,7 @@ export default function Footer() {
             <li>
               <a
                 rel="noopener noreferrer"
-                href="./"
+                href={t("footer.social.linkedin")}
                 target="_blank"
                 className="bg-link flex size-10.5 items-center justify-center rounded-lg"
               >
@@ -102,7 +103,7 @@ export default function Footer() {
             <li>
               <a
                 rel="noopener noreferrer"
-                href="./"
+                href={t("footer.social.telegram")}
                 target="_blank"
                 className="bg-link flex size-10.5 items-center justify-center rounded-lg"
               >
@@ -112,7 +113,7 @@ export default function Footer() {
             <li>
               <a
                 rel="noopener noreferrer"
-                href="./"
+                href={t("footer.social.x")}
                 target="_blank"
                 className="bg-link flex size-10.5 items-center justify-center rounded-lg"
               >
@@ -122,7 +123,7 @@ export default function Footer() {
             <li>
               <a
                 rel="noopener noreferrer"
-                href="./"
+                href={t("footer.social.youtube")}
                 target="_blank"
                 className="bg-link flex size-10.5 items-center justify-center rounded-lg"
               >
@@ -132,8 +133,10 @@ export default function Footer() {
           </ul>
         </nav>
         <p className="text-fontSizeXS text-textBlack800 leading-fontLine-heightXS mt-9 tracking-[1px]">
-          &copy; 2025 Հայաստանի Հանրապետության Վիճակագրական Կոմիտե ԱՐՄՍՏԱՏ: Բոլոր իրավունքները
-          պաշտպանված են:
+          {t(
+            "footer.copyright",
+            "© 2025 Statistical Committee of the Republic of Armenia ARMSTAT. All rights reserved."
+          )}
         </p>
       </div>
     </footer>

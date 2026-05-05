@@ -1,7 +1,9 @@
 import { TypographyH2 } from "@/components/ui/typography";
 import Image from "next/image";
 import Link from "next/link";
-import { defaultLocale, type Locale } from "@/lib/i18n";
+import { cookies } from "next/headers";
+import { LANG_COOKIE } from "@/providers/LangProvider";
+import { defaultLocale, locales, type Locale } from "@/lib/i18n";
 
 type Localized = Record<string, string | undefined>;
 
@@ -39,7 +41,7 @@ type ContactUsResponse = {
 
 function pickLocale(value?: Localized, locale: Locale = defaultLocale) {
   if (!value) return undefined;
-  return value[locale] ?? value.hy ?? value.ru ?? Object.values(value).find(Boolean);
+  return value[locale] ?? "";
 }
 
 function buildMapEmbedSrc(coords?: string) {
@@ -62,11 +64,17 @@ async function getContactUsData(): Promise<ContactUsResponse | null> {
   return (await res.json()) as ContactUsResponse;
 }
 
+async function getActiveLang(): Promise<Locale> {
+  const cookieStore = await cookies();
+  const lang = cookieStore.get(LANG_COOKIE)?.value;
+  return lang && locales.includes(lang as Locale) ? (lang as Locale) : defaultLocale;
+}
+
 export default async function FeedbackPage() {
-  const data = await getContactUsData();
-  const title = pickLocale(data?.title) ?? "Կապ մեզ հետ";
-  const description = pickLocale(data?.description);
-  const notificationsEmailRow = pickLocale(data?.notificationsEmailRow);
+  const [data, lang] = await Promise.all([getContactUsData(), getActiveLang()]);
+  const title = pickLocale(data?.title, lang) ?? "Կապ մեզ հետ";
+  const description = pickLocale(data?.description, lang);
+  const notificationsEmailRow = pickLocale(data?.notificationsEmailRow, lang);
   const mapTitle = data?.mapSection?.title ?? "";
   const mapSrc =
     buildMapEmbedSrc(data?.mapSection?.value) ??
