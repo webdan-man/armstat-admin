@@ -12,7 +12,6 @@ export async function fetchHomePage(): Promise<HomePageApiResponse> {
 export type UpdateHomePageHeroPayload = {
   heroTitle: HomePageLocalizedText;
   heroShortDescription: HomePageLocalizedText;
-  heroTextContent: HomePageLocalizedText;
   heroImage?: File | null;
 };
 
@@ -20,7 +19,6 @@ export async function updateHomePageHero(payload: UpdateHomePageHeroPayload) {
   const formData = new FormData();
   formData.append("heroTitle", JSON.stringify(payload.heroTitle));
   formData.append("heroShortDescription", JSON.stringify(payload.heroShortDescription));
-  formData.append("heroTextContent", JSON.stringify(payload.heroTextContent));
   if (payload.heroImage) {
     formData.append("heroImage", payload.heroImage);
   }

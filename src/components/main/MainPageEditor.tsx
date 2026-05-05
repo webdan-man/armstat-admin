@@ -54,11 +54,6 @@ const heroFormSchema = z.object({
     en: z.string().optional(),
     ru: z.string().optional(),
   }),
-  heroTextContent: z.object({
-    hy: z.string().min(1, "Տեքստը պարտադիր է"),
-    en: z.string().optional(),
-    ru: z.string().optional(),
-  }),
   heroImage: z.string(),
 });
 type HeroFormValues = z.infer<typeof heroFormSchema>;
@@ -522,7 +517,6 @@ export function MainPageEditor() {
     defaultValues: {
       heroTitle: EMPTY_MAIN_PAGE.heroTitle,
       heroShortDescription: EMPTY_MAIN_PAGE.heroShortDescription,
-      heroTextContent: EMPTY_MAIN_PAGE.heroTextContent,
       heroImage: EMPTY_MAIN_PAGE.heroImage,
     },
     mode: "onSubmit",
@@ -565,7 +559,6 @@ export function MainPageEditor() {
         form.reset({
           heroTitle: mapped.heroTitle,
           heroShortDescription: mapped.heroShortDescription,
-          heroTextContent: mapped.heroTextContent,
           heroImage: mapped.heroImage,
         });
       } catch (error) {
@@ -629,7 +622,6 @@ export function MainPageEditor() {
       await updateHomePageHero({
         heroTitle: ensureHyLocalized(data.heroTitle),
         heroShortDescription: ensureHyLocalized(data.heroShortDescription),
-        heroTextContent: ensureHyLocalized(data.heroTextContent),
         heroImage: heroImageFile,
       });
       await updateHomePageFeaturedBlocks(toFeaturedBlocksPayload());
@@ -710,22 +702,6 @@ export function MainPageEditor() {
                   return {
                     ...d,
                     heroShortDescription,
-                  };
-                })
-              }
-              className={cn("min-h-[70px] resize-y", fieldBorder)}
-            />
-            <Textarea
-              value={readLocalized(data.heroTextContent)}
-              onChange={(e) =>
-                setData((d) => {
-                  const heroTextContent = writeLocalized(d.heroTextContent, e.target.value);
-                  form.setValue("heroTextContent", ensureHyLocalized(heroTextContent), {
-                    shouldValidate: true,
-                  });
-                  return {
-                    ...d,
-                    heroTextContent,
                   };
                 })
               }

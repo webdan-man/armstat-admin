@@ -29,6 +29,7 @@ import {
   maxRowLength,
   valueAtColumnIndex,
 } from "@/components/indicators/metric-combinations-table-utils";
+import Image from "next/image";
 
 const fieldBorder =
   "h-9 rounded-[8.5px] border-[rgba(230,231,235,1)] bg-white text-sm text-[#2c2c2c] md:text-sm";
@@ -211,6 +212,30 @@ const ChartDataTabs = ({
               </FormItem>
             )}
           />
+        </div>
+        <div className="mt-3.5 flex items-center gap-10">
+          <div className="flex items-center gap-3">
+            <Image src="/icons/man.svg" width={17} height={27} alt={"man"} />
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-medium text-[#575757]">#</span>
+              <Input className={cn(fieldBorder, "w-32")} type="text" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-medium text-[#575757]">%</span>
+              <Input className={cn(fieldBorder, "w-16")} type="text" />
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Image src="/icons/women.svg" width={17} height={27} alt={"women"} />
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-medium text-[#575757]">#</span>
+              <Input className={cn(fieldBorder, "w-32")} type="text" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-medium text-[#575757]">%</span>
+              <Input className={cn(fieldBorder, "w-16")} type="text" />
+            </div>
+          </div>
         </div>
       </TabsContent>
       <TabsContent className="flex w-full flex-col gap-5" value="table">

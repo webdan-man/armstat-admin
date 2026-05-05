@@ -1,9 +1,9 @@
-import Hero from '@/components/site/home/Hero';
-import News from '@/components/site/home/News';
-import LinksClient from '@/components/site/home/LinksClient';
-import Interesting from '@/components/site/home/Interesting';
-import Statistics from '@/components/site/home/Statistics';
-import Footer from '@/components/site/Footer';
+import Hero from "@/components/site/home/Hero";
+import News from "@/components/site/home/News";
+import LinksClient from "@/components/site/home/LinksClient";
+import Interesting from "@/components/site/home/Interesting";
+import Statistics from "@/components/site/home/Statistics";
+import Footer from "@/components/site/Footer";
 
 type Localized = Record<string, string | undefined>;
 
@@ -11,7 +11,6 @@ type HomePageResponse = {
   _id: string;
   heroTitle?: Localized;
   heroShortDescription?: Localized;
-  heroTextContent?: Localized;
   heroImage?: string;
   featuredBlocks?: Array<{
     titleKey: string;
@@ -39,15 +38,15 @@ type HomePageResponse = {
   updatedAt?: string;
 };
 
-function pickLocale(value?: Localized, locale: string = 'hy') {
+function pickLocale(value?: Localized, locale: string = "hy") {
   if (!value) return undefined;
   return value[locale] ?? value.hy ?? value.ru ?? Object.values(value).find(Boolean);
 }
 
 function absolutizeUrl(pathOrUrl: string | undefined, baseUrl: string) {
   if (!pathOrUrl) return undefined;
-  if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) return pathOrUrl;
-  if (!pathOrUrl.startsWith('/')) return `${baseUrl}/${pathOrUrl}`;
+  if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) return pathOrUrl;
+  if (!pathOrUrl.startsWith("/")) return `${baseUrl}/${pathOrUrl}`;
   return `${baseUrl}${pathOrUrl}`;
 }
 
@@ -55,14 +54,14 @@ async function getHomePageData(): Promise<HomePageResponse | null> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
   if (!baseUrl) return null;
 
-  const res = await fetch(`${baseUrl}/home-page`, { cache: 'no-store' });
+  const res = await fetch(`${baseUrl}/home-page`, { cache: "no-store" });
   if (!res.ok) return null;
 
   return (await res.json()) as HomePageResponse;
 }
 
 export default async function Home() {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? '';
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "";
   const data = await getHomePageData();
 
   return (
@@ -70,7 +69,6 @@ export default async function Home() {
       <Hero
         title={pickLocale(data?.heroTitle)}
         shortDescription={pickLocale(data?.heroShortDescription)}
-        textContent={pickLocale(data?.heroTextContent)}
         imageSrc={absolutizeUrl(data?.heroImage, baseUrl)}
       />
       <Statistics
@@ -80,7 +78,7 @@ export default async function Home() {
           sections:
             ((b.sections as Array<{ name?: string; title?: string }> | undefined) ?? [])
               .map((s) => ({
-                name: s.name ?? s.title ?? '',
+                name: s.name ?? s.title ?? "",
               }))
               .filter((s) => Boolean(s.name)) ?? [],
         }))}
@@ -96,10 +94,10 @@ export default async function Home() {
       <Interesting />
       <LinksClient
         links={(data?.usefulLinks ?? []).map((link) => ({
-          url: link.url ?? '',
-          image: absolutizeUrl(link.image, baseUrl) ?? '',
-          name: pickLocale(link.name) ?? '',
-          description: pickLocale(link.description) ?? '',
+          url: link.url ?? "",
+          image: absolutizeUrl(link.image, baseUrl) ?? "",
+          name: pickLocale(link.name) ?? "",
+          description: pickLocale(link.description) ?? "",
         }))}
       />
       <Footer />

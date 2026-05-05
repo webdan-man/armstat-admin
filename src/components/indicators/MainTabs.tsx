@@ -11,12 +11,7 @@ import { Field, FieldLabel } from "@/components/ui/field";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from "@/components/ui/form";
+import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 import type { IndicatorFormValues } from "@/components/indicators/indicator-form-schema";
 
@@ -111,27 +106,21 @@ function LocaleTabContent({ lang }: { lang: (typeof locales)[number] }) {
   );
 }
 
+const triggerClass =
+  "h-8 min-w-[64px] rounded-lg px-2 py-0 text-[13px] font-normal text-black hover:bg-white/50 group-data-[variant=default]/tabs-list:data-[state=active]:bg-white group-data-[variant=default]/tabs-list:data-[state=active]:border-b-0 data-[state=active]:shadow-[0px_4px_4px_0px_rgba(0,0,0,0.05)]";
+
 const MainTabs = ({ className }: { className?: string }) => {
   return (
     <Tabs defaultValue="hy" className={cn("w-full gap-5", className)}>
       <TabsList className="h-9 gap-0 rounded-[9px] bg-[#e6e7eb] p-0.5">
-        <TabsTrigger
-          value="en"
-          className="h-full rounded-[8px] px-5 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"
-        >
-          EN
-        </TabsTrigger>
-        <TabsTrigger
-          value="hy"
-          className="h-full rounded-[8px] px-5 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"
-        >
+        <TabsTrigger value="hy" className={triggerClass}>
           HY
         </TabsTrigger>
-        <TabsTrigger
-          value="ru"
-          className="h-full rounded-[8px] px-5 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"
-        >
+        <TabsTrigger value="ru" className={triggerClass}>
           RU
+        </TabsTrigger>
+        <TabsTrigger value="en" className={triggerClass}>
+          ENG
         </TabsTrigger>
       </TabsList>
       {locales.map((lang) => (

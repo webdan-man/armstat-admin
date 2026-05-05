@@ -4,16 +4,12 @@ import Image from "next/image";
 export default function Hero({
   title,
   shortDescription,
-  textContent,
   imageSrc,
 }: {
   title?: string;
   shortDescription?: string;
-  textContent?: string;
   imageSrc?: string;
 }) {
-  console.log(imageSrc);
-
   return (
     <div className="flex w-full flex-col items-center">
       <section className="bg-blue1000 flex w-full flex-col items-center rounded-br-[56px]">
@@ -25,11 +21,6 @@ export default function Hero({
             {shortDescription ??
               "Գենդերային բաշխմամբ վիճակագրությունը կարևոր գործիք և ուղեցույց է կանանց ու տղամարդկանց իրավահավասարությունների և հավասար հնարավորության քաղաքականություն մշակողների, ոլորտի ակտիվիստների համար:"}
           </TypographyP>
-          {textContent && (
-            <TypographyP className="text-textBlack100/70 relative z-10 mt-4 max-w-180 text-center leading-5">
-              {textContent}
-            </TypographyP>
-          )}
           <div className="w-max-271 relative -top-25 z-0 h-51.5 w-full">
             <Image src={"/images/hero.png"} alt={"Hero"} fill={true} />
           </div>

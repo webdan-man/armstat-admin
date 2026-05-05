@@ -48,16 +48,16 @@ export default function Header() {
             Հայաստանի Հանրապետության Վիճակագրական Կոմիտե ԱՐՄՍՏԱՏ
           </TypographyH1>
         </Link>
-        <div className="border-blue800 flex rounded-sm border">
-          <input
-            type="text"
-            placeholder={"Որոնել"}
-            className="placeholder:text-blue500/30 px-4 py-2 outline-none"
-          />
-          <button className="border-l-blue800 flex w-13.5 cursor-pointer items-center justify-center border-l">
-            <Image src="/icons/search.svg" alt="Search" width={24} height={24} />
-          </button>
-        </div>
+        {/*<div className="border-blue800 flex rounded-sm border">*/}
+        {/*  <input*/}
+        {/*    type="text"*/}
+        {/*    placeholder={"Որոնել"}*/}
+        {/*    className="placeholder:text-blue500/30 px-4 py-2 outline-none"*/}
+        {/*  />*/}
+        {/*  <button className="border-l-blue800 flex w-13.5 cursor-pointer items-center justify-center border-l">*/}
+        {/*    <Image src="/icons/search.svg" alt="Search" width={24} height={24} />*/}
+        {/*  </button>*/}
+        {/*</div>*/}
       </div>
       <div className="bg-blue800/30 flex w-full justify-center py-4 max-md:hidden">
         <nav className="flex w-full max-w-295 items-center justify-between">

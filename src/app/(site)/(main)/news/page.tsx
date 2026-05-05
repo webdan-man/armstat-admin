@@ -34,6 +34,7 @@ function formatDate(input?: string): string {
 async function fetchNewsPage(page: number): Promise<{ data: NewsItem[]; total: number } | null> {
   try {
     const res = await fetch(`/api/news?limit=${LIMIT}&page=${page}`);
+
     if (!res.ok) return null;
     return (await res.json()) as { data: NewsItem[]; total: number };
   } catch {
@@ -126,22 +127,20 @@ export default function NewsPage() {
           </div>
 
           {hasMore && (
-            <div className="mt-10 flex justify-center">
-              <button
-                onClick={handleMore}
-                disabled={loadingMore}
-                className="bg-link border-blue600 rounded-sm border-2 px-10 py-2 font-medium disabled:opacity-60"
-              >
-                {loadingMore ? (
-                  <span className="flex items-center gap-2">
-                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    Բեռնում...
-                  </span>
-                ) : (
-                  "Ավելին"
-                )}
-              </button>
-            </div>
+            <button
+              onClick={handleMore}
+              disabled={loadingMore}
+              className="bg-link border-blue600 my-16.5 self-start rounded-sm border-2 px-10 py-2 font-medium disabled:opacity-60"
+            >
+              {loadingMore ? (
+                <span className="flex items-center gap-2">
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Բեռնում...
+                </span>
+              ) : (
+                "Տեսնել ավելին"
+              )}
+            </button>
           )}
         </>
       )}
