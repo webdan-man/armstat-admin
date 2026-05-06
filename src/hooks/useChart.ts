@@ -291,6 +291,30 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         };
       }
 
+      // STACKED COLUMN CHART: X - AREA, Y - AGE (row 20 of Discussed sheet)
+      if (categories.has(AttributeCategory.AGE) && categories.has(AttributeCategory.AREA)) {
+        const ageAttributeId = attributeMapByCategory.get(AttributeCategory.AGE)!._id;
+        const areaAttributeId = attributeMapByCategory.get(AttributeCategory.AREA)!._id;
+
+        const xAxisKey = "area";
+
+        const { data, seriesKeys } = mapCombinationsForStackedColumnChart({
+          combinations,
+          xAxisAttributeId: areaAttributeId,
+          yAxisAttributeId: ageAttributeId,
+          xAxisKey,
+        });
+
+        console.log("STACKED COLUMN CHART: X - AREA, Y - AGE", { combinations, data, seriesKeys });
+
+        return {
+          type: "stacked-column-chart",
+          xAxisKey,
+          seriesKeys,
+          data,
+        };
+      }
+
       // STACKED BAR CHART WITH NEGATIVE VALUES: X - GENDER, Y - AGE
       if (categories.has(AttributeCategory.GENDER) && categories.has(AttributeCategory.AGE)) {
         const yAxisKey = "year";
@@ -397,6 +421,37 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           seriesKeys,
           data,
         };
+      }
+
+      // Fallback for 2 attributes from the same category (e.g. 2×OTHER, row 23 of Discussed sheet)
+      // Use Clustered Column chart with CXG
+      {
+        const [id0, id1] = attributeIds;
+        const a0 = attributeMap.get(id0);
+        const a1 = attributeMap.get(id1);
+
+        if (a0 && a1) {
+          const xAxisKey = a0.category;
+
+          const mapped = mapCombinationsForClusteredColumnChart({
+            combinations,
+            xAxisAttributeId: id0,
+            yAxisAttributeId: id1,
+            xAxisKey,
+          });
+
+          const { data, seriesKeys } = mapped;
+          const resolvedXAxisKey = "xAxisKey" in mapped ? mapped.xAxisKey : xAxisKey;
+
+          console.log("2-ATTR SAME-CATEGORY FALLBACK CLUSTERED COLUMN CHART", { combinations, data, seriesKeys });
+
+          return {
+            type: "clustered-column-chart",
+            xAxisKey: resolvedXAxisKey,
+            seriesKeys,
+            data,
+          };
+        }
       }
     }
 
@@ -884,8 +939,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         return { type: "clustered-column-chart-stacked", xAxisKey, seriesKeys, data };
       }
 
-      // Fallback for any remaining 3-attribute combination (rows 47-49: repeated categories)
-      // Use CYXG across all three raw attribute IDs
+      // Fallback for any remaining 3-attribute combination (rows 41, 45, 47-49: repeated categories)
       {
         const [id0, id1, id2] = attributeIds;
         const a0 = attributeMap.get(id0);
@@ -893,6 +947,42 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         const a2 = attributeMap.get(id2);
 
         if (a0 && a1 && a2) {
+          // Province + 2 same-category attrs (e.g. Province + 2×OTHER, row 45)
+          // → Map + Clustered Column chart
+          const provinceAttrFallback = [a0, a1, a2].find(
+            (a) => a.category === AttributeCategory.PROVINCE
+          );
+          if (provinceAttrFallback) {
+            const nonProvAttrs = [
+              { attr: a0, id: id0 },
+              { attr: a1, id: id1 },
+              { attr: a2, id: id2 },
+            ].filter(({ attr }) => attr.category !== AttributeCategory.PROVINCE);
+
+            const xAxisKey = nonProvAttrs[0].attr.category;
+
+            const mapped = mapCombinationsForClusteredColumnChart({
+              combinations,
+              xAxisAttributeId: nonProvAttrs[0].id,
+              yAxisAttributeId: nonProvAttrs[1].id,
+              xAxisKey,
+            });
+
+            const { data: columnData, seriesKeys } = mapped;
+            const resolvedXAxisKey = "xAxisKey" in mapped ? mapped.xAxisKey : xAxisKey;
+            const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttrFallback._id);
+
+            console.log("3-ATTR PROVINCE FALLBACK MAP + CLUSTERED COLUMN", { combinations, columnData, mapData, seriesKeys });
+
+            return {
+              type: "map-and-clustered-column-chart",
+              xAxisKey: resolvedXAxisKey,
+              seriesKeys,
+              data: { columnData, mapData },
+            };
+          }
+
+          // No Province: CYXG across all three (rows 41, 47-49)
           const { data, seriesKeys, xAxisKey } = mapCombinationsForClusteredColumnChartStacked3D({
             combinations,
             attributes: [
