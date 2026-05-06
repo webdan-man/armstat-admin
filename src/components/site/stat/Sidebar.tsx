@@ -93,7 +93,7 @@ function MenuList({ items, level = 0, expandedPath, toggleExpand, activeSlug }: 
                 if (hasChildren) {
                   toggleExpand(item.id, level);
                 }
-                router.push(`/stat/${item.id}`);
+                router.push(`/stat/${item.id}`, { scroll: false });
               }}
               style={{ paddingLeft: 16 + level * 16 }}
               className={`
@@ -158,7 +158,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-full flex flex-col">
+    <aside className="w-full flex flex-col sticky top-0 self-start">
       <div className="flex w-full py-7.5 px-4">
         <p className="text-fontSizeM font-semibold text-[rgba(40,40,40,1)]">Բաժիններ</p>
       </div>

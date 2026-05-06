@@ -220,7 +220,7 @@ export default function StatPage() {
               })}
             </div>
           </div>
-          <div className="border border-[rgba(178,178,178,1)] rounded-2xl mt-6 overflow-hidden">
+          <div className="border border-[rgba(178,178,178,1)] rounded-2xl mt-6 overflow-hidden min-h-[975px]">
             <Tabs defaultValue="diagram" className="w-full">
               <TabsList className="border-b border-b-[rgba(178,178,178,1)] px-5 rounded-none w-full bg-none h-11.75">
                 <TabsTrigger value="diagram" className="text-[rgba(40,40,40,1)]">
@@ -264,7 +264,7 @@ export default function StatPage() {
                       </h4>
                       {(metric?.metadata as any)?.[activeLang]?.body && (
                         <p className="mt-4 text-fontSizeS leading-4.75 text-[rgba(125,125,125,1)] whitespace-pre-line">
-                          {(metric.metadata as any)[activeLang].body}
+                          {(metric?.metadata as any)?.[activeLang]?.body}
                         </p>
                       )}
                       {metric?.description?.[activeLang] && (

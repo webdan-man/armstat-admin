@@ -181,6 +181,84 @@ const Chart = ({ combinations = [] }: ChartProps) => {
           />
         </div>
       );
+    case "map-and-historical-population-pyramid":
+      return (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div>
+            <HistoricalPopulationPyramidChart
+              data={data?.pyramidData ?? []}
+              seriesKeys={seriesKeys}
+            />
+          </div>
+          <div>
+            <ArmeniaProvincesMap data={data?.mapData ?? []} />
+          </div>
+        </div>
+      );
+    case "map-and-clustered-column-chart-stacked":
+      return (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div>
+            <ClusteredColumnChart
+              xAxisKey={xAxisKey as string}
+              data={data?.columnData ?? []}
+              seriesKeys={seriesKeys}
+              stacked
+            />
+          </div>
+          <div>
+            <ArmeniaProvincesMap data={data?.mapData ?? []} />
+          </div>
+        </div>
+      );
+    case "semi-pie-and-clustered-column-chart-stacked":
+      return (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div>
+            <SemiCircleChart data={data?.semiPieData ?? []} />
+          </div>
+          <div>
+            <ClusteredColumnChart
+              xAxisKey={xAxisKey as string}
+              data={data?.columnData ?? []}
+              seriesKeys={seriesKeys}
+              stacked
+            />
+          </div>
+        </div>
+      );
+    case "line-graph-and-clustered-column-chart-stacked":
+      return (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div>
+            <LineGraphChart data={data?.lineData ?? []} />
+          </div>
+          <div>
+            <ClusteredColumnChart
+              xAxisKey={xAxisKey as string}
+              data={data?.columnData ?? []}
+              seriesKeys={seriesKeys}
+              stacked
+            />
+          </div>
+        </div>
+      );
+    case "column-with-rotated-labels-and-clustered-column-chart-stacked":
+      return (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div>
+            <ColumnWithRotatedLabelsChart data={data?.rotatedLabelsData ?? []} />
+          </div>
+          <div>
+            <ClusteredColumnChart
+              xAxisKey={xAxisKey as string}
+              data={data?.columnData ?? []}
+              seriesKeys={seriesKeys}
+              stacked
+            />
+          </div>
+        </div>
+      );
     case "bar":
       return <div>bar</div>;
     case "pie":
