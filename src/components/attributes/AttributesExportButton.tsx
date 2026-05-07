@@ -16,7 +16,7 @@ const AttributesExportButton = ({
   );
 
   return (
-    <Button disabled={disabled} size="sm" className="h-15 max-w-30" onClick={() => getCsv()}>
+    <Button disabled={disabled} size="sm" className="h-15" onClick={() => getCsv()}>
       Արտահանել արժեքները
     </Button>
   );
