@@ -26,7 +26,7 @@ export type UpdateHomePageHeroPayload = {
 
 export async function updateHomePageHero(payload: UpdateHomePageHeroPayload) {
   const formData = new FormData();
-  console.log(payload);
+
   formData.append("heroTitle", JSON.stringify(payload.heroTitle));
   formData.append("heroShortDescription", JSON.stringify(payload.heroShortDescription));
   formData.append("heroTextContent", JSON.stringify(payload.heroTextContent));
@@ -79,7 +79,7 @@ export async function updateHomePageUsefulLinks(payload: UpdateHomePageUsefulLin
   const links = payload.usefulLinks;
   const images = payload.usefulLinkImages.slice(0, links.length);
   const formData = new FormData();
-  console.log(payload);
+
   formData.append("usefulLinks", JSON.stringify(links));
 
   images.forEach((img, index) => {
