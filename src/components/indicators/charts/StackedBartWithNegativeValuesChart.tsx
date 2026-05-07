@@ -149,6 +149,14 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
         fillOpacity: 0.8,
       });
 
+      series.get("tooltip")?.label.adapters.add("text", (text, target) => {
+        const value = target.dataItem?.get("valueX" as any);
+
+        if (value == null) return text;
+
+        return `${field} ${value < 0 ? `- ${Math.abs(value)}` : value}`;
+      });
+
       const valueLabel = am5.Label.new(root, {
         centerY: am5.p50,
         text: "{valueX}",
