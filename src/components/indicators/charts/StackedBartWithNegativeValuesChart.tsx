@@ -154,7 +154,7 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
 
         if (value == null) return text;
 
-        return `${field} ${value < 0 ? `- ${Math.abs(value)}` : value}`;
+        return `${field} - ${String(value).replace("-", "")}`;
       });
 
       const valueLabel = am5.Label.new(root, {
