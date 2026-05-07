@@ -5,6 +5,14 @@ import type {
   HomePageUsefulLink,
 } from "@/components/main/main-mock-data";
 
+function appendImage(formData: FormData, field: string, value: File | string | null | undefined) {
+  if (value instanceof File) {
+    formData.append(field, value);
+  } else if (typeof value === "string" && value) {
+    formData.append(field, value);
+  }
+}
+
 export async function fetchHomePage(): Promise<HomePageApiResponse> {
   return apiClient<HomePageApiResponse>("/api/home-page");
 }
@@ -12,16 +20,17 @@ export async function fetchHomePage(): Promise<HomePageApiResponse> {
 export type UpdateHomePageHeroPayload = {
   heroTitle: HomePageLocalizedText;
   heroShortDescription: HomePageLocalizedText;
-  heroImage?: File | null;
+  heroTextContent: HomePageLocalizedText;
+  heroImage?: File | string | null;
 };
 
 export async function updateHomePageHero(payload: UpdateHomePageHeroPayload) {
   const formData = new FormData();
+  console.log(payload);
   formData.append("heroTitle", JSON.stringify(payload.heroTitle));
   formData.append("heroShortDescription", JSON.stringify(payload.heroShortDescription));
-  if (payload.heroImage) {
-    formData.append("heroImage", payload.heroImage);
-  }
+  formData.append("heroTextContent", JSON.stringify(payload.heroTextContent));
+  appendImage(formData, "heroImage", payload.heroImage);
   return apiClient<HomePageApiResponse>("/api/home-page/hero", {
     method: "PUT",
     body: formData,
@@ -33,7 +42,7 @@ export type UpdateHomePageFeaturedBlocksPayload = {
     titleKey: string;
     sectionIds: string[];
   }>;
-  featuredBlockImages: Array<File | null | undefined>;
+  featuredBlockImages: Array<File | string | null | undefined>;
 };
 
 export async function updateHomePageFeaturedBlocks(payload: UpdateHomePageFeaturedBlocksPayload) {
@@ -51,9 +60,9 @@ export async function updateHomePageFeaturedBlocks(payload: UpdateHomePageFeatur
     )
   );
 
-  if (images[0]) formData.append("featuredBlockImage0", images[0]);
-  if (images[1]) formData.append("featuredBlockImage1", images[1]);
-  if (images[2]) formData.append("featuredBlockImage2", images[2]);
+  for (let i = 0; i < 3; i++) {
+    appendImage(formData, `featuredBlockImage${i}`, images[i]);
+  }
 
   return apiClient<HomePageApiResponse>("/api/home-page/featured-blocks", {
     method: "PUT",
@@ -63,19 +72,18 @@ export async function updateHomePageFeaturedBlocks(payload: UpdateHomePageFeatur
 
 export type UpdateHomePageUsefulLinksPayload = {
   usefulLinks: HomePageUsefulLink[];
-  usefulLinkImages: Array<File | null | undefined>;
+  usefulLinkImages: Array<File | string | null | undefined>;
 };
 
 export async function updateHomePageUsefulLinks(payload: UpdateHomePageUsefulLinksPayload) {
   const links = payload.usefulLinks;
   const images = payload.usefulLinkImages.slice(0, links.length);
-
   const formData = new FormData();
+  console.log(payload);
   formData.append("usefulLinks", JSON.stringify(links));
 
-  images.forEach((file, index) => {
-    if (!file) return;
-    formData.append(`usefulLinkImage${index}`, file);
+  images.forEach((img, index) => {
+    appendImage(formData, `usefulLinkImage${index}`, img);
   });
 
   return apiClient<HomePageApiResponse>("/api/home-page/useful-links", {

@@ -24,6 +24,7 @@ export type MainUsefulLink = {
 export type MainPageMock = {
   heroTitle: HomePageLocalizedText;
   heroShortDescription: HomePageLocalizedText;
+  heroTextContent: HomePageLocalizedText;
   heroImage: string;
   blocks: MainHomeBlock[];
   news: {
@@ -75,6 +76,7 @@ const EMPTY_BLOCKS: MainHomeBlock[] = [
 export const EMPTY_MAIN_PAGE: MainPageMock = {
   heroTitle: { hy: "" },
   heroShortDescription: { hy: "" },
+  heroTextContent: { hy: "" },
   heroImage: "",
   blocks: EMPTY_BLOCKS,
   news: {
@@ -130,6 +132,7 @@ export type HomePageApiResponse = {
   _id: string;
   heroTitle: HomePageLocalizedText;
   heroShortDescription: HomePageLocalizedText;
+  heroTextContent: HomePageLocalizedText;
   heroImage: string;
   featuredBlocks: HomePageFeaturedBlock[];
   newsIds: string[];
@@ -166,6 +169,7 @@ export function fromApiHomePage(
   return {
     heroTitle: toRequiredLocalized(apiData.heroTitle),
     heroShortDescription: toRequiredLocalized(apiData.heroShortDescription),
+    heroTextContent: toRequiredLocalized(apiData.heroTextContent),
     heroImage: apiData.heroImage ?? "",
     blocks: mappedBlocks,
     news: {

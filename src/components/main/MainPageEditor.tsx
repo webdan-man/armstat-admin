@@ -54,7 +54,12 @@ const heroFormSchema = z.object({
     en: z.string().optional(),
     ru: z.string().optional(),
   }),
-  heroImage: z.string(),
+  heroTextContent: z.object({
+    hy: z.string().min(1, "Տեքստային բովանդակությունը պարտադիր է"),
+    en: z.string().optional(),
+    ru: z.string().optional(),
+  }),
+  heroImage: z.string().min(1, "Նկարը պարտադիր է"),
 });
 type HeroFormValues = z.infer<typeof heroFormSchema>;
 
@@ -133,6 +138,7 @@ function resolveHomePageImageSrc(value: string): string {
   const base = (process.env.NEXT_PUBLIC_BASE_URL ?? "").replace(/\/$/, "");
   return `${base}${value.startsWith("/") ? "" : "/"}${value}`;
 }
+
 
 function HeroImageFileControl({
   value,
@@ -504,19 +510,20 @@ export function MainPageEditor() {
   const [blockLangById, setBlockLangById] = useState<Record<string, MainLangCode>>({});
   const [availableSections, setAvailableSections] = useState<Section[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
-  const [featuredBlockFiles, setFeaturedBlockFiles] = useState<Array<File | null>>([
+  const [heroImageFile, setHeroImageFile] = useState<File | string | null>(null);
+  const [featuredBlockFiles, setFeaturedBlockFiles] = useState<Array<File | string | null>>([
     null,
     null,
     null,
   ]);
-  const [usefulLinkFiles, setUsefulLinkFiles] = useState<Array<File | null>>([]);
+  const [usefulLinkFiles, setUsefulLinkFiles] = useState<Array<File | string | null>>([]);
   const [data, setData] = useState<MainPageMock>(() => structuredClone(EMPTY_MAIN_PAGE));
   const form = useForm<HeroFormValues>({
     resolver: zodResolver(heroFormSchema),
     defaultValues: {
       heroTitle: EMPTY_MAIN_PAGE.heroTitle,
       heroShortDescription: EMPTY_MAIN_PAGE.heroShortDescription,
+      heroTextContent: EMPTY_MAIN_PAGE.heroTextContent,
       heroImage: EMPTY_MAIN_PAGE.heroImage,
     },
     mode: "onSubmit",
@@ -551,14 +558,15 @@ export function MainPageEditor() {
         const mapped = fromApiHomePage(homeResponse, "hy");
         mapped.news.availableItems = Array.isArray(newsResponse) ? newsResponse : [];
         initialJson.current = JSON.stringify(mapped);
-        setHeroImageFile(null);
-        setFeaturedBlockFiles([null, null, null]);
-        setUsefulLinkFiles(mapped.usefulLinks.links.map(() => null));
+        setHeroImageFile(mapped.heroImage || null);
+        setFeaturedBlockFiles(mapped.blocks.map((b) => b.image || null));
+        setUsefulLinkFiles(mapped.usefulLinks.links.map((l) => l.image || null));
         setData(mapped);
         setAvailableSections(sectionsResponse);
         form.reset({
           heroTitle: mapped.heroTitle,
           heroShortDescription: mapped.heroShortDescription,
+          heroTextContent: mapped.heroTextContent,
           heroImage: mapped.heroImage,
         });
       } catch (error) {
@@ -622,15 +630,17 @@ export function MainPageEditor() {
       await updateHomePageHero({
         heroTitle: ensureHyLocalized(data.heroTitle),
         heroShortDescription: ensureHyLocalized(data.heroShortDescription),
+        heroTextContent: ensureHyLocalized(data.heroTextContent),
         heroImage: heroImageFile,
       });
       await updateHomePageFeaturedBlocks(toFeaturedBlocksPayload());
       await updateHomePageNews(toNewsPayload());
       await updateHomePageUsefulLinks(toUsefulLinksPayload());
       initialJson.current = JSON.stringify(data);
+      setHeroImageFile(data.heroImage || null);
+      setFeaturedBlockFiles(data.blocks.map((b) => b.image || null));
+      setUsefulLinkFiles(data.usefulLinks.links.map((l) => l.image || null));
       setData((d) => structuredClone(d));
-      setHeroImageFile(null);
-      setFeaturedBlockFiles([null, null, null]);
       toast.success("Պահպանված է։");
     } catch {
       toast.error("Չհաջողվեց պահպանել գլխավոր էջի տվյալները։");
@@ -705,6 +715,23 @@ export function MainPageEditor() {
                   };
                 })
               }
+              className={cn("min-h-[70px] resize-y", fieldBorder)}
+            />
+            <Textarea
+              value={readLocalized(data.heroTextContent)}
+              onChange={(e) =>
+                setData((d) => {
+                  const heroTextContent = writeLocalized(d.heroTextContent, e.target.value);
+                  form.setValue("heroTextContent", ensureHyLocalized(heroTextContent), {
+                    shouldValidate: true,
+                  });
+                  return {
+                    ...d,
+                    heroTextContent,
+                  };
+                })
+              }
+              placeholder="Տեքստային բովանդակություն"
               className={cn("min-h-[70px] resize-y", fieldBorder)}
             />
             <HeroImageFileControl
