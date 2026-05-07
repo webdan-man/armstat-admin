@@ -13,7 +13,7 @@ export default function Hero({
   return (
     <div className="flex w-full flex-col items-center">
       <section className="bg-blue1000 flex w-full flex-col items-center rounded-br-[56px]">
-        <div className="flex w-full max-w-295 flex-col items-center pt-18 pb-2.5">
+        <div className="flex w-full max-w-305 flex-col items-center px-5 pt-18 pb-2.5">
           <TypographyH2 className="relative z-10 max-w-180 text-center font-medium">
             {title}
           </TypographyH2>
@@ -26,7 +26,12 @@ export default function Hero({
         </div>
       </section>
       <div className="relative -top-32.5 h-87 w-full max-w-295 overflow-hidden rounded-3xl">
-        <Image src={imageSrc ?? "/images/hero.jpg"} alt={"Hero"} fill />
+        <Image
+          src={imageSrc ?? "/images/hero.jpg"}
+          alt={"Hero"}
+          fill={true}
+          className="object-cover"
+        />
       </div>
     </div>
   );

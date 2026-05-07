@@ -4,11 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const StatItem = ({ item }: { item: string }) => {
   const textRef = useRef<HTMLSpanElement>(null);
@@ -90,7 +86,7 @@ export const StatisticsCarousel = ({
 
   return (
     <div className="flex w-full flex-col gap-8.75">
-      <div className="flex w-full items-center justify-between gap-10 max-md:flex-col">
+      <div className="flex w-full items-center justify-between gap-10 max-md:flex-col max-md:items-start">
         {children}
         {showButtons && (
           <div className="flex items-center gap-3">

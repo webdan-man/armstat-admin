@@ -103,11 +103,11 @@ export default function News({ items }: { items: NewsItem[] }) {
 
   return (
     <section className="flex w-full flex-col items-center">
-      <div className="flex w-full max-w-295 flex-col items-start py-15">
+      <div className="flex w-full max-w-305 flex-col items-start px-5 py-15">
         <TypographyH2 className="max-w-180 text-center font-medium text-[rgba(44,44,44,1)]">
           Նորություններ
         </TypographyH2>
-        <div className="mt-15 grid grid-cols-3 gap-10 max-md:flex max-md:flex-col">
+        <div className="mt-15 grid grid-cols-3 gap-10 max-lg:flex max-lg:flex-col">
           {pageItems.map((item) => (
             <NewsCard key={item._id} item={item} />
           ))}

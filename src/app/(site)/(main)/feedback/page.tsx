@@ -92,89 +92,93 @@ export default async function FeedbackPage() {
   };
 
   return (
-    <div className="flex w-full flex-col items-center overflow-x-hidden pb-55">
+    <div className="flex w-full flex-col items-center overflow-x-hidden pb-55 max-md:pb-20">
       <div className="bg-blue1000 flex w-full justify-center">
-        <div className="flex w-full max-w-295 flex-col py-12">
+        <div className="flex w-full max-w-305 flex-col px-5 py-12">
           <TypographyH2>{title}</TypographyH2>
         </div>
       </div>
       <div className="flex w-full justify-center">
-        <div className="flex w-full max-w-295">
+        <div className="flex w-full max-w-305 px-5 max-md:flex max-md:flex-col">
           <div className="flex w-full flex-col pt-10.25">
             {description ? (
               <p className="text-[rgba(55,55,55,1)]">{description}</p>
             ) : (
               <div className="h-18 w-full max-w-202 rounded-sm bg-black/5" />
             )}
-            <address className="mt-12.25 flex w-full flex-col gap-6 not-italic">
-              {sections.map((section, idx) => {
-                if (section.type === "address") {
+            {sections?.length > 0 && (
+              <address className="mt-12.25 flex w-full flex-col gap-6 not-italic">
+                {sections.map((section, idx) => {
+                  if (section.type === "address") {
+                    return (
+                      <div key={`address-${idx}`} className="flex flex-col gap-3.5">
+                        <p className="font-medium text-[rgba(37,37,37,1)]">{"Հասցե"}</p>
+                        {section.value && (
+                          <p className="text-[rgba(37,37,37,1)]">{section.value}</p>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  const showBlock =
+                    Boolean(section.title) ||
+                    Boolean(section.phone) ||
+                    Boolean(section.email) ||
+                    Boolean(section.link);
+
+                  if (!showBlock) return null;
+
                   return (
-                    <div key={`address-${idx}`} className="flex flex-col gap-3.5">
-                      <p className="font-medium text-[rgba(37,37,37,1)]">{"Հասցե"}</p>
-                      {section.value && <p className="text-[rgba(37,37,37,1)]">{section.value}</p>}
+                    <div key={`info-${idx}`} className="flex flex-col gap-3.5">
+                      {section.title && (
+                        <p className="font-medium text-[rgba(37,37,37,1)]">{section.title}</p>
+                      )}
+                      <div className="flex flex-col gap-1">
+                        {section.phone && (
+                          <a
+                            className="flex items-center gap-2 text-[rgba(37,37,37,1)]"
+                            href={`tel:${section.phone}`}
+                          >
+                            <Image src="/icons/phone.svg" alt="phone" width={12} height={12} />{" "}
+                            {section.phone}
+                          </a>
+                        )}
+                        {section.email && (
+                          <a
+                            className="text-fontSizeS text-[rgba(15,104,192,1)]"
+                            href={`mailto:${section.email}`}
+                          >
+                            {section.email}
+                          </a>
+                        )}
+                        {section.link &&
+                          (section.link.startsWith("http") ? (
+                            <a
+                              className="text-fontSizeS text-[rgba(15,104,192,1)] underline"
+                              href={section.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {section.link}
+                            </a>
+                          ) : (
+                            <Link
+                              className="text-fontSizeS text-[rgba(15,104,192,1)] underline"
+                              href={section.link}
+                            >
+                              {section.link}
+                            </Link>
+                          ))}
+                      </div>
                     </div>
                   );
-                }
-
-                const showBlock =
-                  Boolean(section.title) ||
-                  Boolean(section.phone) ||
-                  Boolean(section.email) ||
-                  Boolean(section.link);
-
-                if (!showBlock) return null;
-
-                return (
-                  <div key={`info-${idx}`} className="flex flex-col gap-3.5">
-                    {section.title && (
-                      <p className="font-medium text-[rgba(37,37,37,1)]">{section.title}</p>
-                    )}
-                    <div className="flex flex-col gap-1">
-                      {section.phone && (
-                        <a
-                          className="flex items-center gap-2 text-[rgba(37,37,37,1)]"
-                          href={`tel:${section.phone}`}
-                        >
-                          <Image src="/icons/phone.svg" alt="phone" width={12} height={12} />{" "}
-                          {section.phone}
-                        </a>
-                      )}
-                      {section.email && (
-                        <a
-                          className="text-fontSizeS text-[rgba(15,104,192,1)]"
-                          href={`mailto:${section.email}`}
-                        >
-                          {section.email}
-                        </a>
-                      )}
-                      {section.link &&
-                        (section.link.startsWith("http") ? (
-                          <a
-                            className="text-fontSizeS text-[rgba(15,104,192,1)] underline"
-                            href={section.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            {section.link}
-                          </a>
-                        ) : (
-                          <Link
-                            className="text-fontSizeS text-[rgba(15,104,192,1)] underline"
-                            href={section.link}
-                          >
-                            {section.link}
-                          </Link>
-                        ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </address>
+                })}
+              </address>
+            )}
 
             {notificationsEmailRow ? (
               <>
-                <div className="mt-20 h-px w-full bg-[rgba(217,217,217,1)]" />
+                <div className="mt-20 h-px w-full bg-[rgba(217,217,217,1)] max-md:mt-10" />
                 <p className="mt-6 text-[rgba(37,37,37,1)]">{notificationsEmailRow}</p>
               </>
             ) : null}
@@ -216,7 +220,7 @@ export default async function FeedbackPage() {
               </>
             ) : null}
           </div>
-          <div className="relative -right-15.75 -mt-23.5 h-130.5 w-full max-w-101 shrink-0 overflow-hidden rounded-[30px]">
+          <div className="relative -right-15.75 -mt-23.5 h-130.5 w-full max-w-101 shrink-0 overflow-hidden rounded-[30px] max-md:right-0 max-md:mt-10">
             {mapTitle ? (
               <p className="absolute top-4 left-4 z-10 rounded-md bg-white/90 px-3 py-2 font-medium text-[rgba(37,37,37,1)]">
                 {mapTitle}

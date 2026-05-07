@@ -69,26 +69,26 @@ export default async function InformationCenterPage() {
   const heroImageSrc = absolutizeUrl(data?.image, assetBaseUrl) ?? "/images/legal-acts.jpg";
 
   return (
-    <div className="flex w-full flex-col items-center overflow-x-hidden pb-55">
+    <div className="flex w-full flex-col items-center overflow-x-hidden pb-55 max-md:pb-20">
       <div className="bg-blue1000 flex w-full justify-center">
-        <div className="flex w-full max-w-295 flex-col py-12">
+        <div className="flex w-full max-w-305 flex-col px-5 py-12">
           <TypographyH2>Տեղեկատվական կենտրոն</TypographyH2>
         </div>
       </div>
 
       <div className="flex w-full justify-center bg-[rgba(245,246,233,1)]">
-        <div className="flex w-full max-w-295">
-          <div className="flex w-full flex-col pt-23 pb-26.5">
+        <div className="flex w-full max-w-305 px-5 max-md:flex max-md:flex-col">
+          <div className="flex w-full flex-col pt-23 pb-26.5 max-md:pb-10">
             <h3 className="text-[23px] font-semibold text-[rgba(55,55,55,1)]">{title}</h3>
             <p className="mt-8.5 text-[rgba(55,55,55,1)]">{description}</p>
           </div>
-          <div className="relative -right-18 -mt-16.75 h-136.75 w-full max-w-134.75 shrink-0 overflow-hidden rounded-tl-[159px] rounded-r-[159px]">
-            <Image src={heroImageSrc} alt="Տեղեկատվական կենտրոն" fill />
+          <div className="relative -right-18 -mt-16.75 h-136.75 w-full max-w-134.75 shrink-0 overflow-hidden rounded-tl-[159px] rounded-r-[159px] max-md:right-0 max-md:mt-10">
+            <Image src={heroImageSrc} alt="Տեղեկատվական կենտրոն" fill className="object-cover" />
           </div>
         </div>
       </div>
 
-      <div className="flex w-full max-w-295 flex-col pt-27.25">
+      <div className="flex w-full max-w-305 flex-col px-5 pt-27.25 max-md:pt-10">
         <div className="flex w-full max-w-202 flex-col justify-start">
           <h3 className="text-[23px] font-semibold text-[rgba(55,55,55,1)]">
             ԱՐՄՍՏԱՏ Տեղեկատվական ինֆորմացիա

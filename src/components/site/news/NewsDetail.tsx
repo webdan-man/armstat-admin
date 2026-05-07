@@ -87,7 +87,7 @@ export default function NewsDetail({ item, related }: NewsDetailProps) {
       </div>
 
       {related.length > 0 && (
-        <div className="mt-39.5 flex w-full max-w-295 flex-col pb-53.5">
+        <div className="mt-39.5 flex w-full max-w-305 flex-col px-5 pb-53.5">
           <h3 className="text-fontSizeL font-semibold text-[rgba(44,44,44,1)]">
             {t("news.related", "Nmanatype norootioonnner")}
           </h3>

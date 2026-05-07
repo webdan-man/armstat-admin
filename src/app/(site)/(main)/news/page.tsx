@@ -80,7 +80,7 @@ export default function NewsPage() {
   const hasMore = items.length < total;
 
   return (
-    <div className="flex w-full max-w-295 flex-col pt-12 pb-40">
+    <div className="flex w-full max-w-305 flex-col px-5 pt-12 pb-40">
       <TypographyH2 className="text-textBlack800">{t("news.title", "Նորություններ")}</TypographyH2>
 
       {loading ? (
@@ -88,7 +88,9 @@ export default function NewsPage() {
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
         </div>
       ) : error ? (
-        <p className="text-textBlack600 mt-11 text-center">{t("news.load_error", "Չհաջողվեց բեռնել նորությունները։")}</p>
+        <p className="text-textBlack600 mt-11 text-center">
+          {t("news.load_error", "Չհաջողվեց բեռնել նորությունները։")}
+        </p>
       ) : (
         <>
           <div className="mt-11.25 grid grid-cols-3 gap-10 max-md:flex max-md:flex-col">

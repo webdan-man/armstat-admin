@@ -20,8 +20,8 @@ export default function Footer() {
 
   return (
     <footer className="border-t-warning flex w-full flex-col items-center border-t-4 pt-12 pb-10">
-      <div className="flex w-full max-w-295 flex-col">
-        <div className="flex w-full max-w-295 items-center justify-between py-4">
+      <div className="flex w-full max-w-305 flex-col px-5">
+        <div className="flex w-full items-center justify-between py-4 max-md:flex-col max-md:items-start max-md:gap-4">
           <Link href="/">
             <Image src={"/logo-dark.svg"} alt={"Logo"} width={506} height={58} />
           </Link>
@@ -29,7 +29,7 @@ export default function Footer() {
             <Image src={"/giz-logo.svg"} alt={"Logo"} width={191} height={52} />
           </Link>
         </div>
-        <nav className="mt-18 flex w-full max-w-295 items-center justify-between max-md:hidden">
+        <nav className="mt-18 flex w-full items-center justify-between max-md:hidden">
           <ul className="flex gap-6">
             {navItems.map((item) => (
               <li key={item.href}>
@@ -40,7 +40,7 @@ export default function Footer() {
             ))}
           </ul>
         </nav>
-        <address className="mt-10 flex w-full gap-17.5 not-italic max-md:flex-col">
+        <address className="mt-10 flex w-full gap-17.5 not-italic max-md:flex-col max-md:gap-5">
           <div className="flex flex-col gap-2">
             <p className="text-fontSizeS font-semibold text-[rgba(122,122,122,1)]">
               {t("footer.hotline.label", "Hotline:")}
