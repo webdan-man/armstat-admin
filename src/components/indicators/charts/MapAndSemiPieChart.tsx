@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import SemiCircleChart from "@/components/indicators/charts/SemiCircleChart";
 import ArmeniaProvincesMap from "@/components/indicators/charts/Map/MapChart";
 import type { MetricCombination } from "@/types/metric";
 import { aggregateByAttributeTitle } from "@/utils/chart/aggregate-by-attribute-title";
+import { useProvinceHoverSelection } from "@/hooks/useProvinceHoverSelection";
 import {
   filterCombinationsByProvinceMapId,
   getArmenianProvinceHyTitleByMapId,
@@ -26,17 +27,13 @@ interface MapAndSemiPieChartProps {
 
 const MapAndSemiPieChart = ({ combinations, data }: MapAndSemiPieChartProps) => {
   const { mapData = [], provinceAttributeId, genderAttributeId } = data;
-  const [selectedProvinceMapId, setSelectedProvinceMapId] = useState<string | null>(null);
-
-  const onPolygonSelect = useCallback((provinceMapId: string | null) => {
-    setSelectedProvinceMapId(provinceMapId);
-  }, []);
+  const { activeProvinceMapId, onPolygonHover, onPolygonSelect } = useProvinceHoverSelection();
 
   const pieData = useMemo(() => {
     const scoped = filterCombinationsByProvinceMapId(
       combinations,
       provinceAttributeId,
-      selectedProvinceMapId
+      activeProvinceMapId
     );
 
     return Array.from(aggregateByAttributeTitle(scoped, genderAttributeId).entries()).map(
@@ -45,20 +42,20 @@ const MapAndSemiPieChart = ({ combinations, data }: MapAndSemiPieChartProps) => 
         category,
       })
     );
-  }, [combinations, provinceAttributeId, genderAttributeId, selectedProvinceMapId]);
+  }, [combinations, provinceAttributeId, genderAttributeId, activeProvinceMapId]);
 
   const chartTitle = useMemo(() => {
-    if (!selectedProvinceMapId) return "Հայաստան";
-    return getArmenianProvinceHyTitleByMapId(selectedProvinceMapId) ?? selectedProvinceMapId;
-  }, [selectedProvinceMapId]);
+    if (!activeProvinceMapId) return "Հայաստան";
+    return getArmenianProvinceHyTitleByMapId(activeProvinceMapId) ?? activeProvinceMapId;
+  }, [activeProvinceMapId]);
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[35fr_65fr]">
       <div>
         <ArmeniaProvincesMap
-          data={[]}
+          data={mapData}
           onPolygonSelect={onPolygonSelect}
-          onPolygonHover={onPolygonSelect}
+          onPolygonHover={onPolygonHover}
           showRightColumn={false}
           useHeatRules={false}
         />
