@@ -11,6 +11,7 @@ import StackedColumnChart from "@/components/indicators/charts/StackedColumnChar
 import StackedBartWithNegativeValuesChart from "@/components/indicators/charts/StackedBartWithNegativeValuesChart";
 import HistoricalPopulationPyramidChart from "@/components/indicators/charts/HistoricalPopulationPyramidChart";
 import ClusteredColumnChart from "@/components/indicators/charts/ClusteredColumnChart";
+import StackedAndClusteredColumnChart from "@/components/indicators/charts/StackedAndClusteredColumnChart";
 import MapAndSemiPieChart from "@/components/indicators/charts/MapAndSemiPieChart";
 import MapAndLineGraphChart from "@/components/indicators/charts/MapAndLineGraphChart";
 import MapAndColumnWithRotatedLabelsChart from "@/components/indicators/charts/MapAndColumnWithRotatedLabelsChart";
@@ -173,11 +174,10 @@ const Chart = ({ combinations = [] }: ChartProps) => {
     case "clustered-column-chart-stacked":
       return (
         <div>
-          <ClusteredColumnChart
+          <StackedAndClusteredColumnChart
             xAxisKey={xAxisKey as string}
             data={data}
             seriesKeys={seriesKeys}
-            stacked
           />
         </div>
       );

@@ -22,9 +22,9 @@ const PROVINCE_NAMES_BY_ID: Record<string, { hy: string; en: string; ru: string 
 };
 
 function normalizeToMainLangCode(locale: string | undefined): MainLangCode {
-  const lower = (locale ?? "").toLowerCase();
-  if (lower.startsWith("en")) return "en";
-  if (lower.startsWith("ru")) return "ru";
+  // const lower = (locale ?? "").toLowerCase();
+  // if (lower.startsWith("en")) return "en";
+  // if (lower.startsWith("ru")) return "ru";
   return "hy";
 }
 

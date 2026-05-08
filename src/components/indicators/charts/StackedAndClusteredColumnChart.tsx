@@ -99,19 +99,6 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
       // https://www.amcharts.com/docs/v5/concepts/animations/
       series.appear();
 
-      series.bullets.push(function () {
-        return am5.Bullet.new(root, {
-          locationY: 0.5,
-          sprite: am5.Label.new(root, {
-            text: "{valueY}",
-            fill: root.interfaceColors.get("alternativeText"),
-            centerY: am5.percent(50),
-            centerX: am5.percent(50),
-            populateText: true,
-          }),
-        });
-      });
-
       legend.data.push(series);
     }
 
