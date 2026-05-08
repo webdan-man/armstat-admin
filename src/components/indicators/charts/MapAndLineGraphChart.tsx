@@ -28,32 +28,39 @@ interface MapAndLineGraphChartProps {
 const MapAndLineGraphChart = ({ combinations, data }: MapAndLineGraphChartProps) => {
   const { mapData = [], provinceAttributeId, timeAttributeId } = data;
   const [selectedProvinceMapId, setSelectedProvinceMapId] = useState<string | null>(null);
+  const [hoveredProvinceMapId, setHoveredProvinceMapId] = useState<string | null>(null);
 
   const onPolygonSelect = useCallback((provinceMapId: string | null) => {
     setSelectedProvinceMapId(provinceMapId);
   }, []);
 
+  const onPolygonHover = useCallback((provinceMapId: string | null) => {
+    setHoveredProvinceMapId(provinceMapId);
+  }, []);
+
+  const activeProvinceMapId = hoveredProvinceMapId ?? selectedProvinceMapId;
+
   const lineData = useMemo(() => {
     const scoped = filterCombinationsByProvinceMapId(
       combinations,
       provinceAttributeId,
-      selectedProvinceMapId
+      activeProvinceMapId
     );
     return yearTotalsToLineData(aggregateByAttributeTitle(scoped, timeAttributeId));
-  }, [combinations, provinceAttributeId, timeAttributeId, selectedProvinceMapId]);
+  }, [combinations, provinceAttributeId, timeAttributeId, activeProvinceMapId]);
 
   const chartTitle = useMemo(() => {
-    if (!selectedProvinceMapId) return "Հայաստան";
-    return getArmenianProvinceHyTitleByMapId(selectedProvinceMapId) ?? selectedProvinceMapId;
-  }, [selectedProvinceMapId]);
+    if (!activeProvinceMapId) return "Հայաստան";
+    return getArmenianProvinceHyTitleByMapId(activeProvinceMapId) ?? activeProvinceMapId;
+  }, [activeProvinceMapId]);
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[35fr_65fr]">
       <div>
         <ArmeniaProvincesMap
-          data={[]}
+          data={mapData}
           onPolygonSelect={onPolygonSelect}
-          onPolygonHover={onPolygonSelect}
+          onPolygonHover={onPolygonHover}
           showRightColumn={false}
           useHeatRules={false}
         />
