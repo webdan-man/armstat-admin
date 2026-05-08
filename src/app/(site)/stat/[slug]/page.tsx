@@ -41,7 +41,10 @@ export default function StatPage() {
     slug ? swrKeys.metricsByTopic(slug) : null,
     () => fetchMetricsByTopicId(slug)
   );
-  const selectedMetricId = topicMetrics[0]?.id ?? null;
+  // topicMetrics is populated when slug is a topicId; when slug is a direct metricId the
+  // list comes back empty, so we fall back to using slug itself as the metric ID.
+  const selectedMetricId =
+    topicMetrics.length > 0 ? topicMetrics[0].id : !isTopicMetricsLoading ? slug : null;
 
   const { data: metric, isLoading: isMetricLoading } = useSWR(
     selectedMetricId ? swrKeys.metricForm(selectedMetricId) : null,
