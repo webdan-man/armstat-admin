@@ -27,6 +27,8 @@ const Chart = ({ combinations = [] }: ChartProps) => {
     xAxisKey,
     yAxisKey,
     seriesKeys,
+    clusterKeys,
+    stackKeys,
   } = useChart({
     combinations,
   });
@@ -177,6 +179,8 @@ const Chart = ({ combinations = [] }: ChartProps) => {
           <StackedAndClusteredColumnChart
             xAxisKey={xAxisKey as string}
             data={data}
+            clusterKeys={clusterKeys}
+            stackKeys={stackKeys}
             seriesKeys={seriesKeys}
           />
         </div>

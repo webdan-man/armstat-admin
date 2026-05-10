@@ -22,6 +22,7 @@ import { mapCombinationsForMapAndClusteredColumnChart } from "@/utils/chart/map-
 import { mapCombinationsForClusteredColumnChartStacked } from "@/utils/chart/map-combinations-for-clustered-column-chart-stacked.util";
 import { mapCombinationsForPyramidByFrameCategory } from "@/utils/chart/map-combinations-for-pyramid";
 import { mapCombinationsForClusteredColumnChartStacked3D } from "@/utils/chart/map-combinations-for-clustered-column-chart-stacked-3d.util";
+import { mapCombinationsForClusteredAndStackedColumnChart } from "@/utils/chart/map-combinations-for-clustered-and-stacked-column-chart.util";
 import { mapCombinationsForMapAndClusteredColumnChartCXG } from "@/utils/chart/map-combinations-for-map-and-clustered-column-chart-cxg.util";
 import { mapCombinationsForMapAndHistoricalPopulationPyramid } from "@/utils/chart/map-combinations-for-map-and-historical-population-pyramid.util";
 
@@ -73,6 +74,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
   xAxisKey?: string;
   yAxisKey?: string;
   seriesKeys?: string[];
+  /** Cluster group names for true clustered+stacked charts (3D). */
+  clusterKeys?: string[];
+  /** Stack layer names for true clustered+stacked charts (3D). */
+  stackKeys?: string[];
 } {
   const { data: attributes = [] } = useSWR(swrKeys.attributes, fetchAttributes);
   // const { data: categories = [] } = useSWR(swrKeys.attributesCategories, fetchAttributeCategories);
@@ -473,7 +478,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
       const has = (cat: AttributeCategory) => categories.has(cat);
 
       // Clustered Column chart (stacked): TIME + AGE + (AREA or OTHER)
-      // CYGX rule: choose grouping dimension by fewer options; series = next; aggregate over last.
+      // True clustered+stacked: fewest options → X, middle → stack layers, most → cluster groups.
       if (
         has(AttributeCategory.TIME) &&
         has(AttributeCategory.AGE) &&
@@ -486,8 +491,8 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           : AttributeCategory.OTHER;
         const thirdAttributeId = attributeMapByCategory.get(thirdCategory)!._id;
 
-        const { data, seriesKeys, xAxisKey, groupedBy, seriesBy, aggregatedOver } =
-          mapCombinationsForClusteredColumnChartStacked3D({
+        const { data, clusterKeys, stackKeys, xAxisKey, groupedBy, stackedBy, clusteredBy } =
+          mapCombinationsForClusteredAndStackedColumnChart({
             combinations,
             attributes: [
               { id: timeAttributeId, key: "time" },
@@ -499,25 +504,27 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
             ],
           });
 
-        console.log("TIME+AGE+(AREA|OTHER) CLUSTERED COLUMN (STACKED) CYGX", {
+        console.log("TIME+AGE+(AREA|OTHER) CLUSTERED+STACKED COLUMN", {
           combinations,
           groupedBy,
-          seriesBy,
-          aggregatedOver,
+          stackedBy,
+          clusteredBy,
           data,
-          seriesKeys,
+          clusterKeys,
+          stackKeys,
         });
 
         return {
           type: "clustered-column-chart-stacked",
           xAxisKey,
-          seriesKeys,
+          clusterKeys,
+          stackKeys,
           data,
         };
       }
 
       // Clustered Column chart (stacked): TIME + AREA + OTHER
-      // CYGX rule: choose grouping dimension by fewer options; series = next; aggregate over last.
+      // True clustered+stacked: fewest options → X, middle → stack layers, most → cluster groups.
       if (
         has(AttributeCategory.TIME) &&
         has(AttributeCategory.AREA) &&
@@ -527,8 +534,8 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         const areaAttributeId = attributeMapByCategory.get(AttributeCategory.AREA)!._id;
         const otherAttributeId = attributeMapByCategory.get(AttributeCategory.OTHER)!._id;
 
-        const { data, seriesKeys, xAxisKey, groupedBy, seriesBy, aggregatedOver } =
-          mapCombinationsForClusteredColumnChartStacked3D({
+        const { data, clusterKeys, stackKeys, xAxisKey, groupedBy, stackedBy, clusteredBy } =
+          mapCombinationsForClusteredAndStackedColumnChart({
             combinations,
             attributes: [
               { id: timeAttributeId, key: "time" },
@@ -537,19 +544,21 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
             ],
           });
 
-        console.log("TIME+AREA+OTHER CLUSTERED COLUMN (STACKED) CYGX", {
+        console.log("TIME+AREA+OTHER CLUSTERED+STACKED COLUMN", {
           combinations,
           groupedBy,
-          seriesBy,
-          aggregatedOver,
+          stackedBy,
+          clusteredBy,
           data,
-          seriesKeys,
+          clusterKeys,
+          stackKeys,
         });
 
         return {
           type: "clustered-column-chart-stacked",
           xAxisKey,
-          seriesKeys,
+          clusterKeys,
+          stackKeys,
           data,
         };
       }
@@ -915,7 +924,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
       }
 
       // Clustered Column chart (stacked): Age + Area + Other (row 46)
-      // CYXG across all three
+      // True clustered+stacked: fewest options → X, middle → stack layers, most → cluster groups.
       if (
         has(AttributeCategory.AGE) &&
         has(AttributeCategory.AREA) &&
@@ -925,7 +934,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         const areaAttributeId = attributeMapByCategory.get(AttributeCategory.AREA)!._id;
         const otherAttributeId = attributeMapByCategory.get(AttributeCategory.OTHER)!._id;
 
-        const { data, seriesKeys, xAxisKey } = mapCombinationsForClusteredColumnChartStacked3D({
+        const { data, clusterKeys, stackKeys, xAxisKey } = mapCombinationsForClusteredAndStackedColumnChart({
           combinations,
           attributes: [
             { id: ageAttributeId, key: "age" },
@@ -934,9 +943,9 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           ],
         });
 
-        console.log("AGE+AREA+OTHER CLUSTERED COLUMN (STACKED) CYXG", { combinations, data, seriesKeys });
+        console.log("AGE+AREA+OTHER CLUSTERED+STACKED COLUMN", { combinations, data, clusterKeys, stackKeys });
 
-        return { type: "clustered-column-chart-stacked", xAxisKey, seriesKeys, data };
+        return { type: "clustered-column-chart-stacked", xAxisKey, clusterKeys, stackKeys, data };
       }
 
       // Fallback for any remaining 3-attribute combination (rows 41, 45, 47-49: repeated categories)
@@ -982,8 +991,8 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
             };
           }
 
-          // No Province: CYXG across all three (rows 41, 47-49)
-          const { data, seriesKeys, xAxisKey } = mapCombinationsForClusteredColumnChartStacked3D({
+          // No Province: true clustered+stacked across all three (rows 41, 47-49)
+          const { data, clusterKeys, stackKeys, xAxisKey } = mapCombinationsForClusteredAndStackedColumnChart({
             combinations,
             attributes: [
               { id: id0, key: a0.category },
@@ -992,9 +1001,9 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
             ],
           });
 
-          console.log("3-ATTR FALLBACK CLUSTERED COLUMN (STACKED) CYXG", { combinations, data, seriesKeys });
+          console.log("3-ATTR FALLBACK CLUSTERED+STACKED COLUMN", { combinations, data, clusterKeys, stackKeys });
 
-          return { type: "clustered-column-chart-stacked", xAxisKey, seriesKeys, data };
+          return { type: "clustered-column-chart-stacked", xAxisKey, clusterKeys, stackKeys, data };
         }
       }
     }
