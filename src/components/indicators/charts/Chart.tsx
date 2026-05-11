@@ -15,6 +15,10 @@ import StackedAndClusteredColumnChart from "@/components/indicators/charts/Stack
 import MapAndSemiPieChart from "@/components/indicators/charts/MapAndSemiPieChart";
 import MapAndLineGraphChart from "@/components/indicators/charts/MapAndLineGraphChart";
 import MapAndColumnWithRotatedLabelsChart from "@/components/indicators/charts/MapAndColumnWithRotatedLabelsChart";
+import MapAndStackedAreaChart from "@/components/indicators/charts/MapAndStackedAreaChart";
+import MapAndStackedColumnChart from "@/components/indicators/charts/MapAndStackedColumnChart";
+import MapAndStackedBarWithNegativeValuesChart from "@/components/indicators/charts/MapAndStackedBarWithNegativeValuesChart";
+import MapAndClusteredColumnChart from "@/components/indicators/charts/MapAndClusteredColumnChart";
 
 interface ChartProps {
   combinations?: MetricCombination[];
@@ -39,64 +43,24 @@ const Chart = ({ combinations = [] }: ChartProps) => {
     case "map-and-line-graph":
       return <MapAndLineGraphChart combinations={combinations} data={data} />;
     case "map-and-stacked-area-chart":
-      return (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div>
-            <StackedAreaChart
-              data={data?.stackedAreaData ?? []}
-              xAxisKey={xAxisKey}
-              seriesKeys={seriesKeys}
-            />
-          </div>
-          <div>
-            <ArmeniaProvincesMap data={data?.mapData ?? []} />
-          </div>
-        </div>
-      );
+      return <MapAndStackedAreaChart combinations={combinations} data={data} />;
     case "map-and-stacked-column-chart":
       return (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div>
-            <StackedColumnChart
-              data={data?.columnData ?? []}
-              xAxisKey={xAxisKey as string}
-              seriesKeys={seriesKeys}
-            />
-          </div>
-          <div>
-            <ArmeniaProvincesMap data={data?.mapData ?? []} />
-          </div>
-        </div>
+        <MapAndStackedColumnChart
+          combinations={combinations}
+          xAxisKey={xAxisKey as string}
+          data={data}
+        />
       );
     case "map-and-stacked-bar-with-negative-values":
-      return (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div>
-            <StackedBartWithNegativeValuesChart
-              data={data?.barData ?? []}
-              yAxisKey={yAxisKey as string}
-              seriesKeys={seriesKeys}
-            />
-          </div>
-          <div>
-            <ArmeniaProvincesMap data={data?.mapData ?? []} />
-          </div>
-        </div>
-      );
+      return <MapAndStackedBarWithNegativeValuesChart combinations={combinations} data={data} />;
     case "map-and-clustered-column-chart":
       return (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div>
-            <ClusteredColumnChart
-              xAxisKey={xAxisKey as string}
-              data={data?.columnData ?? []}
-              seriesKeys={seriesKeys}
-            />
-          </div>
-          <div>
-            <ArmeniaProvincesMap data={data?.mapData ?? []} />
-          </div>
-        </div>
+        <MapAndClusteredColumnChart
+          combinations={combinations}
+          xAxisKey={xAxisKey as string}
+          data={data}
+        />
       );
     case "map-and-column-with-rotated-labels":
       return <MapAndColumnWithRotatedLabelsChart combinations={combinations} data={data} />;

@@ -1,4 +1,4 @@
-import { useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
@@ -18,8 +18,16 @@ function ClusteredColumnChart<T extends Record<string, string>>({
   seriesKeys = [],
   stacked = false,
 }: ClusteredColumnChartProps<T>) {
+  const rootRef = useRef<am5.Root | null>(null);
+  const xAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
+  const seriesListRef = useRef<am5xy.ColumnSeries[]>([]);
+
   useLayoutEffect(() => {
+    // Create chart once; otherwise amCharts replays intro animations on every data update.
+    if (rootRef.current) return;
+
     const root = am5.Root.new(containerId);
+    rootRef.current = root;
 
     root.setThemes([am5themes_Animated.new(root)]);
 
@@ -61,6 +69,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
         renderer: xRenderer,
       })
     );
+    xAxisRef.current = xAxis;
 
     xRenderer.labels.template.setAll({
       rotation: 0,
@@ -101,8 +110,9 @@ function ClusteredColumnChart<T extends Record<string, string>>({
 
     // ========== SERIES ==========
     const seriesByItem: Record<string, am5xy.ColumnSeries[]> = {};
+    const seriesList: am5xy.ColumnSeries[] = [];
 
-    const makeSeries = (name: string, fieldName: string, index: number) => {
+    const makeSeries = (name: string, fieldName: string) => {
       seriesByItem[name] = [];
 
       const series = chart.series.push(
@@ -129,10 +139,12 @@ function ClusteredColumnChart<T extends Record<string, string>>({
       series.appear();
 
       legend.data.push(series);
+      seriesList.push(series);
       return series;
     };
 
-    seriesKeys.forEach((def, index) => makeSeries(def, def, index));
+    seriesKeys.forEach((def) => makeSeries(def, def));
+    seriesListRef.current = seriesList;
 
     // Sync legend visibility across stacked series
     chart.series.values.forEach((s) => {
@@ -153,9 +165,19 @@ function ClusteredColumnChart<T extends Record<string, string>>({
     chart.appear(1000, 100);
 
     return () => {
+      rootRef.current = null;
+      xAxisRef.current = null;
+      seriesListRef.current = [];
       root.dispose();
     };
-  }, [data, xAxisKey, seriesKeys, stacked]);
+  }, []);
+
+  useEffect(() => {
+    const xAxis = xAxisRef.current;
+    if (!xAxis) return;
+    xAxis.data.setAll(data);
+    seriesListRef.current.forEach((series) => series.data.setAll(data));
+  }, [data]);
 
   return <div id={containerId} style={{ width: "100%", height: "500px" }} />;
 }

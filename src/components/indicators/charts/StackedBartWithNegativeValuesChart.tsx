@@ -1,4 +1,4 @@
-import { useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
@@ -13,13 +13,43 @@ interface StackedBartWithNegativeValuesChartProps<T extends ChartDatum> {
 
 const containerId = "stacked-bar-negative-chartdiv";
 
+function toChartData(data: ChartDatum[], leftKey: string, rightKey: string) {
+  return data.map((row) => {
+    const leftVal = Number(row[leftKey]);
+    const rightVal = Number(row[rightKey]);
+    return {
+      ...row,
+      [leftKey]: Number.isFinite(leftVal) ? -leftVal : 0,
+      [rightKey]: Number.isFinite(rightVal) ? rightVal : 0,
+    };
+  });
+}
+
+function computeAxisMax(chartData: ChartDatum[], leftKey: string, rightKey: string) {
+  const maxAbs = chartData.reduce((acc, row) => {
+    return Math.max(acc, Math.abs(Number(row[leftKey])), Math.abs(Number(row[rightKey])));
+  }, 0);
+  return maxAbs > 0 ? maxAbs * 1.15 : 1;
+}
+
 function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
   data,
   yAxisKey,
   seriesKeys = [],
 }: StackedBartWithNegativeValuesChartProps<T>) {
+  const rootRef = useRef<am5.Root | null>(null);
+  const yAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
+  const xAxisRef = useRef<am5xy.ValueAxis<am5xy.AxisRenderer> | null>(null);
+  const seriesListRef = useRef<am5xy.ColumnSeries[]>([]);
+  // Capture initial seriesKeys for use in data-update effect.
+  const seriesKeysRef = useRef(seriesKeys);
+
   useLayoutEffect(() => {
+    // Create chart once; otherwise amCharts replays intro animations on every data update.
+    if (rootRef.current) return;
+
     const root = am5.Root.new(containerId);
+    rootRef.current = root;
 
     root.setThemes([am5themes_Animated.new(root)]);
 
@@ -38,35 +68,17 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
       })
     );
 
-    // Use only absolute numbers
     chart.getNumberFormatter().set("numberFormat", "#.#s");
 
     const [rightKey, leftKey] = seriesKeys;
+    seriesKeysRef.current = seriesKeys;
 
-    // Match the example palette (left: darker, right: lighter)
     const leftColor = am5.color(0x60a5fa);
     const rightColor = am5.color(0x7dd3fc);
 
-    const chartData = data.map((row) => {
-      const leftVal = Number(row[leftKey]);
-      const rightVal = Number(row[rightKey]);
-      return {
-        ...row,
-        // left side is negative to render to the left
-        [leftKey]: Number.isFinite(leftVal) ? -leftVal : 0,
-        [rightKey]: Number.isFinite(rightVal) ? rightVal : 0,
-      };
-    });
+    const chartData = toChartData(data, leftKey, rightKey);
+    const axisMax = computeAxisMax(chartData, leftKey, rightKey);
 
-    const maxAbs = chartData.reduce((acc, row) => {
-      const leftVal = Math.abs(Number(row[leftKey]));
-      const rightVal = Math.abs(Number(row[rightKey]));
-      return Math.max(acc, leftVal, rightVal);
-    }, 0);
-    const axisMax = maxAbs > 0 ? maxAbs * 1.15 : 1;
-
-    // Create axes
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
     const yAxis = chart.yAxes.push(
       am5xy.CategoryAxis.new(root, {
         categoryField: yAxisKey,
@@ -79,6 +91,7 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
         }),
       })
     );
+    yAxisRef.current = yAxis;
 
     yAxis.data.setAll(chartData);
 
@@ -93,8 +106,8 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
         }),
       })
     );
+    xAxisRef.current = xAxis;
 
-    // Top labels like the screenshot (MALE / FEMALE)
     chart.plotContainer.children.push(
       am5.Label.new(root, {
         text: leftKey ?? "",
@@ -120,24 +133,24 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
       })
     );
 
-    // Add series
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/series/
-    function createSeries(
+    const seriesList: am5xy.ColumnSeries[] = [];
+
+    const createSeries = (
       field: string,
       labelCenterX: number | am5.Percent,
       pointerOrientation: "left" | "right"
-    ) {
+    ) => {
       const series = chart.series.push(
         am5xy.ColumnSeries.new(root, {
-          xAxis: xAxis,
-          yAxis: yAxis,
+          xAxis,
+          yAxis,
           valueXField: field,
           categoryYField: yAxisKey,
           sequencedInterpolation: true,
           clustered: false,
           name: field,
           tooltip: am5.Tooltip.new(root, {
-            pointerOrientation: pointerOrientation,
+            pointerOrientation,
             labelText: `${field} - {valueX.formatNumber('#.###')}`,
           }),
         })
@@ -151,24 +164,8 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
 
       series.get("tooltip")?.label.adapters.add("text", (text, target) => {
         const value = target.dataItem?.get("valueX" as any);
-
         if (value == null) return text;
-
         return `${field} - ${String(value).replace("-", "")}`;
-      });
-
-      const valueLabel = am5.Label.new(root, {
-        centerY: am5.p50,
-        text: "{valueX}",
-        populateText: true,
-        centerX: labelCenterX,
-        fill: am5.color(0xffffff),
-      });
-      valueLabel.adapters.add("text", (text, target) => {
-        const di = (target as unknown as { dataItem?: { get: (k: string) => unknown } }).dataItem;
-        const v = di?.get("valueX");
-        const n = Number(v);
-        return Number.isFinite(n) ? String(Math.abs(n)) : text;
       });
 
       series.bullets.push(function () {
@@ -186,11 +183,10 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
 
       series.data.setAll(chartData);
       series.appear();
-
+      seriesList.push(series);
       return series;
-    }
+    };
 
-    // Left series (negative) and right series (positive)
     if (rightKey) {
       const s = createSeries(rightKey, am5.p0, "left");
       s.setAll({ fill: rightColor, stroke: rightColor });
@@ -202,25 +198,37 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
       s.columns.template.setAll({ fill: leftColor, stroke: leftColor });
     }
 
-    // Add cursor
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/cursor/
-    const cursor = chart.set(
-      "cursor",
-      am5xy.XYCursor.new(root, {
-        behavior: "zoomY",
-      })
-    );
+    seriesListRef.current = seriesList;
+
+    const cursor = chart.set("cursor", am5xy.XYCursor.new(root, { behavior: "zoomY" }));
     cursor.lineY.set("forceHidden", true);
     cursor.lineX.set("forceHidden", true);
 
-    // Make stuff animate on load
-    // https://www.amcharts.com/docs/v5/concepts/animations/
     chart.appear(1000, 100);
 
     return () => {
+      rootRef.current = null;
+      yAxisRef.current = null;
+      xAxisRef.current = null;
+      seriesListRef.current = [];
       root.dispose();
     };
-  }, [data, yAxisKey, seriesKeys]);
+  }, []);
+
+  useEffect(() => {
+    const yAxis = yAxisRef.current;
+    const xAxis = xAxisRef.current;
+    if (!yAxis || !xAxis) return;
+
+    const [rightKey, leftKey] = seriesKeysRef.current;
+    const chartData = toChartData(data, leftKey, rightKey);
+    const axisMax = computeAxisMax(chartData, leftKey, rightKey);
+
+    xAxis.set("min", -axisMax);
+    xAxis.set("max", axisMax);
+    yAxis.data.setAll(chartData);
+    seriesListRef.current.forEach((series) => series.data.setAll(chartData));
+  }, [data]);
 
   return (
     <div>

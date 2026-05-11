@@ -1,4 +1,4 @@
-import { useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
@@ -16,8 +16,16 @@ function StackedAreaChart<T extends Record<string, string>>({
   xAxisKey,
   seriesKeys = [],
 }: StackedAreaChartProps<T>) {
+  const rootRef = useRef<am5.Root | null>(null);
+  const xAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
+  const seriesListRef = useRef<am5xy.LineSeries[]>([]);
+
   useLayoutEffect(() => {
+    // Create chart once; otherwise amCharts replays intro animations on every data update.
+    if (rootRef.current) return;
+
     const root = am5.Root.new(containerId);
+    rootRef.current = root;
 
     root.setThemes([am5themes_Animated.new(root)]);
 
@@ -48,6 +56,7 @@ function StackedAreaChart<T extends Record<string, string>>({
         tooltip: am5.Tooltip.new(root, {}),
       })
     );
+    xAxisRef.current = xAxis;
 
     xAxis.data.setAll(data);
 
@@ -57,7 +66,7 @@ function StackedAreaChart<T extends Record<string, string>>({
       })
     );
 
-    // ✅ Fully dynamic series
+    const seriesList: am5xy.LineSeries[] = [];
     seriesKeys.forEach((key) => {
       const series = chart.series.push(
         am5xy.LineSeries.new(root, {
@@ -81,9 +90,9 @@ function StackedAreaChart<T extends Record<string, string>>({
 
       series.data.setAll(data);
       series.appear(1000);
-
-      return series;
+      seriesList.push(series);
     });
+    seriesListRef.current = seriesList;
 
     chart.set("scrollbarX", am5.Scrollbar.new(root, { orientation: "horizontal" }));
 
@@ -112,9 +121,19 @@ function StackedAreaChart<T extends Record<string, string>>({
     chart.appear(1000, 100);
 
     return () => {
+      rootRef.current = null;
+      xAxisRef.current = null;
+      seriesListRef.current = [];
       root.dispose();
     };
-  }, [data, xAxisKey, seriesKeys]);
+  }, []);
+
+  useEffect(() => {
+    const xAxis = xAxisRef.current;
+    if (!xAxis) return;
+    xAxis.data.setAll(data);
+    seriesListRef.current.forEach((series) => series.data.setAll(data));
+  }, [data]);
 
   return (
     <div>
