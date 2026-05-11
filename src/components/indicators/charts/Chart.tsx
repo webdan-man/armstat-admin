@@ -264,11 +264,11 @@ const Chart = ({ combinations = [] }: ChartProps) => {
         </div>
       );
     case "bar":
-      return <div>bar</div>;
+      return <div className="text-textBlack600">bar</div>;
     case "pie":
-      return <div>pie</div>;
+      return <div className="text-textBlack600">pie</div>;
     default:
-      return <div>default</div>;
+      return <div className="text-textBlack600">default</div>;
   }
 };
 

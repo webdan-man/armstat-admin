@@ -25,7 +25,6 @@ import {
   fetchMetricsByTopicId,
 } from "@/services/metricsService";
 import { swrKeys } from "@/lib/swr/cache-keys";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   headerForColumnIndex,
   maxRowLength,
@@ -39,7 +38,8 @@ export default function StatPage() {
 
   const { data: topicMetrics = [], isLoading: isTopicMetricsLoading } = useSWR(
     slug ? swrKeys.metricsByTopic(slug) : null,
-    () => fetchMetricsByTopicId(slug)
+    () => fetchMetricsByTopicId(slug),
+    { keepPreviousData: true }
   );
   // topicMetrics is populated when slug is a topicId; when slug is a direct metricId the
   // list comes back empty, so we fall back to using slug itself as the metric ID.
@@ -48,16 +48,17 @@ export default function StatPage() {
 
   const { data: metric, isLoading: isMetricLoading } = useSWR(
     selectedMetricId ? swrKeys.metricForm(selectedMetricId) : null,
-    () => getMetricById(selectedMetricId!)
+    () => getMetricById(selectedMetricId!),
+    { keepPreviousData: true }
   );
   const { data: combinations = [], isLoading: isCombinationsLoading } = useSWR(
     selectedMetricId ? swrKeys.metricCombinations(selectedMetricId) : null,
-    () => getMetricCombinations(selectedMetricId!)
+    () => getMetricCombinations(selectedMetricId!),
+    { keepPreviousData: true }
   );
 
   const isLoading =
-    isTopicMetricsLoading ||
-    (!!selectedMetricId && (isMetricLoading || isCombinationsLoading));
+    isTopicMetricsLoading || (!!selectedMetricId && (isMetricLoading || isCombinationsLoading));
 
   const [columnSelectedValues, setColumnSelectedValues] = useState<(string | null)[]>([]);
 
@@ -100,13 +101,9 @@ export default function StatPage() {
 
   return (
     <div className="flex w-full flex-col pt-7.5 pb-10 pl-16.75">
-      {isLoading ? (
-        <Skeleton className="mt-1 h-8 w-96" />
-      ) : (
-        <TypographyH3 className="text-[rgba(40,40,40,1)]">
-          {metric?.title?.[activeLang] ?? ""}
-        </TypographyH3>
-      )}
+      <TypographyH3 className="min-h-6 text-[rgba(40,40,40,1)]">
+        {metric?.title?.[activeLang] ?? ""}
+      </TypographyH3>
       <div className="mt-5 flex gap-3">
         <SearchInput query={query} setQuery={setQuery} setData={setData} />
         <Button
@@ -158,21 +155,15 @@ export default function StatPage() {
               </Button>
             </div>
           </div>
-          {isLoading ? (
-            <>
-              <Skeleton className="mt-7.5 h-6 w-3/4" />
-              <Skeleton className="mt-3 h-4 w-full" />
-              <Skeleton className="mt-2 h-4 w-5/6" />
-            </>
-          ) : (
-            <>
-              <h5 className="mt-7.5 text-[18px] text-[rgba(0,0,0,1)]">
-                {metric?.title?.[activeLang] ?? ""}
-              </h5>
-              <TypographyP className="text-fontSizeS mt-3 leading-4.75 text-[rgba(125,125,125,1)]">
-                {metric?.description?.[activeLang] ?? ""}
-              </TypographyP>
-            </>
+          {metric?.title?.[activeLang] && (
+            <h5 className="mt-7.5 min-h-[27px] text-[18px] text-[rgba(0,0,0,1)]">
+              {metric?.title?.[activeLang]}
+            </h5>
+          )}
+          {metric?.description?.[activeLang] && (
+            <TypographyP className="text-fontSizeS mt-3 min-h-[24px] leading-4.75 text-[rgba(125,125,125,1)]">
+              {metric?.description?.[activeLang]}
+            </TypographyP>
           )}
           <div className="mt-10 border-t border-[rgba(15,104,192,1)] bg-[rgba(241,245,248,1)] px-3 pt-4.25 pb-4.75">
             <div className="mb-3 flex items-center justify-between gap-3">
@@ -260,60 +251,49 @@ export default function StatPage() {
               </TabsContent>
               <TabsContent value="metadata">
                 <div className="w-full p-6">
-                  {isLoading ? (
-                    <div className="flex flex-col gap-3">
-                      <Skeleton className="h-6 w-2/3" />
-                      <Skeleton className="mt-2 h-4 w-full" />
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-5/6" />
-                    </div>
-                  ) : (
-                    <>
-                      <h4 className="text-fontSizeM text-[rgba(0,0,0,1)]">
-                        {metric?.title?.[activeLang] ?? ""}
-                      </h4>
-                      {(metric?.metadata as any)?.[activeLang]?.body && (
-                        <p className="text-fontSizeS mt-4 leading-4.75 whitespace-pre-line text-[rgba(125,125,125,1)]">
-                          {(metric?.metadata as any)?.[activeLang]?.body}
-                        </p>
-                      )}
-                      {metric?.description?.[activeLang] && (
-                        <p className="text-fontSizeS mt-4 leading-4.75 text-[rgba(125,125,125,1)]">
-                          {metric.description[activeLang]}
-                        </p>
-                      )}
-                      <div className="mt-7.5 flex gap-5">
-                        {metric?.updatedAt && (
-                          <p className="text-[11px] text-[rgba(110,127,136,1)]">
-                            Թարմացված է՝{" "}
-                            {new Date(metric.updatedAt).toLocaleDateString("hy-AM", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                            })}
-                          </p>
-                        )}
-                        {((metric?.metadata as any)?.[activeLang]?.sourceUrl ||
-                          metric?.link?.[activeLang]) && (
-                          <p className="text-[11px] text-[rgba(110,127,136,1)]">
-                            Աղբյուրը՝{" "}
-                            <a
-                              href={
-                                (metric?.metadata as any)?.[activeLang]?.sourceUrl ??
-                                metric?.link?.[activeLang]
-                              }
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[rgba(39,81,153,1)] hover:underline"
-                            >
-                              {(metric?.metadata as any)?.[activeLang]?.sourceUrl ??
-                                metric?.link?.[activeLang]}
-                            </a>
-                          </p>
-                        )}
-                      </div>
-                    </>
+                  <h4 className="text-fontSizeM text-[rgba(0,0,0,1)]">
+                    {metric?.title?.[activeLang] ?? ""}
+                  </h4>
+                  {(metric?.metadata as any)?.[activeLang]?.body && (
+                    <p className="text-fontSizeS mt-4 leading-4.75 whitespace-pre-line text-[rgba(125,125,125,1)]">
+                      {(metric?.metadata as any)?.[activeLang]?.body}
+                    </p>
                   )}
+                  {metric?.description?.[activeLang] && (
+                    <p className="text-fontSizeS mt-4 leading-4.75 text-[rgba(125,125,125,1)]">
+                      {metric.description[activeLang]}
+                    </p>
+                  )}
+                  <div className="mt-7.5 flex gap-5">
+                    {metric?.updatedAt && (
+                      <p className="text-[11px] text-[rgba(110,127,136,1)]">
+                        Թարմացված է՝{" "}
+                        {new Date(metric.updatedAt).toLocaleDateString("hy-AM", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        })}
+                      </p>
+                    )}
+                    {((metric?.metadata as any)?.[activeLang]?.sourceUrl ||
+                      metric?.link?.[activeLang]) && (
+                      <p className="text-[11px] text-[rgba(110,127,136,1)]">
+                        Աղբյուրը՝{" "}
+                        <a
+                          href={
+                            (metric?.metadata as any)?.[activeLang]?.sourceUrl ??
+                            metric?.link?.[activeLang]
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[rgba(39,81,153,1)] hover:underline"
+                        >
+                          {(metric?.metadata as any)?.[activeLang]?.sourceUrl ??
+                            metric?.link?.[activeLang]}
+                        </a>
+                      </p>
+                    )}
+                  </div>
                 </div>
               </TabsContent>
             </Tabs>
