@@ -142,7 +142,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
               // into the same horizontal slot on the X axis.
               clusterField: clusterKey,
               stacked: stackIdx > 0,
-            } as Parameters<typeof am5xy.ColumnSeries.new>[1])
+            } as am5xy.IColumnSeriesSettings)
           );
 
           series.columns.template.setAll({
@@ -172,7 +172,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
       // hides/shows all year series in that cluster.
       chart.series.each((s) => {
         const columnSeries = s as am5xy.ColumnSeries;
-        columnSeries.on("visible", (visible: boolean) => {
+        columnSeries.on("visible", (visible: boolean | undefined) => {
           const clusterKey = seriesToCluster.get(columnSeries);
           if (!clusterKey) return;
           const siblings = seriesByCluster[clusterKey] ?? [];
