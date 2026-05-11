@@ -1,4 +1,4 @@
-import { useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
@@ -16,8 +16,16 @@ function StackedColumnChart<T extends Record<string, string>>({
   xAxisKey,
   seriesKeys = [],
 }: StackedColumnChartProps<T>) {
+  const rootRef = useRef<am5.Root | null>(null);
+  const xAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
+  const seriesListRef = useRef<am5xy.ColumnSeries[]>([]);
+
   useLayoutEffect(() => {
+    // Create chart once; otherwise amCharts replays intro animations on every data update.
+    if (rootRef.current) return;
+
     const root = am5.Root.new(containerId);
+    rootRef.current = root;
 
     root.setThemes([am5themes_Animated.new(root)]);
 
@@ -32,17 +40,8 @@ function StackedColumnChart<T extends Record<string, string>>({
       })
     );
 
-    // Add scrollbar
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/scrollbars/
-    chart.set(
-      "scrollbarX",
-      am5.Scrollbar.new(root, {
-        orientation: "horizontal",
-      })
-    );
+    chart.set("scrollbarX", am5.Scrollbar.new(root, { orientation: "horizontal" }));
 
-    // Create axes
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
     const xRenderer = am5xy.AxisRendererX.new(root, {
       minorGridEnabled: true,
     });
@@ -53,24 +52,19 @@ function StackedColumnChart<T extends Record<string, string>>({
         tooltip: am5.Tooltip.new(root, {}),
       })
     );
+    xAxisRef.current = xAxis;
 
-    xRenderer.grid.template.setAll({
-      location: 1,
-    });
+    xRenderer.grid.template.setAll({ location: 1 });
 
     xAxis.data.setAll(data);
 
     const yAxis = chart.yAxes.push(
       am5xy.ValueAxis.new(root, {
         min: 0,
-        renderer: am5xy.AxisRendererY.new(root, {
-          strokeOpacity: 0.1,
-        }),
+        renderer: am5xy.AxisRendererY.new(root, { strokeOpacity: 0.1 }),
       })
     );
 
-    // Add legend
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/legend-xy-series/
     const legend = chart.children.push(
       am5.Legend.new(root, {
         centerX: am5.p50,
@@ -78,15 +72,15 @@ function StackedColumnChart<T extends Record<string, string>>({
       })
     );
 
-    // Add series
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/series/
-    function makeSeries(name: string, fieldName: string) {
+    const seriesList: am5xy.ColumnSeries[] = [];
+
+    const makeSeries = (name: string, fieldName: string) => {
       const series = chart.series.push(
         am5xy.ColumnSeries.new(root, {
-          name: name,
+          name,
           stacked: true,
-          xAxis: xAxis,
-          yAxis: yAxis,
+          xAxis,
+          yAxis,
           valueYField: fieldName,
           categoryXField: xAxisKey,
         })
@@ -98,8 +92,6 @@ function StackedColumnChart<T extends Record<string, string>>({
       });
       series.data.setAll(data);
 
-      // Make stuff animate on load
-      // https://www.amcharts.com/docs/v5/concepts/animations/
       series.appear();
 
       series.bullets.push(function () {
@@ -115,30 +107,39 @@ function StackedColumnChart<T extends Record<string, string>>({
       });
 
       legend.labels.template.setAll({
-        maxWidth: 300, // wrap when label exceeds this width (in pixels)
-        width: 300, // give it a fixed width so wrapping triggers consistently
+        maxWidth: 300,
+        width: 300,
         oversizedBehavior: "wrap",
       });
 
-      // Keep each legend item on its own row so wrapped text doesn't crowd neighbors
       legend.itemContainers.template.setAll({
         paddingTop: 2,
         paddingBottom: 2,
       });
 
       legend.data.push(series);
-    }
+      seriesList.push(series);
+    };
 
-    seriesKeys.map((key) => makeSeries(key, key));
+    seriesKeys.forEach((key) => makeSeries(key, key));
+    seriesListRef.current = seriesList;
 
-    // Make stuff animate on load
-    // https://www.amcharts.com/docs/v5/concepts/animations/
     chart.appear(1000, 100);
 
     return () => {
+      rootRef.current = null;
+      xAxisRef.current = null;
+      seriesListRef.current = [];
       root.dispose();
     };
-  }, [data, xAxisKey, seriesKeys]);
+  }, []);
+
+  useEffect(() => {
+    const xAxis = xAxisRef.current;
+    if (!xAxis) return;
+    xAxis.data.setAll(data);
+    seriesListRef.current.forEach((series) => series.data.setAll(data));
+  }, [data]);
 
   return (
     <div>
