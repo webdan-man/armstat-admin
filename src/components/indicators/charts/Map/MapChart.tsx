@@ -113,7 +113,7 @@ export default function ArmeniaMapChart({
     const hexSelected = 0xffd700;
 
     polygonSeries.mapPolygons.template.setAll({
-      tooltipText: showValueInTooltip ? "{name}: {value}" : "{name}",
+      tooltipText: showValueInTooltip ? "{name} - {value}" : "{name}",
       interactive: true,
       toggleKey: "active",
       fill: am5.color(hexFlat),
