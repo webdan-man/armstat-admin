@@ -18,7 +18,12 @@ function StackedColumnChart<T extends Record<string, string>>({
 }: StackedColumnChartProps<T>) {
   const rootRef = useRef<am5.Root | null>(null);
   const xAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
+  const yAxisRef = useRef<am5xy.ValueAxis<am5xy.AxisRenderer> | null>(null);
   const seriesListRef = useRef<am5xy.ColumnSeries[]>([]);
+
+  const hasNegativeValue = data.some((row) =>
+    seriesKeys.some((key) => Number(row[key]) < 0)
+  );
 
   useLayoutEffect(() => {
     // Create chart once; otherwise amCharts replays intro animations on every data update.
@@ -60,10 +65,11 @@ function StackedColumnChart<T extends Record<string, string>>({
 
     const yAxis = chart.yAxes.push(
       am5xy.ValueAxis.new(root, {
-        min: 0,
+        ...(hasNegativeValue ? {} : { min: 0 }),
         renderer: am5xy.AxisRendererY.new(root, { strokeOpacity: 0.1 }),
       })
     );
+    yAxisRef.current = yAxis;
 
     const legend = chart.children.push(
       am5.Legend.new(root, {
@@ -129,6 +135,7 @@ function StackedColumnChart<T extends Record<string, string>>({
     return () => {
       rootRef.current = null;
       xAxisRef.current = null;
+      yAxisRef.current = null;
       seriesListRef.current = [];
       root.dispose();
     };
@@ -139,6 +146,10 @@ function StackedColumnChart<T extends Record<string, string>>({
     if (!xAxis) return;
     xAxis.data.setAll(data);
     seriesListRef.current.forEach((series) => series.data.setAll(data));
+
+    // Only clamp the y-axis to 0 when there are no negative values; otherwise
+    // let amCharts auto-fit so negative bars are visible.
+    yAxisRef.current?.set("min", hasNegativeValue ? undefined : 0);
   }, [data]);
 
   return (

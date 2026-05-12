@@ -24,6 +24,7 @@ function ColumnWithRotatedLabelsChart({
   const rootRef = useRef<am5.Root | null>(null);
   const titleLabelRef = useRef<am5.Label | null>(null);
   const xAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
+  const yAxisRef = useRef<am5xy.ValueAxis<am5xy.AxisRenderer> | null>(null);
   const seriesRef = useRef<am5xy.ColumnSeries | null>(null);
   const legendRef = useRef<am5.Legend | null>(null);
   const legendLabelRef = useRef<am5.Label | null>(null);
@@ -101,13 +102,16 @@ function ColumnWithRotatedLabelsChart({
       strokeOpacity: 0.1,
     });
 
+    const hasNegativeValue = data.some((d) => d.value < 0);
+
     const yAxis = chart.yAxes.push(
       am5xy.ValueAxis.new(root, {
         maxDeviation: 0.3,
         renderer: yRenderer,
-        min: 0,
+        ...(hasNegativeValue ? {} : { min: 0 }),
       })
     );
+    yAxisRef.current = yAxis;
 
     // Series
     const series = chart.series.push(
@@ -249,6 +253,7 @@ function ColumnWithRotatedLabelsChart({
       rootRef.current = null;
       titleLabelRef.current = null;
       xAxisRef.current = null;
+      yAxisRef.current = null;
       seriesRef.current = null;
       legendRef.current = null;
       legendLabelRef.current = null;
@@ -258,11 +263,17 @@ function ColumnWithRotatedLabelsChart({
 
   useEffect(() => {
     const xAxis = xAxisRef.current;
+    const yAxis = yAxisRef.current;
     const series = seriesRef.current;
     if (!xAxis || !series) return;
 
     xAxis.data.setAll(data);
     series.data.setAll(data);
+
+    // Only clamp the y-axis to 0 when there are no negative values; otherwise
+    // let amCharts auto-fit so negative bars are visible.
+    const hasNegativeValue = data.some((d) => d.value < 0);
+    yAxis?.set("min", hasNegativeValue ? undefined : 0);
 
     // Legend binds to series dataItems; refresh after data update.
     legendRef.current?.data.setAll(series.dataItems);
