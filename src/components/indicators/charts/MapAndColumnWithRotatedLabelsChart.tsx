@@ -70,6 +70,7 @@ const MapAndColumnWithRotatedLabelsChart = ({
           onPolygonHover={onPolygonHover}
           showRightColumn={false}
           useHeatRules={false}
+          showValueInTooltip={false}
         />
       </div>
       <div>

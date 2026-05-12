@@ -37,6 +37,12 @@ interface ArmeniaMapChartProps {
   showRightColumn?: boolean;
   /** Enables value-based polygon coloring (heat rules). */
   useHeatRules?: boolean;
+  /**
+   * Includes the province value in the polygon tooltip. Set to `false` when the
+   * map acts purely as a filter (e.g. in `MapAndLineGraphChart`) and the value
+   * has no meaning in this view.
+   */
+  showValueInTooltip?: boolean;
   /** Fired when a province polygon is toggled; `null` when the selection is cleared. */
   onPolygonSelect?: (provinceMapId: string | null) => void;
   /** Fired on polygon hover; `null` when pointer leaves the map polygon. */
@@ -47,6 +53,7 @@ export default function ArmeniaMapChart({
   data,
   showRightColumn = true,
   useHeatRules = true,
+  showValueInTooltip = true,
   onPolygonSelect,
   onPolygonHover,
 }: ArmeniaMapChartProps) {
@@ -106,7 +113,7 @@ export default function ArmeniaMapChart({
     const hexSelected = 0xffd700;
 
     polygonSeries.mapPolygons.template.setAll({
-      tooltipText: "{name}",
+      tooltipText: showValueInTooltip ? "{name}: {value}" : "{name}",
       interactive: true,
       toggleKey: "active",
       fill: am5.color(hexFlat),
@@ -390,7 +397,7 @@ export default function ArmeniaMapChart({
       pendingMapDataRef.current = null;
       root.dispose(); // cleanup
     };
-  }, [showRightColumn, useHeatRules]);
+  }, [showRightColumn, useHeatRules, showValueInTooltip]);
 
   useEffect(() => {
     onPolygonSelectRef.current = onPolygonSelect;

@@ -10,13 +10,13 @@ interface DataItem {
 
 interface SemiCircleChartProps {
   data: DataItem[];
-  /** Shown above the chart (e.g. selected marz); defaults to whole-country label. */
+  /** Optional title shown above the chart. Only passed in map+chart combinations. */
   chartTitle?: string;
 }
 
 const containerId = "semi-pie-chartdiv";
 
-function SemiCircleChart({ data, chartTitle = "Հայաստան" }: SemiCircleChartProps) {
+function SemiCircleChart({ data, chartTitle }: SemiCircleChartProps) {
   const rootRef = useRef<am5.Root | null>(null);
   const seriesRef = useRef<am5percent.PieSeries | null>(null);
   const titleLabelRef = useRef<am5.Label | null>(null);
@@ -62,15 +62,17 @@ function SemiCircleChart({ data, chartTitle = "Հայաստան" }: SemiCircleCh
       tooltipText: "{category} - {value}",
     });
 
-    titleLabelRef.current = chart.children.unshift(
-      am5.Label.new(root, {
-        text: chartTitle,
-        fontSize: 16,
-        fontWeight: "500",
-        centerX: am5.p50,
-        x: am5.p50,
-      })
-    );
+    if (chartTitle !== undefined) {
+      titleLabelRef.current = chart.children.unshift(
+        am5.Label.new(root, {
+          text: chartTitle,
+          fontSize: 16,
+          fontWeight: "500",
+          centerX: am5.p50,
+          x: am5.p50,
+        })
+      );
+    }
 
     // Run the intro animation only once on mount.
     series.data.setAll(data);
@@ -89,6 +91,7 @@ function SemiCircleChart({ data, chartTitle = "Հայաստան" }: SemiCircleCh
   }, [data]);
 
   useEffect(() => {
+    if (chartTitle === undefined) return;
     titleLabelRef.current?.set("text", chartTitle);
   }, [chartTitle]);
 

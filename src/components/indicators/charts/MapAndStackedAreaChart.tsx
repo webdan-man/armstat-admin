@@ -54,6 +54,7 @@ const MapAndStackedAreaChart = ({ combinations, data }: MapAndStackedAreaChartPr
           onPolygonHover={onPolygonHover}
           showRightColumn={false}
           useHeatRules={false}
+          showValueInTooltip={false}
         />
       </div>
       <div>

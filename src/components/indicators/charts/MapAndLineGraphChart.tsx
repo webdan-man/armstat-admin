@@ -63,6 +63,7 @@ const MapAndLineGraphChart = ({ combinations, data }: MapAndLineGraphChartProps)
           onPolygonHover={onPolygonHover}
           showRightColumn={false}
           useHeatRules={false}
+          showValueInTooltip={false}
         />
       </div>
       <div>

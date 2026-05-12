@@ -11,7 +11,7 @@ interface DataItem {
 
 interface ColumnWithRotatedLabelsChartProps {
   data: DataItem[];
-  /** Shown above the chart (e.g. selected marz); defaults to whole-country label. */
+  /** Optional title shown above the chart. Only passed in map+chart combinations. */
   chartTitle?: string;
 }
 
@@ -19,7 +19,7 @@ const containerId = "columns-with-rotated-labels-chartdiv";
 
 function ColumnWithRotatedLabelsChart({
   data,
-  chartTitle = "Հայաստան",
+  chartTitle,
 }: ColumnWithRotatedLabelsChartProps) {
   const rootRef = useRef<am5.Root | null>(null);
   const titleLabelRef = useRef<am5.Label | null>(null);
@@ -40,16 +40,18 @@ function ColumnWithRotatedLabelsChart({
     // Root layout
     root.container.set("layout", root.verticalLayout);
 
-    const titleLabel = root.container.children.unshift(
-      am5.Label.new(root, {
-        text: chartTitle,
-        fontSize: 16,
-        fontWeight: "500",
-        centerX: am5.p50,
-        x: am5.p50,
-      })
-    );
-    titleLabelRef.current = titleLabel;
+    if (chartTitle !== undefined) {
+      const titleLabel = root.container.children.unshift(
+        am5.Label.new(root, {
+          text: chartTitle,
+          fontSize: 16,
+          fontWeight: "500",
+          centerX: am5.p50,
+          x: am5.p50,
+        })
+      );
+      titleLabelRef.current = titleLabel;
+    }
 
     // Chart
     const chart = root.container.children.push(
@@ -270,6 +272,7 @@ function ColumnWithRotatedLabelsChart({
   }, [data]);
 
   useEffect(() => {
+    if (chartTitle === undefined) return;
     titleLabelRef.current?.set("text", chartTitle);
   }, [chartTitle]);
 

@@ -10,13 +10,13 @@ interface DataItem {
 
 interface LineGraphChartProps {
   data: DataItem[];
-  /** Shown above the chart (e.g. selected marz); defaults to whole-country label. */
+  /** Optional title shown above the chart. Only passed in map+chart combinations. */
   chartTitle?: string;
 }
 
 const containerId = "line-graph-chartdiv";
 
-function LineGraphChart({ data, chartTitle = "Հայաստան" }: LineGraphChartProps) {
+function LineGraphChart({ data, chartTitle }: LineGraphChartProps) {
   const rootRef = useRef<am5.Root | null>(null);
   const seriesRef = useRef<am5xy.LineSeries | null>(null);
   const titleLabelRef = useRef<am5.Label | null>(null);
@@ -46,16 +46,18 @@ function LineGraphChart({ data, chartTitle = "Հայաստան" }: LineGraphChar
       })
     );
 
-    const titleLabel = chart.children.unshift(
-      am5.Label.new(root, {
-        text: chartTitle,
-        fontSize: 16,
-        fontWeight: "500",
-        centerX: am5.p50,
-        x: am5.p50,
-      })
-    );
-    titleLabelRef.current = titleLabel;
+    if (chartTitle !== undefined) {
+      const titleLabel = chart.children.unshift(
+        am5.Label.new(root, {
+          text: chartTitle,
+          fontSize: 16,
+          fontWeight: "500",
+          centerX: am5.p50,
+          x: am5.p50,
+        })
+      );
+      titleLabelRef.current = titleLabel;
+    }
 
     // Add cursor
     // https://www.amcharts.com/docs/v5/charts/xy-chart/cursor/
@@ -149,6 +151,7 @@ function LineGraphChart({ data, chartTitle = "Հայաստան" }: LineGraphChar
   }, [data]);
 
   useEffect(() => {
+    if (chartTitle === undefined) return;
     titleLabelRef.current?.set("text", chartTitle);
   }, [chartTitle]);
 
