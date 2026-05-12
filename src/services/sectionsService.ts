@@ -15,6 +15,16 @@ export async function createSection(payload: {
   });
 }
 
+export async function updateSection(
+  sectionId: string,
+  payload: { name: string; description: string }
+): Promise<Section> {
+  return apiClient<Section>(`/api/sections/${sectionId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
 export type UpsertTopicPayload = {
   sectionId: string;
   parentTopicId?: string;

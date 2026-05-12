@@ -574,6 +574,7 @@ export default function CreateWindow() {
                                 Ընտրել Մակարդակ
                               </FormLabel>
                               <Select
+                                key={`level-select-${field.id}-${selectedLibrary}`}
                                 value={f.value || undefined}
                                 onValueChange={(val) => {
                                   f.onChange(val);

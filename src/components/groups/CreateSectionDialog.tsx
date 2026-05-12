@@ -28,7 +28,8 @@ import {
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { withToastError } from "@/lib/withToastError";
 import { createSection, fetchSections } from "@/services/sectionsService";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LangSwitcher } from "@/components/main/LangSwitcher";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 
 type LangCode = "hy" | "ru" | "en";
 type LocalizedField = Record<LangCode, string>;
@@ -167,73 +168,61 @@ export function CreateSectionDialog({ open, onOpenChange }: CreateSectionDialogP
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="px-6 pt-6 pb-5">
-            <Tabs
-              value={activeLang}
-              onValueChange={(value) => setActiveLang(value as LangCode)}
-              className="w-full gap-5"
-            >
-              <TabsList className="h-9 w-full gap-0 rounded-[9px] bg-[#e6e7eb] p-0.5">
-                <TabsTrigger
-                  value="en"
-                  className="h-full rounded-[8px] px-5 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"
+            <Tabs value={activeLang} className="w-full gap-5">
+              <LangSwitcher
+                value={activeLang}
+                onChange={setActiveLang}
+                className="w-full [&_button]:min-w-0 [&_button]:flex-1"
+              />
+              {(["hy", "ru", "en"] as const).map((lang) => (
+                <TabsContent
+                  key={lang}
+                  value={lang}
+                  forceMount
+                  className="flex w-full flex-col gap-9.25 data-[state=inactive]:hidden"
                 >
-                  EN
-                </TabsTrigger>
-                <TabsTrigger
-                  value="hy"
-                  className="h-full rounded-[8px] px-5 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"
-                >
-                  HY
-                </TabsTrigger>
-                <TabsTrigger
-                  value="ru"
-                  className="h-full rounded-[8px] px-5 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"
-                >
-                  RU
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent className="flex w-full flex-col gap-9.25" value={activeLang}>
-                <div className="flex flex-col gap-5">
-                  <FormField
-                    control={form.control}
-                    name={`name.${activeLang}`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[12px] font-semibold text-[#575757]">
-                          {fieldLabels[activeLang].name}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder={fieldPlaceholders[activeLang].name}
-                            className="h-9 rounded-[9px] border-[#e6e7eb] bg-white px-3 text-[13px]"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name={`description.${activeLang}`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[12px] font-semibold text-[#575757]">
-                          {fieldLabels[activeLang].description}
-                        </FormLabel>
-                        <FormControl>
-                          <Textarea
-                            {...field}
-                            placeholder={fieldPlaceholders[activeLang].description}
-                            className="min-h-24 rounded-[9px] border-[#e6e7eb] bg-white px-3 py-2 text-[13px]"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </TabsContent>
+                  <div className="flex flex-col gap-5">
+                    <FormField
+                      control={form.control}
+                      name={`name.${lang}`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[12px] font-semibold text-[#575757]">
+                            {fieldLabels[lang].name}
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder={fieldPlaceholders[lang].name}
+                              className="h-9 rounded-[9px] border-[#e6e7eb] bg-white px-3 text-[13px]"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name={`description.${lang}`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[12px] font-semibold text-[#575757]">
+                            {fieldLabels[lang].description}
+                          </FormLabel>
+                          <FormControl>
+                            <Textarea
+                              {...field}
+                              placeholder={fieldPlaceholders[lang].description}
+                              className="min-h-24 rounded-[9px] border-[#e6e7eb] bg-white px-3 py-2 text-[13px]"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </TabsContent>
+              ))}
             </Tabs>
 
             <DialogFooter className="mt-10 border-none bg-white">

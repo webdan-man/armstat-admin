@@ -23,12 +23,18 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { LangSwitcher } from "@/components/main/LangSwitcher";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { withToastError } from "@/lib/withToastError";
-import { getTopicById, getTopicSubtopics, upsertTopic } from "@/services/sectionsService";
+import {
+  getTopicById,
+  getTopicSubtopics,
+  updateSection,
+  upsertTopic,
+} from "@/services/sectionsService";
 import type { Topic } from "@/types/section";
 import Image from "next/image";
 
@@ -226,21 +232,32 @@ export function EditSubgroupDialog({
         (child) => !existingTitles.has(child.title.toLowerCase())
       );
 
+      const sectionIdForHeading = topic.sectionId ?? topic._id;
+
       const result = await withToastError(
         async () => {
-          await upsertTopic({
-            sectionId,
-            parentTopicId: sourceTopic._id,
-            title: pickLocalized(values.title),
-            body: pickLocalized(values.body),
-            order: sourceTopic.order ?? 0,
-          });
+          if (headingTopic) {
+            await updateSection(sectionIdForHeading, {
+              name: pickLocalized(values.title),
+              description: pickLocalized(values.body),
+            });
+          } else {
+            await upsertTopic({
+              sectionId,
+              parentTopicId: sourceTopic.parentTopicId ?? undefined,
+              title: pickLocalized(values.title),
+              body: pickLocalized(values.body),
+              order: sourceTopic.order ?? 0,
+            });
+          }
 
           await Promise.all(
             childToCreate.map((child, idx) =>
               upsertTopic({
                 sectionId,
-                parentTopicId: sourceTopic._id,
+                ...(headingTopic
+                  ? {}
+                  : { parentTopicId: sourceTopic._id }),
                 title: child.title,
                 body: child.body,
                 order: childTopics.length + idx,
@@ -273,162 +290,150 @@ export function EditSubgroupDialog({
           </DialogHeader>
 
           <div className="mt-4 mb-5 px-6">
-            <Tabs
-              value={activeLang}
-              onValueChange={(value) => setActiveLang(value as LangCode)}
-              className="w-full gap-0"
-            >
-              <TabsList className="h-9 w-full gap-0 rounded-[9px] bg-[#e6e7eb] p-[2px]">
-                <TabsTrigger
-                  value="hy"
-                  className="h-full rounded-[8px] text-[14px] font-medium text-[#2c2c2c] data-[state=active]:bg-white data-[state=active]:text-black"
-                >
-                  HY
-                </TabsTrigger>
-                <TabsTrigger
-                  value="ru"
-                  className="h-full rounded-[8px] text-[14px] font-medium text-[#2c2c2c] data-[state=active]:bg-white data-[state=active]:text-black"
-                >
-                  RU
-                </TabsTrigger>
-                <TabsTrigger
-                  value="en"
-                  className="h-full rounded-[8px] text-[14px] font-medium text-[#2c2c2c] data-[state=active]:bg-white data-[state=active]:text-black"
-                >
-                  ENG
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value={activeLang}>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="h-full pt-6 pb-5">
-                    <div className="no-scrollbar flex h-full max-h-[60vh] flex-col gap-4 overflow-y-auto">
-                      <FormField
-                        control={form.control}
-                        name={`title.${activeLang}`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-[12px] font-semibold text-[#575757]">
-                              Ենթախմբի անվանում
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                className="h-9 rounded-[9px] border-[#e6e7eb] text-[13px]"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name={`body.${activeLang}`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-[12px] font-semibold text-[#575757]">
-                              Նկարագրություն
-                            </FormLabel>
-                            <FormControl>
-                              <Textarea
-                                {...field}
-                                className="min-h-[78px] rounded-[9px] border-[#e6e7eb] px-3 py-2 text-[13px]"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="flex flex-col justify-start gap-4">
-                        <div className="flex flex-col gap-3 bg-[rgba(230,231,235,0.3)]">
-                          {fields.map((field, index) => (
-                            <div key={field.id} className="flex items-center gap-2 border-b p-3">
-                              <div className={"flex w-full flex-col gap-2"}>
-                                <FormField
-                                  control={form.control}
-                                  name={`nestedSubgroups.${index}.title.${activeLang}`}
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel className="text-[12px] font-semibold text-[#575757]">
-                                        Ենթաթեմայի անվանումը
-                                      </FormLabel>
-                                      <FormControl>
-                                        <Input
-                                          {...field}
-                                          className="h-9 rounded-[9px] border-[#e6e7eb] text-[13px]"
-                                        />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="h-full pb-5">
+                <Tabs value={activeLang} className="w-full gap-5">
+                  <LangSwitcher
+                    value={activeLang}
+                    onChange={setActiveLang}
+                    className="w-full [&_button]:min-w-0 [&_button]:flex-1"
+                  />
+                  {(["hy", "ru", "en"] as const).map((lang) => (
+                    <TabsContent
+                      key={lang}
+                      value={lang}
+                      forceMount
+                      className="data-[state=inactive]:hidden"
+                    >
+                      <div className="no-scrollbar flex h-full max-h-[60vh] flex-col gap-4 overflow-y-auto pt-6">
+                        <FormField
+                          control={form.control}
+                          name={`title.${lang}`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-[12px] font-semibold text-[#575757]">
+                                Ենթախմբի անվանում
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  className="h-9 rounded-[9px] border-[#e6e7eb] text-[13px]"
                                 />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                                <FormField
-                                  control={form.control}
-                                  name={`nestedSubgroups.${index}.body.${activeLang}`}
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel className="text-[12px] font-semibold text-[#575757]">
-                                        Ենթաթեմայի Նկարագրություն
-                                      </FormLabel>
-                                      <FormControl>
-                                        <Textarea
-                                          {...field}
-                                          className="min-h-[78px] rounded-[9px] border-[#e6e7eb] px-3 py-2 text-[13px]"
-                                        />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
+                        <FormField
+                          control={form.control}
+                          name={`body.${lang}`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-[12px] font-semibold text-[#575757]">
+                                Նկարագրություն
+                              </FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  {...field}
+                                  className="min-h-[78px] rounded-[9px] border-[#e6e7eb] px-3 py-2 text-[13px]"
                                 />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <div className="flex flex-col justify-start gap-4">
+                          <div className="flex flex-col gap-3 bg-[rgba(230,231,235,0.3)]">
+                            {fields.map((field, index) => (
+                              <div key={field.id} className="flex items-center gap-2 border-b p-3">
+                                <div className={"flex w-full flex-col gap-2"}>
+                                  <FormField
+                                    control={form.control}
+                                    name={`nestedSubgroups.${index}.title.${lang}`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel className="text-[12px] font-semibold text-[#575757]">
+                                          Ենթաթեմայի անվանումը
+                                        </FormLabel>
+                                        <FormControl>
+                                          <Input
+                                            {...field}
+                                            className="h-9 rounded-[9px] border-[#e6e7eb] text-[13px]"
+                                          />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+
+                                  <FormField
+                                    control={form.control}
+                                    name={`nestedSubgroups.${index}.body.${lang}`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel className="text-[12px] font-semibold text-[#575757]">
+                                          Ենթաթեմայի Նկարագրություն
+                                        </FormLabel>
+                                        <FormControl>
+                                          <Textarea
+                                            {...field}
+                                            className="min-h-[78px] rounded-[9px] border-[#e6e7eb] px-3 py-2 text-[13px]"
+                                          />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  className="h-9 w-9 rounded-[9px] text-[#c00] hover:bg-[#ffecec]"
+                                  onClick={() => remove(index)}
+                                  aria-label="Remove subgroup"
+                                >
+                                  <Trash2 className="size-4" />
+                                </Button>
                               </div>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                className="h-9 w-9 rounded-[9px] text-[#c00] hover:bg-[#ffecec]"
-                                onClick={() => remove(index)}
-                                aria-label="Remove subgroup"
-                              >
-                                <Trash2 className="size-4" />
-                              </Button>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
+                          <button
+                            type="button"
+                            className="flex cursor-pointer items-center gap-3.25"
+                            onClick={handleOpenAddDialog}
+                          >
+                            <Image src="/add.svg" width={24} height={24} alt={"add"} />
+                            <span className="text-[14px] leading-3.5 font-medium text-[rgba(39,81,153,1)]">
+                              Ավելացնել ենթախումբ
+                            </span>
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          className="flex cursor-pointer items-center gap-3.25"
-                          onClick={handleOpenAddDialog}
-                        >
-                          <Image src="/add.svg" width={24} height={24} alt={"add"} />
-                          <span className="text-[14px] leading-3.5 font-medium text-[rgba(39,81,153,1)]">
-                            Ավելացնել ենթախումբ
-                          </span>
-                        </button>
                       </div>
-                    </div>
+                    </TabsContent>
+                  ))}
+                </Tabs>
 
-                    <DialogFooter className="mt-8 border-none bg-white">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-11 w-[140px] rounded-[8px] border-[#e0e0e0] text-[13px] font-semibold text-[#2c2c2c]"
-                        onClick={() => onOpenChange(false)}
-                      >
-                        Չեղարկել
-                      </Button>
-                      <Button
-                        type="submit"
-                        disabled={isSubmitting || isTopicLoading || isSubtopicsLoading}
-                        className="h-11 w-[141px] rounded-[8px] border-0 bg-[#275199] text-[13px] font-semibold text-white hover:bg-[#234a8b]"
-                      >
-                        {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : "Պահպանել"}
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </TabsContent>
-            </Tabs>
+                <DialogFooter className="mt-8 border-none bg-white">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-11 w-[140px] rounded-[8px] border-[#e0e0e0] text-[13px] font-semibold text-[#2c2c2c]"
+                    onClick={() => onOpenChange(false)}
+                  >
+                    Չեղարկել
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting || isTopicLoading || isSubtopicsLoading}
+                    className="h-11 w-[141px] rounded-[8px] border-0 bg-[#275199] text-[13px] font-semibold text-white hover:bg-[#234a8b]"
+                  >
+                    {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : "Պահպանել"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
           </div>
         </DialogContent>
       </Dialog>
@@ -445,79 +450,66 @@ export function EditSubgroupDialog({
           </DialogHeader>
 
           <div className="mt-4 mb-5 px-6">
-            <Tabs
-              value={addDialogActiveLang}
-              onValueChange={(value) => setAddDialogActiveLang(value as LangCode)}
-              className="w-full gap-0"
-            >
-              <TabsList className="h-9 w-full gap-0 rounded-[9px] bg-[#e6e7eb] p-[2px]">
-                <TabsTrigger
-                  value="hy"
-                  className="h-full rounded-[8px] text-[14px] font-medium text-[#2c2c2c] data-[state=active]:bg-white data-[state=active]:text-black"
+            <Tabs value={addDialogActiveLang} className="w-full gap-5">
+              <LangSwitcher
+                value={addDialogActiveLang}
+                onChange={setAddDialogActiveLang}
+                className="w-full [&_button]:min-w-0 [&_button]:flex-1"
+              />
+              {(["hy", "ru", "en"] as const).map((lang) => (
+                <TabsContent
+                  key={lang}
+                  value={lang}
+                  forceMount
+                  className="data-[state=inactive]:hidden"
                 >
-                  HY
-                </TabsTrigger>
-                <TabsTrigger
-                  value="ru"
-                  className="h-full rounded-[8px] text-[14px] font-medium text-[#2c2c2c] data-[state=active]:bg-white data-[state=active]:text-black"
-                >
-                  RU
-                </TabsTrigger>
-                <TabsTrigger
-                  value="en"
-                  className="h-full rounded-[8px] text-[14px] font-medium text-[#2c2c2c] data-[state=active]:bg-white data-[state=active]:text-black"
-                >
-                  ENG
-                </TabsTrigger>
-              </TabsList>
+                  <div className="flex flex-col gap-4 pt-6">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[12px] font-semibold text-[#575757]">Անվանում</label>
+                      <Input
+                        value={newNestedSubgroup.title[lang]}
+                        onChange={(event) => {
+                          const next = event.target.value;
+                          setAddDialogError(null);
+                          setNewNestedSubgroup((current) => ({
+                            ...current,
+                            title: {
+                              ...current.title,
+                              [lang]: next,
+                            },
+                          }));
+                        }}
+                        className="h-9 rounded-[9px] border-[#e6e7eb] text-[13px]"
+                      />
+                    </div>
 
-              <TabsContent value={addDialogActiveLang}>
-                <div className="flex flex-col gap-4 pt-6">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[12px] font-semibold text-[#575757]">Անվանում</label>
-                    <Input
-                      value={newNestedSubgroup.title[addDialogActiveLang]}
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        setAddDialogError(null);
-                        setNewNestedSubgroup((current) => ({
-                          ...current,
-                          title: {
-                            ...current.title,
-                            [addDialogActiveLang]: value,
-                          },
-                        }));
-                      }}
-                      className="h-9 rounded-[9px] border-[#e6e7eb] text-[13px]"
-                    />
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[12px] font-semibold text-[#575757]">
+                        Նկարագրություն
+                      </label>
+                      <Textarea
+                        value={newNestedSubgroup.body[lang]}
+                        onChange={(event) => {
+                          const next = event.target.value;
+                          setNewNestedSubgroup((current) => ({
+                            ...current,
+                            body: {
+                              ...current.body,
+                              [lang]: next,
+                            },
+                          }));
+                        }}
+                        className="min-h-[78px] rounded-[9px] border-[#e6e7eb] px-3 py-2 text-[13px]"
+                      />
+                    </div>
                   </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[12px] font-semibold text-[#575757]">
-                      Նկարագրություն
-                    </label>
-                    <Textarea
-                      value={newNestedSubgroup.body[addDialogActiveLang]}
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        setNewNestedSubgroup((current) => ({
-                          ...current,
-                          body: {
-                            ...current.body,
-                            [addDialogActiveLang]: value,
-                          },
-                        }));
-                      }}
-                      className="min-h-[78px] rounded-[9px] border-[#e6e7eb] px-3 py-2 text-[13px]"
-                    />
-                  </div>
-
-                  {addDialogError ? (
-                    <p className="text-[12px] font-medium text-[#c00]">{addDialogError}</p>
-                  ) : null}
-                </div>
-              </TabsContent>
+                </TabsContent>
+              ))}
             </Tabs>
+
+            {addDialogError ? (
+              <p className="mt-2 text-[12px] font-medium text-[#c00]">{addDialogError}</p>
+            ) : null}
 
             <DialogFooter className="mt-8 border-none bg-white">
               <Button
