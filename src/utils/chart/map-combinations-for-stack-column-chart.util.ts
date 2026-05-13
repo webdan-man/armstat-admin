@@ -9,6 +9,11 @@ export const mapCombinationsForStackedColumnChart = (payload: {
 }) => {
   const { combinations, xAxisAttributeId, yAxisAttributeId, xAxisKey } = payload;
 
+  const yAxisAttributeTitle =
+    combinations
+      .flatMap((c) => c.row ?? [])
+      .find((r) => r.attributeId === yAxisAttributeId)?.label ?? "";
+
   const resultMap: Record<
     string,
     {
@@ -21,12 +26,6 @@ export const mapCombinationsForStackedColumnChart = (payload: {
       .title as string;
     const xAxisAttribute = item.row.find((r) => r.attributeId === xAxisAttributeId)?.value
       .title as string;
-
-    console.log("mapCombinationsForStackedColumnChart", {
-      yAxisAttribute,
-      xAxisAttribute,
-      row: item.row,
-    });
 
     const value = Number(item.value.replace(/,/g, ""));
 
@@ -50,5 +49,6 @@ export const mapCombinationsForStackedColumnChart = (payload: {
   return {
     data: Object.values(resultMap),
     seriesKeys,
+    yAxisAttributeTitle,
   };
 };

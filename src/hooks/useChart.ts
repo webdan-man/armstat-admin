@@ -70,6 +70,8 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
   xAxisKey?: string;
   yAxisKey?: string;
   seriesKeys?: string[];
+  /** Y-axis stack dimension label for stacked column charts (from combination row labels). */
+  yAxisLabel?: string;
   /** Cluster group names for true clustered+stacked charts (3D). */
   clusterKeys?: string[];
   /** Stack layer names for true clustered+stacked charts (3D). */
@@ -227,7 +229,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
         const xAxisKey = "gender";
 
-        const { data, seriesKeys } = mapCombinationsForStackedColumnChart({
+        const { data, seriesKeys, yAxisAttributeTitle } = mapCombinationsForStackedColumnChart({
           combinations,
           xAxisAttributeId,
           yAxisAttributeId: genderAttributeId,
@@ -245,6 +247,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           xAxisKey,
           seriesKeys,
           data,
+          yAxisLabel: yAxisAttributeTitle,
         };
       }
 
@@ -258,7 +261,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
         const xAxisKey = "time";
 
-        const { data, seriesKeys } = mapCombinationsForStackedColumnChart({
+        const { data, seriesKeys, yAxisAttributeTitle } = mapCombinationsForStackedColumnChart({
           combinations,
           xAxisAttributeId: timeAttributeId,
           yAxisAttributeId,
@@ -276,6 +279,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           xAxisKey,
           seriesKeys,
           data,
+          yAxisLabel: yAxisAttributeTitle,
         };
       }
 
@@ -289,7 +293,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
         const xAxisKey = "age";
 
-        const { data, seriesKeys } = mapCombinationsForStackedColumnChart({
+        const { data, seriesKeys, yAxisAttributeTitle } = mapCombinationsForStackedColumnChart({
           combinations,
           xAxisAttributeId: otherAttributeId,
           yAxisAttributeId: ageAttributeId,
@@ -307,6 +311,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           xAxisKey,
           seriesKeys,
           data,
+          yAxisLabel: yAxisAttributeTitle,
         };
       }
 
@@ -321,7 +326,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
         const xAxisKey = "area";
 
-        const { data, seriesKeys } = mapCombinationsForStackedColumnChart({
+        const { data, seriesKeys, yAxisAttributeTitle } = mapCombinationsForStackedColumnChart({
           combinations,
           xAxisAttributeId: areaAttributeId,
           yAxisAttributeId: ageAttributeId,
@@ -335,6 +340,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           xAxisKey,
           seriesKeys,
           data,
+          yAxisLabel: yAxisAttributeTitle,
         };
       }
 

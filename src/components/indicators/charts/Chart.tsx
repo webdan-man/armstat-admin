@@ -31,6 +31,7 @@ const Chart = ({ combinations = [] }: ChartProps) => {
     xAxisKey,
     yAxisKey,
     seriesKeys,
+    yAxisLabel,
     clusterKeys,
     stackKeys,
   } = useChart({
@@ -103,7 +104,12 @@ const Chart = ({ combinations = [] }: ChartProps) => {
       return (
         <div>
           {/*StackedColumnChart - xAxisKey: {xAxisKey}, seriesKeys: {JSON.stringify(seriesKeys)}*/}
-          <StackedColumnChart data={data} xAxisKey={xAxisKey as string} seriesKeys={seriesKeys} />
+          <StackedColumnChart
+            data={data}
+            xAxisKey={xAxisKey as string}
+            seriesKeys={seriesKeys}
+            yAxisLabel={yAxisLabel}
+          />
         </div>
       );
     case "stacked-bar-chart-with-negative-values":
