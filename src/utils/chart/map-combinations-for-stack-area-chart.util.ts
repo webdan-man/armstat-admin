@@ -42,7 +42,9 @@ export const mapCombinationsForStackAreaChart = (payload: {
     entry[gender] = Number(item.value);
   }
 
-  const data = Array.from(resultMap.values());
+  const data = Array.from(resultMap.values()).sort(
+    (a, b) => Number(a.year) - Number(b.year),
+  );
   const seriesKeys = Array.from(categories);
 
   return {
