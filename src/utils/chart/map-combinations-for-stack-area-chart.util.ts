@@ -5,9 +5,9 @@ import { Attribute } from "@/types/attribute";
 export const mapCombinationsForStackAreaChart = (payload: {
   combinations: MetricCombination[];
   attributes: Attribute[];
+  attributeMapByCategory: Map<string, Attribute>;
 }) => {
-  const { combinations, attributes } = payload;
-  const attributeMapByCategory = new Map(attributes.map((a) => [a.category, a]));
+  const { combinations, attributeMapByCategory } = payload;
 
   const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
   const timeAttributeId = attributeMapByCategory.get(AttributeCategory.TIME)!._id;

@@ -140,10 +140,6 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
     if (attributeIds.length === 2) {
       const attributeMap = new Map(attributes.map((a) => [a._id, a]));
-      const attributeMapByCategory = createCombinationAttributesMap({
-        combinations,
-        attributes,
-      });
 
       const first = attributeMap.get(attributeIds[0]);
       const second = attributeMap.get(attributeIds[1]);
@@ -159,12 +155,18 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
       // STACKED AREA CHART: X - TIME, Y - GENDER
       if (categories.has(AttributeCategory.GENDER) && categories.has(AttributeCategory.TIME)) {
-        const { data, seriesKeys } = mapCombinationsForStackAreaChart({ combinations, attributes });
+        const attributeMapByCategory = createCombinationAttributesMap({
+          combinations,
+          attributes,
+        });
+        const { data, seriesKeys } = mapCombinationsForStackAreaChart({ combinations, attributes, attributeMapByCategory });
 
         console.log("STACKED AREA CHART: X - TIME, Y - GENDER", {
           combinations,
           data,
           seriesKeys,
+          attributes,
+          attributeMapByCategory,
         });
 
         return {
@@ -182,6 +184,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
       // Clustered Column chart (stacked): Gender + (Area or Other)
       // Gender is the series; X is (AREA or OTHER)
       if (categories.has(AttributeCategory.GENDER) && stackedCategory) {
+        const attributeMapByCategory = createCombinationAttributesMap({
+          combinations,
+          attributes,
+        });
         const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
         const xAxisAttributeId = attributeMapByCategory.get(stackedCategory)!._id;
 
@@ -212,6 +218,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
       }
 
       if (categories.has(AttributeCategory.GENDER) && stackedCategory) {
+        const attributeMapByCategory = createCombinationAttributesMap({
+          combinations,
+          attributes,
+        });
         const xAxisAttributeId = attributeMapByCategory.get(stackedCategory)!._id;
         const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
 
@@ -239,6 +249,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
       }
 
       if (categories.has(AttributeCategory.TIME) && ageOrAreaOrOther) {
+        const attributeMapByCategory = createCombinationAttributesMap({
+          combinations,
+          attributes,
+        });
         const timeAttributeId = attributeMapByCategory.get(AttributeCategory.TIME)!._id;
         const yAxisAttributeId = attributeMapByCategory.get(ageOrAreaOrOther)!._id;
 
@@ -266,6 +280,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
       }
 
       if (categories.has(AttributeCategory.AGE) && categories.has(AttributeCategory.OTHER)) {
+        const attributeMapByCategory = createCombinationAttributesMap({
+          combinations,
+          attributes,
+        });
         const ageAttributeId = attributeMapByCategory.get(AttributeCategory.AGE)!._id;
         const otherAttributeId = attributeMapByCategory.get(AttributeCategory.OTHER)!._id;
 
@@ -294,6 +312,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
       // STACKED COLUMN CHART: X - AREA, Y - AGE (row 20 of Discussed sheet)
       if (categories.has(AttributeCategory.AGE) && categories.has(AttributeCategory.AREA)) {
+        const attributeMapByCategory = createCombinationAttributesMap({
+          combinations,
+          attributes,
+        });
         const ageAttributeId = attributeMapByCategory.get(AttributeCategory.AGE)!._id;
         const areaAttributeId = attributeMapByCategory.get(AttributeCategory.AREA)!._id;
 
@@ -319,6 +341,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
       // STACKED BAR CHART WITH NEGATIVE VALUES: X - GENDER, Y - AGE
       if (categories.has(AttributeCategory.GENDER) && categories.has(AttributeCategory.AGE)) {
         const yAxisKey = "year";
+        const attributeMapByCategory = createCombinationAttributesMap({
+          combinations,
+          attributes,
+        });
 
         const { data, seriesKeys } = mapCombinationsForStackedBarWithNegativeValuesChartUtil({
           combinations,
@@ -342,6 +368,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
       // Map + Semi-Circle PIE: Province + Gender (pie slices are derived in MapAndSemiPieChart from selected province)
       if (categories.has(AttributeCategory.PROVINCE) && categories.has(AttributeCategory.GENDER)) {
+        const attributeMapByCategory = createCombinationAttributesMap({
+          combinations,
+          attributes,
+        });
         const provinceAttributeId = attributeMapByCategory.get(AttributeCategory.PROVINCE)!._id;
         const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
 
@@ -359,6 +389,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
       // Map + Column with rotated labels: Province + AGE or AREA or OTHER (columns derived in MapAndColumnWithRotatedLabelsChart from selected province)
       if (categories.has(AttributeCategory.PROVINCE) && ageOrAreaOrOther) {
+        const attributeMapByCategory = createCombinationAttributesMap({
+          combinations,
+          attributes,
+        });
         const provinceAttributeId = attributeMapByCategory.get(AttributeCategory.PROVINCE)!._id;
         const breakdownAttributeId = attributeMapByCategory.get(ageOrAreaOrOther)!._id;
 
@@ -379,6 +413,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
       // Map + Line graph: Province + Time (line series is derived in MapAndLineGraphChart from selected province)
       if (categories.has(AttributeCategory.PROVINCE) && categories.has(AttributeCategory.TIME)) {
+        const attributeMapByCategory = createCombinationAttributesMap({
+          combinations,
+          attributes,
+        });
         const timeAttributeId = attributeMapByCategory.get(AttributeCategory.TIME)!._id;
         const provinceAttributeId = attributeMapByCategory.get(AttributeCategory.PROVINCE)!._id;
 
@@ -395,6 +433,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
       }
 
       if (categories.has(AttributeCategory.AREA) && categories.has(AttributeCategory.OTHER)) {
+        const attributeMapByCategory = createCombinationAttributesMap({
+          combinations,
+          attributes,
+        });
         const areaAttributeId = attributeMapByCategory.get(AttributeCategory.AREA)!._id;
         const otherAttributeId = attributeMapByCategory.get(AttributeCategory.OTHER)!._id;
 
