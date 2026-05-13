@@ -165,7 +165,8 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
       series.get("tooltip")?.label.adapters.add("text", (text, target) => {
         const value = target.dataItem?.get("valueX" as any);
         if (value == null) return text;
-        return `${field} - ${String(value).replace("-", "")}`;
+        const absVal = Math.abs(Number(value));
+        return `${field} - ${absVal.toLocaleString("en-US")}`;
       });
 
       series.bullets.push(function () {

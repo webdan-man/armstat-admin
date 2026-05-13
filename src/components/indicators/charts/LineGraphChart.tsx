@@ -138,6 +138,12 @@ function LineGraphChart({ data, chartTitle }: LineGraphChartProps) {
     // Set data
     series.data.setAll(data);
 
+      // Add scrollbar
+  // https://www.amcharts.com/docs/v5/charts/xy-chart/scrollbars/
+  chart.set("scrollbarX", am5.Scrollbar.new(root, {
+    orientation: "horizontal"
+  }));
+
     return () => {
       rootRef.current = null;
       seriesRef.current = null;
