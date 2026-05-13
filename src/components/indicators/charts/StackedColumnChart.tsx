@@ -129,18 +129,6 @@ function StackedColumnChart<T extends Record<string, string>>({
 
       series.appear();
 
-      series.bullets.push(function () {
-        return am5.Bullet.new(root, {
-          sprite: am5.Label.new(root, {
-            text: "{valueY}",
-            fill: root.interfaceColors.get("alternativeText"),
-            centerY: am5.p50,
-            centerX: am5.p50,
-            populateText: true,
-          }),
-        });
-      });
-
       legend.labels.template.setAll({
         oversizedBehavior: "wrap",
       });
