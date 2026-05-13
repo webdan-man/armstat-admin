@@ -122,7 +122,7 @@ function StackedColumnChart<T extends Record<string, string>>({
       );
 
       series.columns.template.setAll({
-        tooltipText: "{name} - {valueY}",
+        tooltipText: "{name} - [bold]{valueY.formatNumber('0.0')}[/]",
         tooltipY: am5.percent(10),
       });
       series.data.setAll(data);
