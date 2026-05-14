@@ -1,4 +1,5 @@
 import type { MetricCombination } from "@/types/metric";
+import type { Attribute } from "@/types/attribute";
 import useSWR from "swr";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { fetchAttributes } from "@/services/attributeService";
@@ -64,6 +65,26 @@ function getUniqueAttributeIds(combinations: MetricCombination[]): string[] {
   return Array.from(ids);
 }
 
+function pickAttributeDisplayTitle(attr: Attribute | undefined): string {
+  if (!attr?.title) return "";
+  const t = attr.title;
+  if (typeof t.hy === "string" && t.hy.trim()) return t.hy.trim();
+  if (typeof t.ru === "string" && t.ru.trim()) return t.ru.trim();
+  if (typeof t.en === "string" && t.en.trim()) return t.en.trim();
+  return "";
+}
+
+/** Localized title of the TIME-category attribute (from combo map, else global attributes list). */
+function pickTimeAttributeDisplayTitle(
+  attributes: Attribute[],
+  attributeMapByCategory: Map<string, Attribute>
+): string {
+  const fromCombo = attributeMapByCategory.get(AttributeCategory.TIME);
+  if (fromCombo) return pickAttributeDisplayTitle(fromCombo);
+  const fromCatalog = attributes.find((a) => a.category === AttributeCategory.TIME);
+  return pickAttributeDisplayTitle(fromCatalog);
+}
+
 function useDetectChartType(combinations: MetricCombination[] | undefined = []): {
   type: ChartType;
   data: any;
@@ -76,6 +97,8 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
   clusterKeys?: string[];
   /** Stack layer names for true clustered+stacked charts (3D). */
   stackKeys?: string[];
+  /** Localized name of the TIME attribute (timeline header on historical population pyramid). */
+  timelineAxisAttributeName?: string;
 } {
   const { data: attributes = [] } = useSWR(swrKeys.attributes, fetchAttributes);
   // const { data: categories = [] } = useSWR(swrKeys.attributesCategories, fetchAttributeCategories);
@@ -862,7 +885,12 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           data,
         });
 
-        return { type: "historical-population-pyramid", data, seriesKeys };
+        return {
+          type: "historical-population-pyramid",
+          data,
+          seriesKeys,
+          timelineAxisAttributeName: pickTimeAttributeDisplayTitle(attributes, attributeMapByCategory),
+        };
       }
 
       // Historical Population Pyramid:
@@ -888,7 +916,12 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           data,
         });
 
-        return { type: "historical-population-pyramid", data, seriesKeys };
+        return {
+          type: "historical-population-pyramid",
+          data,
+          seriesKeys,
+          timelineAxisAttributeName: pickTimeAttributeDisplayTitle(attributes, attributeMapByCategory),
+        };
       }
 
       // Clustered Column chart (stacked): Gender + Area + Other (rows 33-34)
@@ -1045,6 +1078,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
             type: "map-and-historical-population-pyramid",
             data: { pyramidData, mapData },
             seriesKeys,
+            timelineAxisAttributeName: pickTimeAttributeDisplayTitle(
+              attributes,
+              attributeMapByCategory4
+            ),
           };
         }
 

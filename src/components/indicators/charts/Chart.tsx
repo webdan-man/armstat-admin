@@ -34,6 +34,7 @@ const Chart = ({ combinations = [] }: ChartProps) => {
     yAxisLabel,
     clusterKeys,
     stackKeys,
+    timelineAxisAttributeName,
   } = useChart({
     combinations,
   });
@@ -127,9 +128,12 @@ const Chart = ({ combinations = [] }: ChartProps) => {
     case "historical-population-pyramid":
       return (
         <div>
-          HistoricalPopulationPyramidChart - yAxisKey: {yAxisKey}, seriesKeys:{" "}
-          {JSON.stringify(seriesKeys)}
-          <HistoricalPopulationPyramidChart data={data} seriesKeys={seriesKeys} />
+
+          <HistoricalPopulationPyramidChart
+            data={data}
+            seriesKeys={seriesKeys}
+            timelineAxisAttributeName={timelineAxisAttributeName}
+          />
         </div>
       );
     case "clustered-column-chart":
@@ -162,6 +166,7 @@ const Chart = ({ combinations = [] }: ChartProps) => {
             <HistoricalPopulationPyramidChart
               data={data?.pyramidData ?? []}
               seriesKeys={seriesKeys}
+              timelineAxisAttributeName={timelineAxisAttributeName}
             />
           </div>
           <div>

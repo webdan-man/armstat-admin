@@ -8,6 +8,8 @@ type ChartDatum = Record<string, string | number>;
 interface HistoricalPopulationPyramidChartProps<T extends ChartDatum> {
   data: T[];
   seriesKeys?: string[];
+  /** Localized title of the TIME attribute (timeline chart header). */
+  timelineAxisAttributeName?: string;
 }
 
 const containerId = "historical-pyramid-chartdiv";
@@ -44,6 +46,7 @@ type TimelineDatum = {
 function HistoricalPopulationPyramidChart<T extends ChartDatum>({
   data,
   seriesKeys = [],
+  timelineAxisAttributeName = "",
 }: HistoricalPopulationPyramidChartProps<T>) {
   useLayoutEffect(() => {
     const root = am5.Root.new(containerId);
@@ -322,7 +325,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
 
     popChart.children.unshift(
       am5.Label.new(root, {
-        text: "Հատկանիշի անվանում",
+        text: timelineAxisAttributeName.trim() || " ",
         fontSize: 20,
         x: am5.p50,
         centerX: am5.p50,
@@ -428,7 +431,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
     return () => {
       root.dispose();
     };
-  }, [data, seriesKeys]);
+  }, [data, seriesKeys, timelineAxisAttributeName]);
 
   return (
     <div>
