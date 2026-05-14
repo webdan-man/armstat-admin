@@ -2,7 +2,6 @@ import { useLayoutEffect } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
-import { HistoricalPyramidRow } from "@/utils/chart/map-combinations-for-pyramid";
 
 type ChartDatum = Record<string, string | number>;
 
@@ -13,6 +12,35 @@ interface HistoricalPopulationPyramidChartProps<T extends ChartDatum> {
 
 const containerId = "historical-pyramid-chartdiv";
 
+/** One raw fact row after normalizing props (analogous to POP_DATA rows). */
+type SourceRow = {
+  year: number;
+  age: string;
+  male: number;
+  female: number;
+  femaleAbs: number;
+};
+
+/** One row per age band for the pyramid series (amCharts fields match client demo). */
+type PyramidDatum = {
+  age: string;
+  male: number;
+  female: number;
+  femaleAbs: number;
+};
+
+/** One row per year for the timeline (stacked lines). */
+type TimelineDatum = {
+  date: number;
+  male: number;
+  female: number;
+  lineSettings?: {
+    strokeDasharray: number[];
+    strokeOpacity: number;
+    fillOpacity: number;
+  };
+};
+
 function HistoricalPopulationPyramidChart<T extends ChartDatum>({
   data,
   seriesKeys = [],
@@ -22,16 +50,11 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
 
     root.setThemes([am5themes_Animated.new(root)]);
 
+    // Thousand separator only, no compact suffix (matches client snippet)
     root.numberFormatter.setAll({
-      numberFormat: "#,###.#a",
-      bigNumberPrefixes: [
-        { number: 1e3, suffix: "K" },
-        { number: 1e6, suffix: "M" },
-        { number: 1e9, suffix: "B" },
-      ],
+      numberFormat: "#,###.",
     });
 
-    // Create wrapper for charts
     const container = root.container.children.push(
       am5.Container.new(root, {
         width: am5.p100,
@@ -40,140 +63,118 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       })
     );
 
-    // ==========================================
-    // Data (from props)
-    // ==========================================
-
-    type PyramidRow = {
-      col3: number; // timestamp (ms)
-      col4: string; // age group label
-      col5: number; // male
-      col6: number; // female (often negative for pyramid)
-      lineSettings?: unknown;
-    };
-
-    const sourceData: PyramidRow[] = data
-      .filter((d) => d && d.col3 != null && d.col4 != null)
-      .map((d) => {
-        const yearFromCol3 = new Date(d.col3).getFullYear();
-        const ts = Number.isFinite(yearFromCol3)
-          ? new Date(yearFromCol3, 0, 1).getTime()
-          : Number(new Date(d.col3).getTime());
-
-        return {
-          col3: ts,
-          col4: String(d.col4),
-          col5: Number(d.col5 || 0),
-          col6: Number(d.col6 || 0),
-        } satisfies PyramidRow;
+    // ---- Normalize props into source rows (sex already split into male / female columns)
+    const sourceRows: SourceRow[] = [];
+    for (const d of data) {
+      if (!d || d.col3 == null || d.col4 == null) continue;
+      const year = new Date(d.col3 as string | number).getFullYear();
+      if (!Number.isFinite(year)) continue;
+      const male = Number(d.col5 ?? 0);
+      const femaleRaw = Number(d.col6 ?? 0);
+      const femaleAbs = Math.abs(femaleRaw);
+      const female = femaleRaw <= 0 ? femaleRaw : -femaleAbs;
+      sourceRows.push({
+        year,
+        age: String(d.col4),
+        male,
+        female,
+        femaleAbs,
       });
+    }
 
-    const years = sourceData
-      .map((d) => new Date(d.col3).getFullYear())
-      .filter((y) => Number.isFinite(y));
-
-    let currentYear: number = years.length > 0 ? Math.max(...years) : new Date().getFullYear();
+    const years = sourceRows.map((r) => r.year).filter((y) => Number.isFinite(y));
+    let currentYear: number =
+      years.length > 0 ? Math.max(...years) : new Date().getFullYear();
 
     const frameLabelByYear = new Map<number, string>();
-    for (const d of data as any[]) {
-      const y = new Date(d?.col3).getFullYear();
+    for (const d of data as ChartDatum[]) {
+      const y = new Date(d?.col3 as string | number).getFullYear();
       const label = d?.col7;
       if (Number.isFinite(y) && typeof label === "string" && label.trim()) {
         frameLabelByYear.set(y, label);
       }
     }
 
-    const leftLabelText = seriesKeys[0] ?? "Series 1";
-    const rightLabelText = seriesKeys[1] ?? "Series 2";
+    const maleCornerLabel = seriesKeys[0] ?? "Արական";
+    const femaleCornerLabel = seriesKeys[1] ?? "Իգական";
 
-    function buildPopulationSeriesData(rows: PyramidRow[]) {
-      const byYear = new Map<
-        number,
-        { col3: number; col4: number; col5: number; lineSettings?: unknown }
-      >();
-
-      for (const r of rows) {
-        const year = new Date(r.col3).getFullYear();
-        if (!Number.isFinite(year)) continue;
-
-        const male = Number(r.col5 || 0);
-        const femaleAbs = Math.abs(Number(r.col6 || 0));
-
-        const ts = new Date(year, 0, 1).getTime();
-        const existing = byYear.get(year) ?? { col3: ts, col4: 0, col5: 0 };
-        existing.col4 += male;
-        existing.col5 += femaleAbs;
-        byYear.set(year, existing);
+    // Unique age groups in first-seen order (preserves 0-4, 5-9, … like client)
+    const ageGroups: string[] = [];
+    const seenAge = new Set<string>();
+    for (const r of sourceRows) {
+      if (!seenAge.has(r.age)) {
+        seenAge.add(r.age);
+        ageGroups.push(r.age);
       }
+    }
 
-      const result = Array.from(byYear.values()).sort((a, b) => a.col3 - b.col3);
-      for (const item of result) {
-        if (new Date(item.col3).getFullYear() === currentYear) {
+    function buildPyramidData(year: number): PyramidDatum[] {
+      const byAge: Record<string, PyramidDatum> = {};
+      for (const a of ageGroups) {
+        byAge[a] = { age: a, male: 0, female: 0, femaleAbs: 0 };
+      }
+      for (const r of sourceRows) {
+        if (r.year !== year) continue;
+        const b = byAge[r.age];
+        if (!b) continue;
+        b.male = r.male;
+        b.female = r.female;
+        b.femaleAbs = r.femaleAbs;
+      }
+      return ageGroups.map((a) => byAge[a]);
+    }
+
+    function buildTimelineData(): TimelineDatum[] {
+      const byYear: Record<number, { male: number; female: number }> = {};
+      for (const r of sourceRows) {
+        if (!byYear[r.year]) byYear[r.year] = { male: 0, female: 0 };
+        byYear[r.year].male += r.male;
+        byYear[r.year].female += r.femaleAbs;
+      }
+      const sortedYears = Object.keys(byYear)
+        .map(Number)
+        .sort((a, b) => a - b);
+      return sortedYears.map((y) => {
+        const item: TimelineDatum = {
+          date: new Date(y, 0, 1).getTime(),
+          male: byYear[y].male,
+          female: byYear[y].female,
+        };
+        if (y === currentYear) {
           item.lineSettings = {
             strokeDasharray: [3, 3],
             strokeOpacity: 0.3,
             fillOpacity: 0.3,
           };
         }
-      }
-      return result;
+        return item;
+      });
     }
 
-    function getCurrentData() {
-      const currentData: PyramidRow[] = [];
-      am5.array.each(sourceData, function (row, i) {
-        const year = new Date(row.col3).getFullYear();
-        if (year === currentYear) {
-          if (row.col6 > 0) {
-            row.col6 *= -1;
-          }
-          currentData.push(row);
-        }
-      });
-      currentData.sort(function (a, b) {
-        const a1 = Number(a.col4.replace(/[^0-9]+.*$/, ""));
-        const b1 = Number(b.col4.replace(/[^0-9]+.*$/, ""));
-        if (a1 > b1) {
-          return 1;
-        } else if (a1 < b1) {
-          return -1;
-        }
-        return 0;
-      });
-      return currentData;
+    function fitPyramidAxis() {
+      let maxCell = 0;
+      for (const r of sourceRows) {
+        maxCell = Math.max(maxCell, r.male, r.femaleAbs);
+      }
+      const pad = maxCell > 0 ? maxCell * 1.1 : 1;
+      pyramidXAxis.set("min", -pad);
+      pyramidXAxis.set("max", pad);
     }
 
     function updateData() {
-      const data: PyramidRow[] = getCurrentData();
-      const pyramidData = pyramidSeriesMale.data.values;
-
-      if (data.length == 0) {
-        return;
-      }
+      const pyramidData = buildPyramidData(currentYear);
+      if (!pyramidData.length) return;
       for (let i = 0; i < pyramidData.length; i++) {
-        const base = pyramidData[i] as HistoricalPyramidRow;
-        const next = { ...(base ?? {}) };
-        if (!data[i]) {
-          next.col5 = 0;
-          next.col6 = 0;
-        } else {
-          next.col5 = data[i].col5;
-          next.col6 = data[i].col6;
-        }
-        pyramidSeriesMale.data.setIndex(i, next);
-        pyramidSeriesFemale.data.setIndex(i, next);
+        pyramidSeriesMale.data.setIndex(i, pyramidData[i]);
+        pyramidSeriesFemale.data.setIndex(i, pyramidData[i]);
       }
-
-      // Set title
-      pyramidTitle.set("text", frameLabelByYear.get(currentYear) ?? (currentYear + ""));
+      pyramidTitle.set(
+        "text",
+        frameLabelByYear.get(currentYear) ?? String(currentYear)
+      );
     }
 
-    // ==========================================
-    // Pyramid chart
-    // ==========================================
-
-    // Create chart
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/
+    // ---- Pyramid chart
     const pyramidChart = container.children.push(
       am5xy.XYChart.new(root, {
         width: am5.p50,
@@ -185,59 +186,56 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       })
     );
 
-    // // Add titles
-    // const pyramidSubtitle = pyramidChart.children.unshift(
-    //   am5.Label.new(root, {
-    //     text: " ",
-    //     x: am5.p50,
-    //     centerX: am5.p50,
-    //   })
-    // );
+    pyramidChart.children.unshift(
+      am5.Label.new(root, {
+        text: " ",
+        x: am5.p50,
+        centerX: am5.p50,
+      })
+    );
 
     const pyramidTitle = pyramidChart.children.unshift(
       am5.Label.new(root, {
-        text: frameLabelByYear.get(currentYear) ?? (currentYear + ""),
+        text: frameLabelByYear.get(currentYear) ?? String(currentYear),
         fontSize: 20,
         x: am5.p50,
         centerX: am5.p50,
       })
     );
 
-    // // Add labels
-    // const maleLabel = pyramidChart.plotContainer.children.push(
-    //   am5.Label.new(root, {
-    //     text: rightLabelText,
-    //     fontSize: 20,
-    //     x: am5.p100,
-    //     y: 5,
-    //     centerX: am5.p100,
-    //     dx: -5,
-    //     fill: pyramidChart.get("colors")?.getIndex(0) ?? am5.color(0x000000),
-    //     background: am5.RoundedRectangle.new(root, {
-    //       fill: am5.color(0xffffff),
-    //       fillOpacity: 0.5,
-    //     }),
-    //   })
-    // );
-    //
-    // const femaleLabel = pyramidChart.plotContainer.children.push(
-    //   am5.Label.new(root, {
-    //     text: leftLabelText,
-    //     fontSize: 20,
-    //     y: 5,
-    //     x: 5,
-    //     fill: pyramidChart.get("colors")?.getIndex(1) ?? am5.color(0x000000),
-    //     background: am5.RoundedRectangle.new(root, {
-    //       fill: am5.color(0xffffff),
-    //       fillOpacity: 0.5,
-    //     }),
-    //   })
-    // );
+    pyramidChart.plotContainer.children.push(
+      am5.Label.new(root, {
+        text: maleCornerLabel,
+        fontSize: 20,
+        x: am5.p100,
+        y: 5,
+        centerX: am5.p100,
+        dx: -5,
+        fill: pyramidChart.get("colors")?.getIndex(0) ?? am5.color(0x000000),
+        background: am5.RoundedRectangle.new(root, {
+          fill: am5.color(0xffffff),
+          fillOpacity: 0.5,
+        }),
+      })
+    );
 
-    // Create axes
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
+    pyramidChart.plotContainer.children.push(
+      am5.Label.new(root, {
+        text: femaleCornerLabel,
+        fontSize: 20,
+        y: 5,
+        x: 5,
+        fill: pyramidChart.get("colors")?.getIndex(1) ?? am5.color(0x000000),
+        background: am5.RoundedRectangle.new(root, {
+          fill: am5.color(0xffffff),
+          fillOpacity: 0.5,
+        }),
+      })
+    );
+
     const pyramidXAxis = pyramidChart.xAxes.push(
       am5xy.ValueAxis.new(root, {
+        strictMinMax: true,
         renderer: am5xy.AxisRendererX.new(root, {
           minGridDistance: 50,
           strokeOpacity: 0.1,
@@ -246,32 +244,35 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       })
     );
 
+    pyramidXAxis.get("renderer").labels.template.adapters.add("text", (text, target) => {
+      const v = (target.dataItem as { get?: (key: string) => unknown } | undefined)?.get?.(
+        "value"
+      ) as number | undefined;
+      if (v == null) return text;
+      return root.numberFormatter.format(Math.abs(v));
+    });
+
     const yRenderer = am5xy.AxisRendererY.new(root, {
       minGridDistance: 10,
       minorGridEnabled: true,
     });
     const pyramidYAxis = pyramidChart.yAxes.push(
       am5xy.CategoryAxis.new(root, {
-        categoryField: "col4",
+        categoryField: "age",
         renderer: yRenderer,
       })
     );
+    yRenderer.grid.template.setAll({ location: 1 });
 
-    yRenderer.grid.template.setAll({
-      location: 1,
-    });
-
-    // Add series
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/series/
     const pyramidSeriesMale = pyramidChart.series.push(
       am5xy.ColumnSeries.new(root, {
         xAxis: pyramidXAxis,
         yAxis: pyramidYAxis,
-        categoryYField: "col4",
-        valueXField: "col5",
+        categoryYField: "age",
+        valueXField: "male",
         clustered: false,
         tooltip: am5.Tooltip.new(root, {
-          labelText: "{valueX}",
+          labelText: "{categoryY}     [bold]{male}[/]",
         }),
       })
     );
@@ -280,33 +281,26 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       am5xy.ColumnSeries.new(root, {
         xAxis: pyramidXAxis,
         yAxis: pyramidYAxis,
-        categoryYField: "col4",
-        valueXField: "col6",
+        categoryYField: "age",
+        valueXField: "female",
         clustered: false,
         tooltip: am5.Tooltip.new(root, {
-          labelText: "{valueX}",
+          labelText: "{categoryY}     [bold]{femaleAbs}[/]",
         }),
       })
     );
 
-    // Add cursor
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/cursor/
-    const pyradmidCursor = pyramidChart.set(
+    const pyramidCursor = pyramidChart.set(
       "cursor",
       am5xy.XYCursor.new(root, {
         xAxis: pyramidXAxis,
         yAxis: pyramidYAxis,
       })
     );
-    pyradmidCursor.lineX.set("visible", false);
-    pyradmidCursor.lineY.set("visible", false);
+    pyramidCursor.lineX.set("visible", false);
+    pyramidCursor.lineY.set("visible", false);
 
-    // ==========================================
-    // Population chart
-    // ==========================================
-
-    // Create chart
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/
+    // ---- Timeline chart
     const popChart = container.children.push(
       am5xy.XYChart.new(root, {
         width: am5.p50,
@@ -318,66 +312,56 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       })
     );
 
-    // Add titles
-    const popSubtitle = popChart.children.unshift(
+    popChart.children.unshift(
       am5.Label.new(root, {
-        text: "(hover to see breakdown)",
+        text: "(շարժեք մկնիկը՝ արժեքները տեսնելու համար)",
         x: am5.p50,
         centerX: am5.p50,
       })
     );
 
-    const popTitle = popChart.children.unshift(
+    popChart.children.unshift(
       am5.Label.new(root, {
-        text: "U.S. population",
+        text: "Հատկանիշի անվանում",
         fontSize: 20,
         x: am5.p50,
         centerX: am5.p50,
       })
     );
 
-    // Create axes
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
     const popXAxis = popChart.xAxes.push(
       am5xy.DateAxis.new(root, {
         maxDeviation: 0.1,
         groupData: false,
         baseInterval: { timeUnit: "year", count: 1 },
-        renderer: am5xy.AxisRendererX.new(root, {
-          minGridDistance: 40,
-        }),
+        renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 40 }),
         tooltip: am5.Tooltip.new(root, {}),
       })
     );
 
     const popYAxis = popChart.yAxes.push(
       am5xy.ValueAxis.new(root, {
+        min: 0,
+        strictMinMax: true,
         maxDeviation: 0.1,
-        renderer: am5xy.AxisRendererY.new(root, {
-          opposite: true,
-        }),
+        renderer: am5xy.AxisRendererY.new(root, { opposite: true }),
       })
     );
-
-    // Add series
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/series/
 
     const popSeriesMale = popChart.series.push(
       am5xy.LineSeries.new(root, {
         minBulletDistance: 10,
         xAxis: popXAxis,
         yAxis: popYAxis,
-        valueYField: "col4",
-        valueXField: "col3",
+        valueYField: "male",
+        valueXField: "date",
         stacked: true,
       })
     );
-
     popSeriesMale.strokes.template.setAll({
       strokeWidth: 2,
       templateField: "lineSettings",
     });
-
     popSeriesMale.fills.template.setAll({
       visible: true,
       fillOpacity: 0.5,
@@ -389,29 +373,25 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         minBulletDistance: 10,
         xAxis: popXAxis,
         yAxis: popYAxis,
-        valueYField: "col5",
-        valueXField: "col3",
+        valueYField: "female",
+        valueXField: "date",
         stacked: true,
         tooltip: am5.Tooltip.new(root, {
           pointerOrientation: "horizontal",
-          labelText: `[bold]Population in {valueX.formatDate()}[/]\n[font-size: 20]${leftLabelText}: {col4}\n${rightLabelText}: {col5}`,
+          labelText: `[bold]{valueX.formatDate('yyyy')}[/]\n[font-size: 20]${maleCornerLabel}     [bold]{male}[/]\n${femaleCornerLabel}     [bold]{female}[/]`,
         }),
       })
     );
-
     popSeriesFemale.strokes.template.setAll({
       strokeWidth: 2,
       templateField: "lineSettings",
     });
-
     popSeriesFemale.fills.template.setAll({
       visible: true,
       fillOpacity: 0.5,
       templateField: "lineSettings",
     });
 
-    // Add cursor
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/cursor/
     const popCursor = popChart.set(
       "cursor",
       am5xy.XYCursor.new(root, {
@@ -421,38 +401,27 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
     );
     popCursor.lineY.set("visible", false);
 
-    popCursor.events.on("cursormoved", function (ev) {
+    popCursor.events.on("cursormoved", (ev) => {
       const x = ev.target.getPrivate("positionX");
       if (typeof x !== "number") return;
-      currentYear = popXAxis.positionToDate(x).getFullYear();
-      updateData();
+      const y = popXAxis.positionToDate(x).getFullYear();
+      if (y !== currentYear) {
+        currentYear = y;
+        updateData();
+      }
     });
 
-    // ==========================================
-    // Bind data to charts
-    // ==========================================
+    // ---- Initial render
+    const initialPyramid = buildPyramidData(currentYear);
+    pyramidYAxis.data.setAll(initialPyramid);
+    pyramidSeriesMale.data.setAll(initialPyramid);
+    pyramidSeriesFemale.data.setAll(initialPyramid);
+    fitPyramidAxis();
 
-    const currentData = getCurrentData();
-    pyramidYAxis.data.setAll(currentData);
-    pyramidSeriesMale.data.setAll(currentData);
-    pyramidSeriesFemale.data.setAll(currentData);
+    const timeline = buildTimelineData();
+    popSeriesMale.data.setAll(timeline);
+    popSeriesFemale.data.setAll(timeline);
 
-    // Auto-scale pyramid X axis to your data (supports millions).
-    const maxAbs = currentData.reduce((acc, r) => {
-      const v = Math.max(Math.abs(Number(r.col5 || 0)), Math.abs(Number(r.col6 || 0)));
-      return v > acc ? v : acc;
-    }, 0);
-    if (maxAbs > 0) {
-      const pad = Math.ceil(maxAbs * 1.1);
-      pyramidXAxis.setAll({ min: -pad, max: pad });
-    }
-
-    const popData = buildPopulationSeriesData(sourceData);
-    popSeriesMale.data.setAll(popData);
-    popSeriesFemale.data.setAll(popData);
-
-    // Make stuff animate on load
-    // https://www.amcharts.com/docs/v5/concepts/animations/
     popSeriesMale.appear(1000, 100);
     popChart.appear(1000, 100);
 
