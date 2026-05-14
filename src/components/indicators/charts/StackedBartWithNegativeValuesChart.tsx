@@ -101,15 +101,23 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
 
     yAxis.data.setAll(chartData);
 
+    const xRenderer = am5xy.AxisRendererX.new(root, {
+      minGridDistance: 60,
+      strokeOpacity: 0.1,
+    });
+    xRenderer.labels.template.adapters.add("text", (text, target) => {
+      const dataItem = target.dataItem as am5.DataItem<am5xy.IValueAxisDataItem> | undefined;
+      const value = dataItem?.get("value");
+      if (value == null) return text;
+      return formatValueXForDisplay(value);
+    });
+
     const xAxis = chart.xAxes.push(
       am5xy.ValueAxis.new(root, {
         min: -axisMax,
         max: axisMax,
         strictMinMax: true,
-        renderer: am5xy.AxisRendererX.new(root, {
-          minGridDistance: 60,
-          strokeOpacity: 0.1,
-        }),
+        renderer: xRenderer,
       })
     );
     xAxisRef.current = xAxis;
