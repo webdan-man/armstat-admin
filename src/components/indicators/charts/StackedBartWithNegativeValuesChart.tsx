@@ -32,6 +32,12 @@ function computeAxisMax(chartData: ChartDatum[], leftKey: string, rightKey: stri
   return maxAbs > 0 ? maxAbs * 1.15 : 1;
 }
 
+function formatValueXForDisplay(value: unknown): string {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "";
+  return Math.abs(n).toLocaleString("en-US");
+}
+
 function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
   data,
   yAxisKey,
@@ -163,22 +169,29 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
       });
 
       series.get("tooltip")?.label.adapters.add("text", (text, target) => {
-        const value = target.dataItem?.get("valueX" as any);
+        const dataItem = target.dataItem as am5.DataItem<am5xy.IXYSeriesDataItem> | undefined;
+        const value = dataItem?.get("valueX");
         if (value == null) return text;
-        const absVal = Math.abs(Number(value));
-        return `${field} - ${absVal.toLocaleString("en-US")}`;
+        return `${field} - ${formatValueXForDisplay(value)}`;
       });
 
       series.bullets.push(function () {
+        const label = am5.Label.new(root, {
+          centerY: am5.p50,
+          text: "{valueX}",
+          populateText: true,
+          centerX: labelCenterX,
+        });
+        label.adapters.add("text", (text, target) => {
+          const dataItem = target.dataItem as am5.DataItem<am5xy.IXYSeriesDataItem> | undefined;
+          const value = dataItem?.get("valueX");
+          if (value == null) return text;
+          return formatValueXForDisplay(value);
+        });
         return am5.Bullet.new(root, {
           locationX: 1,
           locationY: 0.5,
-          sprite: am5.Label.new(root, {
-            centerY: am5.p50,
-            text: "{valueX}",
-            populateText: true,
-            centerX: labelCenterX,
-          }),
+          sprite: label,
         });
       });
 
