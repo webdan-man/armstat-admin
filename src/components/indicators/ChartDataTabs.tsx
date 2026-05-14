@@ -175,44 +175,7 @@ const ChartDataTabs = ({
         </div>
       ) : null}
       <TabsContent className="flex w-full flex-col gap-10" value="graph">
-        <div className="flex flex-col gap-6">
-          <Chart combinations={filteredCombinations} />
-          <div className="h-50"></div>
-          <FormField
-            control={control}
-            name="charts.0.link"
-            render={({ field }) => (
-              <FormItem>
-                <Field orientation="horizontal">
-                  <FieldLabel>Link</FieldLabel>
-                  <FormControl>
-                    <Input className={fieldBorder} {...field} />
-                  </FormControl>
-                </Field>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        <div className="flex flex-col gap-6">
-          <p className="text-[14px] leading-3.5 font-medium text-[rgba(44,44,44,1)]">Գրաֆիկ 2</p>
-          <div className="h-50"></div>
-          <FormField
-            control={control}
-            name="charts.1.link"
-            render={({ field }) => (
-              <FormItem>
-                <Field orientation="horizontal">
-                  <FieldLabel>Link</FieldLabel>
-                  <FormControl>
-                    <Input className={fieldBorder} {...field} />
-                  </FormControl>
-                </Field>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <Chart combinations={filteredCombinations} />
         <div className="mt-3.5 flex items-center gap-10">
           <div className="flex items-center gap-3">
             <Image src="/icons/man.svg" width={17} height={27} alt={"man"} />
