@@ -25,9 +25,7 @@ function StackedColumnChart<T extends Record<string, string>>({
   const seriesListRef = useRef<am5xy.ColumnSeries[]>([]);
   const yAxisLegendLabelRef = useRef<am5.Label | null>(null);
 
-  const hasNegativeValue = data.some((row) =>
-    seriesKeys.some((key) => Number(row[key]) < 0)
-  );
+  const hasNegativeValue = data.some((row) => seriesKeys.some((key) => Number(row[key]) < 0));
 
   useLayoutEffect(() => {
     // Create chart once; otherwise amCharts replays intro animations on every data update.
@@ -45,11 +43,18 @@ function StackedColumnChart<T extends Record<string, string>>({
         wheelX: "panX",
         wheelY: "zoomX",
         paddingLeft: 0,
+        paddingRight: 20,
+        paddingBottom: 20,
         layout: root.verticalLayout,
       })
     );
 
-    chart.set("scrollbarX", am5.Scrollbar.new(root, { orientation: "horizontal" }));
+    chart.set(
+      "scrollbarX",
+      am5.Scrollbar.new(root, {
+        orientation: "horizontal",
+      })
+    );
 
     const xRenderer = am5xy.AxisRendererX.new(root, {
       minorGridEnabled: true,
@@ -81,31 +86,48 @@ function StackedColumnChart<T extends Record<string, string>>({
     );
     yAxisRef.current = yAxis;
 
-    const legendContainer = chart.children.push(
-      am5.Container.new(root, {
-        layout: root.horizontalLayout,
+    chart.children.push(
+      am5.Label.new(root, {
+        text: yAxisLabel,
+        fontSize: 14,
+        fontWeight: "600",
+        textAlign: "center",
+        x: am5.p50,
+        centerX: am5.p50,
+        paddingTop: 10,
+        paddingBottom: 5,
+      })
+    );
+
+    const legend = chart.children.push(
+      am5.Legend.new(root, {
+        width: am5.percent(100),
+        height: am5.percent(30),
         centerX: am5.p50,
         x: am5.p50,
-        paddingTop: 15,
+        layout: am5.GridLayout.new(root, {
+          maxColumns: 100,
+          fixedWidthGrid: false,
+        }),
+        verticalScrollbar: am5.Scrollbar.new(root, {
+          orientation: "vertical",
+        }),
       })
     );
 
-    const yAxisLegendLabel = legendContainer.children.push(
-      am5.Label.new(root, {
-        text: yAxisLabel ?? "",
-        fontWeight: "bold",
-        paddingRight: 10,
-        centerY: am5.p50,
-        visible: Boolean(yAxisLabel),
-      })
-    );
-    yAxisLegendLabelRef.current = yAxisLegendLabel;
+    legend.labels.template.setAll({
+      maxWidth: 200,
+      oversizedBehavior: "wrap",
+      textAlign: "left",
+    });
 
-    const legend = legendContainer.children.push(
-      am5.Legend.new(root, {
-        centerY: am5.p50,
-      })
-    );
+    legend.itemContainers.template.setAll({
+      maxWidth: 250,
+      paddingRight: 10,
+      paddingLeft: 10,
+      paddingTop: 5,
+      paddingBottom: 5,
+    });
 
     const seriesList: am5xy.ColumnSeries[] = [];
 
@@ -122,21 +144,26 @@ function StackedColumnChart<T extends Record<string, string>>({
       );
 
       series.columns.template.setAll({
-        tooltipText: "{name} - [bold]{valueY.formatNumber('0.0')}[/]",
-        tooltipY: am5.percent(10),
+        tooltipText: "{name}\n[bold]{valueY}[/]",
       });
+
+      // Make the tooltip label wrap instead of stretching off-screen
+      const tooltip = am5.Tooltip.new(root, {
+        labelText: "{name}\n[bold]{valueY}[/]",
+        autoTextColor: true,
+      });
+
+      tooltip.label.setAll({
+        maxWidth: 250,
+        oversizedBehavior: "wrap",
+        textAlign: "left",
+      });
+
+      series.set("tooltip", tooltip);
+
       series.data.setAll(data);
 
       series.appear();
-
-      legend.labels.template.setAll({
-        oversizedBehavior: "wrap",
-      });
-
-      legend.itemContainers.template.setAll({
-        paddingTop: 2,
-        paddingBottom: 2,
-      });
 
       legend.data.push(series);
       seriesList.push(series);
@@ -166,7 +193,7 @@ function StackedColumnChart<T extends Record<string, string>>({
     // Only clamp the y-axis to 0 when there are no negative values; otherwise
     // let amCharts auto-fit so negative bars are visible.
     yAxisRef.current?.set("min", hasNegativeValue ? undefined : 0);
-  }, [data]);
+  }, [data, hasNegativeValue]);
 
   useEffect(() => {
     const label = yAxisLegendLabelRef.current;
