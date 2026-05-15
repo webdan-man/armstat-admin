@@ -206,51 +206,17 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         categories.has(cat)
       );
 
-      // Clustered Column chart (stacked): Gender + (Area or Other)
-      // Gender is the series; X is (AREA or OTHER)
+      // Stacked column chart: Gender + (Area or Other)
+      // X is (AREA or OTHER); gender is the stack series
       if (categories.has(AttributeCategory.GENDER) && stackedCategory) {
         const attributeMapByCategory = createCombinationAttributesMap({
           combinations,
           attributes,
         });
-        const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
         const xAxisAttributeId = attributeMapByCategory.get(stackedCategory)!._id;
+        const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
 
         const xAxisKey = stackedCategory === AttributeCategory.AREA ? "area" : "other";
-
-        const mapped = mapCombinationsForClusteredColumnChart({
-          combinations,
-          xAxisAttributeId,
-          yAxisAttributeId: genderAttributeId,
-          xAxisKey,
-        });
-
-        const { data, seriesKeys } = mapped;
-        const resolvedXAxisKey = "xAxisKey" in mapped ? mapped.xAxisKey : xAxisKey;
-
-        console.log(`CLUSTERED COLUMN CHART (STACKED): X - ${stackedCategory}, SERIES - GENDER`, {
-          combinations,
-          data,
-          seriesKeys,
-        });
-
-        return {
-          type: "clustered-column-chart-stacked",
-          xAxisKey: resolvedXAxisKey,
-          seriesKeys,
-          data,
-        };
-      }
-
-      if (categories.has(AttributeCategory.GENDER) && stackedCategory) {
-        const attributeMapByCategory = createCombinationAttributesMap({
-          combinations,
-          attributes,
-        });
-        const xAxisAttributeId = attributeMapByCategory.get(stackedCategory)!._id;
-        const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
-
-        const xAxisKey = "gender";
 
         const { data, seriesKeys, yAxisAttributeTitle } = mapCombinationsForStackedColumnChart({
           combinations,
