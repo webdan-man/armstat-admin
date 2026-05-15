@@ -207,25 +207,25 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
       );
 
       // Stacked column chart: Gender + (Area or Other)
-      // X is (AREA or OTHER); gender is the stack series
+      // X is GENDER; (AREA or OTHER) is the stack series
       if (categories.has(AttributeCategory.GENDER) && stackedCategory) {
         const attributeMapByCategory = createCombinationAttributesMap({
           combinations,
           attributes,
         });
-        const xAxisAttributeId = attributeMapByCategory.get(stackedCategory)!._id;
         const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
+        const stackAttributeId = attributeMapByCategory.get(stackedCategory)!._id;
 
-        const xAxisKey = stackedCategory === AttributeCategory.AREA ? "area" : "other";
+        const xAxisKey = "gender";
 
         const { data, seriesKeys, yAxisAttributeTitle } = mapCombinationsForStackedColumnChart({
           combinations,
-          xAxisAttributeId,
-          yAxisAttributeId: genderAttributeId,
+          xAxisAttributeId: genderAttributeId,
+          yAxisAttributeId: stackAttributeId,
           xAxisKey,
         });
 
-        console.log(`STACKED COLUMN CHART: X - ${stackedCategory}, Y - GENDER`, {
+        console.log(`STACKED COLUMN CHART: X - GENDER, Y - ${stackedCategory}`, {
           combinations,
           data,
           seriesKeys,
