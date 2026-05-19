@@ -44,8 +44,9 @@ import {
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { useIndicatorFeatures } from "@/components/indicators/indicator-features-context";
 import {
-  buildLibraryDisplay,
   buildLibraryOptions,
+  libraryHasTwoLevels,
+  sameValueIds,
 } from "@/components/indicators/attribute-library-helpers";
 import {
   emptyIndicatorFeatureRow,
@@ -56,23 +57,22 @@ import type { Attribute } from "@/types/attribute";
 import { cn } from "@/lib/utils";
 import { LangSwitcher } from "@/components/main/LangSwitcher";
 import type { MainLangCode } from "@/components/main/main-mock-data";
-
-const LEVEL_OPTIONS = [
-  { value: "primary", label: "Հիմնական" },
-  { value: "secondary", label: "Երկրորդային" },
-] as const;
+import { toast } from "sonner";
 
 const FEATURE_LABEL_LANGS = [
-  { key: "hy" as const, fieldLabel: "Պիտակ (Հայերեն)" },
-  { key: "en" as const, fieldLabel: "Պիտակ (Անգլերեն)" },
-  { key: "ru" as const, fieldLabel: "Պիտակ (Ռուսերեն)" },
+  { key: "hy" as const, fieldLabel: "Հատկանիշի անվանումը" },
+  { key: "en" as const, fieldLabel: "Հատկանիշի անվանումը՝ անգլերեն" },
+  { key: "ru" as const, fieldLabel: "Հատկանիշի անվանումը՝ ռուսերեն" },
 ] as const;
 
 const FEATURE_SECONDARY_LABEL_LANGS = [
-  { key: "hy" as const, fieldLabel: "Երկրորդային պիտակ (Հայերեն)" },
-  { key: "en" as const, fieldLabel: "Երկրորդային պիտակ (Անգլերեն)" },
-  { key: "ru" as const, fieldLabel: "Երկրորդային պիտակ (Ռուսերեն)" },
+  { key: "hy" as const, fieldLabel: "2-րդ մակարդակի հատկանիշի անվանումը" },
+  { key: "en" as const, fieldLabel: "2-րդ մակարդակի հատկանիշի անվանումը՝ անգլերեն" },
+  { key: "ru" as const, fieldLabel: "2-րդ մակարդակի հատկանիշի անվանումը՝ ռուսերեն" },
 ] as const;
+
+const VALIDATION_ERROR_MESSAGE =
+  "Հատկանիշն ավելացնելու համար խնդրում ենք լրացնել բոլոր դաշտերը";
 
 const FEATURE_LABEL_LANG_BY_KEY = Object.fromEntries(
   FEATURE_LABEL_LANGS.map((lang) => [lang.key, lang.fieldLabel])
@@ -86,12 +86,47 @@ const featureLabelInputClass =
   "h-9 rounded-[8.5px] border-[rgba(230,231,235,1)] bg-white text-sm text-[#2c2c2c] md:text-sm";
 
 const hasTextValue = (value?: string) => Boolean(value?.trim());
-const hasSecondaryTitle = (value: Attribute["values"][number]) =>
-  Object.values(value.secondaryTitle ?? {}).some((title) => hasTextValue(title));
+
+function buildLibraryValuesDisplay(
+  attribute: Attribute | null | undefined,
+  valueIds: string[]
+): string {
+  if (!attribute || !valueIds.length) return "";
+  const labels = valueIds.map((valueId) => {
+    const option = attribute.values.find((value) => value._id === valueId);
+    if (!option) return valueId;
+    return option.title?.hy?.trim() || option._id || valueId;
+  });
+  return labels.filter(Boolean).join(", ");
+}
+
+function buildFeaturePayload(
+  row: IndicatorFeaturesBatchFormValues["rows"][number],
+  attribute: Attribute | null | undefined
+) {
+  const libraryDisplay = buildLibraryValuesDisplay(attribute, row.valueIds);
+  return {
+    category: row.category,
+    attributeKey: row.libraryOption,
+    attributeKeyLabel: attribute?.title?.["hy"] ?? "",
+    valueIds: row.valueIds,
+    libraryDisplay,
+    label: row.label,
+    secondaryLabel: row.secondaryLabel,
+  };
+}
 
 export default function CreateWindow() {
-  const { features, dialogOpen, editingId, setDialogOpen, startCreate, addFeature, updateFeature } =
-    useIndicatorFeatures();
+  const {
+    features,
+    dialogOpen,
+    editingId,
+    setDialogOpen,
+    startCreate,
+    addFeature,
+    updateFeature,
+    removeFeature,
+  } = useIndicatorFeatures();
 
   const { data: attributesCategories = [] } = useSWR(
     swrKeys.attributesCategories,
@@ -165,15 +200,21 @@ export default function CreateWindow() {
   useEffect(() => {
     if (!dialogOpen) return;
     if (editing) {
+      const pairedFeature = features.find(
+        (feature) =>
+          feature.id !== editing.id &&
+          feature.attributeKey === editing.attributeKey &&
+          sameValueIds(feature.valueIds, editing.valueIds)
+      );
+
       reset({
         rows: [
           {
             category: resolveEditCategory(editing),
             libraryOption: editing.attributeKey,
-            levelOption: editing.level,
             valueIds: editing.valueIds ?? [],
-            label: editing.label,
-            secondaryLabel: editing.secondaryLabel,
+            label: pairedFeature?.label ?? editing.label,
+            secondaryLabel: pairedFeature?.secondaryLabel ?? editing.secondaryLabel,
           },
         ],
       });
@@ -182,7 +223,7 @@ export default function CreateWindow() {
         rows: [emptyIndicatorFeatureRow()],
       });
     }
-  }, [dialogOpen, editingId, editing, reset]);
+  }, [dialogOpen, editingId, editing, features, reset]);
 
   useEffect(() => {
     if (!dialogOpen || !isEdit || !editing) return;
@@ -259,56 +300,88 @@ export default function CreateWindow() {
     setOpenLastCollapsibleOnAppend(true);
   };
 
+  const validateRows = (rows: IndicatorFeaturesBatchFormValues["rows"]): boolean => {
+    for (const row of rows) {
+      const selectedAttribute = attributeByKey[row.libraryOption];
+      const twoLevels = libraryHasTwoLevels(selectedAttribute);
+      if (!hasTextValue(row.label.hy) || !hasTextValue(row.label.en) || !hasTextValue(row.label.ru)) {
+        return false;
+      }
+      if (twoLevels) {
+        if (
+          !hasTextValue(row.secondaryLabel.hy) ||
+          !hasTextValue(row.secondaryLabel.en) ||
+          !hasTextValue(row.secondaryLabel.ru)
+        ) {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
+  const upsertFeatureRows = (row: IndicatorFeaturesBatchFormValues["rows"][number]) => {
+    const selectedAttribute = attributeByKey[row.libraryOption];
+    const payload = buildFeaturePayload(row, selectedAttribute);
+    const twoLevels = libraryHasTwoLevels(selectedAttribute);
+
+    if (twoLevels) {
+      addFeature({ ...payload, level: "primary" });
+      addFeature({ ...payload, level: "secondary" });
+      return;
+    }
+
+    addFeature({ ...payload, level: "primary" });
+  };
+
   const onSubmit = (values: IndicatorFeaturesBatchFormValues) => {
     if (!attributes?.length) return;
+    if (!validateRows(values.rows)) {
+      toast.error(VALIDATION_ERROR_MESSAGE);
+      return;
+    }
+
     if (isEdit && editing) {
       const row = values.rows[0];
       const selectedAttribute = attributeByKey[row.libraryOption];
-      const selectedLabels = (selectedAttribute?.values ?? [])
-        .filter((v) => row.valueIds.includes(v._id))
-        .map((v) => v.title?.hy);
-      const libraryDisplay =
-        selectedLabels.length > 0
-          ? selectedLabels.join(", ")
-          : buildLibraryDisplay(attributes, row.libraryOption, row.levelOption);
+      const payload = buildFeaturePayload(row, selectedAttribute);
+      const twoLevels = libraryHasTwoLevels(selectedAttribute);
+      const pairedFeatures = features.filter(
+        (feature) =>
+          feature.attributeKey === editing.attributeKey &&
+          sameValueIds(feature.valueIds, editing.valueIds)
+      );
 
-      updateFeature(editing.id, {
-        category: row.category,
-        attributeKey: row.libraryOption,
-        attributeKeyLabel: selectedAttribute?.title["hy"] ?? "",
-        level: row.levelOption as "primary" | "secondary",
-        valueIds: row.valueIds,
-        libraryDisplay,
-        label: row.label,
-        secondaryLabel: row.secondaryLabel,
-      });
+      if (twoLevels) {
+        const primary = pairedFeatures.find((feature) => feature.level === "primary");
+        const secondary = pairedFeatures.find((feature) => feature.level === "secondary");
+        if (primary) {
+          updateFeature(primary.id, { ...payload, level: "primary" });
+        } else {
+          addFeature({ ...payload, level: "primary" });
+        }
+        if (secondary) {
+          updateFeature(secondary.id, { ...payload, level: "secondary" });
+        } else {
+          addFeature({ ...payload, level: "secondary" });
+        }
+      } else {
+        const primary = pairedFeatures.find((feature) => feature.level === "primary") ?? editing;
+        updateFeature(primary.id, { ...payload, level: "primary" });
+        for (const feature of pairedFeatures.filter((item) => item.level === "secondary")) {
+          removeFeature(feature.id, { cascade: false });
+        }
+      }
     } else {
       for (const row of values.rows) {
-        const selectedAttribute = attributeByKey[row.libraryOption];
-        const selectedLabels = (selectedAttribute?.values ?? [])
-          .filter((v) => row.valueIds.includes(v._id))
-          .map((v) => v.title?.hy);
-        const libraryDisplay =
-          selectedLabels.length > 0
-            ? selectedLabels.join(", ")
-            : buildLibraryDisplay(attributes, row.libraryOption, row.levelOption);
-
-        addFeature({
-          category: row.category,
-          attributeKey: row.libraryOption,
-          attributeKeyLabel: selectedAttribute?.title?.["hy"] ?? "",
-          level: row.levelOption as "primary" | "secondary",
-          valueIds: row.valueIds,
-          libraryDisplay,
-          label: row.label,
-          secondaryLabel: row.secondaryLabel,
-        });
+        upsertFeatureRows(row);
       }
     }
     setDialogOpen(false);
   };
 
   const onInvalid: SubmitErrorHandler<IndicatorFeaturesBatchFormValues> = (errors) => {
+    toast.error(VALIDATION_ERROR_MESSAGE);
     const rowErrors = errors.rows;
     if (!Array.isArray(rowErrors) || rowErrors.length === 0) return;
 
@@ -360,7 +433,7 @@ export default function CreateWindow() {
       >
         <Image src="/add.svg" width={24} height={24} alt="" />
         <span className="text-[14px] leading-3.5 font-medium text-[rgba(39,81,153,1)]">
-          Ավել Հատկանիշ
+          Ավելացնել հատկանիշ
         </span>
       </button>
       <DialogContent className="">
@@ -384,7 +457,9 @@ export default function CreateWindow() {
                   const secondaryLabelLang = secondaryLabelLangByRow[field.id] ?? "hy";
                   const selectedCategory = rowsWatch?.[index]?.category ?? "";
                   const selectedLibrary = rowsWatch?.[index]?.libraryOption ?? "";
-                  const selectedLevel = rowsWatch?.[index]?.levelOption ?? "";
+                  const selectedAttribute = selectedLibrary
+                    ? attributeByKey[selectedLibrary]
+                    : undefined;
                   const libraryOptions = buildLibraryOptions(attributes, selectedCategory);
                   const hasSelectedCategoryInOptions = attributesCategories.some(
                     (category) => category.value === selectedCategory
@@ -392,25 +467,22 @@ export default function CreateWindow() {
                   const hasSelectedLibraryInOptions = libraryOptions.some(
                     (option) => option.value === selectedLibrary
                   );
-
-                  const levelOptions = selectedLibrary
-                    ? (attributeByKey[selectedLibrary]?.values ?? []).filter((value) => {
-                        if (selectedLevel === "primary") return !hasSecondaryTitle(value);
-                        if (selectedLevel === "secondary") return hasSecondaryTitle(value);
-                        return false;
-                      })
-                    : [];
+                  const isTwoLevelLibrary = libraryHasTwoLevels(selectedAttribute);
+                  const libraryValueOptions = selectedAttribute?.values ?? [];
                   const currentRow = rowsWatch?.[index];
                   const isCollapsibleOpen = openCollapsibleId === field.id;
                   const isRowFilled = Boolean(
                     currentRow &&
                     hasTextValue(currentRow.category) &&
                     hasTextValue(currentRow.libraryOption) &&
-                    hasTextValue(currentRow.levelOption) &&
                     currentRow.valueIds.length > 0 &&
                     hasTextValue(currentRow.label?.hy) &&
-                    (currentRow.levelOption !== "secondary" ||
-                      hasTextValue(currentRow.secondaryLabel?.hy))
+                    hasTextValue(currentRow.label?.en) &&
+                    hasTextValue(currentRow.label?.ru) &&
+                    (!isTwoLevelLibrary ||
+                      (hasTextValue(currentRow.secondaryLabel?.hy) &&
+                        hasTextValue(currentRow.secondaryLabel?.en) &&
+                        hasTextValue(currentRow.secondaryLabel?.ru)))
                   );
                   const selectedValueIds = currentRow?.valueIds ?? [];
                   const isLevelsLoading = Boolean(
@@ -455,7 +527,7 @@ export default function CreateWindow() {
                         <div className="flex w-full flex-col gap-3">
                           <div className="flex items-center justify-between gap-3">
                             <p className="text-[12px] leading-3.5 font-semibold text-black">
-                              Պիտակներ
+                              Հատկանիշի անվանումը
                             </p>
                             <LangSwitcher
                               value={labelLang}
@@ -493,7 +565,7 @@ export default function CreateWindow() {
                           render={({ field: f }) => (
                             <FormItem className="w-full">
                               <FormLabel className="text-[12px] leading-3.5 font-semibold text-black">
-                                Ընտրել Տեսակը
+                                Հատկանիշի կատեգորիա
                               </FormLabel>
                               <Select
                                 value={
@@ -502,7 +574,6 @@ export default function CreateWindow() {
                                 onValueChange={(val) => {
                                   f.onChange(val);
                                   setValue(`rows.${index}.libraryOption`, "");
-                                  setValue(`rows.${index}.levelOption`, "");
                                   setValue(`rows.${index}.valueIds`, []);
                                 }}
                                 disabled={isLoading || !attributesCategories.length}
@@ -539,7 +610,6 @@ export default function CreateWindow() {
                                 value={f.value && hasSelectedLibraryInOptions ? f.value : undefined}
                                 onValueChange={(val) => {
                                   f.onChange(val);
-                                  setValue(`rows.${index}.levelOption`, "");
                                   setValue(`rows.${index}.valueIds`, []);
                                 }}
                                 disabled={
@@ -565,49 +635,11 @@ export default function CreateWindow() {
                             </FormItem>
                           )}
                         />
-                        <FormField
-                          control={control}
-                          name={`rows.${index}.levelOption`}
-                          render={({ field: f }) => (
-                            <FormItem className="w-full">
-                              <FormLabel className="text-[12px] leading-3.5 text-[rgba(87,87,87,1)]">
-                                Ընտրել Մակարդակ
-                              </FormLabel>
-                              <Select
-                                key={`level-select-${field.id}-${selectedLibrary}`}
-                                value={f.value || undefined}
-                                onValueChange={(val) => {
-                                  f.onChange(val);
-                                  setValue(`rows.${index}.valueIds`, []);
-                                }}
-                                disabled={isLoading || !selectedLibrary || isLevelsLoading}
-                              >
-                                <FormControl>
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue
-                                      placeholder={isLevelsLoading ? "Բեռնում…" : "Ընտրել"}
-                                    />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectGroup>
-                                    {LEVEL_OPTIONS.map((level) => (
-                                      <SelectItem key={level.value} value={level.value}>
-                                        {level.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectGroup>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        {selectedLevel === "secondary" && (
+                        {isTwoLevelLibrary && (
                           <div className="flex w-full flex-col gap-3">
                             <div className="flex items-center justify-between gap-3">
                               <p className="text-[12px] leading-3.5 font-semibold text-black">
-                                Երկրորդային պիտակներ
+                                2-րդ մակարդակի հատկանիշի անվանումը
                               </p>
                               <LangSwitcher
                                 value={secondaryLabelLang}
@@ -647,7 +679,7 @@ export default function CreateWindow() {
                           control={control}
                           name={`rows.${index}.valueIds`}
                           render={({ field: f }) => {
-                            const totalOptions = levelOptions.length;
+                            const totalOptions = libraryValueOptions.length;
                             const selectedCount = selectedValueIds.length;
                             const allSelected = totalOptions > 0 && selectedCount === totalOptions;
                             const triggerLabel =
@@ -675,7 +707,7 @@ export default function CreateWindow() {
                                           isLoading ||
                                           !selectedLibrary ||
                                           isLevelsLoading ||
-                                          levelOptions.length === 0
+                                          libraryValueOptions.length === 0
                                         }
                                         className={cn(
                                           "border-input flex h-9 w-full items-center justify-between rounded-md border bg-transparent px-3 py-2 text-left text-sm",
@@ -707,15 +739,16 @@ export default function CreateWindow() {
                                             f.onChange([]);
                                             return;
                                           }
-                                          f.onChange(levelOptions.map((opt) => opt._id));
+                                          f.onChange(libraryValueOptions.map((opt) => opt._id));
                                         }}
                                       >
                                         Ընտրել բոլորը
                                       </button>
                                     </div>
                                     <div className="max-h-56 space-y-2 overflow-y-auto px-3 py-2">
-                                      {levelOptions.map((opt) => {
+                                      {libraryValueOptions.map((opt) => {
                                         const checked = selectedValueIds.includes(opt._id);
+                                        const secondaryHy = opt.secondaryTitle?.hy?.trim();
                                         return (
                                           <label
                                             key={opt._id}
@@ -733,7 +766,14 @@ export default function CreateWindow() {
                                                 );
                                               }}
                                             />
-                                            <span>{opt.title.hy}</span>
+                                            {isTwoLevelLibrary && secondaryHy ? (
+                                              <span className="grid w-full grid-cols-2 gap-2">
+                                                <span>{opt.title.hy}</span>
+                                                <span>{secondaryHy}</span>
+                                              </span>
+                                            ) : (
+                                              <span>{opt.title.hy}</span>
+                                            )}
                                           </label>
                                         );
                                       })}

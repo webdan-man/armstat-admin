@@ -1,4 +1,21 @@
-import type { Attribute } from "@/types/attribute";
+import type { Attribute, AttributeValue } from "@/types/attribute";
+
+const hasTextValue = (value?: string) => Boolean(value?.trim());
+
+export function valueHasSecondaryTitle(value: AttributeValue): boolean {
+  return Object.values(value.secondaryTitle ?? {}).some((title) => hasTextValue(title));
+}
+
+export function libraryHasTwoLevels(attribute: Attribute | null | undefined): boolean {
+  return attribute?.values?.some(valueHasSecondaryTitle) ?? false;
+}
+
+export function sameValueIds(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  const sortedA = [...a].sort();
+  const sortedB = [...b].sort();
+  return sortedA.every((id, index) => id === sortedB[index]);
+}
 
 export function buildLibraryOptions(
   attributes: Attribute[] | undefined,
