@@ -10,14 +10,14 @@ const trimmedString = z.string().transform((s) => s.trim());
 
 export const indicatorFeatureRowSchema = z
   .object({
-    category: z.string().min(1, "Ընտրեք տեսակը"),
+    category: z.string().min(1, "Ընտրեք հատկանիշի կատեգորիան"),
     libraryOption: z.string().min(1, "Ընտրեք գրադարանը"),
     levelOption: z.string().min(1, "Ընտրեք մակարդակը"),
     valueIds: z.array(z.string().min(1)).min(1, "Ընտրեք գրադարան արժեքները"),
     label: z.object({
-      hy: trimmedNonEmpty("Լրացրեք հայերեն պիտակը"),
-      en: trimmedString,
-      ru: trimmedString,
+      hy: trimmedNonEmpty("Լրացրեք հայերեն անվանումը"),
+      en: trimmedNonEmpty("Լրացրեք անգլերեն անվանումը"),
+      ru: trimmedNonEmpty("Լրացրեք ռուսերեն անվանումը"),
     }),
     secondaryLabel: z.object({
       hy: trimmedString,

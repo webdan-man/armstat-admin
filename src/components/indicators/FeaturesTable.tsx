@@ -111,7 +111,7 @@ function FeaturesTable({ metricId }: { metricId: string }) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="text-[14px] leading-3.5">Տեսակ</TableHead>
+            <TableHead className="text-[14px] leading-3.5">Կատեգորիա</TableHead>
             <TableHead className="text-[14px] leading-3.5">Գրադարան</TableHead>
             <TableHead className="text-[14px] leading-3.5">Մակարդակ</TableHead>
             <TableHead className="text-[14px] leading-3.5">Գրադարան Արժեքներ</TableHead>
@@ -121,8 +121,8 @@ function FeaturesTable({ metricId }: { metricId: string }) {
         <TableBody>
           {features.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="py-8 text-center text-[14px] text-zinc-500">
-                Հատկանիշներ չկան։ Սեղմեք «Ավել Հատկանիշ»։
+              <TableCell colSpan={6} className="py-8 text-center text-[14px] text-zinc-500">
+                Հատկանիշներ չկան։ Սեղմեք «Ավելացնել հատկանիշ»։
               </TableCell>
             </TableRow>
           ) : (

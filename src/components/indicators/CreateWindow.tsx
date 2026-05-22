@@ -63,15 +63,15 @@ const LEVEL_OPTIONS = [
 ] as const;
 
 const FEATURE_LABEL_LANGS = [
-  { key: "hy" as const, fieldLabel: "Պիտակ (Հայերեն)" },
-  { key: "en" as const, fieldLabel: "Պիտակ (Անգլերեն)" },
-  { key: "ru" as const, fieldLabel: "Պիտակ (Ռուսերեն)" },
+  { key: "hy" as const, fieldLabel: "Հատկանիշի անվանումը" },
+  { key: "en" as const, fieldLabel: "Հատկանիշի անվանումը՝ անգլերեն" },
+  { key: "ru" as const, fieldLabel: "Հատկանիշի անվանումը՝ ռուսերեն" },
 ] as const;
 
 const FEATURE_SECONDARY_LABEL_LANGS = [
-  { key: "hy" as const, fieldLabel: "Երկրորդային պիտակ (Հայերեն)" },
-  { key: "en" as const, fieldLabel: "Երկրորդային պիտակ (Անգլերեն)" },
-  { key: "ru" as const, fieldLabel: "Երկրորդային պիտակ (Ռուսերեն)" },
+  { key: "hy" as const, fieldLabel: "2-րդ մակարդակի հատկանիշի անվանումը" },
+  { key: "en" as const, fieldLabel: "2-րդ մակարդակի հատկանիշի անվանումը՝ անգլերեն" },
+  { key: "ru" as const, fieldLabel: "2-րդ մակարդակի հատկանիշի անվանումը՝ ռուսերեն" },
 ] as const;
 
 const FEATURE_LABEL_LANG_BY_KEY = Object.fromEntries(
@@ -360,7 +360,7 @@ export default function CreateWindow() {
       >
         <Image src="/add.svg" width={24} height={24} alt="" />
         <span className="text-[14px] leading-3.5 font-medium text-[rgba(39,81,153,1)]">
-          Ավել Հատկանիշ
+          Ավելացնել հատկանիշ
         </span>
       </button>
       <DialogContent className="">
@@ -455,7 +455,7 @@ export default function CreateWindow() {
                         <div className="flex w-full flex-col gap-3">
                           <div className="flex items-center justify-between gap-3">
                             <p className="text-[12px] leading-3.5 font-semibold text-black">
-                              Պիտակներ
+                              Հատկանիշի անվանումը
                             </p>
                             <LangSwitcher
                               value={labelLang}
@@ -493,7 +493,7 @@ export default function CreateWindow() {
                           render={({ field: f }) => (
                             <FormItem className="w-full">
                               <FormLabel className="text-[12px] leading-3.5 font-semibold text-black">
-                                Ընտրել Տեսակը
+                                Հատկանիշի կատեգորիա
                               </FormLabel>
                               <Select
                                 value={
@@ -607,7 +607,7 @@ export default function CreateWindow() {
                           <div className="flex w-full flex-col gap-3">
                             <div className="flex items-center justify-between gap-3">
                               <p className="text-[12px] leading-3.5 font-semibold text-black">
-                                Երկրորդային պիտակներ
+                                2-րդ մակարդակի հատկանիշի անվանումը
                               </p>
                               <LangSwitcher
                                 value={secondaryLabelLang}
