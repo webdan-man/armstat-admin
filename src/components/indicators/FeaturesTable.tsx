@@ -80,17 +80,6 @@ function FeaturesTable({ metricId }: { metricId: string }) {
     return row.attributeKey;
   };
 
-  const resolveAttributeName = (row: (typeof features)[number]): string => {
-    if (row.level === "secondary") {
-      const name = row.secondaryLabel?.hy?.trim();
-      if (name) return name;
-    } else {
-      const name = row.label?.hy?.trim();
-      if (name) return name;
-    }
-    return "—";
-  };
-
   const resolveCategoryLabel = (row: (typeof features)[number]): string => {
     const attributeCategory = attributeByKey[row.attributeKey]?.category?.trim();
     const attributeTitle = attributesCategories
@@ -122,8 +111,7 @@ function FeaturesTable({ metricId }: { metricId: string }) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="text-[14px] leading-3.5">Հատկանիշի անվանումը</TableHead>
-            <TableHead className="text-[14px] leading-3.5">Կատեգորիա</TableHead>
+            <TableHead className="text-[14px] leading-3.5">Տեսակ</TableHead>
             <TableHead className="text-[14px] leading-3.5">Գրադարան</TableHead>
             <TableHead className="text-[14px] leading-3.5">Մակարդակ</TableHead>
             <TableHead className="text-[14px] leading-3.5">Գրադարան Արժեքներ</TableHead>
@@ -133,16 +121,13 @@ function FeaturesTable({ metricId }: { metricId: string }) {
         <TableBody>
           {features.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="py-8 text-center text-[14px] text-zinc-500">
-                Հատկանիշներ չկան։ Սեղմեք «Ավելացնել հատկանիշ»։
+              <TableCell colSpan={5} className="py-8 text-center text-[14px] text-zinc-500">
+                Հատկանիշներ չկան։ Սեղմեք «Ավել Հատկանիշ»։
               </TableCell>
             </TableRow>
           ) : (
             features.map((row) => (
               <TableRow key={row.id}>
-                <TableCell className="py-5 text-[14px] leading-3.5">
-                  {resolveAttributeName(row)}
-                </TableCell>
                 <TableCell className="py-5 text-[14px] leading-3.5">
                   {resolveCategoryLabel(row)}
                 </TableCell>

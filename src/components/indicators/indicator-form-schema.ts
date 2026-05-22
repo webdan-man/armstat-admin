@@ -226,29 +226,18 @@ export function mapIndicatorFormToUpdateMetric(
 }
 
 export function mapFeaturesToMetricAttributeKeys(features: IndicatorFeature[]): MetricAttribute[] {
-  const seen = new Set<string>();
-  const result: MetricAttribute[] = [];
-
-  for (const feature of features) {
-    const dedupeKey = `${feature.attributeKey}::${[...feature.valueIds].sort().join(",")}`;
-    if (seen.has(dedupeKey)) continue;
-    seen.add(dedupeKey);
-
-    result.push({
-      attributeId: feature.attributeKey,
-      valueIds: feature.valueIds,
-      label: {
-        hy: feature.label.hy.trim(),
-        en: feature.label.en.trim(),
-        ru: feature.label.ru.trim(),
-      },
-      secondaryLabel: {
-        hy: feature.secondaryLabel.hy.trim(),
-        en: feature.secondaryLabel.en.trim(),
-        ru: feature.secondaryLabel.ru.trim(),
-      },
-    });
-  }
-
-  return result;
+  return features.map((feature) => ({
+    attributeId: feature.attributeKey,
+    valueIds: feature.valueIds,
+    label: {
+      hy: feature.label.hy.trim(),
+      en: feature.label.en.trim(),
+      ru: feature.label.ru.trim(),
+    },
+    secondaryLabel: {
+      hy: feature.secondaryLabel.hy.trim(),
+      en: feature.secondaryLabel.en.trim(),
+      ru: feature.secondaryLabel.ru.trim(),
+    },
+  }));
 }

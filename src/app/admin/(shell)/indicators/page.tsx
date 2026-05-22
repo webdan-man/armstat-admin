@@ -16,7 +16,7 @@ function IndicatorsContent() {
   return (
     <div className="flex w-full flex-col gap-2.5">
       <div className="flex min-h-11 items-center justify-between bg-[#f9fafb] pt-7 pb-4">
-        <h1 className="justify-start text-xl leading-4 font-semibold text-zinc-800">Ցուցանիշներ</h1>
+        <h1 className="justify-start text-xl leading-4 font-semibold text-zinc-800">Ցուցաւնիշ</h1>
       </div>
       <Filters />
       {isFormVisible && <IndicatorsForm />}
