@@ -230,7 +230,7 @@ export default function IndicatorsForm() {
     <Form {...form}>
       <form
         id="indicator-form"
-        className="mt-7.5 flex w-full flex-col gap-7.5"
+        className="mt-7.5 flex w-full flex-col gap-7.5 pb-20"
         onSubmit={(e) => e.preventDefault()}
       >
         <Card className={cn(cardSurface, "gap-0 py-0")}>
@@ -296,7 +296,7 @@ export default function IndicatorsForm() {
           </CardContent>
         </Card>
 
-        <div className="flex flex-wrap items-center gap-3 pt-2">
+        <div className="fixed bottom-0 left-60 right-0 z-10 flex flex-wrap items-center gap-3 border-t border-[#e6e7eb] bg-[#f9fafb] px-11 py-4">
           <Button
             type="button"
             variant="outline"

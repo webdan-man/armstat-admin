@@ -4,9 +4,8 @@ import LinksClient from "@/components/site/home/LinksClient";
 import Interesting from "@/components/site/home/Interesting";
 import Statistics from "@/components/site/home/Statistics";
 import Footer from "@/components/site/Footer";
-import { cookies } from "next/headers";
-import { LANG_COOKIE } from "@/providers/LangProvider";
-import { locales, defaultLocale, type Locale } from "@/lib/i18n";
+import { getActiveLocale } from "@/lib/get-active-locale";
+import { defaultLocale, type Locale } from "@/lib/i18n";
 
 type Localized = Record<string, string | undefined>;
 
@@ -46,12 +45,6 @@ function pickLocale(value?: Localized, locale: Locale = defaultLocale) {
   return value[locale] ?? "";
 }
 
-async function getActiveLang(): Promise<Locale> {
-  const cookieStore = await cookies();
-  const lang = cookieStore.get(LANG_COOKIE)?.value;
-  return lang && locales.includes(lang as Locale) ? (lang as Locale) : defaultLocale;
-}
-
 function absolutizeUrl(pathOrUrl: string | undefined, baseUrl: string) {
   if (!pathOrUrl) return undefined;
   if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) return pathOrUrl;
@@ -69,9 +62,14 @@ async function getHomePageData(): Promise<HomePageResponse | null> {
   return (await res.json()) as HomePageResponse;
 }
 
-export default async function Home() {
+type HomePageProps = {
+  searchParams: Promise<{ lang?: string }>;
+};
+
+export default async function Home({ searchParams }: HomePageProps) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "";
-  const [data, lang] = await Promise.all([getHomePageData(), getActiveLang()]);
+  const { lang: langParam } = await searchParams;
+  const [data, lang] = await Promise.all([getHomePageData(), getActiveLocale(langParam)]);
 
   return (
     <>

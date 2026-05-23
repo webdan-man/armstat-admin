@@ -1,9 +1,9 @@
+import { MarkdownText } from "@/components/site/MarkdownText";
 import { TypographyH2 } from "@/components/ui/typography";
 import Image from "next/image";
 import Link from "next/link";
-import { cookies } from "next/headers";
-import { LANG_COOKIE } from "@/providers/LangProvider";
-import { defaultLocale, locales, type Locale } from "@/lib/i18n";
+import { getActiveLocale } from "@/lib/get-active-locale";
+import { defaultLocale, type Locale } from "@/lib/i18n";
 
 type Localized = Record<string, string | undefined>;
 
@@ -64,14 +64,13 @@ async function getContactUsData(): Promise<ContactUsResponse | null> {
   return (await res.json()) as ContactUsResponse;
 }
 
-async function getActiveLang(): Promise<Locale> {
-  const cookieStore = await cookies();
-  const lang = cookieStore.get(LANG_COOKIE)?.value;
-  return lang && locales.includes(lang as Locale) ? (lang as Locale) : defaultLocale;
-}
+type FeedbackPageProps = {
+  searchParams: Promise<{ lang?: string }>;
+};
 
-export default async function FeedbackPage() {
-  const [data, lang] = await Promise.all([getContactUsData(), getActiveLang()]);
+export default async function FeedbackPage({ searchParams }: FeedbackPageProps) {
+  const { lang: langParam } = await searchParams;
+  const [data, lang] = await Promise.all([getContactUsData(), getActiveLocale(langParam)]);
   const title = pickLocale(data?.title, lang) ?? "Կապ մեզ հետ";
   const description = pickLocale(data?.description, lang);
   const notificationsEmailRow = pickLocale(data?.notificationsEmailRow, lang);
@@ -102,7 +101,7 @@ export default async function FeedbackPage() {
         <div className="flex w-full max-w-305 px-5 max-md:flex max-md:flex-col">
           <div className="flex w-full flex-col pt-10.25">
             {description ? (
-              <p className="text-[rgba(55,55,55,1)]">{description}</p>
+              <MarkdownText className="text-[rgba(55,55,55,1)]">{description}</MarkdownText>
             ) : (
               <div className="h-18 w-full max-w-202 rounded-sm bg-black/5" />
             )}

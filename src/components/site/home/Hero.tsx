@@ -1,3 +1,4 @@
+import { MarkdownText } from "@/components/site/MarkdownText";
 import { TypographyH2, TypographyP } from "@/components/ui/typography";
 import Image from "next/image";
 
@@ -17,9 +18,11 @@ export default function Hero({
           <TypographyH2 className="relative z-10 max-w-180 text-center font-medium">
             {title}
           </TypographyH2>
-          <TypographyP className="text-textBlack100/70 relative z-10 mt-6 max-w-180 text-center leading-5">
-            {shortDescription}
-          </TypographyP>
+          {shortDescription ? (
+            <TypographyP className="text-textBlack100/70 relative z-10 mt-6 max-w-180 text-center leading-5">
+              <MarkdownText as="span">{shortDescription}</MarkdownText>
+            </TypographyP>
+          ) : null}
           <div className="w-max-271 relative -top-25 z-0 h-51.5 w-full">
             <Image src={"/images/hero.png"} alt={"Hero"} fill={true} />
           </div>

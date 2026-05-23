@@ -1,9 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
+import { MarkdownText } from "@/components/site/MarkdownText";
 import { TypographyH2 } from "@/components/ui/typography";
-import { cookies } from "next/headers";
-import { LANG_COOKIE } from "@/providers/LangProvider";
-import { defaultLocale, locales, type Locale } from "@/lib/i18n";
+import { getActiveLocale } from "@/lib/get-active-locale";
+import { defaultLocale, type Locale } from "@/lib/i18n";
 
 type Localized = Record<string, string | undefined>;
 
@@ -53,16 +53,20 @@ async function getInformationCenterData(): Promise<InformationCenterResponse | n
   return (await res.json()) as InformationCenterResponse;
 }
 
-async function getActiveLang(): Promise<Locale> {
-  const cookieStore = await cookies();
-  const lang = cookieStore.get(LANG_COOKIE)?.value;
-  return lang && locales.includes(lang as Locale) ? (lang as Locale) : defaultLocale;
-}
+type InformationCenterPageProps = {
+  searchParams: Promise<{ lang?: string }>;
+};
 
-export default async function InformationCenterPage() {
+export default async function InformationCenterPage({
+  searchParams,
+}: InformationCenterPageProps) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "";
   const assetBaseUrl = getOrigin(baseUrl);
-  const [data, lang] = await Promise.all([getInformationCenterData(), getActiveLang()]);
+  const { lang: langParam } = await searchParams;
+  const [data, lang] = await Promise.all([
+    getInformationCenterData(),
+    getActiveLocale(langParam),
+  ]);
 
   const title = pickLocale(data?.title, lang) ?? "Տեղեկատվական կենտրոն";
   const description = pickLocale(data?.description, lang);
@@ -72,7 +76,7 @@ export default async function InformationCenterPage() {
     <div className="flex w-full flex-col items-center overflow-x-hidden pb-55 max-md:pb-20">
       <div className="bg-blue1000 flex w-full justify-center">
         <div className="flex w-full max-w-305 flex-col px-5 py-12">
-          <TypographyH2>Տեղեկատվական կենտրոն</TypographyH2>
+          <TypographyH2>{title}</TypographyH2>
         </div>
       </div>
 
@@ -80,10 +84,12 @@ export default async function InformationCenterPage() {
         <div className="flex w-full max-w-305 px-5 max-md:flex max-md:flex-col">
           <div className="flex w-full flex-col pt-23 pb-26.5 max-md:pb-10">
             <h3 className="text-[23px] font-semibold text-[rgba(55,55,55,1)]">{title}</h3>
-            <p className="mt-8.5 text-[rgba(55,55,55,1)]">{description}</p>
+            {description ? (
+              <MarkdownText className="mt-8.5 text-[rgba(55,55,55,1)]">{description}</MarkdownText>
+            ) : null}
           </div>
           <div className="relative -right-18 -mt-16.75 h-136.75 w-full max-w-134.75 shrink-0 overflow-hidden rounded-tl-[159px] rounded-r-[159px] max-md:right-0 max-md:mt-10">
-            <Image src={heroImageSrc} alt="Տեղեկատվական կենտրոն" fill className="object-cover" />
+            <Image src={heroImageSrc} alt={title} fill className="object-cover" />
           </div>
         </div>
       </div>
@@ -105,7 +111,11 @@ export default async function InformationCenterPage() {
                 <h5 className="text-ontSizeM mt-10 font-medium text-[rgba(0,0,0,1)]">
                   {sectionTitle}
                 </h5>
-                <p className="text-fontSizeXS mt-3 text-[rgba(85,85,85,1)]">{sectionDescription}</p>
+                {sectionDescription ? (
+                  <MarkdownText className="text-fontSizeXS mt-3 text-[rgba(85,85,85,1)]">
+                    {sectionDescription}
+                  </MarkdownText>
+                ) : null}
 
                 <div className="mt-6 flex items-center gap-10">
                   {fileLink ? (

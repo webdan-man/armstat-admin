@@ -366,7 +366,7 @@ export default function CreateWindow() {
       <DialogContent className="">
         <DialogHeader className="px-6 py-5">
           <DialogTitle className="text-[18px] leading-3.5 font-semibold text-[rgba(44,44,44,1)]">
-            {isEdit ? "Խմբագրել հատկանիշ" : "Հատկանիշ"}
+            {isEdit ? "Խմբագրել հատկանիշ" : "Ավելացնել հատկանիշ(ներ)"}
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
@@ -380,6 +380,11 @@ export default function CreateWindow() {
               )}
               <div className="flex w-full flex-col gap-3.5">
                 {fields.map((field, index) => {
+                  const editingIndex = editingId
+                    ? features.findIndex((f) => f.id === editingId)
+                    : -1;
+                  const featureNumber =
+                    isEdit && editingIndex >= 0 ? editingIndex + 1 : features.length + index + 1;
                   const labelLang = labelLangByRow[field.id] ?? "hy";
                   const secondaryLabelLang = secondaryLabelLangByRow[field.id] ?? "hy";
                   const selectedCategory = rowsWatch?.[index]?.category ?? "";
@@ -433,7 +438,7 @@ export default function CreateWindow() {
                         >
                           <ChevronDownIcon className="size-5 -rotate-90 transition-transform group-data-panel-open:rotate-0" />
                           <p className="text-start text-[16px] font-semibold text-black">
-                            {`Հատկանիշ ${index + 1}`}
+                            {`Հատկանիշ ${featureNumber}`}
                           </p>
                         </CollapsibleTrigger>
                         <div className="flex items-center gap-3">
@@ -454,9 +459,7 @@ export default function CreateWindow() {
                       <CollapsibleContent className="flex w-full flex-col gap-4 border-t border-t-[rgba(217,217,217,1)] bg-[rgba(217,217,217,0.1)] px-10 py-4.25">
                         <div className="flex w-full flex-col gap-3">
                           <div className="flex items-center justify-between gap-3">
-                            <p className="text-[12px] leading-3.5 font-semibold text-black">
-                              Հատկանիշի անվանումը
-                            </p>
+                            <div />
                             <LangSwitcher
                               value={labelLang}
                               onChange={(nextLang) =>
@@ -471,7 +474,7 @@ export default function CreateWindow() {
                               name={`rows.${index}.label.${labelLang}`}
                               render={({ field: f }) => (
                                 <FormItem className="w-full">
-                                  <FormLabel className="text-[12px] leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
+                                  <FormLabel className="text-[12px] leading-3.5 font-semibold text-black">
                                     {FEATURE_LABEL_LANG_BY_KEY[labelLang]}
                                   </FormLabel>
                                   <FormControl>
@@ -606,9 +609,7 @@ export default function CreateWindow() {
                         {selectedLevel === "secondary" && (
                           <div className="flex w-full flex-col gap-3">
                             <div className="flex items-center justify-between gap-3">
-                              <p className="text-[12px] leading-3.5 font-semibold text-black">
-                                2-րդ մակարդակի հատկանիշի անվանումը
-                              </p>
+                              <div />
                               <LangSwitcher
                                 value={secondaryLabelLang}
                                 onChange={(nextLang) =>
@@ -617,7 +618,7 @@ export default function CreateWindow() {
                                     [field.id]: nextLang,
                                   }))
                                 }
-                                className="sm:shrink-0"
+                                className="font-semibold text-black sm:shrink-0"
                               />
                             </div>
                             <div className="grid w-full gap-3">
@@ -626,7 +627,7 @@ export default function CreateWindow() {
                                 name={`rows.${index}.secondaryLabel.${secondaryLabelLang}`}
                                 render={({ field: f }) => (
                                   <FormItem className="w-full">
-                                    <FormLabel className="text-[12px] leading-3.5 font-semibold text-[rgba(87,87,87,1)]">
+                                    <FormLabel className="text-[12px] leading-3.5 font-semibold text-black">
                                       {FEATURE_SECONDARY_LABEL_LANG_BY_KEY[secondaryLabelLang]}
                                     </FormLabel>
                                     <FormControl>
@@ -655,7 +656,7 @@ export default function CreateWindow() {
 
                             return (
                               <FormItem className="w-full">
-                                <FormLabel className="text-[12px] leading-3.5 text-[rgba(87,87,87,1)]">
+                                <FormLabel className="text-[12px] leading-3.5 font-semibold text-black">
                                   Գրադարան Արժեքներ
                                 </FormLabel>
                                 <Popover
@@ -696,7 +697,7 @@ export default function CreateWindow() {
                                   </PopoverTrigger>
                                   <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                                     <div className="flex items-center justify-between border-b px-3 py-2">
-                                      <FieldLabel className="text-xs font-medium text-zinc-700">
+                                      <FieldLabel className="text-xs font-medium font-semibold text-black">
                                         Գրադարան Արժեքներ
                                       </FieldLabel>
                                       <button

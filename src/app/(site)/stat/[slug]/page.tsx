@@ -1,5 +1,6 @@
 "use client";
 
+import { MarkdownText } from "@/components/site/MarkdownText";
 import { TypographyH3, TypographyP } from "@/components/ui/typography";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -162,7 +163,7 @@ export default function StatPage() {
           )}
           {metric?.description?.[activeLang] && (
             <TypographyP className="text-fontSizeS mt-3 min-h-[24px] leading-4.75 text-[rgba(125,125,125,1)]">
-              {metric?.description?.[activeLang]}
+              <MarkdownText as="span">{metric.description[activeLang]}</MarkdownText>
             </TypographyP>
           )}
           <div className="mt-10 border-t border-[rgba(15,104,192,1)] bg-[rgba(241,245,248,1)] px-3 pt-4.25 pb-4.75">
@@ -260,9 +261,9 @@ export default function StatPage() {
                     </p>
                   )}
                   {metric?.description?.[activeLang] && (
-                    <p className="text-fontSizeS mt-4 leading-4.75 text-[rgba(125,125,125,1)]">
+                    <MarkdownText className="text-fontSizeS mt-4 leading-4.75 text-[rgba(125,125,125,1)]">
                       {metric.description[activeLang]}
-                    </p>
+                    </MarkdownText>
                   )}
                   <div className="mt-7.5 flex gap-5">
                     {metric?.updatedAt && (

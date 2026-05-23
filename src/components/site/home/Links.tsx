@@ -3,6 +3,7 @@
 import useEmblaCarousel from "embla-carousel-react";
 import { useCallback, useEffect, useState } from "react";
 
+import { MarkdownText } from "@/components/site/MarkdownText";
 import { TypographyH2, TypographyH3, TypographyP } from "@/components/ui/typography";
 import Image from "next/image";
 
@@ -81,8 +82,10 @@ export default function Links({ links }: LinksProps) {
                       {item.name || "Վերնագրիրը այստեղ"}
                     </TypographyH3>
 
-                    <TypographyP className="text-textBlack700 mt-4">
-                      {item.description || "Լրացուցիչ տեղեկություններն այստեղ"}
+                    <TypographyP className="text-textBlack700 mt-4 line-clamp-2">
+                      <MarkdownText as="span">
+                        {item.description || "Լրացուցիչ տեղեկություններն այստեղ"}
+                      </MarkdownText>
                     </TypographyP>
                   </div>
                 ))}
