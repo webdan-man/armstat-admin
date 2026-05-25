@@ -53,6 +53,7 @@ export type MetricResponse = {
   createdAt?: string;
   updatedAt?: string;
   unit?: Record<string, string> & { am?: string; hy?: string; ru?: string; en?: string };
+  isCumulative?: boolean;
 };
 
 export type MetricSelectOption = {
