@@ -35,7 +35,7 @@ type IndicatorFilterStateContextValue = {
   childTopics: Topic[];
   needsSubSubgroup: boolean;
   hierarchyComplete: boolean;
-  /** Topic id for POST /metrics: leaf in hierarchy (subSubgroup or subgroup). */
+  /** Topic id for POST /metrics: deepest selected level (subSubgroup or subgroup). */
   resolvedTopicId: string | null;
 };
 
@@ -74,21 +74,18 @@ export function IndicatorFiltersProvider({ children }: { children: React.ReactNo
   }, [selectedSection, selectedFilter.subgroup]);
 
   const needsSubSubgroup = childTopics.length > 0;
-  const hierarchyComplete =
-    Boolean(selectedFilter.section) &&
-    Boolean(selectedFilter.subgroup) &&
-    (needsSubSubgroup ? Boolean(selectedFilter.subSubgroup) : true);
 
   const resolvedTopicId = useMemo(() => {
-    if (!hierarchyComplete) return null;
+    if (!selectedFilter.section || !selectedFilter.subgroup) return null;
     if (selectedFilter.subSubgroup) return selectedFilter.subSubgroup;
     return selectedFilter.subgroup;
-  }, [hierarchyComplete, selectedFilter.subgroup, selectedFilter.subSubgroup]);
+  }, [selectedFilter.section, selectedFilter.subgroup, selectedFilter.subSubgroup]);
 
+  const hierarchyComplete = Boolean(resolvedTopicId);
   const canSelectIndicator = hierarchyComplete;
 
   const openCreateForm = () => {
-    if (!canSelectIndicator) return;
+    if (!resolvedTopicId) return;
     setSelectedFilter((prev) => ({ ...prev, indicator: "" }));
     setFormMode("create");
   };
