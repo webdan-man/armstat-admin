@@ -8,12 +8,7 @@ import { Label } from "@/components/ui/label";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from "@/components/ui/form";
+import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 import type { IndicatorFormValues } from "@/components/indicators/indicator-form-schema";
 
@@ -46,7 +41,7 @@ function MetadataLocaleContent({ lang }: { lang: (typeof locales)[number] }) {
         />
       </div>
       <div className="grid grid-cols-[1fr_4fr_2fr] gap-5">
-        <Label className="text-sm font-medium text-[#575757]">Աղբյուրի հղումը՝</Label>
+        <Label className="text-sm font-medium text-[#575757]">Աղբյուրը</Label>
         <FormField
           control={control}
           name={`metadata.${lang}.sourceUrl`}

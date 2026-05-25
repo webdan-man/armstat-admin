@@ -6,6 +6,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import useSWR, { useSWRConfig } from "swr";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
@@ -28,6 +38,7 @@ import {
 import { swrKeys } from "@/lib/swr/cache-keys";
 import {
   createMetric,
+  deleteMetric,
   fetchMetricForForm,
   patchMetric,
   publishMetric,
@@ -42,7 +53,14 @@ const cardSurface =
   "ring-0 rounded-[10px] border-0 bg-white text-[#2c2c2c] shadow-[0_6px_14px_rgba(0,0,0,0.05)]";
 
 export default function IndicatorsForm() {
-  const { selectedFilter, resolvedTopicId, formMode, markIndicatorEdit } = useIndicatorFilters();
+  const {
+    selectedFilter,
+    resolvedTopicId,
+    formMode,
+    markIndicatorEdit,
+    setSelectedFilter,
+    closeForm,
+  } = useIndicatorFilters();
   const { features, replaceFeatures } = useIndicatorFeatures();
   const { mutate } = useSWRConfig();
   const committedRef = useRef<IndicatorFormValues>(emptyIndicatorFormValues());
@@ -64,6 +82,8 @@ export default function IndicatorsForm() {
   const [featuresDirty, setFeaturesDirty] = useState(false);
   const csvInputRef = useRef<HTMLInputElement>(null);
   const [csvUploading, setCsvUploading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const initializedForIndicatorIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -146,10 +166,7 @@ export default function IndicatorsForm() {
         const newOption: MetricSelectOption = {
           id: createdMetric._id,
           label:
-            values.title.hy?.trim() ||
-            values.title.ru?.trim() ||
-            values.title.en?.trim() ||
-            "—",
+            values.title.hy?.trim() || values.title.ru?.trim() || values.title.en?.trim() || "—",
           updatedAt: createdMetric.updatedAt ?? createdMetric.createdAt ?? null,
         };
         await mutate(
@@ -204,6 +221,50 @@ export default function IndicatorsForm() {
     setFeaturesDirty(false);
   };
 
+  const deleteDialogTitle =
+    form.getValues("title.hy")?.trim() ||
+    form.getValues("title.ru")?.trim() ||
+    form.getValues("title.en")?.trim() ||
+    "—";
+
+  const submitDelete = async () => {
+    if (!indicatorId || formMode !== "edit") return;
+    setIsDeleting(true);
+    try {
+      await deleteMetric(indicatorId);
+
+      if (resolvedTopicId) {
+        await mutate(
+          swrKeys.metricsByTopic(resolvedTopicId),
+          (current: MetricSelectOption[] | undefined) =>
+            (current ?? []).filter((option) => option.id !== indicatorId),
+          { revalidate: false }
+        );
+      }
+
+      void mutate(swrKeys.metrics);
+
+      setSelectedFilter((prev) => ({ ...prev, indicator: "" }));
+      closeForm();
+
+      const empty = emptyIndicatorFormValues();
+      committedRef.current = empty;
+      committedFeaturesRef.current = [];
+      setFeaturesDirty(false);
+      reset(empty);
+      replaceFeatures([]);
+      initializedForIndicatorIdRef.current = null;
+
+      toast.success("Ջնջված է");
+      setDeleteDialogOpen(false);
+    } catch (e) {
+      const message = e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Սխալ";
+      toast.error(message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const onMetricCsvSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target;
     const file = input.files?.[0];
@@ -235,7 +296,9 @@ export default function IndicatorsForm() {
       >
         <Card className={cn(cardSurface, "gap-0 py-0")}>
           <CardHeader className="gap-4 border-0 px-8 pt-8 pb-0">
-            <CardTitle className="text-base font-medium text-[#2c2c2c]">Վերնագրեր</CardTitle>
+            <CardTitle className="text-base font-medium text-[#2c2c2c]">
+              Ցուցանիշի նկարագիր
+            </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 px-8 pt-6 pb-8">
             <MainTabs />
@@ -296,7 +359,7 @@ export default function IndicatorsForm() {
           </CardContent>
         </Card>
 
-        <div className="fixed bottom-0 left-60 right-0 z-10 flex flex-wrap items-center gap-3 border-t border-[#e6e7eb] bg-[#f9fafb] px-11 py-4">
+        <div className="fixed right-0 bottom-0 left-60 z-10 flex flex-wrap items-center gap-3 border-t border-[#e6e7eb] bg-[#f9fafb] px-11 py-4">
           <Button
             type="button"
             variant="outline"
@@ -322,7 +385,43 @@ export default function IndicatorsForm() {
           >
             Հաստատել
           </Button>
+
+          {formMode === "edit" && indicatorId ? (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isDeleting || isSubmitting}
+              className="ml-auto h-11 min-w-[131px] rounded-lg border-[rgba(204,0,0,1)] bg-white text-[rgba(204,0,0,1)] hover:bg-[rgba(204,0,0,0.06)] disabled:opacity-50"
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              Ջնջել
+            </Button>
+          ) : null}
         </div>
+
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Ջնջե՞լ ցուցանիշը</AlertDialogTitle>
+              <AlertDialogDescription>
+                «{deleteDialogTitle}» կհեռացվի։ Այս գործողությունը չի կարելի հետ կանչել։
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Չեղարկել</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={isDeleting}
+                className="bg-[rgba(204,0,0,1)] text-white hover:bg-[rgba(204,0,0,0.9)]"
+                onClick={(e) => {
+                  e.preventDefault();
+                  void submitDelete();
+                }}
+              >
+                {isDeleting ? "Ջնջվում է…" : "Ջնջել"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </form>
     </Form>
   );

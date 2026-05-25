@@ -100,7 +100,7 @@ function FeaturesTable({ metricId }: { metricId: string }) {
       return option.title?.hy?.trim() || option._id || valueId;
     });
 
-    const joined = labels.filter(Boolean).join(", ");
+    const joined = Array.from(new Set(labels.filter(Boolean))).join(", ");
     return joined || row.libraryDisplay || "—";
   };
 
@@ -114,7 +114,7 @@ function FeaturesTable({ metricId }: { metricId: string }) {
             <TableHead className="text-[14px] leading-3.5">Կատեգորիա</TableHead>
             <TableHead className="text-[14px] leading-3.5">Գրադարան</TableHead>
             <TableHead className="text-[14px] leading-3.5">Մակարդակ</TableHead>
-            <TableHead className="text-[14px] leading-3.5">Գրադարան Արժեքներ</TableHead>
+            <TableHead className="text-[14px] leading-3.5">Գրադարանի արժեքներ</TableHead>
             <TableHead></TableHead>
           </TableRow>
         </TableHeader>

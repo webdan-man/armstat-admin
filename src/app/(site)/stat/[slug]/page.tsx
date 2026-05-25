@@ -99,7 +99,7 @@ export default function StatPage() {
 
   const [data, setData] = useState([]);
   const [query, setQuery] = useState<string>("");
-
+  console.log(metric);
   return (
     <div className="flex w-full flex-col pt-7.5 pb-10 pl-16.75">
       <TypographyH3 className="min-h-6 text-[rgba(40,40,40,1)]">
@@ -224,14 +224,17 @@ export default function StatPage() {
           </div>
           <div className="mt-6 min-h-[975px] overflow-hidden rounded-2xl border border-[rgba(178,178,178,1)]">
             <Tabs defaultValue="diagram" className="w-full">
-              <TabsList className="h-11.75 w-full rounded-none border-b border-b-[rgba(178,178,178,1)] bg-none px-5">
-                <TabsTrigger value="diagram" className="text-[rgba(40,40,40,1)]">
+              <TabsList className="w-full rounded-none border-b border-b-[rgba(178,178,178,1)] bg-none px-5 group-data-[orientation=horizontal]/tabs:h-11.75">
+                <TabsTrigger value="diagram" className="h-11.75 text-[rgba(40,40,40,1)]">
                   Գծապատկեր
                 </TabsTrigger>
-                <TabsTrigger value="data" className="font-medium text-[rgba(40,40,40,1)]">
+                <TabsTrigger value="data" className="h-11.75 font-medium text-[rgba(40,40,40,1)]">
                   Տվյալներ
                 </TabsTrigger>
-                <TabsTrigger value="metadata" className="font-medium text-[rgba(40,40,40,1)]">
+                <TabsTrigger
+                  value="metadata"
+                  className="h-11.75 font-medium text-[rgba(40,40,40,1)]"
+                >
                   Մետատվյալներ
                 </TabsTrigger>
               </TabsList>
@@ -252,18 +255,10 @@ export default function StatPage() {
               </TabsContent>
               <TabsContent value="metadata">
                 <div className="w-full p-6">
-                  <h4 className="text-fontSizeM text-[rgba(0,0,0,1)]">
-                    {metric?.title?.[activeLang] ?? ""}
-                  </h4>
-                  {(metric?.metadata as any)?.[activeLang]?.body && (
+                  {(metric?.metadata as any)?.[activeLang] && (
                     <p className="text-fontSizeS mt-4 leading-4.75 whitespace-pre-line text-[rgba(125,125,125,1)]">
-                      {(metric?.metadata as any)?.[activeLang]?.body}
+                      <MarkdownText>{(metric?.metadata as any)[activeLang]}</MarkdownText>
                     </p>
-                  )}
-                  {metric?.description?.[activeLang] && (
-                    <MarkdownText className="text-fontSizeS mt-4 leading-4.75 text-[rgba(125,125,125,1)]">
-                      {metric.description[activeLang]}
-                    </MarkdownText>
                   )}
                   <div className="mt-7.5 flex gap-5">
                     {metric?.updatedAt && (

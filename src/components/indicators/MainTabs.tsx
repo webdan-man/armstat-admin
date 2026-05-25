@@ -26,33 +26,39 @@ function LocaleTabContent({ lang }: { lang: (typeof locales)[number] }) {
 
   return (
     <TabsContent className="flex w-full flex-col gap-5" value={lang}>
-      <FormField
-        control={control}
-        name={`title.${lang}`}
-        render={({ field }) => (
-          <FormItem>
-            <FormControl>
-              <Input className={fieldBorder} {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={control}
-        name={`description.${lang}`}
-        render={({ field }) => (
-          <FormItem>
-            <FormControl>
-              <Textarea
-                className="resize-y rounded-[8px] border-[rgba(230,231,235,1)] bg-white text-sm text-[#575757] shadow-none"
-                {...field}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      <div className="grid grid-cols-[1fr_3fr] gap-5">
+        <Label className="text-sm font-medium text-[#575757]">Անվանում</Label>
+        <FormField
+          control={control}
+          name={`title.${lang}`}
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <Input className={`${fieldBorder} w-full`} {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+      <div className="grid grid-cols-[1fr_3fr] gap-5">
+        <Label className="text-sm font-medium text-[#575757]">Նկարագրական տեքստ</Label>
+        <FormField
+          control={control}
+          name={`description.${lang}`}
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <Textarea
+                  className="resize-y rounded-[8px] border-[rgba(230,231,235,1)] bg-white text-sm text-[#575757] shadow-none"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
       <div className="grid grid-cols-[1fr_4fr_2fr] gap-5">
         <Label className="text-sm font-medium text-[#575757]">Հղումը՝</Label>
         <FormField
@@ -69,7 +75,7 @@ function LocaleTabContent({ lang }: { lang: (typeof locales)[number] }) {
         />
       </div>
       <div className="grid grid-cols-[1fr_4fr_2fr] gap-5">
-        <Label className="text-sm font-medium text-[#575757]">Չափման միավերը՝</Label>
+        <Label className="text-sm font-medium text-[#575757]">Աղբյուրը</Label>
         <FormField
           control={control}
           name={`unit.${lang}`}

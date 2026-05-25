@@ -30,18 +30,20 @@ export default function CombinationsTable({
 
   const columnIndexes = Array.from({ length: columnCount }, (_, i) => i);
 
+  const cellClassName = "w-[1%] text-[14px] leading-3.5";
+
   if (columnCount === 0) {
     return (
-      <Table>
+      <Table className="table-fixed">
         <TableHeader>
           <TableRow>
-            <TableHead className="text-[14px] leading-3.5" />
+            <TableHead className={cellClassName} />
           </TableRow>
         </TableHeader>
         <TableBody>
           {combinations.map((combo) => (
             <TableRow key={combo._id}>
-              <TableCell className="text-[14px] leading-3.5">{combo.value}</TableCell>
+              <TableCell className={cellClassName}>{combo.value}</TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -51,28 +53,28 @@ export default function CombinationsTable({
 
   return (
     <div className="flex flex-col gap-3">
-      <Table>
+      <Table className="table-fixed">
         <TableHeader>
           <TableRow>
-            <TableHead className="text-[14px] leading-3.5">ID</TableHead>
+            <TableHead className={cellClassName}>ID</TableHead>
             {columnIndexes.map((i) => (
-              <TableHead key={i} className="text-[14px] leading-3.5">
+              <TableHead key={i} className={cellClassName}>
                 {headerForColumnIndex(combinations, i)}
               </TableHead>
             ))}
-            <TableHead className="text-[14px] leading-3.5">{metricUnit}</TableHead>
+            <TableHead className={cellClassName}>{metricUnit}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filteredCombinations.map((combo, index) => (
             <TableRow key={combo._id}>
-              <TableCell className="text-[14px] leading-3.5">{index + 1}</TableCell>
+              <TableCell className={cellClassName}>{index + 1}</TableCell>
               {columnIndexes.map((i) => (
-                <TableCell key={i} className="text-[14px] leading-3.5">
+                <TableCell key={i} className={cellClassName}>
                   {valueAtColumnIndex(combo, i)}
                 </TableCell>
               ))}
-              <TableCell className="text-[14px] leading-3.5">{combo.value}</TableCell>
+              <TableCell className={cellClassName}>{combo.value}</TableCell>
             </TableRow>
           ))}
         </TableBody>

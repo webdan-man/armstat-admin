@@ -657,7 +657,7 @@ export default function CreateWindow() {
                             return (
                               <FormItem className="w-full">
                                 <FormLabel className="text-[12px] leading-3.5 font-semibold text-black">
-                                  Գրադարան Արժեքներ
+                                  Գրադարանի արժեքներ
                                 </FormLabel>
                                 <Popover
                                   open={Boolean(valuesPopoverOpenByRow[index])}
@@ -698,7 +698,7 @@ export default function CreateWindow() {
                                   <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                                     <div className="flex items-center justify-between border-b px-3 py-2">
                                       <FieldLabel className="text-xs font-medium font-semibold text-black">
-                                        Գրադարան Արժեքներ
+                                        Գրադարանի արժեքներ
                                       </FieldLabel>
                                       <button
                                         type="button"

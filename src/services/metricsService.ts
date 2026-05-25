@@ -30,6 +30,12 @@ export async function patchMetric(
   });
 }
 
+export async function deleteMetric(metricId: string): Promise<void> {
+  await apiClient<void>(`/api/metrics/${encodeURIComponent(metricId)}`, {
+    method: "DELETE",
+  });
+}
+
 function normalizeMetricAttributesFromApi(
   raw: MetricAttributeFromApi[] | undefined
 ): MetricAttribute[] {

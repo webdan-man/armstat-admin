@@ -19,7 +19,7 @@ export function headerForColumnIndex(
     const entry = combo.row?.[columnIndex];
     if (entry) {
       const t = entry.label?.trim();
-      return t && t.length > 0 ? `${t} (${entry.level})` : entry.attributeId;
+      return t && t.length > 0 ? `${t}` : entry.attributeId;
     }
   }
   return String(columnIndex + 1);
@@ -31,4 +31,3 @@ export function valueAtColumnIndex(combo: MetricCombination, columnIndex: number
   const t = entry.value.title?.trim();
   return t && t.length > 0 ? t : entry.value._id;
 }
-
