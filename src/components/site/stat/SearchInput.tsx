@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   Combobox,
@@ -7,14 +7,14 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
-} from '@/components/ui/combobox';
-import React, { useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import useSWR from 'swr';
-import { fetchSections } from '@/services/sectionsService';
-import { swrKeys } from '@/lib/swr/cache-keys';
-import { isRootTopic } from '@/lib/section-topic-utils';
-import type { Topic } from '@/types/section';
+} from "@/components/ui/combobox";
+import React, { useMemo } from "react";
+import { useRouter } from "next/navigation";
+import useSWR from "swr";
+import { fetchSections } from "@/services/sectionsService";
+import { swrKeys } from "@/lib/swr/cache-keys";
+import { isRootTopic } from "@/lib/section-topic-utils";
+import type { Topic } from "@/types/section";
 
 type SearchOption = {
   id: string;
@@ -51,7 +51,7 @@ export default function SearchInput({
       itemToStringValue={(item: SearchOption) => item.label}
       onValueChange={(item: SearchOption | null) => {
         if (item) {
-          setQuery('');
+          setQuery("");
           setData([]);
           router.push(`/stat/${item.id}`);
         }
@@ -60,7 +60,7 @@ export default function SearchInput({
       <ComboboxInput
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="text-[rgba(55,71,79,1)] border-textBlack300 shadow-none w-full h-10.5"
+        className="text-[rgba(55,71,79,1)] border-textBlack300 shadow-none h-10.5 w-full"
         placeholder="Փնտրել"
       />
       <ComboboxContent>

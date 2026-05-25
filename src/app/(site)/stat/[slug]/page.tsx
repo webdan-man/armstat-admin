@@ -25,6 +25,7 @@ import {
   getMetricCombinations,
   fetchMetricsByTopicId,
 } from "@/services/metricsService";
+import { fetchSections } from "@/services/sectionsService";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import {
   headerForColumnIndex,
@@ -37,8 +38,16 @@ export default function StatPage() {
   const slug = params.slug as string;
   const { activeLang } = useLang();
 
+  const { data: sections } = useSWR(swrKeys.sections, fetchSections);
+  const activeSection = useMemo(
+    () => (sections ?? []).find((section) => section._id === slug),
+    [sections, slug]
+  );
+  const isSectionSlug = Boolean(activeSection);
+  const canLoadMetric = Boolean(slug) && sections !== undefined && !isSectionSlug;
+
   const { data: topicMetrics = [], isLoading: isTopicMetricsLoading } = useSWR(
-    slug ? swrKeys.metricsByTopic(slug) : null,
+    canLoadMetric ? swrKeys.metricsByTopic(slug) : null,
     () => fetchMetricsByTopicId(slug),
     { keepPreviousData: true }
   );
@@ -99,11 +108,11 @@ export default function StatPage() {
 
   const [data, setData] = useState([]);
   const [query, setQuery] = useState<string>("");
-  console.log(metric);
+
   return (
     <div className="flex w-full flex-col pt-7.5 pb-10 pl-16.75">
       <TypographyH3 className="min-h-6 text-[rgba(40,40,40,1)]">
-        {metric?.title?.[activeLang] ?? ""}
+        {isSectionSlug ? (activeSection?.name ?? "") : (metric?.title?.[activeLang] ?? "")}
       </TypographyH3>
       <div className="mt-5 flex gap-3">
         <SearchInput query={query} setQuery={setQuery} setData={setData} />
@@ -126,7 +135,7 @@ export default function StatPage() {
           />
         </Button>
       </div>
-      {data && !query ? (
+      {data && !query && sections !== undefined && !isSectionSlug ? (
         <div className="mt-6 flex flex-col">
           <div className="flex items-center justify-between">
             <div className="flex gap-6">
