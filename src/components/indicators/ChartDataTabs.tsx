@@ -5,7 +5,6 @@ import { useFormContext } from "react-hook-form";
 import useSWR from "swr";
 
 import { Input } from "@/components/ui/input";
-import { Field, FieldLabel } from "@/components/ui/field";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
@@ -178,25 +177,39 @@ const ChartDataTabs = ({
         <Chart combinations={filteredCombinations} />
         <div className="mt-3.5 flex items-center gap-10">
           <div className="flex items-center gap-3">
-            <Image src="/icons/man.svg" width={17} height={27} alt={"man"} />
+            <Image src="/icons/man.svg" width={17} height={27} alt="man" />
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-medium text-[#575757]">#</span>
-              <Input className={cn(fieldBorder, "w-32")} type="text" />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm font-medium text-[#575757]">%</span>
-              <Input className={cn(fieldBorder, "w-16")} type="text" />
+              <FormField
+                control={control}
+                name="total.male"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input className={cn(fieldBorder, "w-32")} type="text" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Image src="/icons/women.svg" width={17} height={27} alt={"women"} />
+            <Image src="/icons/women.svg" width={17} height={27} alt="women" />
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-medium text-[#575757]">#</span>
-              <Input className={cn(fieldBorder, "w-32")} type="text" />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm font-medium text-[#575757]">%</span>
-              <Input className={cn(fieldBorder, "w-16")} type="text" />
+              <FormField
+                control={control}
+                name="total.female"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input className={cn(fieldBorder, "w-32")} type="text" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </div>
         </div>

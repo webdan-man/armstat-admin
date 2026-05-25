@@ -1,3 +1,9 @@
+/** Chart headline totals by sex (PATCH/POST body field `total`). */
+export type MetricTotal = {
+  male: number;
+  female: number;
+};
+
 /** Per-locale label for a metric attribute row (sent as `label` on each attributes[] item). */
 export type MetricAttributeLabel = {
   hy: string;
@@ -29,6 +35,7 @@ export type CreateMetricBody = {
   metadata: Record<string, string>;
   attributes: MetricAttribute[];
   order: number;
+  total?: MetricTotal;
 };
 
 export type UpdateMetricBody = {
@@ -39,6 +46,7 @@ export type UpdateMetricBody = {
   metadata: Record<string, string>;
   attributes: MetricAttribute[];
   order: number;
+  total?: MetricTotal;
 };
 
 export type MetricResponse = {
@@ -53,6 +61,7 @@ export type MetricResponse = {
   createdAt?: string;
   updatedAt?: string;
   unit?: Record<string, string> & { am?: string; hy?: string; ru?: string; en?: string };
+  total?: MetricTotal;
 };
 
 export type MetricSelectOption = {

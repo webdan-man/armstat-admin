@@ -43,6 +43,7 @@ import {
   patchMetric,
   publishMetric,
   uploadMetricCsv,
+  downloadMetricCombinationsCSV,
 } from "@/services/metricsService";
 import { ApiError } from "@/lib/api/api-error";
 import { useIndicatorFeatures } from "@/components/indicators/indicator-features-context";
@@ -97,8 +98,25 @@ export default function IndicatorsForm() {
       initializedForIndicatorIdRef.current = null;
       return;
     }
+
+    const loadedMetricId = loadedMetricData?.metric?._id;
+    const metricDataMatchesIndicator = Boolean(loadedMetricData) && loadedMetricId === indicatorId;
+
+    if (!metricDataMatchesIndicator) {
+      if (initializedForIndicatorIdRef.current !== indicatorId) {
+        initializedForIndicatorIdRef.current = null;
+        const empty = emptyIndicatorFormValues();
+        committedRef.current = empty;
+        committedFeaturesRef.current = [];
+        setFeaturesDirty(false);
+        reset(empty);
+        replaceFeatures([]);
+      }
+      return;
+    }
+
     if (initializedForIndicatorIdRef.current === indicatorId) return;
-    if (!loadedMetricData) return;
+
     initializedForIndicatorIdRef.current = indicatorId;
     const metricAttributeKeys = mapFeaturesToMetricAttributeKeys(loadedMetricData.features);
     committedRef.current = {
@@ -313,7 +331,7 @@ export default function IndicatorsForm() {
             </CardAction>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 px-8 pt-6 pb-8">
-            <FeaturesTable metricId={indicatorId} />
+            <FeaturesTable />
           </CardContent>
         </Card>
 
@@ -322,7 +340,17 @@ export default function IndicatorsForm() {
             <CardTitle className="text-base font-medium text-[#2c2c2c]">
               Տվյալների Մուտքագրում
             </CardTitle>
-            <CardAction>
+            <CardAction className="flex items-center gap-4">
+              <Button
+                type="button"
+                size="lg"
+                disabled={!indicatorId}
+                onClick={() => {
+                  if (indicatorId) void downloadMetricCombinationsCSV(indicatorId);
+                }}
+              >
+                Գեներացնել CSV
+              </Button>
               <input
                 ref={csvInputRef}
                 type="file"
@@ -394,7 +422,7 @@ export default function IndicatorsForm() {
               className="ml-auto h-11 min-w-[131px] rounded-lg border-[rgba(204,0,0,1)] bg-white text-[rgba(204,0,0,1)] hover:bg-[rgba(204,0,0,0.06)] disabled:opacity-50"
               onClick={() => setDeleteDialogOpen(true)}
             >
-              Ջնջել
+              Հեռացնել
             </Button>
           ) : null}
         </div>

@@ -8,6 +8,7 @@ import {
   valueAtColumnIndex,
 } from "@/components/indicators/metric-combinations-table-utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MarkdownText } from "@/components/site/MarkdownText";
 
 const PAGE_SIZE = 20;
 
@@ -16,15 +17,17 @@ type SortKey = number | "value";
 interface TableTabProps {
   combinations?: MetricCombination[];
   filteredCombinations?: MetricCombination[];
-  metricUnit?: string;
   isLoading?: boolean;
+  link?: string;
+  updatedAt?: string;
 }
 
 const TableTab = ({
   combinations = [],
   filteredCombinations = [],
-  metricUnit,
   isLoading = false,
+  link,
+  updatedAt,
 }: TableTabProps) => {
   const columnCount = useMemo(() => maxRowLength(combinations), [combinations]);
   const columnIndexes = useMemo(
@@ -38,9 +41,9 @@ const TableTab = ({
         label: headerForColumnIndex(combinations, i),
         key: i as SortKey,
       })),
-      { label: metricUnit ?? "Արժեք", key: "value" as SortKey },
+      { label: "Արժեք", key: "value" as SortKey },
     ],
-    [columnIndexes, combinations, metricUnit]
+    [columnIndexes, combinations]
   );
 
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -145,10 +148,23 @@ const TableTab = ({
 
       <div className="flex justify-between gap-5">
         <div className="flex gap-5">
-          <p className="text-[11px] text-[rgba(110,127,136,1)]">Թարմացված է՝ 20/05/2024, 16:43</p>
-          <p className="text-[11px] text-[rgba(110,127,136,1)]">
-            Աղբյուրը՝ <span className="text-[rgba(39,81,153,1)]">Հղման անվանումը կարճ</span>
-          </p>
+          {updatedAt ? (
+            <p className="text-[11px] text-[rgba(110,127,136,1)]">
+              Թարմացված է՝{" "}
+              {new Date(updatedAt).toLocaleString("hy-AM", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </p>
+          ) : null}
+          {link && (
+            <p className="text-[11px] text-[rgba(110,127,136,1)]">
+              Աղբյուրը՝ <MarkdownText as={"span"}>{link}</MarkdownText>
+            </p>
+          )}
         </div>
         <p className="text-[11px] text-[rgba(110,127,136,1)]">Դիտված է 1,343 անգամ</p>
       </div>

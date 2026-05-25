@@ -34,6 +34,7 @@ export default function Filters() {
     selectedFilter,
     setSelectedFilter,
     openCreateForm,
+    formMode,
     sections,
     isLoading,
     rootTopics,
@@ -158,7 +159,7 @@ export default function Filters() {
         <div className="flex flex-col items-start">
           {Boolean(selectedFilter.indicator) && <FilterChip>Ցուցանիշ</FilterChip>}
           <Select
-            key={resolvedTopicId || "empty-topic"}
+            key={`${resolvedTopicId || "empty-topic"}-${formMode}`}
             disabled={controlsDisabled}
             value={selectedFilter.indicator || undefined}
             onValueChange={(val) => setSelectedFilter((prev) => ({ ...prev, indicator: val }))}

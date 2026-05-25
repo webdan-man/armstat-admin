@@ -7,29 +7,14 @@ import { fetchSections } from "@/services/sectionsService";
 import { fetchMetricsByTopicId, getMetricById } from "@/services/metricsService";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { Skeleton } from "@/components/ui/skeleton";
-import { isRootTopic } from "@/lib/section-topic-utils";
-import type { Section, Topic } from "@/types/section";
+import {
+  buildStatMenu,
+  isSlugInStatMenu,
+  type StatMenuItem,
+} from "@/lib/stat-menu-utils";
+import type { Topic } from "@/types/section";
 
-type MenuItem = {
-  id: string;
-  title: string;
-  children?: MenuItem[];
-};
-
-function buildMenu(sections: Section[]): MenuItem[] {
-  return sections.map((section) => ({
-    id: section._id,
-    title: section.name,
-    children: section.topics.filter(isRootTopic).map((rootTopic) => ({
-      id: rootTopic._id,
-      title: rootTopic.title,
-      children: (rootTopic.subtopics ?? []).map((sub) => ({
-        id: sub._id,
-        title: sub.title,
-      })),
-    })),
-  }));
-}
+type MenuItem = StatMenuItem;
 
 /** Returns the expandedPath needed to make activeSlug visible in the tree. */
 function findExpandedPath(items: MenuItem[], activeSlug: string, depth = 0): string[] {
@@ -253,20 +238,6 @@ function MenuList({
   );
 }
 
-/** Returns true when slug matches a section, topic, or subtopic in the menu tree. */
-function isSlugInTree(menu: MenuItem[], slug: string): boolean {
-  for (const section of menu) {
-    if (section.id === slug) return true;
-    for (const topic of section.children ?? []) {
-      if (topic.id === slug) return true;
-      for (const sub of topic.children ?? []) {
-        if (sub.id === slug) return true;
-      }
-    }
-  }
-  return false;
-}
-
 export default function Sidebar() {
   const params = useParams();
   const router = useRouter();
@@ -284,12 +255,12 @@ export default function Sidebar() {
   );
 
   const isSidebarLoading = isSectionsLoading || sections === undefined;
-  const menu = useMemo(() => buildMenu(sections ?? []), [sections]);
+  const menu = useMemo(() => buildStatMenu(sections ?? []), [sections]);
 
   // Once sections load, check whether the active slug belongs to the tree.
   // If it doesn't, it's a metricId — fetch the metric to resolve its topicId.
   const slugInTree = useMemo(
-    () => (!menu.length ? true : isSlugInTree(menu, effectiveSlug)),
+    () => (!menu.length ? true : isSlugInStatMenu(menu, effectiveSlug)),
     [menu, effectiveSlug]
   );
 

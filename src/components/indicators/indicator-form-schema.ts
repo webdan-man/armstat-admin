@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { CreateMetricBody, MetricAttribute, UpdateMetricBody } from "@/types/metric";
+import type { CreateMetricBody, MetricAttribute, MetricTotal, UpdateMetricBody } from "@/types/metric";
 import type { IndicatorFeature } from "@/types/indicator-feature";
 
 const perLangStrings = z.object({
@@ -24,6 +24,22 @@ const chartBlock = z.object({
   link: z.string(),
 });
 
+const metricTotalFormBlock = z.object({
+  male: z.string(),
+  female: z.string(),
+});
+
+/** Залишає лише цифри; порожній рядок → 0 (для API). */
+export function parseMetricTotalForApi(total: z.infer<typeof metricTotalFormBlock>): MetricTotal {
+  const toNumber = (raw: string) => {
+    const digits = raw.replace(/\D/g, "");
+    if (!digits) return 0;
+    const n = Number.parseInt(digits, 10);
+    return Number.isFinite(n) ? n : 0;
+  };
+  return { male: toNumber(total.male), female: toNumber(total.female) };
+}
+
 const trimmedNonEmpty = (message: string) =>
   z
     .string()
@@ -45,6 +61,7 @@ export const indicatorFormSchema = z.object({
   }),
   charts: z.tuple([chartBlock, chartBlock]),
   order: z.number().int(),
+  total: metricTotalFormBlock,
   attributes: z.array(
     z.object({
       attributeId: z.string().min(1),
@@ -94,6 +111,7 @@ export function emptyIndicatorFormValues(): IndicatorFormValues {
     },
     charts: [{ link: "" }, { link: "" }],
     order: 0,
+    total: { male: "", female: "" },
     attributes: [],
   };
 }
@@ -186,6 +204,7 @@ export function mapIndicatorFormToCreateMetric(
     metadata,
     attributes,
     order: values.order,
+    total: parseMetricTotalForApi(values.total),
   };
 }
 
@@ -222,6 +241,7 @@ export function mapIndicatorFormToUpdateMetric(
     metadata,
     attributes,
     order: values.order,
+    total: parseMetricTotalForApi(values.total),
   };
 }
 

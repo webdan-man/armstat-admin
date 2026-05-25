@@ -28,11 +28,9 @@ function flattenTopics(topics: Topic[]): Topic[] {
 export default function SearchInput({
   query,
   setQuery,
-  setData,
 }: {
   query: string;
   setQuery: (v: string) => void;
-  setData: (v: any) => void;
 }) {
   const router = useRouter();
   const { data: sections = [] } = useSWR(swrKeys.sections, fetchSections);
@@ -52,7 +50,6 @@ export default function SearchInput({
       onValueChange={(item: SearchOption | null) => {
         if (item) {
           setQuery("");
-          setData([]);
           router.push(`/stat/${item.id}`);
         }
       }}

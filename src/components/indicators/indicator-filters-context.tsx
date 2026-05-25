@@ -86,8 +86,8 @@ export function IndicatorFiltersProvider({ children }: { children: React.ReactNo
 
   const openCreateForm = () => {
     if (!resolvedTopicId) return;
-    setSelectedFilter((prev) => ({ ...prev, indicator: "" }));
     setFormMode("create");
+    setSelectedFilter((prev) => ({ ...prev, indicator: "" }));
   };
   const closeForm = () => setFormMode("closed");
   const markIndicatorEdit = (indicatorId: string) => {
@@ -96,11 +96,11 @@ export function IndicatorFiltersProvider({ children }: { children: React.ReactNo
   };
 
   React.useEffect(() => {
-    if (formMode === "create") {
-      return;
-    }
     if (selectedFilter.indicator) {
       setFormMode("edit");
+      return;
+    }
+    if (formMode === "create") {
       return;
     }
     if (formMode === "edit") {

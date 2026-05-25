@@ -86,8 +86,16 @@ const featureLabelInputClass =
   "h-9 rounded-[8.5px] border-[rgba(230,231,235,1)] bg-white text-sm text-[#2c2c2c] md:text-sm";
 
 const hasTextValue = (value?: string) => Boolean(value?.trim());
+const hasAnyLangText = (value?: { hy?: string; en?: string; ru?: string }) =>
+  hasTextValue(value?.hy) || hasTextValue(value?.en) || hasTextValue(value?.ru);
 const hasSecondaryTitle = (value: Attribute["values"][number]) =>
   Object.values(value.secondaryTitle ?? {}).some((title) => hasTextValue(title));
+
+const FIRST_LANG_WITH_ERROR: MainLangCode[] = ["hy", "en", "ru"];
+const pickLangFromFieldErrors = (
+  errors: { hy?: unknown; en?: unknown; ru?: unknown } | undefined
+): MainLangCode | undefined =>
+  FIRST_LANG_WITH_ERROR.find((lang) => errors?.[lang]);
 
 export default function CreateWindow() {
   const { features, dialogOpen, editingId, setDialogOpen, startCreate, addFeature, updateFeature } =
@@ -323,31 +331,18 @@ export default function CreateWindow() {
     const rowError = rowErrors[firstInvalidIndex];
     if (!rowError) return;
 
-    const labelErrors = rowError.label;
-    if (labelErrors?.hy) {
-      setLabelLangByRow((prev) => ({ ...prev, [firstInvalidField.id]: "hy" }));
-      return;
-    }
-    if (labelErrors?.en) {
-      setLabelLangByRow((prev) => ({ ...prev, [firstInvalidField.id]: "en" }));
-      return;
-    }
-    if (labelErrors?.ru) {
-      setLabelLangByRow((prev) => ({ ...prev, [firstInvalidField.id]: "ru" }));
+    const labelLangWithError = pickLangFromFieldErrors(rowError.label);
+    if (labelLangWithError) {
+      setLabelLangByRow((prev) => ({ ...prev, [firstInvalidField.id]: labelLangWithError }));
       return;
     }
 
-    const secondaryLabelErrors = rowError.secondaryLabel;
-    if (secondaryLabelErrors?.hy) {
-      setSecondaryLabelLangByRow((prev) => ({ ...prev, [firstInvalidField.id]: "hy" }));
-      return;
-    }
-    if (secondaryLabelErrors?.en) {
-      setSecondaryLabelLangByRow((prev) => ({ ...prev, [firstInvalidField.id]: "en" }));
-      return;
-    }
-    if (secondaryLabelErrors?.ru) {
-      setSecondaryLabelLangByRow((prev) => ({ ...prev, [firstInvalidField.id]: "ru" }));
+    const secondaryLabelLangWithError = pickLangFromFieldErrors(rowError.secondaryLabel);
+    if (secondaryLabelLangWithError) {
+      setSecondaryLabelLangByRow((prev) => ({
+        ...prev,
+        [firstInvalidField.id]: secondaryLabelLangWithError,
+      }));
     }
   };
 
@@ -413,9 +408,9 @@ export default function CreateWindow() {
                     hasTextValue(currentRow.libraryOption) &&
                     hasTextValue(currentRow.levelOption) &&
                     currentRow.valueIds.length > 0 &&
-                    hasTextValue(currentRow.label?.hy) &&
+                    hasAnyLangText(currentRow.label) &&
                     (currentRow.levelOption !== "secondary" ||
-                      hasTextValue(currentRow.secondaryLabel?.hy))
+                      hasAnyLangText(currentRow.secondaryLabel))
                   );
                   const selectedValueIds = currentRow?.valueIds ?? [];
                   const isLevelsLoading = Boolean(
@@ -438,7 +433,7 @@ export default function CreateWindow() {
                         >
                           <ChevronDownIcon className="size-5 -rotate-90 transition-transform group-data-panel-open:rotate-0" />
                           <p className="text-start text-[16px] font-semibold text-black">
-                            {`Հատկանիշ ${featureNumber}`}
+                            {`Հատկանիշ ${featureNumber > 1 ? featureNumber : ""}`}
                           </p>
                         </CollapsibleTrigger>
                         <div className="flex items-center gap-3">
@@ -534,7 +529,7 @@ export default function CreateWindow() {
                           name={`rows.${index}.libraryOption`}
                           render={({ field: f }) => (
                             <FormItem className="w-full">
-                              <FormLabel className="text-[12px] leading-3.5 text-[rgba(87,87,87,1)]">
+                              <FormLabel className="text-[12px] leading-3.5 font-semibold text-black">
                                 Գրադարան
                               </FormLabel>
                               <Select
@@ -573,7 +568,7 @@ export default function CreateWindow() {
                           name={`rows.${index}.levelOption`}
                           render={({ field: f }) => (
                             <FormItem className="w-full">
-                              <FormLabel className="text-[12px] leading-3.5 text-[rgba(87,87,87,1)]">
+                              <FormLabel className="text-[12px] leading-3.5 font-semibold text-black">
                                 Ընտրել Մակարդակ
                               </FormLabel>
                               <Select

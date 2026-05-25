@@ -3,13 +3,15 @@
 import Chart from "@/components/indicators/charts/Chart";
 import type { MetricCombination } from "@/types/metric";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MarkdownText } from "@/components/site/MarkdownText";
 
 interface ChartTabProps {
   combinations?: MetricCombination[];
   isLoading?: boolean;
+  link?: string;
 }
 
-export default function ChartTab({ combinations = [], isLoading = false }: ChartTabProps) {
+export default function ChartTab({ combinations = [], isLoading = false, link }: ChartTabProps) {
   return (
     <div className="flex w-full flex-col gap-4">
       {isLoading ? (
@@ -29,7 +31,7 @@ export default function ChartTab({ combinations = [], isLoading = false }: Chart
           <div className="flex gap-5">
             <p className="text-[11px] text-[rgba(110,127,136,1)]">Թարմացված է՝ 20/05/2024, 16:43</p>
             <p className="text-[11px] text-[rgba(110,127,136,1)]">
-              Աղբյուրը՝ <span className="text-[rgba(39,81,153,1)]">Հղման անվանումը կարճ</span>
+              Աղբյուրը՝ <MarkdownText as={"span"}>{link}</MarkdownText>
             </p>
           </div>
           <p className="text-[11px] text-[rgba(110,127,136,1)]">Դիտված է 1,343 անգամ</p>

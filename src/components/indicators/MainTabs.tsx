@@ -60,7 +60,7 @@ function LocaleTabContent({ lang }: { lang: (typeof locales)[number] }) {
         />
       </div>
       <div className="grid grid-cols-[1fr_4fr_2fr] gap-5">
-        <Label className="text-sm font-medium text-[#575757]">Հղումը՝</Label>
+        <Label className="text-sm font-medium text-[#575757]">Աղբյուրը</Label>
         <FormField
           control={control}
           name={`link.${lang}`}
@@ -75,7 +75,7 @@ function LocaleTabContent({ lang }: { lang: (typeof locales)[number] }) {
         />
       </div>
       <div className="grid grid-cols-[1fr_4fr_2fr] gap-5">
-        <Label className="text-sm font-medium text-[#575757]">Աղբյուրը</Label>
+        <Label className="text-sm font-medium text-[#575757]">Միավորը</Label>
         <FormField
           control={control}
           name={`unit.${lang}`}

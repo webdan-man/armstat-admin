@@ -3,6 +3,7 @@
 import { MarkdownText } from "@/components/site/MarkdownText";
 import { TypographyH3, TypographyP } from "@/components/ui/typography";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -10,6 +11,7 @@ import {
   SelectContent,
   SelectGroup,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -20,6 +22,8 @@ import React, { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
 import { useLang } from "@/providers/LangProvider";
+import { buildStatMenu, isSlugInStatMenu } from "@/lib/stat-menu-utils";
+import { formatIntegerWithCommas, sexTotalPercents } from "@/lib/format-integer";
 import {
   getMetricById,
   getMetricCombinations,
@@ -39,36 +43,46 @@ export default function StatPage() {
   const { activeLang } = useLang();
 
   const { data: sections } = useSWR(swrKeys.sections, fetchSections);
+  const menu = useMemo(() => buildStatMenu(sections ?? []), [sections]);
   const activeSection = useMemo(
     () => (sections ?? []).find((section) => section._id === slug),
     [sections, slug]
   );
   const isSectionSlug = Boolean(activeSection);
-  const canLoadMetric = Boolean(slug) && sections !== undefined && !isSectionSlug;
+  const sectionsReady = sections !== undefined;
+  const slugInTree = useMemo(() => {
+    if (!sectionsReady) return false;
+    return isSlugInStatMenu(menu, slug);
+  }, [sectionsReady, menu, slug]);
+  const shouldLoadTopicMetrics = Boolean(slug) && sectionsReady && !isSectionSlug && slugInTree;
 
   const { data: topicMetrics = [], isLoading: isTopicMetricsLoading } = useSWR(
-    canLoadMetric ? swrKeys.metricsByTopic(slug) : null,
-    () => fetchMetricsByTopicId(slug),
-    { keepPreviousData: true }
+    shouldLoadTopicMetrics ? swrKeys.metricsByTopic(slug) : null,
+    () => fetchMetricsByTopicId(slug)
   );
-  // topicMetrics is populated when slug is a topicId; when slug is a direct metricId the
-  // list comes back empty, so we fall back to using slug itself as the metric ID.
-  const selectedMetricId =
-    topicMetrics.length > 0 ? topicMetrics[0].id : !isTopicMetricsLoading ? slug : null;
+
+  const selectedMetricId = useMemo(() => {
+    if (!slug || isSectionSlug) return null;
+    if (sectionsReady && slugInTree) {
+      if (topicMetrics.length > 0) return topicMetrics[0].id;
+      return null;
+    }
+    return slug;
+  }, [slug, isSectionSlug, sectionsReady, slugInTree, topicMetrics]);
 
   const { data: metric, isLoading: isMetricLoading } = useSWR(
     selectedMetricId ? swrKeys.metricForm(selectedMetricId) : null,
-    () => getMetricById(selectedMetricId!),
-    { keepPreviousData: true }
+    () => getMetricById(selectedMetricId!)
   );
   const { data: combinations = [], isLoading: isCombinationsLoading } = useSWR(
     selectedMetricId ? swrKeys.metricCombinations(selectedMetricId) : null,
-    () => getMetricCombinations(selectedMetricId!),
-    { keepPreviousData: true }
+    () => getMetricCombinations(selectedMetricId!)
   );
 
   const isLoading =
-    isTopicMetricsLoading || (!!selectedMetricId && (isMetricLoading || isCombinationsLoading));
+    !sectionsReady ||
+    isTopicMetricsLoading ||
+    (!!selectedMetricId && (isMetricLoading || isCombinationsLoading));
 
   const [columnSelectedValues, setColumnSelectedValues] = useState<(string | null)[]>([]);
 
@@ -106,8 +120,35 @@ export default function StatPage() {
     );
   }, [columnCount, columnSelectedValues, combinations]);
 
-  const [data, setData] = useState([]);
   const [query, setQuery] = useState<string>("");
+
+  const shouldShowMetricPanel = Boolean(slug) && !isSectionSlug && !query;
+  const metricUnit = metric?.unit?.[activeLang];
+
+  const sexTotals = useMemo(() => {
+    const male = Number(metric?.total?.male ?? 0);
+    const female = Number(metric?.total?.female ?? 0);
+    const hasTotals = male + female > 0;
+    const percents = sexTotalPercents(male, female);
+    return {
+      hasTotals,
+      male: {
+        count: formatIntegerWithCommas(male),
+        percent: `${percents.male}%`,
+      },
+      female: {
+        count: formatIntegerWithCommas(female),
+        percent: `${percents.female}%`,
+      },
+    };
+  }, [metric?.total]);
+
+  const sexTotalsPlaceholder = (
+    <>
+      <p className="text-fontSizeXS font-semibold text-[rgba(56,56,56,1)]">-</p>
+      <p className="text-[11px] text-[rgba(110,127,136,1)]">-</p>
+    </>
+  );
 
   return (
     <div className="flex w-full flex-col pt-7.5 pb-10 pl-16.75">
@@ -115,12 +156,11 @@ export default function StatPage() {
         {isSectionSlug ? (activeSection?.name ?? "") : (metric?.title?.[activeLang] ?? "")}
       </TypographyH3>
       <div className="mt-5 flex gap-3">
-        <SearchInput query={query} setQuery={setQuery} setData={setData} />
+        <SearchInput query={query} setQuery={setQuery} />
         <Button
           onClick={() => {
             if (query) {
               setQuery("");
-              setData([]);
             }
           }}
           variant="secondary"
@@ -135,22 +175,52 @@ export default function StatPage() {
           />
         </Button>
       </div>
-      {data && !query && sections !== undefined && !isSectionSlug ? (
+      {shouldShowMetricPanel ? (
         <div className="mt-6 flex flex-col">
           <div className="flex items-center justify-between">
             <div className="flex gap-6">
               <div className="flex items-center gap-3">
-                <Image src={"/icons/man.svg"} alt="man" width={17} height={27} />
-                <div className="flex flex-col">
-                  <p className="text-fontSizeXS font-semibold text-[rgba(56,56,56,1)]">1,580,982</p>
-                  <p className="text-[11px] text-[rgba(110,127,136,1)]">52%</p>
+                <Image src="/icons/man.svg" alt="man" width={17} height={27} />
+                <div className="flex flex-col gap-1">
+                  {isMetricLoading ? (
+                    <>
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-3 w-10" />
+                    </>
+                  ) : sexTotals.hasTotals ? (
+                    <>
+                      <p className="text-fontSizeXS font-semibold text-[rgba(56,56,56,1)]">
+                        {sexTotals.male.count}
+                      </p>
+                      <p className="text-[11px] text-[rgba(110,127,136,1)]">
+                        {sexTotals.male.percent}
+                      </p>
+                    </>
+                  ) : (
+                    sexTotalsPlaceholder
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Image src={"/icons/women.svg"} alt="man" width={17} height={27} />
-                <div className="flex flex-col">
-                  <p className="text-fontSizeXS font-semibold text-[rgba(56,56,56,1)]">1,448,982</p>
-                  <p className="text-[11px] text-[rgba(110,127,136,1)]">48%</p>
+                <Image src="/icons/women.svg" alt="women" width={17} height={27} />
+                <div className="flex flex-col gap-1">
+                  {isMetricLoading ? (
+                    <>
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-3 w-10" />
+                    </>
+                  ) : sexTotals.hasTotals ? (
+                    <>
+                      <p className="text-fontSizeXS font-semibold text-[rgba(56,56,56,1)]">
+                        {sexTotals.female.count}
+                      </p>
+                      <p className="text-[11px] text-[rgba(110,127,136,1)]">
+                        {sexTotals.female.percent}
+                      </p>
+                    </>
+                  ) : (
+                    sexTotalsPlaceholder
+                  )}
                 </div>
               </div>
             </div>
@@ -216,9 +286,15 @@ export default function StatPage() {
                     <SelectTrigger className="h-9 border-none bg-transparent px-2 text-[rgba(44,44,44,1)] shadow-none">
                       <SelectValue placeholder={label} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-w-[500px]">
                       <SelectGroup>
-                        <SelectItem value="__all__">{label}</SelectItem>
+                        <SelectItem
+                          value="__all__"
+                          className="font-semibold text-[rgba(44,44,44,1)]"
+                        >
+                          {label}
+                        </SelectItem>
+                        <SelectSeparator className="bg-[rgba(178,178,178,1)]" />
                         {options.map((opt) => (
                           <SelectItem key={opt} value={opt}>
                             {opt}
@@ -233,23 +309,34 @@ export default function StatPage() {
           </div>
           <div className="mt-6 min-h-[975px] overflow-hidden rounded-2xl border border-[rgba(178,178,178,1)]">
             <Tabs defaultValue="diagram" className="w-full">
-              <TabsList className="w-full rounded-none border-b border-b-[rgba(178,178,178,1)] bg-none px-5 group-data-[orientation=horizontal]/tabs:h-11.75">
-                <TabsTrigger value="diagram" className="h-11.75 text-[rgba(40,40,40,1)]">
-                  Գծապատկեր
-                </TabsTrigger>
-                <TabsTrigger value="data" className="h-11.75 font-medium text-[rgba(40,40,40,1)]">
-                  Տվյալներ
-                </TabsTrigger>
-                <TabsTrigger
-                  value="metadata"
-                  className="h-11.75 font-medium text-[rgba(40,40,40,1)]"
-                >
-                  Մետատվյալներ
-                </TabsTrigger>
-              </TabsList>
+              <div className="flex h-11.75 w-full items-center justify-between gap-4 border-b border-b-[rgba(178,178,178,1)] px-5">
+                <TabsList className="h-full w-auto flex-1 justify-start rounded-none border-0 bg-none p-0 shadow-none group-data-[orientation=horizontal]/tabs:h-11.75">
+                  <TabsTrigger value="diagram" className="h-11.75 text-[rgba(40,40,40,1)]">
+                    Գծապատկեր
+                  </TabsTrigger>
+                  <TabsTrigger value="data" className="h-11.75 font-medium text-[rgba(40,40,40,1)]">
+                    Տվյալներ
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="metadata"
+                    className="h-11.75 font-medium text-[rgba(40,40,40,1)]"
+                  >
+                    Մետատվյալներ
+                  </TabsTrigger>
+                </TabsList>
+                {metricUnit ? (
+                  <p className="shrink-0 text-[12px] text-[rgba(131,131,131,1)]">
+                    Միավորը {metricUnit}
+                  </p>
+                ) : null}
+              </div>
               <TabsContent value="diagram">
                 <div className="p-7.5">
-                  <ChartTab combinations={filteredCombinations} isLoading={isLoading} />
+                  <ChartTab
+                    combinations={filteredCombinations}
+                    isLoading={isLoading}
+                    link={metric?.link?.[activeLang]}
+                  />
                 </div>
               </TabsContent>
               <TabsContent value="data">
@@ -257,8 +344,9 @@ export default function StatPage() {
                   <TableTab
                     combinations={combinations}
                     filteredCombinations={filteredCombinations}
-                    metricUnit={metric?.unit?.[activeLang] ?? ""}
                     isLoading={isLoading}
+                    link={metric?.link?.[activeLang]}
+                    updatedAt={metric?.updatedAt}
                   />
                 </div>
               </TabsContent>
@@ -284,18 +372,10 @@ export default function StatPage() {
                       metric?.link?.[activeLang]) && (
                       <p className="text-[11px] text-[rgba(110,127,136,1)]">
                         Աղբյուրը՝{" "}
-                        <a
-                          href={
-                            (metric?.metadata as any)?.[activeLang]?.sourceUrl ??
-                            metric?.link?.[activeLang]
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[rgba(39,81,153,1)] hover:underline"
-                        >
+                        <MarkdownText as={"span"}>
                           {(metric?.metadata as any)?.[activeLang]?.sourceUrl ??
                             metric?.link?.[activeLang]}
-                        </a>
+                        </MarkdownText>
                       </p>
                     )}
                   </div>

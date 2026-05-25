@@ -1,12 +1,34 @@
 import { z } from "zod";
 
-const trimmedNonEmpty = (message: string) =>
-  z
-    .string()
-    .transform((s) => s.trim())
-    .pipe(z.string().min(1, message));
-
 const trimmedString = z.string().transform((s) => s.trim());
+
+const perLangStrings = z.object({
+  hy: trimmedString,
+  en: trimmedString,
+  ru: trimmedString,
+});
+
+const localeKeys = ["hy", "en", "ru"] as const;
+
+const hasAnyLangText = (value: z.infer<typeof perLangStrings>) =>
+  localeKeys.some((lang) => value[lang].length > 0);
+
+const requireAtLeastOneLang = (
+  value: z.infer<typeof perLangStrings>,
+  pathPrefix: "label" | "secondaryLabel",
+  message: string,
+  ctx: z.RefinementCtx
+) => {
+  if (hasAnyLangText(value)) return;
+
+  for (const lang of localeKeys) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: [pathPrefix, lang],
+      message,
+    });
+  }
+};
 
 export const indicatorFeatureRowSchema = z
   .object({
@@ -14,27 +36,20 @@ export const indicatorFeatureRowSchema = z
     libraryOption: z.string().min(1, "Ընտրեք գրադարանը"),
     levelOption: z.string().min(1, "Ընտրեք մակարդակը"),
     valueIds: z.array(z.string().min(1)).min(1, "Ընտրեք գրադարան արժեքները"),
-    label: z.object({
-      hy: trimmedNonEmpty("Լրացրեք հայերեն անվանումը"),
-      en: trimmedNonEmpty("Լրացրեք անգլերեն անվանումը"),
-      ru: trimmedNonEmpty("Լրացրեք ռուսերեն անվանումը"),
-    }),
-    secondaryLabel: z.object({
-      hy: trimmedString,
-      en: trimmedString,
-      ru: trimmedString,
-    }),
+    label: perLangStrings,
+    secondaryLabel: perLangStrings,
   })
   .superRefine((row, ctx) => {
+    requireAtLeastOneLang(row.label, "label", "Լրացրեք անվանումը (առնվազն մեկ լեզվով)", ctx);
+
     if (row.levelOption !== "secondary") return;
 
-    if (row.secondaryLabel.hy.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["secondaryLabel", "hy"],
-        message: "Լրացրեք հայերեն երկրորդային պիտակը",
-      });
-    }
+    requireAtLeastOneLang(
+      row.secondaryLabel,
+      "secondaryLabel",
+      "Լրացրեք երկրորդային անվանումը (առնվազն մեկ լեզվով)",
+      ctx
+    );
   });
 
 /** @deprecated use indicatorFeatureRowSchema */

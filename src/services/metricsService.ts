@@ -118,7 +118,22 @@ function mapApiMetricToIndicatorForm(raw: MetricResponse): IndicatorFormValues {
       },
     },
     order: typeof raw.order === "number" ? raw.order : 0,
+    total: readMetricTotalFromApi(raw.total),
     attributes: normalizeMetricAttributesFromApi(raw.attributes),
+  };
+}
+
+function readMetricTotalFromApi(raw: unknown): { male: string; female: string } {
+  const empty = { male: "", female: "" };
+  if (!raw || typeof raw !== "object") return empty;
+  const o = raw as Record<string, unknown>;
+  const format = (value: unknown) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? String(n) : "";
+  };
+  return {
+    male: format(o.male),
+    female: format(o.female),
   };
 }
 
