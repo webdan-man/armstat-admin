@@ -9,11 +9,6 @@ const perLangStrings = z.object({
   ru: z.string(),
 });
 
-const perLangBools = z.object({
-  en: z.boolean(),
-  hy: z.boolean(),
-  ru: z.boolean(),
-});
 
 const metadataBlock = z.object({
   body: z.string(),
@@ -37,7 +32,7 @@ export const indicatorFormSchema = z.object({
   description: perLangStrings,
   link: perLangStrings,
   unit: perLangStrings,
-  aggregatable: perLangBools,
+  isCumulative: z.boolean(),
   metadata: z.object({
     en: metadataBlock,
     hy: metadataBlock,
@@ -69,9 +64,6 @@ function emptyPerLangStrings(): z.infer<typeof perLangStrings> {
   return { en: "", hy: "", ru: "" };
 }
 
-function emptyPerLangBools(): z.infer<typeof perLangBools> {
-  return { en: false, hy: false, ru: false };
-}
 
 function emptyMetadata(): z.infer<typeof metadataBlock> {
   return {
@@ -86,7 +78,7 @@ export function emptyIndicatorFormValues(): IndicatorFormValues {
     description: emptyPerLangStrings(),
     link: emptyPerLangStrings(),
     unit: emptyPerLangStrings(),
-    aggregatable: emptyPerLangBools(),
+    isCumulative: false,
     metadata: {
       en: emptyMetadata(),
       hy: emptyMetadata(),
@@ -125,11 +117,7 @@ export function mockIndicatorFormValues(indicatorId: string): IndicatorFormValue
       hy: "միավոր",
       ru: "ед.",
     },
-    aggregatable: {
-      en: n % 2 === 0,
-      hy: n % 2 === 1,
-      ru: false,
-    },
+    isCumulative: n % 2 === 0,
     metadata: {
       en: {
         body: `Metadata body EN for indicator ${suffix}.`,
@@ -186,6 +174,7 @@ export function mapIndicatorFormToCreateMetric(
     metadata,
     attributes,
     order: values.order,
+    isCumulative: values.isCumulative,
   };
 }
 
@@ -222,6 +211,7 @@ export function mapIndicatorFormToUpdateMetric(
     metadata,
     attributes,
     order: values.order,
+    isCumulative: values.isCumulative,
   };
 }
 

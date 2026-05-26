@@ -22,7 +22,6 @@ const locales = ["en", "hy", "ru"] as const;
 
 function LocaleTabContent({ lang }: { lang: (typeof locales)[number] }) {
   const { control } = useFormContext<IndicatorFormValues>();
-  const checkboxId = `aggregatable-${lang}`;
 
   return (
     <TabsContent className="flex w-full flex-col gap-5" value={lang}>
@@ -74,7 +73,7 @@ function LocaleTabContent({ lang }: { lang: (typeof locales)[number] }) {
           )}
         />
       </div>
-      <div className="grid grid-cols-[1fr_4fr_2fr] gap-5">
+      <div className="grid grid-cols-[1fr_3fr] gap-5">
         <Label className="text-sm font-medium text-[#575757]">Աղբյուրը</Label>
         <FormField
           control={control}
@@ -88,27 +87,33 @@ function LocaleTabContent({ lang }: { lang: (typeof locales)[number] }) {
             </FormItem>
           )}
         />
-        <FormField
-          control={control}
-          name={`aggregatable.${lang}`}
-          render={({ field }) => (
-            <FormItem>
-              <Field orientation="horizontal">
-                <FormControl>
-                  <Checkbox
-                    id={checkboxId}
-                    checked={field.value}
-                    onCheckedChange={(v) => field.onChange(v === true)}
-                  />
-                </FormControl>
-                <FieldLabel htmlFor={checkboxId}>Գումարվող ցուցանիշ</FieldLabel>
-              </Field>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
       </div>
     </TabsContent>
+  );
+}
+
+function IsCumulativeCheckbox() {
+  const { control } = useFormContext<IndicatorFormValues>();
+  return (
+    <FormField
+      control={control}
+      name="isCumulative"
+      render={({ field }) => (
+        <FormItem>
+          <Field orientation="horizontal">
+            <FormControl>
+              <Checkbox
+                id="isCumulative"
+                checked={field.value}
+                onCheckedChange={(v) => field.onChange(v === true)}
+              />
+            </FormControl>
+            <FieldLabel htmlFor="isCumulative">Գումարվող ցուցանիշ</FieldLabel>
+          </Field>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
   );
 }
 
@@ -117,22 +122,25 @@ const triggerClass =
 
 const MainTabs = ({ className }: { className?: string }) => {
   return (
-    <Tabs defaultValue="hy" className={cn("w-full gap-5", className)}>
-      <TabsList className="h-9 gap-0 rounded-[9px] bg-[#e6e7eb] p-0.5">
-        <TabsTrigger value="hy" className={triggerClass}>
-          HY
-        </TabsTrigger>
-        <TabsTrigger value="ru" className={triggerClass}>
-          RU
-        </TabsTrigger>
-        <TabsTrigger value="en" className={triggerClass}>
-          ENG
-        </TabsTrigger>
-      </TabsList>
-      {locales.map((lang) => (
-        <LocaleTabContent key={lang} lang={lang} />
-      ))}
-    </Tabs>
+    <div className={cn("flex w-full flex-col gap-5", className)}>
+      <Tabs defaultValue="hy" className="w-full gap-5">
+        <TabsList className="h-9 gap-0 rounded-[9px] bg-[#e6e7eb] p-0.5">
+          <TabsTrigger value="hy" className={triggerClass}>
+            HY
+          </TabsTrigger>
+          <TabsTrigger value="ru" className={triggerClass}>
+            RU
+          </TabsTrigger>
+          <TabsTrigger value="en" className={triggerClass}>
+            ENG
+          </TabsTrigger>
+        </TabsList>
+        {locales.map((lang) => (
+          <LocaleTabContent key={lang} lang={lang} />
+        ))}
+      </Tabs>
+      <IsCumulativeCheckbox />
+    </div>
   );
 };
 

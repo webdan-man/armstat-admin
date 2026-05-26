@@ -29,6 +29,7 @@ export type CreateMetricBody = {
   metadata: Record<string, string>;
   attributes: MetricAttribute[];
   order: number;
+  isCumulative?: boolean;
 };
 
 export type UpdateMetricBody = {
@@ -39,6 +40,7 @@ export type UpdateMetricBody = {
   metadata: Record<string, string>;
   attributes: MetricAttribute[];
   order: number;
+  isCumulative?: boolean;
 };
 
 export type MetricResponse = {
