@@ -8,6 +8,7 @@ import { ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -36,7 +37,7 @@ const ChartDataTabs = ({
   metricId: string;
   metric?: MetricResponse;
 }) => {
-  useFormContext<IndicatorFormValues>();
+  const { control } = useFormContext<IndicatorFormValues>();
 
   // columnVisible[i] = false means column i is hidden; undefined/true = visible
   const [columnVisible, setColumnVisible] = useState<boolean[]>([]);

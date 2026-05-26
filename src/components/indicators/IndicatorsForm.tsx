@@ -100,9 +100,9 @@ export default function IndicatorsForm() {
     }
 
     const loadedMetricId = loadedMetricData?.metric?._id;
-    const metricDataMatchesIndicator = Boolean(loadedMetricData) && loadedMetricId === indicatorId;
+    const metricDataMatchesIndicator = !!loadedMetricData && loadedMetricId === indicatorId;
 
-    if (!metricDataMatchesIndicator) {
+    if (!metricDataMatchesIndicator || !loadedMetricData) {
       if (initializedForIndicatorIdRef.current !== indicatorId) {
         initializedForIndicatorIdRef.current = null;
         const empty = emptyIndicatorFormValues();
