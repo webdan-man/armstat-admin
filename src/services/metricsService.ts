@@ -118,6 +118,7 @@ function mapApiMetricToIndicatorForm(raw: MetricResponse): IndicatorFormValues {
       },
     },
     order: typeof raw.order === "number" ? raw.order : 0,
+    isCumulative: raw.isCumulative === true,
     total: readMetricTotalFromApi(raw.total),
     attributes: normalizeMetricAttributesFromApi(raw.attributes),
   };
