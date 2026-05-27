@@ -12,11 +12,12 @@ import type {
 interface GroupedStackedColumnChartProps {
   data: GroupedStackedColumnChartRow[];
   stackDimensions: GroupedStackedDimension[];
+  innerAttributeName?: string;
 }
 
 const containerId = "grouped-stacked-column-chartdiv";
 
-function GroupedStackedColumnChart({ data, stackDimensions }: GroupedStackedColumnChartProps) {
+function GroupedStackedColumnChart({ data, stackDimensions, innerAttributeName = "" }: GroupedStackedColumnChartProps) {
   useLayoutEffect(() => {
     const root = am5.Root.new(containerId);
     root.setThemes([am5themes_Animated.new(root)]);
@@ -247,7 +248,7 @@ function GroupedStackedColumnChart({ data, stackDimensions }: GroupedStackedColu
 
     bottomContainer.children.push(
       am5.Label.new(root, {
-        text: "Հատկանիշի անվանում",
+        text: innerAttributeName,
         centerX: am5.p50,
         x: am5.p50,
         paddingBottom: 5,
@@ -333,7 +334,7 @@ function GroupedStackedColumnChart({ data, stackDimensions }: GroupedStackedColu
     return () => {
       root.dispose();
     };
-  }, [data, stackDimensions]);
+  }, [data, stackDimensions, innerAttributeName]);
 
   return <div id={containerId} style={{ width: "100%", height: "900px" }} />;
 }

@@ -244,6 +244,7 @@ const Chart = ({ combinations = [] }: ChartProps) => {
         <GroupedStackedColumnChart
           data={data?.data ?? []}
           stackDimensions={data?.stackDimensions ?? []}
+          innerAttributeName={data?.innerAttributeName ?? ""}
         />
       );
     case "bar":

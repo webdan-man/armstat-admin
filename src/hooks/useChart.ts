@@ -994,6 +994,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
             stackAttributeId: stackId,
           });
 
+          const innerAttributeName = pickAttributeDisplayTitle(
+            attributes.find((a) => a._id === innerEntry.id)
+          );
+
           console.log("GROUPED STACKED COLUMN CHART", {
             combinations,
             data,
@@ -1002,7 +1006,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
           return {
             type: "grouped-stacked-column-chart",
-            data: { data, stackDimensions },
+            data: { data, stackDimensions, innerAttributeName },
           };
         }
         } // end gscA0 && gscA1 && gscA2
