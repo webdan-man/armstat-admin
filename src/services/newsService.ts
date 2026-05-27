@@ -91,9 +91,20 @@ export async function createNews(
   const formData = new FormData();
   appendNewsFields(formData, payload);
   appendNewsImage(formData, image);
-  return apiClient<HomePageNewsItem>("/api/news", {
+  const created = await apiClient<HomePageNewsItem>("/api/news", {
     method: "POST",
     body: formData,
+  });
+
+  // POST /news accepts only title, content, and url — publishedAt is ignored.
+  // PATCH is required to persist the publication date (same as the edit flow).
+  if (!payload.publishedAt) return created;
+
+  return updateNews(created._id, {
+    title: payload.title,
+    content: payload.content,
+    url: payload.url,
+    publishedAt: payload.publishedAt,
   });
 }
 
