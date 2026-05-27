@@ -19,6 +19,7 @@ import MapAndStackedAreaChart from "@/components/indicators/charts/MapAndStacked
 import MapAndStackedColumnChart from "@/components/indicators/charts/MapAndStackedColumnChart";
 import MapAndStackedBarWithNegativeValuesChart from "@/components/indicators/charts/MapAndStackedBarWithNegativeValuesChart";
 import MapAndClusteredColumnChart from "@/components/indicators/charts/MapAndClusteredColumnChart";
+import GroupedStackedColumnChart from "@/components/indicators/charts/GroupedStackedColumnChart";
 
 interface ChartProps {
   combinations?: MetricCombination[];
@@ -237,6 +238,13 @@ const Chart = ({ combinations = [] }: ChartProps) => {
             />
           </div>
         </div>
+      );
+    case "grouped-stacked-column-chart":
+      return (
+        <GroupedStackedColumnChart
+          data={data?.data ?? []}
+          stackDimensions={data?.stackDimensions ?? []}
+        />
       );
     case "bar":
       return <div className="text-textBlack600">bar</div>;

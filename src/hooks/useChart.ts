@@ -22,6 +22,10 @@ import { mapCombinationsForClusteredColumnChartStacked3D } from "@/utils/chart/m
 import { mapCombinationsForClusteredAndStackedColumnChart } from "@/utils/chart/map-combinations-for-clustered-and-stacked-column-chart.util";
 import { mapCombinationsForMapAndClusteredColumnChartCXG } from "@/utils/chart/map-combinations-for-map-and-clustered-column-chart-cxg.util";
 import { mapCombinationsForMapAndHistoricalPopulationPyramid } from "@/utils/chart/map-combinations-for-map-and-historical-population-pyramid.util";
+import {
+  mapCombinationsForGroupedStackedColumnChart,
+  countUniqueForAttr,
+} from "@/utils/chart/map-combinations-for-grouped-stacked-column-chart.util";
 
 type ChartType =
   | "bar"
@@ -47,7 +51,8 @@ type ChartType =
   | "map-and-clustered-column-chart-stacked"
   | "semi-pie-and-clustered-column-chart-stacked"
   | "line-graph-and-clustered-column-chart-stacked"
-  | "column-with-rotated-labels-and-clustered-column-chart-stacked";
+  | "column-with-rotated-labels-and-clustered-column-chart-stacked"
+  | "grouped-stacked-column-chart";
 
 function getUniqueAttributeIds(combinations: MetricCombination[]): string[] {
   const ids = new Set<string>();
@@ -936,6 +941,71 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         console.log("AGE+AREA+OTHER CLUSTERED+STACKED COLUMN", { combinations, data, clusterKeys, stackKeys });
 
         return { type: "clustered-column-chart-stacked", xAxisKey, clusterKeys, stackKeys, data };
+      }
+
+      // Grouped stacked column chart: any combination with 2+ OTHER-category attrs (no Province)
+      // Gender/Time/Age/Area + Other + Other  OR  Other + Other + Other
+      {
+        const [gscId0, gscId1, gscId2] = attributeIds;
+        const gscA0 = attributeMap.get(gscId0);
+        const gscA1 = attributeMap.get(gscId1);
+        const gscA2 = attributeMap.get(gscId2);
+
+        if (gscA0 && gscA1 && gscA2) {
+        const allThreeEntries = [
+          { attr: gscA0, id: gscId0 },
+          { attr: gscA1, id: gscId1 },
+          { attr: gscA2, id: gscId2 },
+        ];
+        const otherEntries = allThreeEntries.filter(
+          ({ attr }) => attr.category === AttributeCategory.OTHER
+        );
+
+        if (!has(AttributeCategory.PROVINCE) && otherEntries.length >= 2) {
+          const nonOtherEntry = allThreeEntries.find(
+            ({ attr }) => attr.category !== AttributeCategory.OTHER
+          );
+
+          let stackId: string;
+          let outerEntry: { attr: (typeof attributes)[number]; id: string };
+          let innerEntry: { attr: (typeof attributes)[number]; id: string };
+
+          if (nonOtherEntry) {
+            stackId = nonOtherEntry.id;
+            const [e0, e1] = otherEntries;
+            const c0 = countUniqueForAttr(combinations, e0.id);
+            const c1 = countUniqueForAttr(combinations, e1.id);
+            outerEntry = c0 <= c1 ? e0 : e1;
+            innerEntry = outerEntry === e0 ? e1 : e0;
+          } else {
+            // All three are OTHER: fewest → stack, then: fewer → outer, more → inner
+            const sorted = otherEntries
+              .map((e) => ({ ...e, count: countUniqueForAttr(combinations, e.id) }))
+              .sort((a, b) => a.count - b.count);
+            stackId = sorted[0].id;
+            outerEntry = sorted[1];
+            innerEntry = sorted[2];
+          }
+
+          const { data, stackDimensions } = mapCombinationsForGroupedStackedColumnChart({
+            combinations,
+            outerAttributeId: outerEntry.id,
+            innerAttributeId: innerEntry.id,
+            stackAttributeId: stackId,
+          });
+
+          console.log("GROUPED STACKED COLUMN CHART", {
+            combinations,
+            data,
+            stackDimensions,
+          });
+
+          return {
+            type: "grouped-stacked-column-chart",
+            data: { data, stackDimensions },
+          };
+        }
+        } // end gscA0 && gscA1 && gscA2
       }
 
       // Fallback for any remaining 3-attribute combination (rows 41, 45, 47-49: repeated categories)

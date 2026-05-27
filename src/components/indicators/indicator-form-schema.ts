@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-import type { CreateMetricBody, MetricAttribute, MetricTotal, UpdateMetricBody } from "@/types/metric";
+import type {
+  CreateMetricBody,
+  MetricAttribute,
+  MetricTotal,
+  UpdateMetricBody,
+} from "@/types/metric";
 import type { IndicatorFeature } from "@/types/indicator-feature";
 
 const perLangStrings = z.object({
@@ -8,7 +13,6 @@ const perLangStrings = z.object({
   hy: z.string(),
   ru: z.string(),
 });
-
 
 const metadataBlock = z.object({
   body: z.string(),
@@ -80,7 +84,6 @@ export type IndicatorFormValues = z.infer<typeof indicatorFormSchema>;
 function emptyPerLangStrings(): z.infer<typeof perLangStrings> {
   return { en: "", hy: "", ru: "" };
 }
-
 
 function emptyMetadata(): z.infer<typeof metadataBlock> {
   return {
@@ -185,9 +188,9 @@ export function mapIndicatorFormToCreateMetric(
       en: values.description.en,
     },
     unit: {
-      hy: values.description.hy,
-      ru: values.description.ru,
-      en: values.description.en,
+      hy: values.unit.hy,
+      ru: values.unit.ru,
+      en: values.unit.en,
     },
     metadata,
     attributes,
