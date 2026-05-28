@@ -94,8 +94,7 @@ const hasSecondaryTitle = (value: Attribute["values"][number]) =>
 const FIRST_LANG_WITH_ERROR: MainLangCode[] = ["hy", "en", "ru"];
 const pickLangFromFieldErrors = (
   errors: { hy?: unknown; en?: unknown; ru?: unknown } | undefined
-): MainLangCode | undefined =>
-  FIRST_LANG_WITH_ERROR.find((lang) => errors?.[lang]);
+): MainLangCode | undefined => FIRST_LANG_WITH_ERROR.find((lang) => errors?.[lang]);
 
 export default function CreateWindow() {
   const { features, dialogOpen, editingId, setDialogOpen, startCreate, addFeature, updateFeature } =
@@ -453,36 +452,38 @@ export default function CreateWindow() {
                       </div>
                       <CollapsibleContent className="flex w-full flex-col gap-4 border-t border-t-[rgba(217,217,217,1)] bg-[rgba(217,217,217,0.1)] px-10 py-4.25">
                         <div className="flex w-full flex-col gap-3">
-                          <div className="flex items-center justify-between gap-3">
-                            <div />
-                            <LangSwitcher
-                              value={labelLang}
-                              onChange={(nextLang) =>
-                                setLabelLangByRow((prev) => ({ ...prev, [field.id]: nextLang }))
-                              }
-                              className="sm:shrink-0"
-                            />
-                          </div>
-                          <div className="grid w-full gap-3">
-                            <FormField
-                              control={control}
-                              name={`rows.${index}.label.${labelLang}`}
-                              render={({ field: f }) => (
-                                <FormItem className="w-full">
-                                  <FormLabel className="text-[12px] leading-3.5 font-semibold text-black">
-                                    {FEATURE_LABEL_LANG_BY_KEY[labelLang]}
-                                  </FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      className={featureLabelInputClass}
-                                      placeholder=""
-                                      {...f}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
+                          <div className="flex w-full flex-col">
+                            <div className="flex items-center justify-between">
+                              <div />
+                              <LangSwitcher
+                                value={labelLang}
+                                onChange={(nextLang) =>
+                                  setLabelLangByRow((prev) => ({ ...prev, [field.id]: nextLang }))
+                                }
+                                className="sm:shrink-0"
+                              />
+                            </div>
+                            <div className="grid w-full gap-3">
+                              <FormField
+                                control={control}
+                                name={`rows.${index}.label.${labelLang}`}
+                                render={({ field: f }) => (
+                                  <FormItem className="w-full">
+                                    <FormLabel className="text-[12px] leading-3.5 font-semibold text-black">
+                                      {FEATURE_LABEL_LANG_BY_KEY[labelLang]}
+                                    </FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        className={featureLabelInputClass}
+                                        placeholder=""
+                                        {...f}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
                           </div>
                         </div>
                         <FormField
@@ -563,79 +564,83 @@ export default function CreateWindow() {
                             </FormItem>
                           )}
                         />
-                        <FormField
-                          control={control}
-                          name={`rows.${index}.levelOption`}
-                          render={({ field: f }) => (
-                            <FormItem className="w-full">
-                              <FormLabel className="text-[12px] leading-3.5 font-semibold text-black">
-                                Ընտրել Մակարդակ
-                              </FormLabel>
-                              <Select
-                                key={`level-select-${field.id}-${selectedLibrary}`}
-                                value={f.value || undefined}
-                                onValueChange={(val) => {
-                                  f.onChange(val);
-                                  setValue(`rows.${index}.valueIds`, []);
-                                }}
-                                disabled={isLoading || !selectedLibrary || isLevelsLoading}
-                              >
-                                <FormControl>
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue
-                                      placeholder={isLevelsLoading ? "Բեռնում…" : "Ընտրել"}
-                                    />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectGroup>
-                                    {LEVEL_OPTIONS.map((level) => (
-                                      <SelectItem key={level.value} value={level.value}>
-                                        {level.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectGroup>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        {selectedLibrary && (
+                          <FormField
+                            control={control}
+                            name={`rows.${index}.levelOption`}
+                            render={({ field: f }) => (
+                              <FormItem className="w-full">
+                                <FormLabel className="text-[12px] leading-3.5 font-semibold text-black">
+                                  Ընտրել Մակարդակ
+                                </FormLabel>
+                                <Select
+                                  key={`level-select-${field.id}-${selectedLibrary}`}
+                                  value={f.value || undefined}
+                                  onValueChange={(val) => {
+                                    f.onChange(val);
+                                    setValue(`rows.${index}.valueIds`, []);
+                                  }}
+                                  disabled={isLoading || isLevelsLoading}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue
+                                        placeholder={isLevelsLoading ? "Բեռնում…" : "Ընտրել"}
+                                      />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectGroup>
+                                      {LEVEL_OPTIONS.map((level) => (
+                                        <SelectItem key={level.value} value={level.value}>
+                                          {level.label}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectGroup>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
                         {selectedLevel === "secondary" && (
                           <div className="flex w-full flex-col gap-3">
-                            <div className="flex items-center justify-between gap-3">
-                              <div />
-                              <LangSwitcher
-                                value={secondaryLabelLang}
-                                onChange={(nextLang) =>
-                                  setSecondaryLabelLangByRow((prev) => ({
-                                    ...prev,
-                                    [field.id]: nextLang,
-                                  }))
-                                }
-                                className="font-semibold text-black sm:shrink-0"
-                              />
-                            </div>
-                            <div className="grid w-full gap-3">
-                              <FormField
-                                control={control}
-                                name={`rows.${index}.secondaryLabel.${secondaryLabelLang}`}
-                                render={({ field: f }) => (
-                                  <FormItem className="w-full">
-                                    <FormLabel className="text-[12px] leading-3.5 font-semibold text-black">
-                                      {FEATURE_SECONDARY_LABEL_LANG_BY_KEY[secondaryLabelLang]}
-                                    </FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        className={featureLabelInputClass}
-                                        placeholder=""
-                                        {...f}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
+                            <div className="flex w-full flex-col">
+                              <div className="flex items-center justify-between">
+                                <div />
+                                <LangSwitcher
+                                  value={secondaryLabelLang}
+                                  onChange={(nextLang) =>
+                                    setSecondaryLabelLangByRow((prev) => ({
+                                      ...prev,
+                                      [field.id]: nextLang,
+                                    }))
+                                  }
+                                  className="font-semibold text-black sm:shrink-0"
+                                />
+                              </div>
+                              <div className="grid w-full gap-3">
+                                <FormField
+                                  control={control}
+                                  name={`rows.${index}.secondaryLabel.${secondaryLabelLang}`}
+                                  render={({ field: f }) => (
+                                    <FormItem className="w-full">
+                                      <FormLabel className="text-[12px] leading-3.5 font-semibold text-black">
+                                        {FEATURE_SECONDARY_LABEL_LANG_BY_KEY[secondaryLabelLang]}
+                                      </FormLabel>
+                                      <FormControl>
+                                        <Input
+                                          className={featureLabelInputClass}
+                                          placeholder=""
+                                          {...f}
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
                             </div>
                           </div>
                         )}
