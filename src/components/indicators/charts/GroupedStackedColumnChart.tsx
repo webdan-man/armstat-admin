@@ -17,7 +17,11 @@ interface GroupedStackedColumnChartProps {
 
 const containerId = "grouped-stacked-column-chartdiv";
 
-function GroupedStackedColumnChart({ data, stackDimensions, innerAttributeName = "" }: GroupedStackedColumnChartProps) {
+function GroupedStackedColumnChart({
+  data,
+  stackDimensions,
+  innerAttributeName = "",
+}: GroupedStackedColumnChartProps) {
   useLayoutEffect(() => {
     const root = am5.Root.new(containerId);
     root.setThemes([am5themes_Animated.new(root)]);
@@ -99,20 +103,23 @@ function GroupedStackedColumnChart({ data, stackDimensions, innerAttributeName =
       })
     );
 
-    // Shared tooltip listing all stack dimensions
+    // Tooltip text — all dimension values resolved from data context
     const tooltipLines = ["{realName}", ""];
     [...stackDimensions].reverse().forEach((dim) => {
       tooltipLines.push(`${dim.label}     [bold]{${dim.field}}[/]`);
     });
-    const sharedTooltip = am5.Tooltip.new(root, {
-      labelText: tooltipLines.join("\n"),
-    });
+    const tooltipText = tooltipLines.join("\n");
 
     // One series per stack dimension
     const seriesList: am5xy.ColumnSeries[] = [];
 
     stackDimensions.forEach((dim, i) => {
       const opacity = Math.max(1 - i * 0.3, 0.3);
+
+      // Tooltip is only on the top series; cursor.snapToSeries activates it
+      // from any hover position within the stacked column group, preventing jumping.
+      const isTop = i === stackDimensions.length - 1;
+      const tooltip = isTop ? am5.Tooltip.new(root, { labelText: tooltipText }) : undefined;
 
       const series = chart.series.push(
         am5xy.ColumnSeries.new(root, {
@@ -123,7 +130,7 @@ function GroupedStackedColumnChart({ data, stackDimensions, innerAttributeName =
           sequencedInterpolation: true,
           categoryXField: "category",
           stacked: i > 0,
-          tooltip: sharedTooltip,
+          tooltip,
         })
       );
 
@@ -149,6 +156,12 @@ function GroupedStackedColumnChart({ data, stackDimensions, innerAttributeName =
 
       seriesList.push(series);
     });
+
+    // Snap cursor to the bottom series so its tooltip activates regardless of
+    // which stack layer the pointer is over, eliminating tooltip jumping.
+    if (seriesList.length > 0) {
+      cursor.set("snapToSeries", [seriesList[seriesList.length - 1]]);
+    }
 
     // Rounded top on the last (topmost) stack layer
     if (seriesList.length > 0) {
@@ -336,7 +349,7 @@ function GroupedStackedColumnChart({ data, stackDimensions, innerAttributeName =
     };
   }, [data, stackDimensions, innerAttributeName]);
 
-  return <div id={containerId} style={{ width: "100%", height: "900px" }} />;
+  return <div id={containerId} style={{ width: "100%", height: "800px" }} />;
 }
 
 export default GroupedStackedColumnChart;
