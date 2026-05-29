@@ -239,6 +239,21 @@ export default function CreateWindow() {
     wasDialogOpenRef.current = dialogOpen;
   }, [dialogOpen]);
 
+  useEffect(() => {
+    if (!rowsWatch) return;
+    rowsWatch.forEach((row, index) => {
+      if (!row?.libraryOption) return;
+      const attr = attributeByKey[row.libraryOption];
+      if (!attr) return;
+      const values = attr.values ?? [];
+      const hasSecondary = values.some((v) => hasSecondaryTitle(v));
+      if (hasSecondary && row.levelOption !== "secondary") {
+        setValue(`rows.${index}.levelOption`, "secondary");
+        setValue(`rows.${index}.valueIds`, []);
+      }
+    });
+  }, [rowsWatch, attributeByKey, setValue]);
+
   const handleRemoveRow = (index: number) => {
     const removedId = fields[index]?.id;
     if (removedId && openCollapsibleId === removedId) {
@@ -392,8 +407,13 @@ export default function CreateWindow() {
                     (option) => option.value === selectedLibrary
                   );
 
+                  const attributeValues = selectedLibrary
+                    ? (attributeByKey[selectedLibrary]?.values ?? [])
+                    : [];
+                  const hasTwoLevels = attributeValues.some((v) => hasSecondaryTitle(v));
+
                   const levelOptions = selectedLibrary
-                    ? (attributeByKey[selectedLibrary]?.values ?? []).filter((value) => {
+                    ? attributeValues.filter((value) => {
                         if (selectedLevel === "primary") return !hasSecondaryTitle(value);
                         if (selectedLevel === "secondary") return hasSecondaryTitle(value);
                         return false;
@@ -564,7 +584,7 @@ export default function CreateWindow() {
                             </FormItem>
                           )}
                         />
-                        {selectedLibrary && (
+                        {selectedLibrary && !hasTwoLevels && (
                           <FormField
                             control={control}
                             name={`rows.${index}.levelOption`}
@@ -717,6 +737,9 @@ export default function CreateWindow() {
                                     <div className="max-h-56 space-y-2 overflow-y-auto px-3 py-2">
                                       {levelOptions.map((opt) => {
                                         const checked = selectedValueIds.includes(opt._id);
+
+                                        const secondaryHy = opt.secondaryTitle?.hy?.trim();
+
                                         return (
                                           <label
                                             key={opt._id}
@@ -734,7 +757,14 @@ export default function CreateWindow() {
                                                 );
                                               }}
                                             />
-                                            <span>{opt.title.hy}</span>
+                                            {hasTwoLevels && secondaryHy ? (
+                                              <span className="grid flex-1 grid-cols-2 gap-2">
+                                                <span>{opt.title.hy}</span>
+                                                <span>{secondaryHy}</span>
+                                              </span>
+                                            ) : (
+                                              <span>{opt.title.hy}</span>
+                                            )}
                                           </label>
                                         );
                                       })}
