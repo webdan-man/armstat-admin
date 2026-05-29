@@ -187,8 +187,6 @@ function TopicIdSelect() {
                 </SelectContent>
               </Select>
               <FormMessage />
-
-              <p>{JSON.stringify(field)} test</p>
             </FormItem>
           );
         }}
