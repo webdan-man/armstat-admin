@@ -40,6 +40,7 @@ export type CreateMetricBody = {
 };
 
 export type UpdateMetricBody = {
+  topicId?: string;
   title: Record<string, string>;
   description: Record<string, string>;
   unit: Record<string, string>;

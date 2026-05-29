@@ -47,3 +47,11 @@ export async function upsertTopic(payload: UpsertTopicPayload): Promise<Topic> {
     body: JSON.stringify(payload),
   });
 }
+
+export async function deleteTopic(topicId: string): Promise<void> {
+  return apiClient<void>(`/api/topics/${topicId}`, { method: "DELETE" });
+}
+
+export async function deleteSection(sectionId: string): Promise<void> {
+  return apiClient<void>(`/api/sections/${sectionId}`, { method: "DELETE" });
+}
