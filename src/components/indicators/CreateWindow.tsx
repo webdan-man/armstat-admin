@@ -247,8 +247,12 @@ export default function CreateWindow() {
       if (!attr) return;
       const values = attr.values ?? [];
       const hasSecondary = values.some((v) => hasSecondaryTitle(v));
+      const hasPrimary = values.some((v) => !hasSecondaryTitle(v));
       if (hasSecondary && row.levelOption !== "secondary") {
         setValue(`rows.${index}.levelOption`, "secondary");
+        setValue(`rows.${index}.valueIds`, []);
+      } else if (!hasSecondary && hasPrimary && row.levelOption !== "primary") {
+        setValue(`rows.${index}.levelOption`, "primary");
         setValue(`rows.${index}.valueIds`, []);
       }
     });
@@ -410,7 +414,12 @@ export default function CreateWindow() {
                   const attributeValues = selectedLibrary
                     ? (attributeByKey[selectedLibrary]?.values ?? [])
                     : [];
-                  const hasTwoLevels = attributeValues.some((v) => hasSecondaryTitle(v));
+                  const hasSecondaryValues = attributeValues.some((v) => hasSecondaryTitle(v));
+                  const hasTwoLevels = hasSecondaryValues;
+                  const attributeDataLoaded =
+                    selectedLibrary && attributeByKey[selectedLibrary] !== undefined;
+                  const hasOnlyPrimary =
+                    attributeDataLoaded && !hasSecondaryValues && attributeValues.length > 0;
 
                   const levelOptions = selectedLibrary
                     ? attributeValues.filter((value) => {
@@ -584,7 +593,7 @@ export default function CreateWindow() {
                             </FormItem>
                           )}
                         />
-                        {selectedLibrary && !hasTwoLevels && (
+                        {selectedLibrary && !hasTwoLevels && !hasOnlyPrimary && (
                           <FormField
                             control={control}
                             name={`rows.${index}.levelOption`}
