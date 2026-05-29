@@ -58,13 +58,13 @@ function LocaleTabContent({ lang }: { lang: (typeof locales)[number] }) {
           )}
         />
       </div>
-      <div className="grid grid-cols-[1fr_4fr_2fr] gap-5">
+      <div className="grid grid-cols-[1fr_3fr] gap-5">
         <Label className="text-sm font-medium text-[#575757]">Աղբյուրը</Label>
         <FormField
           control={control}
           name={`link.${lang}`}
           render={({ field }) => (
-            <FormItem className="col-span-2">
+            <FormItem>
               <FormControl>
                 <Input className={fieldBorder} placeholder="" {...field} />
               </FormControl>
