@@ -7,12 +7,7 @@ import { fetchSections } from "@/services/sectionsService";
 import { fetchMetricsByTopicId, getMetricById } from "@/services/metricsService";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  buildStatMenu,
-  isSlugInStatMenu,
-  type StatMenuItem,
-} from "@/lib/stat-menu-utils";
-import type { Topic } from "@/types/section";
+import { buildStatMenu, isSlugInStatMenu, type StatMenuItem } from "@/lib/stat-menu-utils";
 
 type MenuItem = StatMenuItem;
 
@@ -114,49 +109,6 @@ function SidebarSkeleton() {
   );
 }
 
-function TopicMetricItems({
-  topicId,
-  level,
-  activeSlug,
-}: {
-  topicId: string;
-  level: number;
-  activeSlug: string;
-}) {
-  const router = useRouter();
-  const { data: metrics = [] } = useSWR(swrKeys.metricsByTopic(topicId), () =>
-    fetchMetricsByTopicId(topicId)
-  );
-
-  if (metrics.length === 0) return null;
-
-  return (
-    <ul className="flex w-full flex-col">
-      {metrics.map((metric, index) => {
-        const isActive = metric.id === activeSlug;
-        return (
-          <li
-            key={metric.id}
-            className={`w-full ${index === 0 ? `border-t ${SIDEBAR_ROW_BORDER}` : ""}`}
-          >
-            <button
-              onClick={() => router.push(`/stat/${metric.id}`, { scroll: false })}
-              style={{ paddingLeft: 16 + level * 16 }}
-              className={`text-fontSizeXS flex w-full cursor-pointer items-center justify-between border-b ${SIDEBAR_ROW_BORDER} py-4 pr-4 text-left bg-[rgba(241,245,248,1)] font-semibold ${
-                isActive
-                  ? "border-r-6 border-r-[rgba(22,81,149,1)] text-[rgba(15,104,192,1)]"
-                  : "text-[rgba(55,55,55,1)]"
-              }`}
-            >
-              {metric.label}
-            </button>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
 type MenuListProps = {
   items: MenuItem[];
   level?: number;
@@ -179,11 +131,9 @@ function MenuList({
     <ul className="flex w-full flex-col">
       {items.map((item, index) => {
         const hasSubtopics = !!item.children?.length;
-        // Topics and subtopics (level > 0) can always expand to reveal their metrics.
-        const canExpand = hasSubtopics || level > 0;
+        const canExpand = hasSubtopics;
         const isExpanded = expandedPath[level] === item.id;
         const isActive = item.id === activeSlug;
-        // A descendant topic/subtopic is active, OR this item is the topic that owns the active metric.
         const activeChild =
           hasActiveDescendant(item, activeSlug) ||
           (activeTopicId
@@ -191,8 +141,7 @@ function MenuList({
             : false);
 
         const showActive = isActive || activeChild;
-        const showsNestedContent =
-          (hasSubtopics && isExpanded) || (level > 0 && !hasSubtopics && isExpanded);
+        const showsNestedContent = hasSubtopics && isExpanded;
         const rowBorderBottom =
           (level === 0 && !isExpanded) || (level > 0 && !showsNestedContent)
             ? `border-b ${SIDEBAR_ROW_BORDER}`
@@ -227,10 +176,6 @@ function MenuList({
                 activeTopicId={activeTopicId}
               />
             )}
-
-            {level > 0 && !hasSubtopics && isExpanded && (
-              <TopicMetricItems topicId={item.id} level={level + 1} activeSlug={activeSlug} />
-            )}
           </li>
         );
       })}
@@ -249,10 +194,7 @@ export default function Sidebar() {
 
   const effectiveSlug = pendingSlug ?? activeSlug;
 
-  const { data: sections, isLoading: isSectionsLoading } = useSWR(
-    swrKeys.sections,
-    fetchSections
-  );
+  const { data: sections, isLoading: isSectionsLoading } = useSWR(swrKeys.sections, fetchSections);
 
   const isSidebarLoading = isSectionsLoading || sections === undefined;
   const menu = useMemo(() => buildStatMenu(sections ?? []), [sections]);
@@ -277,7 +219,9 @@ export default function Sidebar() {
   );
 
   const isSectionCollapsed = useMemo(
-    () => menu.some((section) => section.id === effectiveSlug) && collapsedSectionIds.has(effectiveSlug),
+    () =>
+      menu.some((section) => section.id === effectiveSlug) &&
+      collapsedSectionIds.has(effectiveSlug),
     [menu, effectiveSlug, collapsedSectionIds]
   );
 

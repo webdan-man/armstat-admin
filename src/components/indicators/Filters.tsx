@@ -72,7 +72,12 @@ export default function Filters() {
           <span>Բեռնում…</span>
         </div>
       )}
-      <div className="grid min-h-11 items-end gap-4 md:grid-cols-3">
+      <div
+        className={cn(
+          "grid min-h-11 items-end gap-4",
+          childTopics.length > 0 ? "md:grid-cols-3" : "md:grid-cols-2"
+        )}
+      >
         <div className="flex flex-col items-start">
           {selectedFilter.section && <FilterChip>Բաժին</FilterChip>}
           <Select
@@ -128,32 +133,34 @@ export default function Filters() {
             </SelectContent>
           </Select>
         </div>
-        <div className="flex flex-col items-start">
-          {selectedFilter.subSubgroup && <FilterChip>Ենթա-ենթախումբ</FilterChip>}
-          <Select
-            key={selectedFilter.subgroup || "empty-subgroup"}
-            disabled={isLoading || !selectedFilter.subgroup || childTopics.length === 0}
-            value={selectedFilter.subSubgroup || undefined}
-            onValueChange={(val) =>
-              setSelectedFilter((prev) => ({
-                ...prev,
-                subSubgroup: val,
-                indicator: "",
-              }))
-            }
-          >
-            <SelectTrigger className={selectTriggerClass}>
-              <SelectValue placeholder={"Ենթա-ենթախումբ"} />
-            </SelectTrigger>
-            <SelectContent>
-              {childTopics.map((topic) => (
-                <SelectItem key={topic._id} value={topic._id}>
-                  {topic.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {childTopics.length > 0 && (
+          <div className="flex flex-col items-start">
+            {selectedFilter.subSubgroup && <FilterChip>Ենթա-ենթախումբ</FilterChip>}
+            <Select
+              key={selectedFilter.subgroup || "empty-subgroup"}
+              disabled={isLoading || !selectedFilter.subgroup}
+              value={selectedFilter.subSubgroup || undefined}
+              onValueChange={(val) =>
+                setSelectedFilter((prev) => ({
+                  ...prev,
+                  subSubgroup: val,
+                  indicator: "",
+                }))
+              }
+            >
+              <SelectTrigger className={selectTriggerClass}>
+                <SelectValue placeholder={"Ենթա-ենթախումբ"} />
+              </SelectTrigger>
+              <SelectContent>
+                {childTopics.map((topic) => (
+                  <SelectItem key={topic._id} value={topic._id}>
+                    {topic.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
       <div className={"grid min-h-11 w-full grid-cols-[5fr_1fr] items-center gap-6"}>
         <div className="flex flex-col items-start">

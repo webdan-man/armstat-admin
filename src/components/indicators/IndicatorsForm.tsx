@@ -338,7 +338,7 @@ export default function IndicatorsForm() {
         <Card className={cn(cardSurface, "gap-0 py-0")}>
           <CardHeader className="gap-4 border-0 px-8 pt-8 pb-0">
             <CardTitle className="text-base font-medium text-[#2c2c2c]">
-              Տվյալների Մուտքագրում
+              Տվյալների մուտքագրում
             </CardTitle>
             <CardAction className="flex items-center gap-4">
               <Button

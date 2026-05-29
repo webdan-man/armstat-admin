@@ -9,20 +9,51 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox";
 import React, { useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { fetchSections } from "@/services/sectionsService";
+import { fetchMetricsByTopicId, getMetricById } from "@/services/metricsService";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { isRootTopic } from "@/lib/section-topic-utils";
-import type { Topic } from "@/types/section";
+import { buildStatMenu, isSlugInStatMenu } from "@/lib/stat-menu-utils";
+import type { Section } from "@/types/section";
 
 type SearchOption = {
   id: string;
   label: string;
 };
 
-function flattenTopics(topics: Topic[]): Topic[] {
-  return topics.flatMap((t) => [t, ...flattenTopics(t.subtopics ?? [])]);
+type SlugTarget =
+  | { kind: "section"; topicIds: string[] }
+  | { kind: "topic"; topicIds: [string] }
+  | { kind: "subtopic"; topicIds: [string] };
+
+function collectTopicIdsForSection(section: Section): string[] {
+  const ids: string[] = [];
+  for (const topic of section.topics) {
+    ids.push(topic._id);
+    for (const sub of topic.subtopics ?? []) ids.push(sub._id);
+  }
+  return ids;
+}
+
+function resolveSlug(sections: Section[], slug: string): SlugTarget | null {
+  for (const section of sections) {
+    if (section._id === slug) {
+      return { kind: "section", topicIds: collectTopicIdsForSection(section) };
+    }
+    for (const topic of section.topics) {
+      if (topic._id === slug) {
+        return isRootTopic(topic)
+          ? { kind: "topic", topicIds: [topic._id] }
+          : { kind: "subtopic", topicIds: [topic._id] };
+      }
+      for (const sub of topic.subtopics ?? []) {
+        if (sub._id === slug) return { kind: "subtopic", topicIds: [sub._id] };
+      }
+    }
+  }
+  return null;
 }
 
 export default function SearchInput({
@@ -33,19 +64,52 @@ export default function SearchInput({
   setQuery: (v: string) => void;
 }) {
   const router = useRouter();
+  const params = useParams();
+  const slug = (params?.slug as string) ?? "";
   const { data: sections = [] } = useSWR(swrKeys.sections, fetchSections);
 
-  const options = useMemo<SearchOption[]>(() => {
-    return sections.flatMap((section) => {
-      const rootTopics = section.topics.filter(isRootTopic);
-      const allTopics = flattenTopics(rootTopics);
-      return allTopics.map((t) => ({ id: t._id, label: t.title }));
-    });
-  }, [sections]);
+  const menu = useMemo(() => buildStatMenu(sections), [sections]);
+  const slugInTree = useMemo(
+    () => sections.length > 0 && isSlugInStatMenu(menu, slug),
+    [menu, slug, sections.length]
+  );
+
+  // When the slug is a metric ID (not a section/topic/subtopic), fetch the
+  // metric so we can surface its sibling indicators via topicId.
+  const { data: activeMetric } = useSWR(
+    slug && sections.length > 0 && !slugInTree ? swrKeys.metricForm(slug) : null,
+    () => getMetricById(slug)
+  );
+
+  const topicIds = useMemo<string[]>(() => {
+    if (!slug || sections.length === 0) return [];
+    const target = resolveSlug(sections, slug);
+    if (target) return target.topicIds;
+    return activeMetric?.topicId ? [activeMetric.topicId] : [];
+  }, [slug, sections, activeMetric]);
+
+  const indicatorsKey = useMemo(
+    () => (topicIds.length === 0 ? null : (["search-indicators", ...topicIds] as const)),
+    [topicIds]
+  );
+
+  const { data: indicators = [] } = useSWR(indicatorsKey, async () => {
+    const lists = await Promise.all(topicIds.map((id) => fetchMetricsByTopicId(id)));
+    const seen = new Set<string>();
+    const merged: SearchOption[] = [];
+    for (const list of lists) {
+      for (const item of list) {
+        if (seen.has(item.id)) continue;
+        seen.add(item.id);
+        merged.push({ id: item.id, label: item.label });
+      }
+    }
+    return merged;
+  });
 
   return (
     <Combobox
-      items={options}
+      items={indicators}
       itemToStringValue={(item: SearchOption) => item.label}
       onValueChange={(item: SearchOption | null) => {
         if (item) {
