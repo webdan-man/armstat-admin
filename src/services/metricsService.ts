@@ -78,6 +78,7 @@ function mapApiMetricToIndicatorForm(raw: MetricResponse): IndicatorFormValues {
 
   return {
     ...empty,
+    topicId: raw.topicId ?? "",
     title: {
       en: typeof title.en === "string" ? title.en : "",
       hy: typeof title.hy === "string" ? title.hy : typeof title.am === "string" ? title.am : "",
@@ -160,6 +161,12 @@ export async function fetchMetricForForm(metricId: string): Promise<{
   features: IndicatorFeature[];
 }> {
   const raw = await getMetricById(metricId);
+
+  console.log({
+    metric: raw,
+    form: mapApiMetricToIndicatorForm(raw),
+    features: mapMetricAttributesToFeatures(raw.attributes ?? []),
+  });
   return {
     metric: raw,
     form: mapApiMetricToIndicatorForm(raw),

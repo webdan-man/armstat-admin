@@ -48,6 +48,7 @@ const trimmedNonEmpty = (message: string) =>
 const trimmedString = z.string().transform((s) => s.trim());
 
 export const indicatorFormSchema = z.object({
+  topicId: z.string(),
   title: perLangStrings,
   description: perLangStrings,
   link: perLangStrings,
@@ -94,6 +95,7 @@ function emptyMetadata(): z.infer<typeof metadataBlock> {
 
 export function emptyIndicatorFormValues(): IndicatorFormValues {
   return {
+    topicId: "",
     title: emptyPerLangStrings(),
     description: emptyPerLangStrings(),
     link: emptyPerLangStrings(),
@@ -210,6 +212,7 @@ export function mapIndicatorFormToUpdateMetric(
   }
 
   return {
+    ...(values.topicId ? { topicId: values.topicId } : {}),
     title: {
       hy: values.title.hy,
       ru: values.title.ru,
