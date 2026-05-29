@@ -349,7 +349,7 @@ export default function IndicatorsForm() {
                   if (indicatorId) void downloadMetricCombinationsCSV(indicatorId);
                 }}
               >
-                Արտահանել
+                Արտահանել CSV
               </Button>
               <input
                 ref={csvInputRef}

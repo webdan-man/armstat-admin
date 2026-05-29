@@ -286,7 +286,7 @@ export default function StatPage() {
                     <SelectTrigger className="h-9 border-none bg-transparent px-2 text-[rgba(44,44,44,1)] shadow-none">
                       <SelectValue placeholder={label} />
                     </SelectTrigger>
-                    <SelectContent className="max-w-[500px]">
+                    <SelectContent className="max-w-[30vw]">
                       <SelectGroup>
                         <SelectItem
                           value="__all__"
@@ -326,7 +326,7 @@ export default function StatPage() {
                 </TabsList>
                 {metricUnit ? (
                   <p className="shrink-0 text-[12px] text-[rgba(131,131,131,1)]">
-                    Միավորը {metricUnit}
+                    Չափման միավոր՝ {metricUnit}
                   </p>
                 ) : null}
               </div>
