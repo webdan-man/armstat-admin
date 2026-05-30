@@ -251,6 +251,12 @@ export async function downloadMetricCombinationsCSV(metricId: string): Promise<v
   URL.revokeObjectURL(url);
 }
 
+export async function recordMetricView(metricId: string): Promise<void> {
+  await apiClient<unknown>(`/api/metrics/${encodeURIComponent(metricId)}/view`, {
+    method: "POST",
+  });
+}
+
 export async function getMetricCombinations(metricId: string): Promise<MetricCombination[]> {
   return apiClient<MetricCombination[]>(
     `/api/metrics/${encodeURIComponent(metricId)}/combinations?locale=hy`

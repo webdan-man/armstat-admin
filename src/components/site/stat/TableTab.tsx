@@ -20,6 +20,7 @@ interface TableTabProps {
   isLoading?: boolean;
   link?: string;
   updatedAt?: string;
+  viewCount?: number;
 }
 
 const TableTab = ({
@@ -28,6 +29,7 @@ const TableTab = ({
   isLoading = false,
   link,
   updatedAt,
+  viewCount,
 }: TableTabProps) => {
   const columnCount = useMemo(() => maxRowLength(combinations), [combinations]);
   const columnIndexes = useMemo(
@@ -166,7 +168,11 @@ const TableTab = ({
             </p>
           )}
         </div>
-        <p className="text-[11px] text-[rgba(110,127,136,1)]">Դիտված է 1,343 անգամ</p>
+        {viewCount != null && (
+          <p className="text-[11px] text-[rgba(110,127,136,1)]">
+            Դիտված է {viewCount.toLocaleString()} անգամ
+          </p>
+        )}
       </div>
     </div>
   );

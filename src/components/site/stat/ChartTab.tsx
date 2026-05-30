@@ -1,17 +1,33 @@
 "use client";
 
+import { useEffect } from "react";
 import Chart from "@/components/indicators/charts/Chart";
 import type { MetricCombination } from "@/types/metric";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MarkdownText } from "@/components/site/MarkdownText";
+import { recordMetricView } from "@/services/metricsService";
 
 interface ChartTabProps {
   combinations?: MetricCombination[];
   isLoading?: boolean;
   link?: string;
+  metricId?: string;
+  viewCount?: number;
 }
 
-export default function ChartTab({ combinations = [], isLoading = false, link }: ChartTabProps) {
+export default function ChartTab({
+  combinations = [],
+  isLoading = false,
+  link,
+  metricId,
+  viewCount,
+}: ChartTabProps) {
+  useEffect(() => {
+    if (metricId) {
+      recordMetricView(metricId).catch(() => {});
+    }
+  }, [metricId]);
+
   return (
     <div className="flex w-full flex-col gap-4">
       {isLoading ? (
@@ -34,7 +50,11 @@ export default function ChartTab({ combinations = [], isLoading = false, link }:
               Աղբյուրը՝ <MarkdownText as={"span"}>{link}</MarkdownText>
             </p>
           </div>
-          <p className="text-[11px] text-[rgba(110,127,136,1)]">Դիտված է 1,343 անգամ</p>
+          {viewCount != null && (
+            <p className="text-[11px] text-[rgba(110,127,136,1)]">
+              Դիտված է {viewCount.toLocaleString()} անգամ
+            </p>
+          )}
         </div>
       )}
     </div>

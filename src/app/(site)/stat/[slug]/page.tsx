@@ -338,6 +338,8 @@ export default function StatPage() {
                     combinations={filteredCombinations}
                     isLoading={isLoading}
                     link={metric?.link?.[activeLang]}
+                    metricId={metric?._id}
+                    viewCount={metric?.viewCount}
                   />
                 </div>
               </TabsContent>
@@ -349,6 +351,7 @@ export default function StatPage() {
                     isLoading={isLoading}
                     link={metric?.link?.[activeLang]}
                     updatedAt={metric?.updatedAt}
+                    viewCount={metric?.viewCount}
                   />
                 </div>
               </TabsContent>

@@ -68,6 +68,7 @@ export type MetricResponse = {
   unit?: Record<string, string> & { am?: string; hy?: string; ru?: string; en?: string };
   isCumulative?: boolean;
   total?: MetricTotal;
+  viewCount?: number;
 };
 
 export type MetricSelectOption = {
