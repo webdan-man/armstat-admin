@@ -16,6 +16,7 @@ import { useIndicatorFilters } from "@/components/indicators/indicator-filters-c
 import { getSectionLocalizedText } from "@/lib/section-localization";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { fetchMetricsByTopicId } from "@/services/metricsService";
+import { Button } from "@/components/ui/button";
 
 const selectTriggerClass = cn(
   "h-9 w-full rounded-[8.5px] border-[#c8c8c8] bg-[#f9fafb] shadow-none"
@@ -131,32 +132,46 @@ export default function Filters() {
             </SelectContent>
           </Select>
         </div>
-        {selectedFilter.subSubgroup && (
-          <div className="flex flex-col items-start">
-            <FilterChip>Ենթա-ենթախումբ</FilterChip>
-            <Select
-              key={selectedFilter.subgroup || "empty-subgroup"}
-              disabled={isLoading || !selectedFilter.subgroup}
-              value={selectedFilter.subSubgroup || undefined}
-              onValueChange={(val) =>
-                setSelectedFilter((prev) => ({
-                  ...prev,
-                  subSubgroup: val,
-                  indicator: "",
-                }))
-              }
-            >
-              <SelectTrigger className={selectTriggerClass}>
-                <SelectValue placeholder={"Ենթա-ենթախումբ"} />
-              </SelectTrigger>
-              <SelectContent>
-                {childTopics.map((topic) => (
-                  <SelectItem key={topic._id} value={topic._id}>
-                    {getSectionLocalizedText(topic.title)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
+        {!!childTopics.length && (
+          <div className="flex w-full items-end justify-between gap-6">
+            <div className="flex w-full flex-col items-start">
+              <FilterChip>Ենթա-ենթախումբ</FilterChip>
+              <Select
+                key={selectedFilter.subSubgroup || "empty-subgroup"}
+                disabled={isLoading || !selectedFilter.subgroup}
+                value={selectedFilter.subSubgroup || undefined}
+                onValueChange={(val) =>
+                  setSelectedFilter((prev) => ({
+                    ...prev,
+                    subSubgroup: val,
+                    indicator: "",
+                  }))
+                }
+              >
+                <SelectTrigger className={selectTriggerClass}>
+                  <SelectValue placeholder={"Ենթա-ենթախումբ"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {childTopics.map((topic) => (
+                    <SelectItem key={topic._id} value={topic._id}>
+                      {getSectionLocalizedText(topic.title)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedFilter.subSubgroup && (
+              <Button
+                className="bg-destructive"
+                onClick={() =>
+                  setSelectedFilter((prev) => ({ ...prev, subSubgroup: "", indicator: "" }))
+                }
+              >
+                X
+              </Button>
+            )}
           </div>
         )}
       </div>
