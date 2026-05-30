@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import { Input } from "@/components/ui/input";
@@ -15,9 +15,7 @@ import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/f
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -25,6 +23,7 @@ import { cn } from "@/lib/utils";
 import type { IndicatorFormValues } from "@/components/indicators/indicator-form-schema";
 import { useIndicatorSections } from "@/components/indicators/indicator-filters-context";
 import { getSectionLocalizedText } from "@/lib/section-localization";
+import { isRootTopic } from "@/lib/section-topic-utils";
 
 const fieldBorder =
   "h-9 rounded-[8.5px] border-[rgba(230,231,235,1)] bg-white text-sm text-[#2c2c2c] md:text-sm";
@@ -129,74 +128,144 @@ function IsCumulativeCheckbox() {
 }
 
 function TopicIdSelect() {
-  const { control } = useFormContext<IndicatorFormValues>();
+  const { control, setValue } = useFormContext<IndicatorFormValues>();
   const { sections } = useIndicatorSections();
   const topicId = useWatch({ control, name: "topicId" });
 
-  const sectionGroups = useMemo(
-    () =>
-      sections
-        .map((section) => ({
-          sectionId: section._id,
-          sectionName: section.name,
-          topics: section.topics.flatMap((topic) => [
-            {
-              id: topic._id,
-              label: getSectionLocalizedText(topic.title),
-              parentLabel: null as string | null,
-            },
-            ...(topic.subtopics ?? []).map((sub) => ({
-              id: sub._id,
-              label: getSectionLocalizedText(sub.title),
-              parentLabel: getSectionLocalizedText(topic.title),
-            })),
-          ]),
-        }))
-        .filter((g) => g.topics.length > 0),
-    [sections]
-  );
+  const [localSection, setLocalSection] = useState("");
+  const [localTopic, setLocalTopic] = useState("");
+  const [localSubtopic, setLocalSubtopic] = useState("");
+  const initialized = useRef(false);
 
-  const allTopics = useMemo(() => sectionGroups.flatMap((g) => g.topics), [sectionGroups]);
+  useEffect(() => {
+    if (initialized.current || !topicId || sections.length === 0) return;
+    for (const section of sections) {
+      for (const topic of section.topics) {
+        if (!isRootTopic(topic)) continue;
+        if (topic._id === topicId) {
+          setLocalSection(section._id);
+          setLocalTopic(topic._id);
+          initialized.current = true;
+          return;
+        }
+        for (const sub of topic.subtopics ?? []) {
+          if (sub._id === topicId) {
+            setLocalSection(section._id);
+            setLocalTopic(topic._id);
+            setLocalSubtopic(sub._id);
+            initialized.current = true;
+            return;
+          }
+        }
+      }
+    }
+  }, [topicId, sections]);
 
-  const matched = allTopics.find((t) => t.id === topicId);
-  const displayLabel = matched
-    ? matched.parentLabel
-      ? `${matched.parentLabel} · ${matched.label}`
-      : matched.label
-    : undefined;
+  const rootTopics = useMemo(() => {
+    const section = sections.find((s) => s._id === localSection);
+    return section ? section.topics.filter(isRootTopic) : [];
+  }, [sections, localSection]);
+
+  const childTopics = useMemo(() => {
+    const topic = rootTopics.find((t) => t._id === localTopic);
+    return topic?.subtopics ?? [];
+  }, [rootTopics, localTopic]);
+
+  const handleSectionChange = (val: string) => {
+    setLocalSection(val);
+    setLocalTopic("");
+    setLocalSubtopic("");
+    setValue("topicId", "", { shouldDirty: true });
+  };
+
+  const handleTopicChange = (val: string) => {
+    setLocalTopic(val);
+    setLocalSubtopic("");
+    const topic = rootTopics.find((t) => t._id === val);
+    if ((topic?.subtopics ?? []).length === 0) {
+      setValue("topicId", val, { shouldDirty: true });
+    } else {
+      setValue("topicId", "", { shouldDirty: true });
+    }
+  };
+
+  const handleSubtopicChange = (val: string) => {
+    setLocalSubtopic(val);
+    setValue("topicId", val, { shouldDirty: true });
+  };
 
   return (
-    <div className="grid grid-cols-[1fr_3fr] gap-5">
-      <Label className="text-sm font-medium text-[#575757]">Ենթախումբ</Label>
+    <>
+      <div className="grid grid-cols-[1fr_3fr] gap-5">
+        <Label className="text-sm font-medium text-[#575757]">Բաժին</Label>
+        <Select value={localSection || ""} onValueChange={handleSectionChange}>
+          <SelectTrigger className={`${fieldBorder} w-full`}>
+            <SelectValue placeholder="Ընտրեք…" />
+          </SelectTrigger>
+          <SelectContent>
+            {sections.map((section) => (
+              <SelectItem key={section._id} value={section._id}>
+                {getSectionLocalizedText(section.name)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid grid-cols-[1fr_3fr] gap-5">
+        <Label className="text-sm font-medium text-[#575757]">Ենթախումբ</Label>
+        <Select
+          key={localSection || "empty-section"}
+          disabled={!localSection}
+          value={localTopic || ""}
+          onValueChange={handleTopicChange}
+        >
+          <SelectTrigger className={`${fieldBorder} w-full`}>
+            <SelectValue placeholder="Ընտրեք…" />
+          </SelectTrigger>
+          <SelectContent>
+            {rootTopics.map((topic) => (
+              <SelectItem key={topic._id} value={topic._id}>
+                {getSectionLocalizedText(topic.title)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {childTopics.length > 0 && (
+        <div className="grid grid-cols-[1fr_3fr] gap-5">
+          <Label className="text-sm font-medium text-[#575757]">Ենթա-ենթախումբ</Label>
+          <Select
+            key={localTopic || "empty-topic"}
+            disabled={!localTopic}
+            value={localSubtopic || ""}
+            onValueChange={handleSubtopicChange}
+          >
+            <SelectTrigger className={`${fieldBorder} w-full`}>
+              <SelectValue placeholder="Ընտրեք…" />
+            </SelectTrigger>
+            <SelectContent>
+              {childTopics.map((sub) => (
+                <SelectItem key={sub._id} value={sub._id}>
+                  {getSectionLocalizedText(sub.title)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       <FormField
         control={control}
         name="topicId"
-        render={({ field }) => (
+        render={() => (
           <FormItem>
-            <Select value={topicId || ""} onValueChange={field.onChange}>
-              <FormControl>
-                <SelectTrigger className={`${fieldBorder} w-full`}>
-                  <SelectValue placeholder="Ընտրեք…">{displayLabel}</SelectValue>
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {sectionGroups.map(({ sectionId, sectionName, topics }) => (
-                  <SelectGroup key={sectionId}>
-                    <SelectLabel>{sectionName.hy}</SelectLabel>
-                    {topics.map(({ id, label, parentLabel }) => (
-                      <SelectItem key={id} value={id}>
-                        {parentLabel ? `${parentLabel} · ${label}` : label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
             <FormMessage />
           </FormItem>
         )}
       />
-    </div>
+    </>
   );
 }
 
