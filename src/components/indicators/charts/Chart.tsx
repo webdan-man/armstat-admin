@@ -20,6 +20,7 @@ import MapAndStackedColumnChart from "@/components/indicators/charts/MapAndStack
 import MapAndStackedBarWithNegativeValuesChart from "@/components/indicators/charts/MapAndStackedBarWithNegativeValuesChart";
 import MapAndClusteredColumnChart from "@/components/indicators/charts/MapAndClusteredColumnChart";
 import GroupedStackedColumnChart from "@/components/indicators/charts/GroupedStackedColumnChart";
+import MapAndGroupedStackedColumnChart from "@/components/indicators/charts/MapAndGroupedStackedColumnChart";
 
 interface ChartProps {
   combinations?: MetricCombination[];
@@ -245,6 +246,13 @@ const Chart = ({ combinations = [] }: ChartProps) => {
           data={data?.data ?? []}
           stackDimensions={data?.stackDimensions ?? []}
           innerAttributeName={data?.innerAttributeName ?? ""}
+        />
+      );
+    case "map-and-grouped-stacked-column-chart":
+      return (
+        <MapAndGroupedStackedColumnChart
+          combinations={combinations}
+          data={data}
         />
       );
     case "bar":

@@ -203,10 +203,9 @@ export function EditSubgroupDialog({
             order: childTopics.length,
           };
 
-      const created = await withToastError(
-        () => upsertTopic(createPayload),
-        { title: "Ենթաթեման ստեղծվել է" }
-      );
+      const created = await withToastError(() => upsertTopic(createPayload), {
+        title: "Ենթաթեման ստեղծվել է",
+      });
       if (!created) return;
 
       await mutate(swrKeys.sections);
@@ -228,9 +227,7 @@ export function EditSubgroupDialog({
       .filter((child) => child.title.hy || child.title.ru || child.title.en);
     setIsSubmitting(true);
     try {
-      const existingTitles = new Set(
-        childTopics.map((t) => t.title.hy.trim().toLowerCase())
-      );
+      const existingTitles = new Set(childTopics.map((t) => t.title?.hy?.trim()?.toLowerCase()));
       const childToCreate = normalizedChildren.filter(
         (child) => !existingTitles.has(child.title.hy.toLowerCase())
       );
@@ -255,9 +252,7 @@ export function EditSubgroupDialog({
             childToCreate.map((child, idx) =>
               upsertTopic({
                 sectionId,
-                ...(headingTopic
-                  ? {}
-                  : { parentTopicId: sourceTopic._id }),
+                ...(headingTopic ? {} : { parentTopicId: sourceTopic._id }),
                 title: child.title,
                 body: child.body,
                 order: childTopics.length + idx,

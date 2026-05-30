@@ -52,7 +52,8 @@ type ChartType =
   | "semi-pie-and-clustered-column-chart-stacked"
   | "line-graph-and-clustered-column-chart-stacked"
   | "column-with-rotated-labels-and-clustered-column-chart-stacked"
-  | "grouped-stacked-column-chart";
+  | "grouped-stacked-column-chart"
+  | "map-and-grouped-stacked-column-chart";
 
 function getUniqueAttributeIds(combinations: MetricCombination[]): string[] {
   const ids = new Set<string>();
@@ -467,7 +468,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
       }
 
       // Fallback for 2 attributes from the same category (e.g. 2×OTHER, row 23 of Discussed sheet)
-      // Use Clustered Column chart with CXG
+      // Both are OTHER → Stacked Column chart
       {
         const [id0, id1] = attributeIds;
         const a0 = attributeMap.get(id0);
@@ -476,23 +477,21 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         if (a0 && a1) {
           const xAxisKey = a0.category;
 
-          const mapped = mapCombinationsForClusteredColumnChart({
+          const { data, seriesKeys, yAxisAttributeTitle } = mapCombinationsForStackedColumnChart({
             combinations,
             xAxisAttributeId: id0,
             yAxisAttributeId: id1,
             xAxisKey,
           });
 
-          const { data, seriesKeys } = mapped;
-          const resolvedXAxisKey = "xAxisKey" in mapped ? mapped.xAxisKey : xAxisKey;
-
-          console.log("2-ATTR SAME-CATEGORY FALLBACK CLUSTERED COLUMN CHART", { combinations, data, seriesKeys });
+          console.log("2-ATTR SAME-CATEGORY FALLBACK STACKED COLUMN CHART", { combinations, data, seriesKeys });
 
           return {
-            type: "clustered-column-chart",
-            xAxisKey: resolvedXAxisKey,
+            type: "stacked-column-chart",
+            xAxisKey,
             seriesKeys,
             data,
+            yAxisLabel: yAxisAttributeTitle,
           };
         }
       }
@@ -842,6 +841,40 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         };
       }
 
+      // Map + Stacked column chart: Province + 2×OTHER
+      // CXG: fewer unique values → X axis, more → series/stacks
+      if (
+        categories.size === 2 &&
+        has(AttributeCategory.PROVINCE) &&
+        has(AttributeCategory.OTHER)
+      ) {
+        const provinceAttributeId = attributeMapByCategory.get(AttributeCategory.PROVINCE)!._id;
+        const otherIds = attributeIds.filter(
+          (id) => attributeMap.get(id)?.category === AttributeCategory.OTHER
+        );
+        const [otherId0, otherId1] = otherIds;
+
+        const count0 = countUniqueForAttr(combinations, otherId0);
+        const count1 = countUniqueForAttr(combinations, otherId1);
+        const stackedAttributeId = count0 <= count1 ? otherId0 : otherId1;
+        const seriesAttributeId = stackedAttributeId === otherId0 ? otherId1 : otherId0;
+
+        const xAxisKey = "other";
+        const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
+
+        console.log("PROVINCE+2×OTHER MAP + STACKED COLUMN CXG", {
+          combinations,
+          stackedAttributeId,
+          seriesAttributeId,
+        });
+
+        return {
+          type: "map-and-stacked-column-chart",
+          xAxisKey,
+          data: { mapData, provinceAttributeId, stackedAttributeId, seriesAttributeId },
+        };
+      }
+
       if (
         has(AttributeCategory.GENDER) &&
         has(AttributeCategory.AGE) &&
@@ -1123,6 +1156,86 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
               attributeMapByCategory4
             ),
           };
+        }
+
+        // ── Map + Grouped Stacked Column Chart ───────────────────────────────────
+        {
+          const nonProvAttrs4 = attrObjects.filter((a) => a.category !== AttributeCategory.PROVINCE);
+          const otherAttrs4 = nonProvAttrs4.filter((a) => a.category === AttributeCategory.OTHER);
+
+          // Case 1: GENDER + PROVINCE + 2×OTHER → GENDER=inner(X), CXG between OTHERs
+          if (
+            genderAttr &&
+            otherAttrs4.length === 2 &&
+            !has4(AttributeCategory.AGE) &&
+            !has4(AttributeCategory.AREA) &&
+            !has4(AttributeCategory.TIME)
+          ) {
+            const [o0, o1] = otherAttrs4;
+            const outerAttr = countUniqueForAttr(combinations, o0._id) <= countUniqueForAttr(combinations, o1._id) ? o0 : o1;
+            const stackAttr = outerAttr === o0 ? o1 : o0;
+            const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
+            console.log("MAP+GENDER+2×OTHER GROUPED STACKED COLUMN CXG", { combinations });
+            return {
+              type: "map-and-grouped-stacked-column-chart",
+              data: {
+                mapData, provinceAttributeId,
+                outerAttributeId: outerAttr._id,
+                innerAttributeId: genderAttr._id,
+                stackAttributeId: stackAttr._id,
+                innerAttributeName: pickAttributeDisplayTitle(genderAttr),
+              },
+            };
+          }
+
+          // Case 2: TIME + PROVINCE + 2×OTHER → TIME=stack(Y), CXG between OTHERs
+          if (
+            has4(AttributeCategory.TIME) &&
+            !has4(AttributeCategory.GENDER) &&
+            otherAttrs4.length === 2
+          ) {
+            const timeAttr4 = attrObjects.find((a) => a.category === AttributeCategory.TIME)!;
+            const [o0, o1] = otherAttrs4;
+            const outerAttr = countUniqueForAttr(combinations, o0._id) <= countUniqueForAttr(combinations, o1._id) ? o0 : o1;
+            const innerAttr = outerAttr === o0 ? o1 : o0;
+            const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
+            console.log("MAP+TIME+2×OTHER GROUPED STACKED COLUMN CXG", { combinations });
+            return {
+              type: "map-and-grouped-stacked-column-chart",
+              data: {
+                mapData, provinceAttributeId,
+                outerAttributeId: outerAttr._id,
+                innerAttributeId: innerAttr._id,
+                stackAttributeId: timeAttr4._id,
+                innerAttributeName: pickAttributeDisplayTitle(innerAttr),
+              },
+            };
+          }
+
+          // Cases 3-6: Province + (AGE|AREA mix + 2-3×OTHER, no GENDER, no TIME) → CYXG all 3
+          // 3: AGE+AREA+OTHER, 4: AGE+2×OTHER, 5: AREA+2×OTHER, 6: 3×OTHER
+          if (
+            !has4(AttributeCategory.GENDER) &&
+            !has4(AttributeCategory.TIME) &&
+            nonProvAttrs4.length === 3
+          ) {
+            const sorted = nonProvAttrs4
+              .map((a) => ({ a, count: countUniqueForAttr(combinations, a._id) }))
+              .sort((x, y) => x.count - y.count);
+            const [yEntry, xEntry, cEntry] = sorted;
+            const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
+            console.log("MAP+3CYXG GROUPED STACKED COLUMN (no GENDER, no TIME)", { combinations, outer: cEntry.a, inner: xEntry.a, stack: yEntry.a });
+            return {
+              type: "map-and-grouped-stacked-column-chart",
+              data: {
+                mapData, provinceAttributeId,
+                outerAttributeId: cEntry.a._id,
+                innerAttributeId: xEntry.a._id,
+                stackAttributeId: yEntry.a._id,
+                innerAttributeName: pickAttributeDisplayTitle(xEntry.a),
+              },
+            };
+          }
         }
 
         // Map + Clustered Column chart (stacked): Province + Gender + 2 CXG attrs
