@@ -20,6 +20,7 @@ import SearchInput from "@/components/site/stat/SearchInput";
 import TableTab from "@/components/site/stat/TableTab";
 import React, { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
+import { toast } from "sonner";
 import useSWR from "swr";
 import { useLang } from "@/providers/LangProvider";
 import { buildStatMenu, isSlugInStatMenu } from "@/lib/stat-menu-utils";
@@ -28,6 +29,7 @@ import {
   getMetricById,
   getMetricCombinations,
   fetchMetricsByTopicId,
+  downloadMetricCombinationsCSV,
 } from "@/services/metricsService";
 import { fetchSections } from "@/services/sectionsService";
 import { swrKeys } from "@/lib/swr/cache-keys";
@@ -227,11 +229,30 @@ export default function StatPage() {
               </div>
             </div>
             <div className="flex">
-              <Button variant="ghost" className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                className="flex items-center gap-1"
+                disabled={!selectedMetricId}
+                onClick={() => {
+                  if (selectedMetricId) void downloadMetricCombinationsCSV(selectedMetricId);
+                }}
+              >
                 <Image src={"/icons/download.svg"} alt="download" width={20} height={20} />
                 <p className="text-link text-[12px] font-medium">Ներբեռնել</p>
               </Button>
-              <Button variant="ghost" className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                className="flex items-center gap-1"
+                onClick={async () => {
+                  const url = window.location.href;
+                  try {
+                    await navigator.clipboard.writeText(url);
+                    toast.success("Հղումը պատճենված է");
+                  } catch {
+                    toast.error("Չհաջողվեց պատճենել հղումը");
+                  }
+                }}
+              >
                 <Image src={"/icons/share.svg"} alt="share" width={20} height={20} />
                 <p className="text-link text-[12px] font-medium">Կիսվել</p>
               </Button>
