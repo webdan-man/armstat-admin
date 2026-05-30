@@ -581,11 +581,13 @@ export default function CreateWindow() {
                                 </FormControl>
                                 <SelectContent>
                                   <SelectGroup>
-                                    {libraryOptions.map((opt) => (
-                                      <SelectItem key={opt.value} value={opt.value}>
-                                        {opt.label}
-                                      </SelectItem>
-                                    ))}
+                                    {libraryOptions
+                                      .sort((a, b) => a.label.localeCompare(b.label))
+                                      .map((opt) => (
+                                        <SelectItem key={opt.value} value={opt.value}>
+                                          {opt.label}
+                                        </SelectItem>
+                                      ))}
                                   </SelectGroup>
                                 </SelectContent>
                               </Select>
