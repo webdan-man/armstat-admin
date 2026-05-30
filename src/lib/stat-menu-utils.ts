@@ -1,5 +1,6 @@
 import { isRootTopic } from "@/lib/section-topic-utils";
 import type { Section } from "@/types/section";
+import { getSectionLocalizedText } from "@/lib/section-localization";
 
 export type StatMenuItem = {
   id: string;
@@ -10,13 +11,13 @@ export type StatMenuItem = {
 export function buildStatMenu(sections: Section[]): StatMenuItem[] {
   return sections.map((section) => ({
     id: section._id,
-    title: section.name,
+    title: getSectionLocalizedText(section.name),
     children: section.topics.filter(isRootTopic).map((rootTopic) => ({
       id: rootTopic._id,
-      title: rootTopic.title,
+      title: getSectionLocalizedText(rootTopic.title),
       children: (rootTopic.subtopics ?? []).map((sub) => ({
         id: sub._id,
-        title: sub.title,
+        title: getSectionLocalizedText(sub.title),
       })),
     })),
   }));

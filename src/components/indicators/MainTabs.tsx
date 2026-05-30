@@ -24,6 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { IndicatorFormValues } from "@/components/indicators/indicator-form-schema";
 import { useIndicatorSections } from "@/components/indicators/indicator-filters-context";
+import { getSectionLocalizedText } from "@/lib/section-localization";
 
 const fieldBorder =
   "h-9 rounded-[8.5px] border-[rgba(230,231,235,1)] bg-white text-sm text-[#2c2c2c] md:text-sm";
@@ -139,11 +140,11 @@ function TopicIdSelect() {
           sectionId: section._id,
           sectionName: section.name,
           topics: section.topics.flatMap((topic) => [
-            { id: topic._id, label: topic.title, parentLabel: null as string | null },
+            { id: topic._id, label: getSectionLocalizedText(topic.title), parentLabel: null as string | null },
             ...(topic.subtopics ?? []).map((sub) => ({
               id: sub._id,
-              label: sub.title,
-              parentLabel: topic.title,
+              label: getSectionLocalizedText(sub.title),
+              parentLabel: getSectionLocalizedText(topic.title),
             })),
           ]),
         }))

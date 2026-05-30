@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/accordion";
 import { SectionTopicRow } from "@/components/groups/SectionTopicRow";
 import type { Section } from "@/types/section";
+import { getSectionLocalizedText } from "@/lib/section-localization";
 import { cn } from "@/lib/utils";
 
 type SectionAccordionProps = {
@@ -28,6 +29,7 @@ export function SectionAccordion({ sections }: SectionAccordionProps) {
         const sectionHeadingTopic = {
           ...section,
           title: section.name,
+          body: section.description,
           topics: [],
           sectionId: section._id,
         };
@@ -51,7 +53,7 @@ export function SectionAccordion({ sections }: SectionAccordionProps) {
                 aria-hidden
               />
               <span className="flex-1 text-left text-[14px] leading-[14px] font-medium text-[#2c2c2c]">
-                {section.name}
+                {getSectionLocalizedText(section.name)}
               </span>
             </AccordionTrigger>
             <AccordionContent className="pb-0">

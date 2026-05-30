@@ -11,16 +11,16 @@ export async function createSection(payload: {
 }): Promise<Section> {
   return apiClient<Section>("/api/sections", {
     method: "POST",
-    body: JSON.stringify({ name: payload.name.hy, description: payload.description.hy }),
+    body: JSON.stringify({ name: payload.name, description: payload.description }),
   });
 }
 
 export async function updateSection(
   sectionId: string,
-  payload: { name: string; description: string }
+  payload: { name: SectionLocalizedText; description: SectionLocalizedText }
 ): Promise<Section> {
   return apiClient<Section>(`/api/sections/${sectionId}`, {
-    method: "PUT",
+    method: "PATCH",
     body: JSON.stringify(payload),
   });
 }
@@ -28,8 +28,8 @@ export async function updateSection(
 export type UpsertTopicPayload = {
   sectionId: string;
   parentTopicId?: string;
-  title: string;
-  body: string;
+  title: SectionLocalizedText;
+  body: SectionLocalizedText;
   order: number;
 };
 
@@ -44,6 +44,16 @@ export async function getTopicSubtopics(topicId: string): Promise<Topic[]> {
 export async function upsertTopic(payload: UpsertTopicPayload): Promise<Topic> {
   return apiClient<Topic>("/api/topics", {
     method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateTopic(
+  topicId: string,
+  payload: Partial<UpsertTopicPayload>
+): Promise<Topic> {
+  return apiClient<Topic>(`/api/topics/${topicId}`, {
+    method: "PATCH",
     body: JSON.stringify(payload),
   });
 }

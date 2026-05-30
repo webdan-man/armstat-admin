@@ -10,13 +10,14 @@ import { SectionAccordion } from "@/components/groups/SectionAccordion";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { fetchSections } from "@/services/sectionsService";
 import type { Section } from "@/types/section";
+import { getSectionLocalizedText } from "@/lib/section-localization";
 
 function filterSectionsByQuery(sections: Section[], query: string): Section[] {
   const q = query.trim().toLowerCase();
   if (!q) return sections;
   return sections.filter((s) => {
-    if (s.name.toLowerCase().includes(q)) return true;
-    return s.topics.some((t) => t.title.toLowerCase().includes(q));
+    if (getSectionLocalizedText(s.name).toLowerCase().includes(q)) return true;
+    return s.topics.some((t) => getSectionLocalizedText(t.title).toLowerCase().includes(q));
   });
 }
 

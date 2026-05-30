@@ -33,9 +33,11 @@ import {
   getTopicById,
   getTopicSubtopics,
   updateSection,
+  updateTopic,
   upsertTopic,
 } from "@/services/sectionsService";
 import type { Topic } from "@/types/section";
+import { getSectionLocalizedText } from "@/lib/section-localization";
 import Image from "next/image";
 
 type LangCode = "hy" | "ru" | "en";
@@ -131,11 +133,11 @@ export function EditSubgroupDialog({
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      title: { hy: topic.title, ru: "", en: "" },
-      body: { hy: topic.body ?? "", ru: "", en: "" },
+      title: { hy: topic.title.hy ?? "", ru: topic.title.ru ?? "", en: topic.title.en ?? "" },
+      body: { hy: topic.body?.hy ?? "", ru: topic.body?.ru ?? "", en: topic.body?.en ?? "" },
       nestedSubgroups: childTopics.map((t) => ({
-        title: { hy: t.title, ru: "", en: "" },
-        body: { hy: t.body ?? "", ru: "", en: "" },
+        title: { hy: t.title.hy ?? "", ru: t.title.ru ?? "", en: t.title.en ?? "" },
+        body: { hy: t.body?.hy ?? "", ru: t.body?.ru ?? "", en: t.body?.en ?? "" },
       })),
     },
   });
@@ -190,15 +192,15 @@ export function EditSubgroupDialog({
       const createPayload = headingTopic
         ? {
             sectionId,
-            title: pickLocalized(newNestedSubgroup.title),
-            body: pickLocalized(newNestedSubgroup.body),
+            title: newNestedSubgroup.title,
+            body: newNestedSubgroup.body,
             order: childTopics.length,
           }
         : {
             sectionId,
             parentTopicId: sourceTopic._id,
-            title: pickLocalized(newNestedSubgroup.title),
-            body: pickLocalized(newNestedSubgroup.body),
+            title: newNestedSubgroup.title,
+            body: newNestedSubgroup.body,
             order: childTopics.length,
           };
 
@@ -221,15 +223,17 @@ export function EditSubgroupDialog({
 
     const normalizedChildren = values.nestedSubgroups
       .map((child) => ({
-        title: pickLocalized(child.title).trim(),
-        body: pickLocalized(child.body).trim(),
+        title: { hy: child.title.hy.trim(), ru: child.title.ru.trim(), en: child.title.en.trim() },
+        body: { hy: child.body.hy.trim(), ru: child.body.ru.trim(), en: child.body.en.trim() },
       }))
-      .filter((child) => child.title.length > 0);
+      .filter((child) => child.title.hy || child.title.ru || child.title.en);
     setIsSubmitting(true);
     try {
-      const existingTitles = new Set(childTopics.map((t) => t.title.trim().toLowerCase()));
+      const existingTitles = new Set(
+        childTopics.map((t) => getSectionLocalizedText(t.title).trim().toLowerCase())
+      );
       const childToCreate = normalizedChildren.filter(
-        (child) => !existingTitles.has(child.title.toLowerCase())
+        (child) => !existingTitles.has(getSectionLocalizedText(child.title).toLowerCase())
       );
 
       const sectionIdForHeading = topic.sectionId ?? topic._id;
@@ -238,16 +242,13 @@ export function EditSubgroupDialog({
         async () => {
           if (headingTopic) {
             await updateSection(sectionIdForHeading, {
-              name: pickLocalized(values.title),
-              description: pickLocalized(values.body),
+              name: values.title,
+              description: values.body,
             });
           } else {
-            await upsertTopic({
-              sectionId,
-              parentTopicId: sourceTopic.parentTopicId ?? undefined,
-              title: pickLocalized(values.title),
-              body: pickLocalized(values.body),
-              order: sourceTopic.order ?? 0,
+            await updateTopic(sourceTopic._id, {
+              title: values.title,
+              body: values.body,
             });
           }
 
@@ -264,6 +265,8 @@ export function EditSubgroupDialog({
               })
             )
           );
+
+          return true;
         },
         { title: "Ենթախումբը թարմացվել է" }
       );

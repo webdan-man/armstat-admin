@@ -2,8 +2,8 @@ export type Topic = {
   _id: string;
   sectionId?: string;
   parentTopicId?: string | null;
-  title: string;
-  body?: string;
+  title: SectionLocalizedText;
+  body?: SectionLocalizedText;
   order?: number;
   createdAt: string;
   updatedAt: string;
@@ -18,8 +18,8 @@ export type SectionLocalizedText = {
 
 export type Section = {
   _id: string;
-  name: string;
-  description: string;
+  name: SectionLocalizedText;
+  description: SectionLocalizedText;
   createdAt: string;
   updatedAt: string;
   topics: Topic[];

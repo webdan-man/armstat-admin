@@ -98,9 +98,7 @@ export default function Filters() {
             <SelectContent>
               {sections.map((section) => (
                 <SelectItem key={section._id} value={section._id}>
-                  {typeof section.name === "string"
-                    ? section.name
-                    : getSectionLocalizedText(section.name)}
+                  {getSectionLocalizedText(section.name)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -127,40 +125,38 @@ export default function Filters() {
             <SelectContent>
               {rootTopics.map((topic) => (
                 <SelectItem key={topic._id} value={topic._id}>
-                  {topic.title}
+                  {getSectionLocalizedText(topic.title)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-        {childTopics.length > 0 && (
-          <div className="flex flex-col items-start">
-            {selectedFilter.subSubgroup && <FilterChip>Ենթա-ենթախումբ</FilterChip>}
-            <Select
-              key={selectedFilter.subgroup || "empty-subgroup"}
-              disabled={isLoading || !selectedFilter.subgroup}
-              value={selectedFilter.subSubgroup || undefined}
-              onValueChange={(val) =>
-                setSelectedFilter((prev) => ({
-                  ...prev,
-                  subSubgroup: val,
-                  indicator: "",
-                }))
-              }
-            >
-              <SelectTrigger className={selectTriggerClass}>
-                <SelectValue placeholder={"Ենթա-ենթախումբ"} />
-              </SelectTrigger>
-              <SelectContent>
-                {childTopics.map((topic) => (
-                  <SelectItem key={topic._id} value={topic._id}>
-                    {topic.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+        <div className="flex flex-col items-start">
+          {selectedFilter.subSubgroup && <FilterChip>Ենթա-ենթախումբ</FilterChip>}
+          <Select
+            key={selectedFilter.subgroup || "empty-subgroup"}
+            disabled={isLoading || !selectedFilter.subgroup}
+            value={selectedFilter.subSubgroup || undefined}
+            onValueChange={(val) =>
+              setSelectedFilter((prev) => ({
+                ...prev,
+                subSubgroup: val,
+                indicator: "",
+              }))
+            }
+          >
+            <SelectTrigger className={selectTriggerClass}>
+              <SelectValue placeholder={"Ենթա-ենթախումբ"} />
+            </SelectTrigger>
+            <SelectContent>
+              {childTopics.map((topic) => (
+                <SelectItem key={topic._id} value={topic._id}>
+                  {getSectionLocalizedText(topic.title)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       <div className={"grid min-h-11 w-full grid-cols-[5fr_1fr] items-center gap-6"}>
         <div className="flex flex-col items-start">
