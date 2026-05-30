@@ -248,6 +248,21 @@ const Chart = ({ combinations = [] }: ChartProps) => {
           innerAttributeName={data?.innerAttributeName ?? ""}
         />
       );
+    case "semi-pie-and-grouped-stacked-column-chart":
+      return (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div>
+            <SemiCircleChart data={data?.semiPieData ?? []} />
+          </div>
+          <div>
+            <GroupedStackedColumnChart
+              data={data?.data ?? []}
+              stackDimensions={data?.stackDimensions ?? []}
+              innerAttributeName={data?.innerAttributeName ?? ""}
+            />
+          </div>
+        </div>
+      );
     case "map-and-grouped-stacked-column-chart":
       return (
         <MapAndGroupedStackedColumnChart

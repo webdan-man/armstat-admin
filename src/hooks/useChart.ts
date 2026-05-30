@@ -53,7 +53,8 @@ type ChartType =
   | "line-graph-and-clustered-column-chart-stacked"
   | "column-with-rotated-labels-and-clustered-column-chart-stacked"
   | "grouped-stacked-column-chart"
-  | "map-and-grouped-stacked-column-chart";
+  | "map-and-grouped-stacked-column-chart"
+  | "semi-pie-and-grouped-stacked-column-chart";
 
 function getUniqueAttributeIds(combinations: MetricCombination[]): string[] {
   const ids = new Set<string>();
@@ -1307,10 +1308,84 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           value,
         }));
 
-        // Clustered stacked column: CYXG across 3 non-gender attrs
         const nonGenderAttrs = attrObjects.filter((a) => a.category !== AttributeCategory.GENDER);
         const [nga0, nga1, nga2] = nonGenderAttrs;
 
+        // Semi-pie + Grouped Stacked Column: GENDER + TIME + 2 remaining attrs
+        // TIME fixed as stack(Y); CXG between the 2 non-gender non-TIME attrs for inner(X)/outer(C)
+        if (has4(AttributeCategory.TIME)) {
+          const timeAttr4 = attrObjects.find((a) => a.category === AttributeCategory.TIME)!;
+          const cxgPair = nonGenderAttrs.filter((a) => a.category !== AttributeCategory.TIME);
+          const [cp0, cp1] = cxgPair;
+          const innerAttr = countUniqueForAttr(combinations, cp0._id) <= countUniqueForAttr(combinations, cp1._id) ? cp0 : cp1;
+          const outerAttr = innerAttr === cp0 ? cp1 : cp0;
+
+          const { data: chartData, stackDimensions } = mapCombinationsForGroupedStackedColumnChart({
+            combinations,
+            outerAttributeId: outerAttr._id,
+            innerAttributeId: innerAttr._id,
+            stackAttributeId: timeAttr4._id,
+          });
+
+          console.log("SEMI-PIE+AGE-X+TIME-Y+CXG GROUPED STACKED COLUMN", { combinations, semiPieData, chartData, stackDimensions });
+
+          return {
+            type: "semi-pie-and-grouped-stacked-column-chart",
+            data: {
+              semiPieData,
+              data: chartData,
+              stackDimensions,
+              innerAttributeName: pickAttributeDisplayTitle(innerAttr),
+            },
+          };
+        }
+
+        // Semi-pie + Grouped Stacked Column: GENDER(inner=X) + AGE|AREA(stack=Y) + 2×OTHER(CXG outer=C)
+        {
+          const otherAttrs = nonGenderAttrs.filter((a) => a.category === AttributeCategory.OTHER);
+          const ageOrAreaAttr = nonGenderAttrs.find(
+            (a) => a.category === AttributeCategory.AGE || a.category === AttributeCategory.AREA
+          );
+          if (ageOrAreaAttr && otherAttrs.length === 2) {
+            const [o0, o1] = otherAttrs;
+            const outerAttr = countUniqueForAttr(combinations, o0._id) <= countUniqueForAttr(combinations, o1._id) ? o0 : o1;
+            const { data: chartData, stackDimensions } = mapCombinationsForGroupedStackedColumnChart({
+              combinations,
+              outerAttributeId: outerAttr._id,
+              innerAttributeId: genderAttributeId,
+              stackAttributeId: ageOrAreaAttr._id,
+            });
+            console.log("SEMI-PIE+GENDER-X+(AGE|AREA)-Y+2×OTHER-CXG GROUPED STACKED COLUMN", { combinations });
+            return {
+              type: "semi-pie-and-grouped-stacked-column-chart",
+              data: { semiPieData, data: chartData, stackDimensions, innerAttributeName: pickAttributeDisplayTitle(genderAttr) },
+            };
+          }
+        }
+
+        // Semi-pie + Grouped Stacked Column: GENDER(inner=X) + 3×OTHER
+        // fewest-OTHER → stack(Y); of remaining 2: fewer → outer(C)
+        {
+          const otherAttrs = nonGenderAttrs.filter((a) => a.category === AttributeCategory.OTHER);
+          if (otherAttrs.length === 3) {
+            const sorted = otherAttrs
+              .map((a) => ({ a, count: countUniqueForAttr(combinations, a._id) }))
+              .sort((x, y) => x.count - y.count);
+            const { data: chartData, stackDimensions } = mapCombinationsForGroupedStackedColumnChart({
+              combinations,
+              outerAttributeId: sorted[1].a._id,
+              innerAttributeId: genderAttributeId,
+              stackAttributeId: sorted[0].a._id,
+            });
+            console.log("SEMI-PIE+GENDER-X+OTHER-Y+2×OTHER-CXG GROUPED STACKED COLUMN", { combinations });
+            return {
+              type: "semi-pie-and-grouped-stacked-column-chart",
+              data: { semiPieData, data: chartData, stackDimensions, innerAttributeName: pickAttributeDisplayTitle(genderAttr) },
+            };
+          }
+        }
+
+        // Fallback: clustered stacked column via CYXG across 3 non-gender attrs
         const { data: columnData, seriesKeys, xAxisKey } = mapCombinationsForClusteredColumnChartStacked3D({
           combinations,
           attributes: [
