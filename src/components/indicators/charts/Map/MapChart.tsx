@@ -427,5 +427,5 @@ export default function ArmeniaMapChart({
     polygonSeries.data.setAll(mapData);
   }, [data]);
 
-  return <div ref={containerRef} style={{ width: "100%", height: "800px" }} />;
+  return <div ref={containerRef} style={{ width: "100%", height: "500px" }} />;
 }
