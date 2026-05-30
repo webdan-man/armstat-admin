@@ -84,7 +84,7 @@ function LocaleTabContent({ lang }: { lang: (typeof locales)[number] }) {
         />
       </div>
       <div className="grid grid-cols-[1fr_3fr] gap-5">
-        <Label className="text-sm font-medium text-[#575757]">Միավորը</Label>
+        <Label className="text-sm font-medium text-[#575757]">Չափման միավոր</Label>
         <FormField
           control={control}
           name={`unit.${lang}`}

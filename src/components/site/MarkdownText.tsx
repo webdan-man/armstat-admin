@@ -14,8 +14,10 @@ export function MarkdownText({ children, className, as: Tag = "p" }: MarkdownTex
   const text = children?.trim();
   if (!text) return null;
 
+  const WrapperTag = Tag === "span" ? "span" : "div";
+
   return (
-    <Tag className={cn(className)}>
+    <WrapperTag className={cn(className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -29,7 +31,9 @@ export function MarkdownText({ children, className, as: Tag = "p" }: MarkdownTex
               {linkChildren}
             </a>
           ),
-          p: ({ children: paragraphChildren }) => <>{paragraphChildren}</>,
+          p: ({ children: paragraphChildren }) => (
+            <span className="block not-last:mb-3">{paragraphChildren}</span>
+          ),
           strong: ({ children: strongChildren }) => (
             <strong className="font-semibold">{strongChildren}</strong>
           ),
@@ -37,6 +41,6 @@ export function MarkdownText({ children, className, as: Tag = "p" }: MarkdownTex
       >
         {text}
       </ReactMarkdown>
-    </Tag>
+    </WrapperTag>
   );
 }
