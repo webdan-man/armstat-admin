@@ -79,8 +79,7 @@ const FEATURE_SECONDARY_LABEL_LANG_BY_KEY = Object.fromEntries(
   FEATURE_SECONDARY_LABEL_LANGS.map((lang) => [lang.key, lang.fieldLabel])
 ) as Record<MainLangCode, string>;
 
-const VALIDATION_ERROR_MESSAGE =
-  "Հատկանիշն ավելացնելու համար խնդրում ենք լրացնել բոլոր դաշտերը";
+const VALIDATION_ERROR_MESSAGE = "Հատկանիշն ավելացնելու համար խնդրում ենք լրացնել բոլոր դաշտերը";
 
 const featureLabelInputClass =
   "h-9 rounded-[8.5px] border-[rgba(230,231,235,1)] bg-white text-sm text-[#2c2c2c] md:text-sm";
@@ -309,7 +308,11 @@ export default function CreateWindow() {
     for (const row of rows) {
       const selectedAttribute = attributeByKey[row.libraryOption];
       const twoLevels = libraryHasTwoLevels(selectedAttribute);
-      if (!hasTextValue(row.label.hy) || !hasTextValue(row.label.en) || !hasTextValue(row.label.ru)) {
+      if (
+        !hasTextValue(row.label.hy) ||
+        !hasTextValue(row.label.en) ||
+        !hasTextValue(row.label.ru)
+      ) {
         return false;
       }
       if (twoLevels) {
@@ -620,13 +623,15 @@ export default function CreateWindow() {
                                 </FormControl>
                                 <SelectContent>
                                   <SelectGroup>
-                                    {libraryOptions
-                                      .sort((a, b) => a.label.localeCompare(b.label))
-                                      .map((opt) => (
-                                        <SelectItem key={opt.value} value={opt.value}>
-                                          {opt.label}
-                                        </SelectItem>
-                                      ))}
+                                    <div className="max-h-125 overflow-y-auto">
+                                      {libraryOptions
+                                        .sort((a, b) => a.label.localeCompare(b.label))
+                                        .map((opt) => (
+                                          <SelectItem key={opt.value} value={opt.value}>
+                                            {opt.label}
+                                          </SelectItem>
+                                        ))}
+                                    </div>
                                   </SelectGroup>
                                 </SelectContent>
                               </Select>
@@ -744,7 +749,7 @@ export default function CreateWindow() {
                                         Ընտրել բոլորը
                                       </button>
                                     </div>
-                                    <div className="max-h-56 space-y-2 overflow-y-auto px-3 py-2">
+                                    <div className="max-h-125 space-y-2 overflow-y-auto px-3 py-2">
                                       {libraryValueOptions.map((opt) => {
                                         const checked = selectedValueIds.includes(opt._id);
                                         const secondaryHy = opt.secondaryTitle?.hy?.trim();
