@@ -349,7 +349,7 @@ function GroupedStackedColumnChart({
     };
   }, [data, stackDimensions, innerAttributeName]);
 
-  return <div id={containerId} style={{ width: "100%", height: "800px" }} />;
+  return <div id={containerId} style={{ width: "100%", height: "600px" }} />;
 }
 
 export default GroupedStackedColumnChart;

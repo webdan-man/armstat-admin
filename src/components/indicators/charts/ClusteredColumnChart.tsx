@@ -95,9 +95,8 @@ function ClusteredColumnChart<T extends Record<string, string>>({
         centerX: am5.p50,
         x: am5.p50,
         marginTop: 15,
-        marginBottom: 15,
         width: am5.percent(95),
-        height: am5.percent(30),
+        height: am5.percent(20),
         layout: root.gridLayout,
         verticalScrollbar: am5.Scrollbar.new(root, { orientation: "vertical" }),
       })
@@ -179,7 +178,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
     seriesListRef.current.forEach((series) => series.data.setAll(data));
   }, [data]);
 
-  return <div id={containerId} style={{ width: "100%", height: "500px" }} />;
+  return <div id={containerId} style={{ width: "100%", height: "600px" }} />;
 }
 
 export default ClusteredColumnChart;

@@ -140,7 +140,11 @@ function TopicIdSelect() {
           sectionId: section._id,
           sectionName: section.name,
           topics: section.topics.flatMap((topic) => [
-            { id: topic._id, label: getSectionLocalizedText(topic.title), parentLabel: null as string | null },
+            {
+              id: topic._id,
+              label: getSectionLocalizedText(topic.title),
+              parentLabel: null as string | null,
+            },
             ...(topic.subtopics ?? []).map((sub) => ({
               id: sub._id,
               label: getSectionLocalizedText(sub.title),
@@ -178,7 +182,7 @@ function TopicIdSelect() {
               <SelectContent>
                 {sectionGroups.map(({ sectionId, sectionName, topics }) => (
                   <SelectGroup key={sectionId}>
-                    <SelectLabel>{sectionName}</SelectLabel>
+                    <SelectLabel>{sectionName.hy}</SelectLabel>
                     {topics.map(({ id, label, parentLabel }) => (
                       <SelectItem key={id} value={id}>
                         {parentLabel ? `${parentLabel} · ${label}` : label}

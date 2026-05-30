@@ -86,8 +86,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
     }
 
     const years = sourceRows.map((r) => r.year).filter((y) => Number.isFinite(y));
-    let currentYear: number =
-      years.length > 0 ? Math.max(...years) : new Date().getFullYear();
+    let currentYear: number = years.length > 0 ? Math.max(...years) : new Date().getFullYear();
 
     const frameLabelByYear = new Map<number, string>();
     for (const d of data as ChartDatum[]) {
@@ -171,10 +170,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         pyramidSeriesMale.data.setIndex(i, pyramidData[i]);
         pyramidSeriesFemale.data.setIndex(i, pyramidData[i]);
       }
-      pyramidTitle.set(
-        "text",
-        frameLabelByYear.get(currentYear) ?? String(currentYear)
-      );
+      pyramidTitle.set("text", frameLabelByYear.get(currentYear) ?? String(currentYear));
     }
 
     // ---- Pyramid chart
@@ -435,7 +431,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
 
   return (
     <div>
-      <div id={containerId} style={{ width: "100%", height: "500px" }} />
+      <div id={containerId} style={{ width: "100%", height: "550px" }} />
     </div>
   );
 }

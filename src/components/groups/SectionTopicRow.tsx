@@ -19,7 +19,6 @@ import { swrKeys } from "@/lib/swr/cache-keys";
 import { withToastError } from "@/lib/withToastError";
 import { deleteSection, deleteTopic } from "@/services/sectionsService";
 import type { Topic } from "@/types/section";
-import { getSectionLocalizedText } from "@/lib/section-localization";
 import { cn } from "@/lib/utils";
 
 type SectionTopicRowProps = {
@@ -40,7 +39,7 @@ export function SectionTopicRow({
   const [isDeleting, setIsDeleting] = useState(false);
   const { mutate } = useSWRConfig();
 
-  const topicTitle = getSectionLocalizedText(topic.title);
+  const topicTitle = topic.title.hy;
   const titleContent = showHeadingPrefix ? (
     <>
       <span className="text-[#747474]">Վերնագիր: </span>

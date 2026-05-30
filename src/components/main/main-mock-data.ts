@@ -1,4 +1,6 @@
 /** Main homepage editor types and API mappers. */
+import type { SectionLocalizedText } from "@/types/section";
+
 export type MainLangCode = "hy" | "ru" | "en";
 
 export type MainHomeBlock = {
@@ -97,8 +99,8 @@ export type HomePageLocalizedText = {
 
 export type HomePageSection = {
   _id: string;
-  name: string;
-  description: string;
+  name: SectionLocalizedText;
+  description: SectionLocalizedText;
   createdAt: string;
   updatedAt: string;
 };

@@ -7,7 +7,7 @@ import { StatisticsCarousel } from "@/components/site/home/StatisticsCarousel";
 export type FeaturedBlock = {
   titleKey: string;
   image?: string;
-  sections?: Array<{ name: string }>;
+  sections?: Array<{ name: { hy: string; ru?: string; en?: string } }>;
 };
 
 export type StatisticsProps = {
@@ -26,7 +26,7 @@ export default function Statistics({ blocks }: StatisticsProps) {
       <div className="flex w-full max-w-305 flex-col gap-15.75 px-5">
         {blocks.map((block, idx) => {
           const borderClass = BORDER_COLORS[idx % BORDER_COLORS.length];
-          const items = block?.sections?.map((s) => s.name) ?? [];
+          const items = block?.sections?.map((s) => s.name.hy) ?? [];
 
           return (
             <StatisticsCarousel key={`${block.titleKey}-${idx}`} items={items}>

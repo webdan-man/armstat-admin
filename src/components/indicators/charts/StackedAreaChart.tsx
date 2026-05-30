@@ -63,7 +63,7 @@ function StackedAreaChart<T extends Record<string, string>>({
     const yAxis = chart.yAxes.push(
       am5xy.ValueAxis.new(root, {
         renderer: am5xy.AxisRendererY.new(root, { pan: "zoom" }),
-        min: 0
+        min: 0,
       })
     );
 
@@ -138,7 +138,7 @@ function StackedAreaChart<T extends Record<string, string>>({
 
   return (
     <div>
-      <div id={containerId} style={{ width: "100%", height: "500px" }} />
+      <div id={containerId} style={{ width: "100%", height: "600px" }} />
     </div>
   );
 }

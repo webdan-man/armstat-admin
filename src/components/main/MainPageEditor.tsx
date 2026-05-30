@@ -139,7 +139,6 @@ function resolveHomePageImageSrc(value: string): string {
   return `${base}${value.startsWith("/") ? "" : "/"}${value}`;
 }
 
-
 function HeroImageFileControl({
   value,
   onChange,
@@ -372,7 +371,7 @@ function BlockCard({
               .filter((s) => !block.sectionIds.includes(s._id))
               .map((s) => (
                 <SelectItem key={s._id} value={s._id}>
-                  {s.name}
+                  {s.name.hy}
                 </SelectItem>
               ))}
           </SelectContent>
@@ -382,7 +381,7 @@ function BlockCard({
           {block.sectionIds.map((sid) => {
             const fromAvail = availableSections.find((s) => s._id === sid);
             const fromEmbedded = block.sections.find((s) => s._id === sid);
-            const label = fromAvail?.name ?? fromEmbedded?.name ?? sid;
+            const label = fromAvail?.name.hy ?? fromEmbedded?.name.hy ?? sid;
             return (
               <TagChip
                 key={sid}

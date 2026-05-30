@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/accordion";
 import { SectionTopicRow } from "@/components/groups/SectionTopicRow";
 import type { Section } from "@/types/section";
-import { getSectionLocalizedText } from "@/lib/section-localization";
 import { cn } from "@/lib/utils";
 
 type SectionAccordionProps = {
@@ -53,7 +52,7 @@ export function SectionAccordion({ sections }: SectionAccordionProps) {
                 aria-hidden
               />
               <span className="flex-1 text-left text-[14px] leading-[14px] font-medium text-[#2c2c2c]">
-                {getSectionLocalizedText(section.name)}
+                {section.name.hy}
               </span>
             </AccordionTrigger>
             <AccordionContent className="pb-0">
@@ -65,7 +64,11 @@ export function SectionAccordion({ sections }: SectionAccordionProps) {
               />
               {topLevelTopics.map((topic) => (
                 <React.Fragment key={topic._id}>
-                  <SectionTopicRow topic={topic} showHeadingPrefix={false} siblingTopics={section.topics} />
+                  <SectionTopicRow
+                    topic={topic}
+                    showHeadingPrefix={false}
+                    siblingTopics={section.topics}
+                  />
                   {(topic.subtopics ?? []).map((subtopic) => (
                     <SectionTopicRow
                       key={subtopic._id}

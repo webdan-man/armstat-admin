@@ -17,10 +17,7 @@ interface ColumnWithRotatedLabelsChartProps {
 
 const containerId = "columns-with-rotated-labels-chartdiv";
 
-function ColumnWithRotatedLabelsChart({
-  data,
-  chartTitle,
-}: ColumnWithRotatedLabelsChartProps) {
+function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLabelsChartProps) {
   const rootRef = useRef<am5.Root | null>(null);
   const titleLabelRef = useRef<am5.Label | null>(null);
   const xAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
@@ -162,7 +159,8 @@ function ColumnWithRotatedLabelsChart({
     );
 
     // Label
-    const legendLabel = legendBar.children.push(
+
+    legendLabelRef.current = legendBar.children.push(
       am5.Label.new(root, {
         text: data[0]?.label || "Հատկանիշ",
         centerY: am5.p50,
@@ -170,7 +168,6 @@ function ColumnWithRotatedLabelsChart({
         fontSize: 14,
       })
     );
-    legendLabelRef.current = legendLabel;
 
     // Legend
     const legend = legendBar.children.push(
@@ -289,7 +286,7 @@ function ColumnWithRotatedLabelsChart({
 
   return (
     <div>
-      <div id={containerId} style={{ width: "100%", height: "500px" }}></div>
+      <div id={containerId} style={{ width: "100%", height: "600px" }}></div>
     </div>
   );
 }

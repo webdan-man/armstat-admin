@@ -37,7 +37,6 @@ import {
   upsertTopic,
 } from "@/services/sectionsService";
 import type { Topic } from "@/types/section";
-import { getSectionLocalizedText } from "@/lib/section-localization";
 import Image from "next/image";
 
 type LangCode = "hy" | "ru" | "en";
@@ -230,10 +229,10 @@ export function EditSubgroupDialog({
     setIsSubmitting(true);
     try {
       const existingTitles = new Set(
-        childTopics.map((t) => getSectionLocalizedText(t.title).trim().toLowerCase())
+        childTopics.map((t) => t.title.hy.trim().toLowerCase())
       );
       const childToCreate = normalizedChildren.filter(
-        (child) => !existingTitles.has(getSectionLocalizedText(child.title).toLowerCase())
+        (child) => !existingTitles.has(child.title.hy.toLowerCase())
       );
 
       const sectionIdForHeading = topic.sectionId ?? topic._id;

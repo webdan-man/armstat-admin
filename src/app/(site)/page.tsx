@@ -83,11 +83,11 @@ export default async function Home({ searchParams }: HomePageProps) {
           titleKey: b.titleKey,
           image: absolutizeUrl(b.image, baseUrl),
           sections:
-            ((b.sections as Array<{ name?: string; title?: string }> | undefined) ?? [])
+            ((b.sections as Array<{ name?: { hy?: string; ru?: string; en?: string } }> | undefined) ?? [])
               .map((s) => ({
-                name: s.name ?? s.title ?? "",
+                name: { hy: s.name?.hy ?? "" },
               }))
-              .filter((s) => Boolean(s.name)) ?? [],
+              .filter((s) => Boolean(s.name.hy)) ?? [],
         }))}
       />
       <News

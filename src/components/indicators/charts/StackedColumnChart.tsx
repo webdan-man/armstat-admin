@@ -102,7 +102,7 @@ function StackedColumnChart<T extends Record<string, string>>({
     const legend = chart.children.push(
       am5.Legend.new(root, {
         width: am5.percent(100),
-        height: am5.percent(30),
+        height: am5.percent(20),
         centerX: am5.p50,
         x: am5.p50,
         layout: am5.GridLayout.new(root, {
@@ -204,7 +204,7 @@ function StackedColumnChart<T extends Record<string, string>>({
 
   return (
     <div>
-      <div id={containerId} style={{ width: "100%", height: "500px" }} />
+      <div id={containerId} style={{ width: "100%", height: "600px" }} />
     </div>
   );
 }
