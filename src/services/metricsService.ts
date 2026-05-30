@@ -181,30 +181,54 @@ export async function fetchMetricForForm(metricId: string): Promise<{
   };
 }
 
+function hasSecondaryLabelContent(
+  secondaryLabel: MetricAttributeFromApi["secondaryLabel"]
+): boolean {
+  return [secondaryLabel?.hy, secondaryLabel?.en, secondaryLabel?.ru].some(
+    (value) => typeof value === "string" && value.trim().length > 0
+  );
+}
+
 function mapMetricAttributesToFeatures(attributes: MetricAttributeFromApi[]): IndicatorFeature[] {
-  return attributes.map((item, index) => {
+  const features: IndicatorFeature[] = [];
+
+  attributes.forEach((item, index) => {
+    const label = {
+      hy: typeof item.label?.hy === "string" ? item.label.hy.trim() : "",
+      en: typeof item.label?.en === "string" ? item.label.en.trim() : "",
+      ru: typeof item.label?.ru === "string" ? item.label.ru.trim() : "",
+    };
     const secondaryLabel = {
       hy: typeof item.secondaryLabel?.hy === "string" ? item.secondaryLabel.hy.trim() : "",
       en: typeof item.secondaryLabel?.en === "string" ? item.secondaryLabel.en.trim() : "",
       ru: typeof item.secondaryLabel?.ru === "string" ? item.secondaryLabel.ru.trim() : "",
     };
-    const hasSecondary = Boolean(secondaryLabel.hy || secondaryLabel.en || secondaryLabel.ru);
-    return {
-      id: `${item.attributeId}-${index}`,
+    const base = {
       category: "",
       attributeKey: item.attributeId,
       attributeKeyLabel: "",
-      level: hasSecondary ? "secondary" : "primary",
       valueIds: item.valueIds ?? [],
       libraryDisplay: "",
-      label: {
-        hy: typeof item.label?.hy === "string" ? item.label.hy.trim() : "",
-        en: typeof item.label?.en === "string" ? item.label.en.trim() : "",
-        ru: typeof item.label?.ru === "string" ? item.label.ru.trim() : "",
-      },
+      label,
       secondaryLabel,
     };
+
+    features.push({
+      ...base,
+      id: `${item.attributeId}-primary-${index}`,
+      level: "primary",
+    });
+
+    if (hasSecondaryLabelContent(item.secondaryLabel)) {
+      features.push({
+        ...base,
+        id: `${item.attributeId}-secondary-${index}`,
+        level: "secondary",
+      });
+    }
   });
+
+  return features;
 }
 
 function pickMetricTitle(title: MetricResponse["title"]): string {

@@ -94,7 +94,11 @@ function FeaturesTable() {
     const labels = row.valueIds.map((valueId) => {
       const option = attribute.values.find((value) => value._id === valueId);
       if (!option) return valueId;
-      return option.secondaryTitle?.hy?.trim() || option.title?.hy?.trim() || option._id || valueId;
+      const label =
+        row.level === "secondary"
+          ? option.secondaryTitle?.hy?.trim() || option.title?.hy?.trim()
+          : option.title?.hy?.trim();
+      return label || option._id || valueId;
     });
 
     const joined = Array.from(new Set(labels.filter(Boolean))).join(", ");
@@ -103,11 +107,23 @@ function FeaturesTable() {
 
   const pendingDelete = deleteId ? features.find((f) => f.id === deleteId) : undefined;
 
+  const resolveAttributeName = (row: (typeof features)[number]): string => {
+    if (row.level === "secondary") {
+      const name = row.secondaryLabel?.hy?.trim();
+      if (name) return name;
+    } else {
+      const name = row.label?.hy?.trim();
+      if (name) return name;
+    }
+    return "—";
+  };
+
   return (
     <>
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="text-[14px] leading-3.5">Հատկանիշի անվանումը</TableHead>
             <TableHead className="text-[14px] leading-3.5">Կատեգորիա</TableHead>
             <TableHead className="text-[14px] leading-3.5">Գրադարան</TableHead>
             <TableHead className="text-[14px] leading-3.5">Մակարդակ</TableHead>
@@ -125,6 +141,9 @@ function FeaturesTable() {
           ) : (
             features.map((row) => (
               <TableRow key={row.id}>
+                <TableCell className="py-5 text-[14px] leading-3.5">
+                  {resolveAttributeName(row)}
+                </TableCell>
                 <TableCell className="py-5 text-[14px] leading-3.5">
                   {resolveCategoryLabel(row)}
                 </TableCell>

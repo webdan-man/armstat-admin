@@ -2,6 +2,7 @@
 
 import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 
+import { sameValueIds } from "@/components/indicators/attribute-library-helpers";
 import type { IndicatorFeature } from "@/types/indicator-feature";
 
 type IndicatorFeaturesContextValue = {
@@ -14,7 +15,7 @@ type IndicatorFeaturesContextValue = {
   addFeature: (input: Omit<IndicatorFeature, "id">) => void;
   replaceFeatures: (next: IndicatorFeature[]) => void;
   updateFeature: (id: string, patch: Partial<IndicatorFeature>) => void;
-  removeFeature: (id: string) => void;
+  removeFeature: (id: string, options?: { cascade?: boolean }) => void;
 };
 
 const IndicatorFeaturesContext = createContext<IndicatorFeaturesContextValue | null>(null);
@@ -52,8 +53,22 @@ export function IndicatorFeaturesProvider({ children }: { children: React.ReactN
     setFeatures((prev) => prev.map((f) => (f.id === id ? { ...f, ...patch } : f)));
   }, []);
 
-  const removeFeature = useCallback((id: string) => {
-    setFeatures((prev) => prev.filter((f) => f.id !== id));
+  const removeFeature = useCallback((id: string, options?: { cascade?: boolean }) => {
+    const cascade = options?.cascade ?? true;
+    setFeatures((prev) => {
+      const target = prev.find((feature) => feature.id === id);
+      if (!target) return prev.filter((feature) => feature.id !== id);
+      if (!cascade) return prev.filter((feature) => feature.id !== id);
+
+      return prev.filter((feature) => {
+        if (feature.id === id) return false;
+        const isPairedRow =
+          feature.attributeKey === target.attributeKey &&
+          feature.level !== target.level &&
+          sameValueIds(feature.valueIds, target.valueIds);
+        return !isPairedRow;
+      });
+    });
   }, []);
 
   const value = useMemo(
