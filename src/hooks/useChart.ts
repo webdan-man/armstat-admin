@@ -54,7 +54,8 @@ type ChartType =
   | "column-with-rotated-labels-and-clustered-column-chart-stacked"
   | "grouped-stacked-column-chart"
   | "map-and-grouped-stacked-column-chart"
-  | "semi-pie-and-grouped-stacked-column-chart";
+  | "semi-pie-and-grouped-stacked-column-chart"
+  | "line-graph-and-grouped-stacked-column-chart";
 
 function getUniqueAttributeIds(combinations: MetricCombination[]): string[] {
   const ids = new Set<string>();
@@ -1421,27 +1422,54 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           .map(([yr, value]) => ({ date: new Date(Number(yr), 0, 1).getTime(), value }))
           .sort((a, b) => a.date - b.date);
 
-        // Clustered stacked column: CYXG across 3 non-time attrs
         const nonTimeAttrs = attrObjects.filter((a) => a.category !== AttributeCategory.TIME);
-        const [nta0, nta1, nta2] = nonTimeAttrs;
 
-        const { data: columnData, seriesKeys, xAxisKey } = mapCombinationsForClusteredColumnChartStacked3D({
-          combinations,
-          attributes: [
-            { id: nta0._id, key: nta0.category },
-            { id: nta1._id, key: nta1.category },
-            { id: nta2._id, key: nta2.category },
-          ],
-        });
+        // Case 1 & 2: TIME + AGE + 2×OTHER or TIME + AREA + 2×OTHER
+        // AGE/AREA → stack(Y); of the 2 OTHERs: fewer-unique → inner(X), more → outer(C)
+        const ageOrAreaAttr = nonTimeAttrs.find(
+          (a) => a.category === AttributeCategory.AGE || a.category === AttributeCategory.AREA
+        );
+        const otherAttrsForAgeArea = nonTimeAttrs.filter((a) => a.category === AttributeCategory.OTHER);
+        if (ageOrAreaAttr && otherAttrsForAgeArea.length === 2) {
+          const [o0, o1] = otherAttrsForAgeArea;
+          const innerAttr = countUniqueForAttr(combinations, o0._id) <= countUniqueForAttr(combinations, o1._id) ? o0 : o1;
+          const outerAttr = innerAttr === o0 ? o1 : o0;
+          const { data: chartData, stackDimensions } = mapCombinationsForGroupedStackedColumnChart({
+            combinations,
+            outerAttributeId: outerAttr._id,
+            innerAttributeId: innerAttr._id,
+            stackAttributeId: ageOrAreaAttr._id,
+          });
+          console.log(`LINE-GRAPH+${ageOrAreaAttr.category.toUpperCase()}-Y+2×OTHER-CXG GROUPED STACKED COLUMN`, { combinations, lineData, chartData, stackDimensions });
+          return {
+            type: "line-graph-and-grouped-stacked-column-chart",
+            data: { lineData, data: chartData, stackDimensions, innerAttributeName: pickAttributeDisplayTitle(innerAttr) },
+          };
+        }
 
-        console.log("LINE-GRAPH+3CYXG CLUSTERED COLUMN (STACKED)", { combinations, lineData, columnData, seriesKeys });
-
-        return {
-          type: "line-graph-and-clustered-column-chart-stacked",
-          xAxisKey,
-          seriesKeys,
-          data: { lineData, columnData },
-        };
+        // Case 3: TIME + 3×OTHER → fewest-unique OTHER → stack(Y); remaining 2 → CXG
+        const allOtherAttrs = nonTimeAttrs.filter((a) => a.category === AttributeCategory.OTHER);
+        if (allOtherAttrs.length === 3) {
+          const sorted = allOtherAttrs
+            .map((a) => ({ a, count: countUniqueForAttr(combinations, a._id) }))
+            .sort((x, y) => x.count - y.count);
+          const stackAttr = sorted[0].a;
+          const cxg0 = sorted[1].a;
+          const cxg1 = sorted[2].a;
+          const innerAttr = countUniqueForAttr(combinations, cxg0._id) <= countUniqueForAttr(combinations, cxg1._id) ? cxg0 : cxg1;
+          const outerAttr = innerAttr === cxg0 ? cxg1 : cxg0;
+          const { data: chartData, stackDimensions } = mapCombinationsForGroupedStackedColumnChart({
+            combinations,
+            outerAttributeId: outerAttr._id,
+            innerAttributeId: innerAttr._id,
+            stackAttributeId: stackAttr._id,
+          });
+          console.log("LINE-GRAPH+OTHER-Y+2×OTHER-CXG GROUPED STACKED COLUMN", { combinations, lineData, chartData, stackDimensions });
+          return {
+            type: "line-graph-and-grouped-stacked-column-chart",
+            data: { lineData, data: chartData, stackDimensions, innerAttributeName: pickAttributeDisplayTitle(innerAttr) },
+          };
+        }
       }
 
       // ── Fallback: Column w/ Rotated Labels + CYXG (no Province, no Gender, no Time) ──

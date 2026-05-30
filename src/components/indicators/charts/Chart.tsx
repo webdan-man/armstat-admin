@@ -224,6 +224,21 @@ const Chart = ({ combinations = [] }: ChartProps) => {
           </div>
         </div>
       );
+    case "line-graph-and-grouped-stacked-column-chart":
+      return (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div>
+            <LineGraphChart data={data?.lineData ?? []} />
+          </div>
+          <div>
+            <GroupedStackedColumnChart
+              data={data?.data ?? []}
+              stackDimensions={data?.stackDimensions ?? []}
+              innerAttributeName={data?.innerAttributeName ?? ""}
+            />
+          </div>
+        </div>
+      );
     case "column-with-rotated-labels-and-clustered-column-chart-stacked":
       return (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
