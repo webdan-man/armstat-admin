@@ -103,7 +103,7 @@ const ChartDataTabs = ({
 
     // isCumulative=true means a cumulative time series (running totals) → values must not be summed.
     // Everything else (undefined / false) is regular count data → summable.
-    const isSummable = metric?.isCumulative !== true;
+    const isSummable = metric?.isCumulative === true;
     const groupMap = new Map<string, { combo: MetricCombination; numValue: number }>();
     let hasDuplicates = false;
 
