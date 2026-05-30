@@ -179,7 +179,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
     seriesListRef.current.forEach((series) => series.data.setAll(data));
   }, [data]);
 
-  return <div id={containerId} style={{ width: "100%", height: "500px" }} />;
+  return <div id={containerId} style={{ width: "100%", height: "800px" }} />;
 }
 
 export default ClusteredColumnChart;

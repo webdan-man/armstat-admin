@@ -254,7 +254,7 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
 
   return (
     <div>
-      <div id={containerId} style={{ width: "100%", height: "500px" }} />
+      <div id={containerId} style={{ width: "100%", height: "800px" }} />
     </div>
   );
 }
