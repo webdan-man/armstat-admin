@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -130,6 +130,7 @@ function IsCumulativeCheckbox() {
 function TopicIdSelect() {
   const { control } = useFormContext<IndicatorFormValues>();
   const { sections } = useIndicatorSections();
+  const topicId = useWatch({ control, name: "topicId" });
 
   const sectionGroups = useMemo(
     () =>
@@ -152,44 +153,43 @@ function TopicIdSelect() {
 
   const allTopics = useMemo(() => sectionGroups.flatMap((g) => g.topics), [sectionGroups]);
 
+  const matched = allTopics.find((t) => t.id === topicId);
+  const displayLabel = matched
+    ? matched.parentLabel
+      ? `${matched.parentLabel} · ${matched.label}`
+      : matched.label
+    : undefined;
+
   return (
     <div className="grid grid-cols-[1fr_3fr] gap-5">
       <Label className="text-sm font-medium text-[#575757]">Ենթախումբ</Label>
       <FormField
         control={control}
         name="topicId"
-        render={({ field }) => {
-          const matched = allTopics.find((t) => t.id === field.value);
-          const displayLabel = matched
-            ? matched.parentLabel
-              ? `${matched.parentLabel} · ${matched.label}`
-              : matched.label
-            : undefined;
-          return (
-            <FormItem>
-              <Select value={field.value || ""} onValueChange={field.onChange}>
-                <FormControl>
-                  <SelectTrigger className={`${fieldBorder} w-full`}>
-                    <SelectValue placeholder="Ընտրեք…">{displayLabel}</SelectValue>
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {sectionGroups.map(({ sectionId, sectionName, topics }) => (
-                    <SelectGroup key={sectionId}>
-                      <SelectLabel>{sectionName}</SelectLabel>
-                      {topics.map(({ id, label, parentLabel }) => (
-                        <SelectItem key={id} value={id}>
-                          {parentLabel ? `${parentLabel} · ${label}` : label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          );
-        }}
+        render={({ field }) => (
+          <FormItem>
+            <Select value={topicId || ""} onValueChange={field.onChange}>
+              <FormControl>
+                <SelectTrigger className={`${fieldBorder} w-full`}>
+                  <SelectValue placeholder="Ընտրեք…">{displayLabel}</SelectValue>
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {sectionGroups.map(({ sectionId, sectionName, topics }) => (
+                  <SelectGroup key={sectionId}>
+                    <SelectLabel>{sectionName}</SelectLabel>
+                    {topics.map(({ id, label, parentLabel }) => (
+                      <SelectItem key={id} value={id}>
+                        {parentLabel ? `${parentLabel} · ${label}` : label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
       />
     </div>
   );
