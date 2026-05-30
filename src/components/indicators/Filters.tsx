@@ -131,32 +131,34 @@ export default function Filters() {
             </SelectContent>
           </Select>
         </div>
-        <div className="flex flex-col items-start">
-          {selectedFilter.subSubgroup && <FilterChip>Ենթա-ենթախումբ</FilterChip>}
-          <Select
-            key={selectedFilter.subgroup || "empty-subgroup"}
-            disabled={isLoading || !selectedFilter.subgroup}
-            value={selectedFilter.subSubgroup || undefined}
-            onValueChange={(val) =>
-              setSelectedFilter((prev) => ({
-                ...prev,
-                subSubgroup: val,
-                indicator: "",
-              }))
-            }
-          >
-            <SelectTrigger className={selectTriggerClass}>
-              <SelectValue placeholder={"Ենթա-ենթախումբ"} />
-            </SelectTrigger>
-            <SelectContent>
-              {childTopics.map((topic) => (
-                <SelectItem key={topic._id} value={topic._id}>
-                  {getSectionLocalizedText(topic.title)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {selectedFilter.subSubgroup && (
+          <div className="flex flex-col items-start">
+            <FilterChip>Ենթա-ենթախումբ</FilterChip>
+            <Select
+              key={selectedFilter.subgroup || "empty-subgroup"}
+              disabled={isLoading || !selectedFilter.subgroup}
+              value={selectedFilter.subSubgroup || undefined}
+              onValueChange={(val) =>
+                setSelectedFilter((prev) => ({
+                  ...prev,
+                  subSubgroup: val,
+                  indicator: "",
+                }))
+              }
+            >
+              <SelectTrigger className={selectTriggerClass}>
+                <SelectValue placeholder={"Ենթա-ենթախումբ"} />
+              </SelectTrigger>
+              <SelectContent>
+                {childTopics.map((topic) => (
+                  <SelectItem key={topic._id} value={topic._id}>
+                    {getSectionLocalizedText(topic.title)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
       <div className={"grid min-h-11 w-full grid-cols-[5fr_1fr] items-center gap-6"}>
         <div className="flex flex-col items-start">
