@@ -34,7 +34,7 @@ export type CreateMetricBody = {
   title: Record<string, string>;
   description: Record<string, string>;
   unit: Record<string, string>;
-  metadata: Record<string, string>;
+  metadata: Record<string, { body: string; sourceUrl: string }>;
   attributes: MetricAttribute[];
   order: number;
   isCumulative?: boolean;
@@ -47,7 +47,7 @@ export type UpdateMetricBody = {
   description: Record<string, string>;
   unit: Record<string, string>;
   link: Record<string, string>;
-  metadata: Record<string, string>;
+  metadata: Record<string, { body: string; sourceUrl: string }>;
   attributes: MetricAttribute[];
   order: number;
   total?: MetricTotal;

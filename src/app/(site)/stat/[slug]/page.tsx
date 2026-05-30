@@ -354,9 +354,9 @@ export default function StatPage() {
               </TabsContent>
               <TabsContent value="metadata">
                 <div className="w-full p-6">
-                  {(metric?.metadata as any)?.[activeLang] && (
+                  {(metric?.metadata as any)?.[activeLang]?.body && (
                     <p className="text-fontSizeS mt-4 leading-4.75 whitespace-pre-line text-[rgba(125,125,125,1)]">
-                      <MarkdownText>{(metric?.metadata as any)[activeLang]}</MarkdownText>
+                      <MarkdownText>{(metric?.metadata as any)[activeLang].body}</MarkdownText>
                     </p>
                   )}
                   <div className="mt-7.5 flex gap-5">

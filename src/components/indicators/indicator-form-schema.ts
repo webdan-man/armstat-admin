@@ -179,9 +179,9 @@ export function mapIndicatorFormToCreateMetric(
   values: IndicatorFormValues,
   attributes: MetricAttribute[]
 ): CreateMetricBody {
-  const metadata: Record<string, string> = {};
+  const metadata: Record<string, { body: string; sourceUrl: string }> = {};
   for (const lang of localeKeys) {
-    metadata[lang] = values.metadata[lang].body;
+    metadata[lang] = { body: values.metadata[lang].body, sourceUrl: values.metadata[lang].sourceUrl };
   }
 
   return {
@@ -213,9 +213,9 @@ export function mapIndicatorFormToUpdateMetric(
   values: IndicatorFormValues,
   attributes: MetricAttribute[]
 ): UpdateMetricBody {
-  const metadata: Record<string, string> = {};
+  const metadata: Record<string, { body: string; sourceUrl: string }> = {};
   for (const lang of localeKeys) {
-    metadata[lang] = values.metadata[lang].body;
+    metadata[lang] = { body: values.metadata[lang].body, sourceUrl: values.metadata[lang].sourceUrl };
   }
 
   return {
