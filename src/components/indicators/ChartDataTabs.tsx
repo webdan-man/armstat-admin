@@ -116,7 +116,8 @@ const ChartDataTabs = ({
       for (const i of visibleColumnIndexes) {
         const entry = combo.row?.[i];
         if (entry?.attributeId) {
-          projectedAttributes[entry.attributeId] = (combo.attributes ?? {})[entry.attributeId] ?? "";
+          projectedAttributes[entry.attributeId] =
+            (combo.attributes ?? {})[entry.attributeId] ?? "";
         }
       }
 
@@ -165,8 +166,9 @@ const ChartDataTabs = ({
 
   const toggleColumnVisible = (i: number, visible: boolean) => {
     setColumnVisible((prev) => {
-      const copy = Array.from({ length: Math.max(prev.length, i + 1) }, (_, j) =>
-        prev[j] !== false
+      const copy = Array.from(
+        { length: Math.max(prev.length, i + 1) },
+        (_, j) => prev[j] !== false
       );
       copy[i] = visible;
       return copy;
@@ -175,10 +177,7 @@ const ChartDataTabs = ({
 
   const toggleColumnValue = (i: number, opt: string, checked: boolean) => {
     setColumnSelectedValues((prev) => {
-      const copy = Array.from(
-        { length: Math.max(prev.length, i + 1) },
-        (_, j) => prev[j] ?? null
-      );
+      const copy = Array.from({ length: Math.max(prev.length, i + 1) }, (_, j) => prev[j] ?? null);
       const allOptions = columnValueOptions[i] ?? [];
       const current = copy[i] === null ? new Set(allOptions) : new Set(copy[i] as Set<string>);
 
@@ -214,9 +213,7 @@ const ChartDataTabs = ({
               <div
                 className={cn(
                   "text-[14px] leading-3.5",
-                  activeFilterCount === 0
-                    ? "text-[rgba(44,44,44,0.65)]"
-                    : "text-[rgba(44,44,44,1)]"
+                  activeFilterCount === 0 ? "text-[rgba(44,44,44,0.65)]" : "text-[rgba(44,44,44,1)]"
                 )}
               >
                 {activeFilterCount > 0 ? `Ֆիլտրեր (${activeFilterCount})` : "Ֆիլտրեր"}
@@ -260,7 +257,7 @@ const ChartDataTabs = ({
                           <ChevronDown className="h-3.5 w-3.5 opacity-60" />
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto min-w-36 p-2" align="start">
+                      <PopoverContent className="w-auto max-w-150 min-w-36 p-2" align="start">
                         <div className="flex flex-col gap-0.5">
                           {options.map((opt) => {
                             const isChecked = selected === null || (selected?.has(opt) ?? true);

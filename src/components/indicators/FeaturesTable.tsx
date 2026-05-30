@@ -94,7 +94,7 @@ function FeaturesTable() {
     const labels = row.valueIds.map((valueId) => {
       const option = attribute.values.find((value) => value._id === valueId);
       if (!option) return valueId;
-      return option.title?.hy?.trim() || option._id || valueId;
+      return option.secondaryTitle?.hy?.trim() || option.title?.hy?.trim() || option._id || valueId;
     });
 
     const joined = Array.from(new Set(labels.filter(Boolean))).join(", ");
