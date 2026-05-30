@@ -26,6 +26,8 @@ const chartBlock = z.object({
 const metricTotalFormBlock = z.object({
   male: z.string(),
   female: z.string(),
+  malePercentage: z.string(),
+  femalePercentage: z.string(),
 });
 
 /** Залишає лише цифри; порожній рядок → 0 (для API). */
@@ -36,7 +38,12 @@ export function parseMetricTotalForApi(total: z.infer<typeof metricTotalFormBloc
     const n = Number.parseInt(digits, 10);
     return Number.isFinite(n) ? n : 0;
   };
-  return { male: toNumber(total.male), female: toNumber(total.female) };
+  return {
+    male: toNumber(total.male),
+    female: toNumber(total.female),
+    malePercentage: total.malePercentage.trim(),
+    femalePercentage: total.femalePercentage.trim(),
+  };
 }
 
 const trimmedNonEmpty = (message: string) =>
@@ -108,7 +115,7 @@ export function emptyIndicatorFormValues(): IndicatorFormValues {
     },
     charts: [{ link: "" }, { link: "" }],
     order: 0,
-    total: { male: "", female: "" },
+    total: { male: "", female: "", malePercentage: "", femalePercentage: "" },
     attributes: [],
   };
 }

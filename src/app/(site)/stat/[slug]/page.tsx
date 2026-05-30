@@ -128,17 +128,19 @@ export default function StatPage() {
   const sexTotals = useMemo(() => {
     const male = Number(metric?.total?.male ?? 0);
     const female = Number(metric?.total?.female ?? 0);
-    const hasTotals = male + female > 0;
-    const percents = sexTotalPercents(male, female);
+
+    const hasTotals =
+      male + female > 0 || metric?.total?.femalePercentage || metric?.total?.malePercentage;
+
     return {
       hasTotals,
       male: {
         count: formatIntegerWithCommas(male),
-        percent: `${percents.male}%`,
+        percent: metric?.total?.malePercentage,
       },
       female: {
         count: formatIntegerWithCommas(female),
-        percent: `${percents.female}%`,
+        percent: metric?.total?.femalePercentage,
       },
     };
   }, [metric?.total]);

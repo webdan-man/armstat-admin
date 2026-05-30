@@ -306,6 +306,20 @@ const ChartDataTabs = ({
                   </FormItem>
                 )}
               />
+
+              <span className="text-sm font-medium text-[#575757]">%</span>
+              <FormField
+                control={control}
+                name="total.malePercentage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input className={cn(fieldBorder, "w-32")} type="text" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -315,6 +329,20 @@ const ChartDataTabs = ({
               <FormField
                 control={control}
                 name="total.female"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input className={cn(fieldBorder, "w-32")} type="text" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <span className="text-sm font-medium text-[#575757]">%</span>
+              <FormField
+                control={control}
+                name="total.femalePercentage"
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>

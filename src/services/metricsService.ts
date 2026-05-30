@@ -125,8 +125,13 @@ function mapApiMetricToIndicatorForm(raw: MetricResponse): IndicatorFormValues {
   };
 }
 
-function readMetricTotalFromApi(raw: unknown): { male: string; female: string } {
-  const empty = { male: "", female: "" };
+function readMetricTotalFromApi(raw: unknown): {
+  male: string;
+  female: string;
+  malePercentage: string;
+  femalePercentage: string;
+} {
+  const empty = { male: "", female: "", malePercentage: "", femalePercentage: "" };
   if (!raw || typeof raw !== "object") return empty;
   const o = raw as Record<string, unknown>;
   const format = (value: unknown) => {
@@ -136,6 +141,8 @@ function readMetricTotalFromApi(raw: unknown): { male: string; female: string } 
   return {
     male: format(o.male),
     female: format(o.female),
+    malePercentage: typeof o.malePercentage === "string" ? o.malePercentage : "",
+    femalePercentage: typeof o.femalePercentage === "string" ? o.femalePercentage : "",
   };
 }
 

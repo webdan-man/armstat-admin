@@ -2,6 +2,8 @@
 export type MetricTotal = {
   male: number;
   female: number;
+  malePercentage?: string;
+  femalePercentage?: string;
 };
 
 /** Per-locale label for a metric attribute row (sent as `label` on each attributes[] item). */
