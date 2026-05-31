@@ -149,7 +149,7 @@ function StackedAreaChart<T extends Record<string, string>>({
 
   return (
     <div>
-      <div id={containerId} style={{ width: "100%", height: "600px" }} />
+      <div id={containerId} style={{ width: "100%", height: "700px" }} />
     </div>
   );
 }

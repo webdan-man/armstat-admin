@@ -360,7 +360,7 @@ function GroupedStackedColumnChart({
     axisRangesRef.current = buildAxisRanges(xAxis, data);
   }, [data]);
 
-  return <div id={containerId} style={{ width: "100%", height: "600px" }} />;
+  return <div id={containerId} style={{ width: "100%", height: "800px" }} />;
 }
 
 export default GroupedStackedColumnChart;

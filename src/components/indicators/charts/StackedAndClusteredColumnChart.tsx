@@ -260,7 +260,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
 
   return (
     <div>
-      <div id={containerId} style={{ width: "100%", height: "600px" }} />
+      <div id={containerId} style={{ width: "100%", height: "700px" }} />
     </div>
   );
 }

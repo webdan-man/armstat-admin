@@ -234,7 +234,10 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       return root.numberFormatter.format(Math.abs(value));
     });
 
-    const yRenderer = am5xy.AxisRendererY.new(root, { minGridDistance: 10, minorGridEnabled: true });
+    const yRenderer = am5xy.AxisRendererY.new(root, {
+      minGridDistance: 10,
+      minorGridEnabled: true,
+    });
     const pyramidYAxis = pyramidChart.yAxes.push(
       am5xy.CategoryAxis.new(root, { categoryField: AGE_FIELD, renderer: yRenderer })
     );
@@ -403,10 +406,12 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       maleCornerLabel.set("text", cfg.maleLabel);
       femaleCornerLabel.set("text", cfg.femaleLabel);
       popTitle.set("text", cfg.timelineTitle);
-      popSeriesFemale.get("tooltip")?.set(
-        "labelText",
-        `[bold]{valueX.formatDate('yyyy')}[/]\n[font-size: 20]${cfg.maleLabel}     [bold]{male}[/]\n${cfg.femaleLabel}     [bold]{female}[/]`
-      );
+      popSeriesFemale
+        .get("tooltip")
+        ?.set(
+          "labelText",
+          `[bold]{valueX.formatDate('yyyy')}[/]\n[font-size: 20]${cfg.maleLabel}     [bold]{male}[/]\n${cfg.femaleLabel}     [bold]{female}[/]`
+        );
 
       const pyramid = buildPyramidData(rows, ageGroups, currentYearRef.current, cfg);
       pyramidYAxis.data.setAll(pyramid);
@@ -450,7 +455,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
 
   return (
     <div>
-      <div id={containerId} style={{ width: "100%", height: "550px" }} />
+      <div id={containerId} style={{ width: "100%", height: "600px" }} />
     </div>
   );
 }

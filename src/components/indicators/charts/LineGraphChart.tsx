@@ -208,7 +208,7 @@ function LineGraphChart({ data, chartTitle }: LineGraphChartProps) {
 
   return (
     <div>
-      <div id={containerId} style={{ width: "100%", height: "600px" }}></div>
+      <div id={containerId} style={{ width: "100%", height: "800px" }}></div>
     </div>
   );
 }

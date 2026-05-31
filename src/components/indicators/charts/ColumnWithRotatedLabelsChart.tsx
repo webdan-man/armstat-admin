@@ -292,7 +292,7 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
 
   return (
     <div>
-      <div id={containerId} style={{ width: "100%", height: "700px" }}></div>
+      <div id={containerId} style={{ width: "100%", height: "800px" }}></div>
     </div>
   );
 }
