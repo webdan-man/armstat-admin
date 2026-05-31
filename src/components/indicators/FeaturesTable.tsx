@@ -153,8 +153,10 @@ function FeaturesTable() {
                 <TableCell className="py-5 text-[14px] leading-3.5">
                   {row.level === "primary" ? "Հիմնական" : "Երկրորդային"}
                 </TableCell>
-                <TableCell className="max-w-[340px] py-5 text-[14px] leading-3.5 break-words">
-                  {resolveLibraryValues(row)}
+                <TableCell className="max-w-85 py-5 text-[14px] leading-3.5 break-words">
+                  <div className="max-h-85 max-w-85 overflow-y-auto py-5 text-[14px] leading-3.5 break-words">
+                    {resolveLibraryValues(row)}
+                  </div>
                 </TableCell>
                 <TableCell className="py-5">
                   <div className="flex h-full w-full items-center justify-end gap-6.75">

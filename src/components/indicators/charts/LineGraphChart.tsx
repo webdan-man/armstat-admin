@@ -209,7 +209,8 @@ function LineGraphChart({ data, chartTitle }: LineGraphChartProps) {
   // Keep the plot tall and let long category labels overflow into a vertically scrollable
   // area below, instead of squeezing the plot. The chart canvas grows with the longest
   // label; the outer container stays fixed and scrolls to reveal the rest of the labels.
-  const PLOT_HEIGHT = 480;
+  // Baseline keeps the plot at least ~500px (the extra covers the title/axis padding).
+  const PLOT_HEIGHT = 540;
   const longestLabel = isCategoryBased
     ? data.reduce((max, d) => Math.max(max, (d.label ?? "").length), 0)
     : 0;

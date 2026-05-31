@@ -284,9 +284,20 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
     titleLabelRef.current?.set("text", chartTitle);
   }, [chartTitle]);
 
+  // Long category labels (rotated -75°) would otherwise squeeze the plot. Grow the canvas
+  // with the longest label so the plot keeps its height, and let the fixed-height container
+  // scroll vertically to reveal the rest of the labels.
+  const longestLabel = data.reduce((max, d) => Math.max(max, (d.xAxisKey ?? "").length), 0);
+  // Rough px the longest label needs at a near-vertical -75° angle.
+  const labelAreaHeight = Math.round(longestLabel * 7) + 30;
+  // The plot is ~90% of the canvas (the legend takes the other 10%) minus the label area.
+  // Size the canvas so the plot stays at least 500px tall; +30 leaves room for the title.
+  const MIN_PLOT_HEIGHT = 500;
+  const chartHeight = Math.max(640, Math.round((MIN_PLOT_HEIGHT + labelAreaHeight) / 0.9) + 30);
+
   return (
-    <div>
-      <div id={containerId} style={{ width: "100%", height: "600px" }}></div>
+    <div style={{ width: "100%", height: "700px", overflowY: "auto" }}>
+      <div id={containerId} style={{ width: "100%", height: `${chartHeight}px` }}></div>
     </div>
   );
 }
