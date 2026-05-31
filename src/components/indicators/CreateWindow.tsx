@@ -623,7 +623,7 @@ export default function CreateWindow() {
                                 </FormControl>
                                 <SelectContent>
                                   <SelectGroup>
-                                    <div className="max-h-125 overflow-y-auto">
+                                    <div className="max-h-100 overflow-y-auto">
                                       {libraryOptions
                                         .sort((a, b) => a.label.localeCompare(b.label))
                                         .map((opt) => (
@@ -749,7 +749,7 @@ export default function CreateWindow() {
                                         Ընտրել բոլորը
                                       </button>
                                     </div>
-                                    <div className="max-h-125 space-y-2 overflow-y-auto px-3 py-2">
+                                    <div className="max-h-100 space-y-2 overflow-y-auto px-3 py-2">
                                       {libraryValueOptions.map((opt) => {
                                         const checked = selectedValueIds.includes(opt._id);
                                         const secondaryHy = opt.secondaryTitle?.hy?.trim();
