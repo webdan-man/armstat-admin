@@ -77,6 +77,15 @@ function ContentCard({ children, className }: { children: React.ReactNode; class
   );
 }
 
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-[12px] text-[#575757]">{label}</span>
+      {children}
+    </div>
+  );
+}
+
 function KeyRow({
   lang,
   onLangChange,
@@ -319,55 +328,61 @@ function BlockCard({
       <div className="flex flex-col gap-4">
         <KeyRow lang={lang} onLangChange={onLangChange} />
 
-        <Input
-          value={readLocalizedByLang(block.title, lang)}
-          onChange={(e) =>
-            onChange({
-              ...block,
-              title: writeLocalizedByLang(block.title, e.target.value, lang),
-            })
-          }
-          className={cn("h-9", fieldBorder)}
-          placeholder="Վերնագիր"
-        />
+        <Field label="Վերնագիր">
+          <Input
+            value={readLocalizedByLang(block.title, lang)}
+            onChange={(e) =>
+              onChange({
+                ...block,
+                title: writeLocalizedByLang(block.title, e.target.value, lang),
+              })
+            }
+            className={cn("h-9", fieldBorder)}
+            placeholder="Մուտքագրեք վերնագիրը"
+          />
+        </Field>
 
-        <Input
-          value={readLocalizedByLang(block.subtitle, lang)}
-          onChange={(e) =>
-            onChange({
-              ...block,
-              subtitle: writeLocalizedByLang(block.subtitle, e.target.value, lang),
-            })
-          }
-          className={cn("h-9", fieldBorder)}
-          placeholder="Ենթավերնագիր"
-        />
+        <Field label="Ենթավերնագիր">
+          <Input
+            value={readLocalizedByLang(block.subtitle, lang)}
+            onChange={(e) =>
+              onChange({
+                ...block,
+                subtitle: writeLocalizedByLang(block.subtitle, e.target.value, lang),
+              })
+            }
+            className={cn("h-9", fieldBorder)}
+            placeholder="Մուտքագրեք ենթավերնագիրը"
+          />
+        </Field>
 
-        <Select
-          value=""
-          onValueChange={(id) => {
-            if (block.sectionIds.includes(id)) return;
-            onChange({
-              ...block,
-              sectionIds: [...block.sectionIds, id],
-            });
-          }}
-        >
-          <SelectTrigger
-            className={cn("h-9 w-full max-w-[306px] sm:w-[306px]", fieldBorder, "text-[#2c2c2c]")}
+        <Field label="Բաժիններ">
+          <Select
+            value=""
+            onValueChange={(id) => {
+              if (block.sectionIds.includes(id)) return;
+              onChange({
+                ...block,
+                sectionIds: [...block.sectionIds, id],
+              });
+            }}
           >
-            <SelectValue placeholder="Ընտրել բաժինները" />
-          </SelectTrigger>
-          <SelectContent>
-            {availableSections
-              .filter((s) => !block.sectionIds.includes(s._id))
-              .map((s) => (
-                <SelectItem key={s._id} value={s._id}>
-                  {s.name.hy}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
+            <SelectTrigger
+              className={cn("h-9 w-full max-w-[306px] sm:w-[306px]", fieldBorder, "text-[#2c2c2c]")}
+            >
+              <SelectValue placeholder="Ընտրել բաժինները" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableSections
+                .filter((s) => !block.sectionIds.includes(s._id))
+                .map((s) => (
+                  <SelectItem key={s._id} value={s._id}>
+                    {s.name.hy}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </Field>
 
         <div className="flex flex-wrap gap-3">
           {block.sectionIds.map((sid) => {
@@ -416,8 +431,7 @@ function UsefulLinkRow({
 }) {
   return (
     <div className="flex flex-col gap-3 rounded-[9px] border border-[#e6e7eb] bg-white p-4">
-      <div className="flex flex-col gap-1">
-        <span className="text-[12px] text-[#575757]">Անվանում</span>
+      <Field label="Անվանում">
         <Input
           value={readLocalizedByLang(link.name, lang)}
           onChange={(e) =>
@@ -427,11 +441,11 @@ function UsefulLinkRow({
             })
           }
           className={cn("h-9", fieldBorder)}
+          placeholder="Մուտքագրեք անվանումը"
         />
-      </div>
+      </Field>
 
-      <div className="flex flex-col gap-1">
-        <span className="text-[12px] text-[#575757]">Նկարագրություն</span>
+      <Field label="Նկարագրություն">
         <Textarea
           value={readLocalizedByLang(link.description, lang)}
           onChange={(e) =>
@@ -441,18 +455,18 @@ function UsefulLinkRow({
             })
           }
           className={cn("min-h-[70px] resize-y", fieldBorder)}
+          placeholder="Մուտքագրեք նկարագրությունը"
         />
-      </div>
+      </Field>
 
-      <div className="flex flex-col gap-1">
-        <span className="text-[12px] text-[#575757]">Հղում</span>
+      <Field label="Հղում">
         <Input
           value={link.url}
           placeholder="https://"
           onChange={(e) => onChange({ ...link, url: e.target.value })}
           className={cn("h-9", fieldBorder)}
         />
-      </div>
+      </Field>
 
       <HeroImageFileControl
         value={link.image}
@@ -687,41 +701,47 @@ export function MainPageEditor() {
           <h2 className="mb-4 text-[14px] font-medium text-[#2c2c2c]">Վերնագրեր</h2>
           <div className="flex flex-col gap-4">
             <KeyRow lang={heroLang} onLangChange={setHeroLang} />
-            <Input
-              value={readLocalized(data.heroTitle)}
-              onChange={(e) =>
-                setData((d) => {
-                  const heroTitle = writeLocalized(d.heroTitle, e.target.value);
-                  form.setValue("heroTitle", ensureHyLocalized(heroTitle), {
-                    shouldValidate: true,
-                  });
-                  return {
-                    ...d,
-                    heroTitle,
-                  };
-                })
-              }
-              className={cn("h-9", fieldBorder)}
-            />
-            <Textarea
-              value={readLocalized(data.heroShortDescription)}
-              onChange={(e) =>
-                setData((d) => {
-                  const heroShortDescription = writeLocalized(
-                    d.heroShortDescription,
-                    e.target.value
-                  );
-                  form.setValue("heroShortDescription", ensureHyLocalized(heroShortDescription), {
-                    shouldValidate: true,
-                  });
-                  return {
-                    ...d,
-                    heroShortDescription,
-                  };
-                })
-              }
-              className={cn("min-h-[70px] resize-y", fieldBorder)}
-            />
+            <Field label="Վերնագիր">
+              <Input
+                value={readLocalized(data.heroTitle)}
+                onChange={(e) =>
+                  setData((d) => {
+                    const heroTitle = writeLocalized(d.heroTitle, e.target.value);
+                    form.setValue("heroTitle", ensureHyLocalized(heroTitle), {
+                      shouldValidate: true,
+                    });
+                    return {
+                      ...d,
+                      heroTitle,
+                    };
+                  })
+                }
+                className={cn("h-9", fieldBorder)}
+                placeholder="Մուտքագրեք վերնագիրը"
+              />
+            </Field>
+            <Field label="Կարճ նկարագրություն">
+              <Textarea
+                value={readLocalized(data.heroShortDescription)}
+                onChange={(e) =>
+                  setData((d) => {
+                    const heroShortDescription = writeLocalized(
+                      d.heroShortDescription,
+                      e.target.value
+                    );
+                    form.setValue("heroShortDescription", ensureHyLocalized(heroShortDescription), {
+                      shouldValidate: true,
+                    });
+                    return {
+                      ...d,
+                      heroShortDescription,
+                    };
+                  })
+                }
+                className={cn("min-h-[70px] resize-y", fieldBorder)}
+                placeholder="Մուտքագրեք կարճ նկարագրությունը"
+              />
+            </Field>
             {/*<Textarea*/}
             {/*  value={readLocalized(data.heroTextContent)}*/}
             {/*  onChange={(e) =>*/}
@@ -783,42 +803,46 @@ export function MainPageEditor() {
           <h2 className="mb-4 text-[14px] font-medium text-[#2c2c2c]">Գովազդային բաժին</h2>
           <div className="flex flex-col gap-4">
             <KeyRow lang={advertisingLang} onLangChange={setAdvertisingLang} />
-            <Input
-              value={readLocalizedByLang(data.advertising.title, advertisingLang)}
-              onChange={(e) =>
-                setData((d) => ({
-                  ...d,
-                  advertising: {
-                    ...d.advertising,
-                    title: writeLocalizedByLang(
-                      d.advertising.title,
-                      e.target.value,
-                      advertisingLang
-                    ),
-                  },
-                }))
-              }
-              className={cn("h-9", fieldBorder)}
-              placeholder="Վերնագիր"
-            />
-            <Textarea
-              value={readLocalizedByLang(data.advertising.description, advertisingLang)}
-              onChange={(e) =>
-                setData((d) => ({
-                  ...d,
-                  advertising: {
-                    ...d.advertising,
-                    description: writeLocalizedByLang(
-                      d.advertising.description,
-                      e.target.value,
-                      advertisingLang
-                    ),
-                  },
-                }))
-              }
-              className={cn("min-h-[70px] resize-y", fieldBorder)}
-              placeholder="Նկարագրություն"
-            />
+            <Field label="Վերնագիր">
+              <Input
+                value={readLocalizedByLang(data.advertising.title, advertisingLang)}
+                onChange={(e) =>
+                  setData((d) => ({
+                    ...d,
+                    advertising: {
+                      ...d.advertising,
+                      title: writeLocalizedByLang(
+                        d.advertising.title,
+                        e.target.value,
+                        advertisingLang
+                      ),
+                    },
+                  }))
+                }
+                className={cn("h-9", fieldBorder)}
+                placeholder="Մուտքագրեք վերնագիրը"
+              />
+            </Field>
+            <Field label="Նկարագրություն">
+              <Textarea
+                value={readLocalizedByLang(data.advertising.description, advertisingLang)}
+                onChange={(e) =>
+                  setData((d) => ({
+                    ...d,
+                    advertising: {
+                      ...d.advertising,
+                      description: writeLocalizedByLang(
+                        d.advertising.description,
+                        e.target.value,
+                        advertisingLang
+                      ),
+                    },
+                  }))
+                }
+                className={cn("min-h-[70px] resize-y", fieldBorder)}
+                placeholder="Մուտքագրեք նկարագրությունը"
+              />
+            </Field>
             <HeroImageFileControl
               value={data.advertising.image}
               onChange={({ previewUrl, file }) => {
@@ -835,35 +859,37 @@ export function MainPageEditor() {
         <ContentCard>
           <h2 className="mb-4 text-[14px] font-medium text-[#2c2c2c]">Նորություններ</h2>
           <div className="flex flex-col gap-4">
-            <Select
-              value=""
-              onValueChange={(id) =>
-                setData((d) =>
-                  d.news.selectedIds.includes(id)
-                    ? d
-                    : {
-                        ...d,
-                        news: {
-                          ...d.news,
-                          selectedIds: [...d.news.selectedIds, id],
-                        },
-                      }
-                )
-              }
-            >
-              <SelectTrigger className={cn("h-9 w-full", fieldBorder)}>
-                <SelectValue placeholder="Ընտրել նորությունները" />
-              </SelectTrigger>
-              <SelectContent>
-                {data.news.availableItems
-                  .filter((item) => !data.news.selectedIds.includes(item._id))
-                  .map((item) => (
-                    <SelectItem key={item._id} value={item._id}>
-                      {item.title}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <Field label="Նորություններ">
+              <Select
+                value=""
+                onValueChange={(id) =>
+                  setData((d) =>
+                    d.news.selectedIds.includes(id)
+                      ? d
+                      : {
+                          ...d,
+                          news: {
+                            ...d.news,
+                            selectedIds: [...d.news.selectedIds, id],
+                          },
+                        }
+                  )
+                }
+              >
+                <SelectTrigger className={cn("h-9 w-full", fieldBorder)}>
+                  <SelectValue placeholder="Ընտրել նորությունները" />
+                </SelectTrigger>
+                <SelectContent>
+                  {data.news.availableItems
+                    .filter((item) => !data.news.selectedIds.includes(item._id))
+                    .map((item) => (
+                      <SelectItem key={item._id} value={item._id}>
+                        {item.title}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </Field>
             <div className="flex flex-wrap gap-3">
               {data.news.selectedIds.map((id) => {
                 const item = data.news.availableItems.find((n) => n._id === id);
