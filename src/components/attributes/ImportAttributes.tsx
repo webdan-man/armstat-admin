@@ -6,11 +6,11 @@ import { withToastError } from "@/lib/withToastError";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { Form, FormLabel } from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
 
 const schema = z.object({
   file: z
@@ -64,52 +64,50 @@ export default function ImportAttributes({ selectedId, onImport }: ImportAttribu
   };
 
   return (
-    <div className="flex flex-col">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="flex items-center gap-4 pb-5">
-            <div>
-              <FormLabel className="mb-2">Ֆայլ</FormLabel>
-              <div className="flex items-center gap-3">
-                <Input
-                  type="file"
-                  accept=".csv,.zip"
-                  ref={fileRef}
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0] ?? null;
-                    if (f) {
-                      setValue("file", f, { shouldValidate: true });
-                      setSelectedFileName(f.name);
-                    } else {
-                      setSelectedFileName("");
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-80 justify-start"
-                  disabled={isUploading}
-                  onClick={() => fileRef.current?.click()}
-                >
-                  {selectedFileName || "Ընտրել CSV ֆայլը"}
-                </Button>
-              </div>
-              {errors.file && <p style={{ color: "crimson" }}>{errors.file.message}</p>}
-            </div>
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="flex flex-col gap-1"
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            type="file"
+            accept=".csv,.zip"
+            ref={fileRef}
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0] ?? null;
+              if (f) {
+                setValue("file", f, { shouldValidate: true });
+                setSelectedFileName(f.name);
+              } else {
+                setSelectedFileName("");
+              }
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-9 w-56 justify-start"
+            disabled={!selectedId || isUploading}
+            onClick={() => fileRef.current?.click()}
+          >
+            <span className="truncate">{selectedFileName || "Ընտրել CSV ֆայլը"}</span>
+          </Button>
 
-            <Button
-              type="submit"
-              className="mt-5 h-15"
-              disabled={!selectedId || isUploading || !form.watch("file")}
-            >
-              {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isUploading ? "Բեռնվում է..." : "Ներմուծել արժեքները"}
-            </Button>
-          </div>
-        </form>
-      </Form>
-    </div>
+          <Button
+            type="submit"
+            size="sm"
+            className="h-9"
+            disabled={!selectedId || isUploading || !form.watch("file")}
+          >
+            {isUploading ? <Loader2 className="size-4 animate-spin" /> : <Upload />}
+            {isUploading ? "Բեռնվում է..." : "Ներմուծել"}
+          </Button>
+        </div>
+        {errors.file && <p className="text-destructive text-xs">{errors.file.message}</p>}
+      </form>
+    </Form>
   );
 }

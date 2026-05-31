@@ -9,7 +9,7 @@ import {
   saveAttributeLibrary,
 } from "@/services/attributeService";
 import { swrKeys } from "@/lib/swr/cache-keys";
-import { Loader2 } from "lucide-react";
+import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import AttributesExportButton from "@/components/attributes/AttributesExportButton";
 import ImportAttributes from "@/components/attributes/ImportAttributes";
 import { Button } from "@/components/ui/button";
@@ -153,13 +153,14 @@ export default function AttributesList() {
           className="h-11 shrink-0 rounded-lg border-0 bg-[#004d99] px-5 text-[13px] font-medium text-white hover:bg-[#004080]"
           onClick={openCreate}
         >
+          <Plus />
           Նոր հատկանիշ
         </Button>
       </div>
 
-      <div className="my-8 flex w-full flex-col gap-4">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-end">
+      <div className="rounded-[10px] bg-white p-6 shadow-[0_6px_14px_rgba(0,0,0,0.05)]">
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             <FormItem className="flex w-full max-w-[320px] flex-col gap-2 text-sm">
               <FieldLabel className="text-muted-foreground">Հատկանիշի կատեգորիա</FieldLabel>
               <Select
@@ -205,23 +206,42 @@ export default function AttributesList() {
             </FormItem>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-            <AttributesExportButton
-              selectedId={selectedAttribute?._id ?? "__all__"}
-              disabled={idFilter === "__all__" || !selectedAttribute}
-            />
+          <div className="flex flex-col gap-4 border-t border-[#eef0f2] pt-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9"
+                onClick={onEdit}
+                disabled={idFilter === "__all__"}
+              >
+                <Pencil />
+                Խմբագրել
+              </Button>
+            </div>
 
-            <ImportAttributes
-              selectedId={selectedAttribute?._id}
-              onImport={() => mutate(swrKeys.attributes)}
-            />
+            <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+              <AttributesExportButton
+                selectedId={selectedAttribute?._id ?? "__all__"}
+                disabled={idFilter === "__all__" || !selectedAttribute}
+              />
 
-            <Button className="h-11 bg-amber-500 px-4" onClick={onEdit} disabled={idFilter === "__all__"}>
-              Խմբագրել գրադարանը
-            </Button>
-            <Button className="bg-destructive h-11 px-4" onClick={onDelete} disabled={idFilter === "__all__"}>
-              Հեռացնել գրադարանը
-            </Button>
+              <ImportAttributes
+                selectedId={selectedAttribute?._id}
+                onImport={() => mutate(swrKeys.attributes)}
+              />
+
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-9"
+                onClick={onDelete}
+                disabled={idFilter === "__all__"}
+              >
+                <Trash2 />
+                Հեռացնել
+              </Button>
+            </div>
           </div>
         </div>
       </div>

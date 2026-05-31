@@ -1,4 +1,5 @@
 import React from "react";
+import { Download } from "lucide-react";
 import { downloadAttributesAsCSV } from "@/services/attributeService";
 import useSWRMutation from "swr/mutation";
 import { Button } from "@/components/ui/button";
@@ -16,8 +17,15 @@ const AttributesExportButton = ({
   );
 
   return (
-    <Button disabled={disabled} size="sm" className="h-15" onClick={() => getCsv()}>
-      Արտահանել արժեքները
+    <Button
+      disabled={disabled}
+      variant="outline"
+      size="sm"
+      className="h-9"
+      onClick={() => getCsv()}
+    >
+      <Download />
+      Արտահանել
     </Button>
   );
 };
