@@ -83,14 +83,18 @@ function pickAttributeDisplayTitle(attr: Attribute | undefined): string {
 }
 
 /** Localized title of the TIME-category attribute (from combo map, else global attributes list). */
-function pickTimeAttributeDisplayTitle(
-  attributes: Attribute[],
-  attributeMapByCategory: Map<string, Attribute>
+// The metric-specific label for an attribute, taken from the combination rows,
+// falling back to the attribute's global title (`pickAttributeDisplayTitle`).
+function pickAttributeLabelFromRows(
+  combinations: MetricCombination[],
+  attribute: Attribute | undefined
 ): string {
-  const fromCombo = attributeMapByCategory.get(AttributeCategory.TIME);
-  if (fromCombo) return pickAttributeDisplayTitle(fromCombo);
-  const fromCatalog = attributes.find((a) => a.category === AttributeCategory.TIME);
-  return pickAttributeDisplayTitle(fromCatalog);
+  if (!attribute) return "";
+  for (const combination of combinations) {
+    const entry = (combination.row ?? []).find((r) => r.attributeId === attribute._id);
+    if (entry?.label) return entry.label;
+  }
+  return pickAttributeDisplayTitle(attribute);
 }
 
 function useDetectChartType(combinations: MetricCombination[] | undefined = []): {
@@ -192,7 +196,11 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           combinations,
           attributes,
         });
-        const { data, seriesKeys } = mapCombinationsForStackAreaChart({ combinations, attributes, attributeMapByCategory });
+        const { data, seriesKeys } = mapCombinationsForStackAreaChart({
+          combinations,
+          attributes,
+          attributeMapByCategory,
+        });
 
         console.log("STACKED AREA CHART: X - TIME, Y - GENDER", {
           combinations,
@@ -486,7 +494,11 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
             xAxisKey,
           });
 
-          console.log("2-ATTR SAME-CATEGORY FALLBACK STACKED COLUMN CHART", { combinations, data, seriesKeys });
+          console.log("2-ATTR SAME-CATEGORY FALLBACK STACKED COLUMN CHART", {
+            combinations,
+            data,
+            seriesKeys,
+          });
 
           return {
             type: "stacked-column-chart",
@@ -693,7 +705,12 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         return {
           type: "map-and-stacked-column-chart",
           xAxisKey,
-          data: { mapData, provinceAttributeId, stackedAttributeId, seriesAttributeId: genderAttributeId },
+          data: {
+            mapData,
+            provinceAttributeId,
+            stackedAttributeId,
+            seriesAttributeId: genderAttributeId,
+          },
         };
       }
 
@@ -726,7 +743,12 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         return {
           type: "map-and-stacked-column-chart",
           xAxisKey,
-          data: { mapData, provinceAttributeId, stackedAttributeId: timeAttributeId, seriesAttributeId },
+          data: {
+            mapData,
+            provinceAttributeId,
+            stackedAttributeId: timeAttributeId,
+            seriesAttributeId,
+          },
         };
       }
 
@@ -752,7 +774,12 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         return {
           type: "map-and-stacked-column-chart",
           xAxisKey,
-          data: { mapData, provinceAttributeId, stackedAttributeId, seriesAttributeId: ageAttributeId },
+          data: {
+            mapData,
+            provinceAttributeId,
+            stackedAttributeId,
+            seriesAttributeId: ageAttributeId,
+          },
         };
       }
 
@@ -805,7 +832,12 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         return {
           type: "map-and-clustered-column-chart",
           xAxisKey,
-          data: { mapData, provinceAttributeId, xAxisAttributeId: otherAttributeId, yAxisAttributeId: ageAttributeId },
+          data: {
+            mapData,
+            provinceAttributeId,
+            xAxisAttributeId: otherAttributeId,
+            yAxisAttributeId: ageAttributeId,
+          },
         };
       }
 
@@ -889,13 +921,17 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         console.log("historical-population-pyramid", {
           combinations,
           data,
+          attributeMapByCategory,
         });
 
         return {
           type: "historical-population-pyramid",
           data,
           seriesKeys,
-          timelineAxisAttributeName: pickTimeAttributeDisplayTitle(attributes, attributeMapByCategory),
+          timelineAxisAttributeName: pickAttributeLabelFromRows(
+            combinations,
+            attributeMapByCategory.get(AttributeCategory.TIME)
+          ),
         };
       }
 
@@ -926,7 +962,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           type: "historical-population-pyramid",
           data,
           seriesKeys,
-          timelineAxisAttributeName: pickTimeAttributeDisplayTitle(attributes, attributeMapByCategory),
+          timelineAxisAttributeName: pickAttributeLabelFromRows(
+            combinations,
+            attributeMapByCategory.get(frameCategory)
+          ),
         };
       }
 
@@ -948,7 +987,11 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           secondCtgAttribute: { id: otherAttributeId, key: "other" },
         });
 
-        console.log("GENDER+AREA+OTHER CLUSTERED COLUMN (STACKED) CXG", { combinations, data, seriesKeys });
+        console.log("GENDER+AREA+OTHER CLUSTERED COLUMN (STACKED) CXG", {
+          combinations,
+          data,
+          seriesKeys,
+        });
 
         return { type: "clustered-column-chart-stacked", xAxisKey, seriesKeys, data };
       }
@@ -964,16 +1007,22 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         const areaAttributeId = attributeMapByCategory.get(AttributeCategory.AREA)!._id;
         const otherAttributeId = attributeMapByCategory.get(AttributeCategory.OTHER)!._id;
 
-        const { data, clusterKeys, stackKeys, xAxisKey } = mapCombinationsForClusteredAndStackedColumnChart({
-          combinations,
-          attributes: [
-            { id: ageAttributeId, key: "age" },
-            { id: areaAttributeId, key: "area" },
-            { id: otherAttributeId, key: "other" },
-          ],
-        });
+        const { data, clusterKeys, stackKeys, xAxisKey } =
+          mapCombinationsForClusteredAndStackedColumnChart({
+            combinations,
+            attributes: [
+              { id: ageAttributeId, key: "age" },
+              { id: areaAttributeId, key: "area" },
+              { id: otherAttributeId, key: "other" },
+            ],
+          });
 
-        console.log("AGE+AREA+OTHER CLUSTERED+STACKED COLUMN", { combinations, data, clusterKeys, stackKeys });
+        console.log("AGE+AREA+OTHER CLUSTERED+STACKED COLUMN", {
+          combinations,
+          data,
+          clusterKeys,
+          stackKeys,
+        });
 
         return { type: "clustered-column-chart-stacked", xAxisKey, clusterKeys, stackKeys, data };
       }
@@ -987,63 +1036,63 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         const gscA2 = attributeMap.get(gscId2);
 
         if (gscA0 && gscA1 && gscA2) {
-        const allThreeEntries = [
-          { attr: gscA0, id: gscId0 },
-          { attr: gscA1, id: gscId1 },
-          { attr: gscA2, id: gscId2 },
-        ];
-        const otherEntries = allThreeEntries.filter(
-          ({ attr }) => attr.category === AttributeCategory.OTHER
-        );
-
-        if (!has(AttributeCategory.PROVINCE) && otherEntries.length >= 2) {
-          const nonOtherEntry = allThreeEntries.find(
-            ({ attr }) => attr.category !== AttributeCategory.OTHER
+          const allThreeEntries = [
+            { attr: gscA0, id: gscId0 },
+            { attr: gscA1, id: gscId1 },
+            { attr: gscA2, id: gscId2 },
+          ];
+          const otherEntries = allThreeEntries.filter(
+            ({ attr }) => attr.category === AttributeCategory.OTHER
           );
 
-          let stackId: string;
-          let outerEntry: { attr: (typeof attributes)[number]; id: string };
-          let innerEntry: { attr: (typeof attributes)[number]; id: string };
+          if (!has(AttributeCategory.PROVINCE) && otherEntries.length >= 2) {
+            const nonOtherEntry = allThreeEntries.find(
+              ({ attr }) => attr.category !== AttributeCategory.OTHER
+            );
 
-          if (nonOtherEntry) {
-            stackId = nonOtherEntry.id;
-            const [e0, e1] = otherEntries;
-            const c0 = countUniqueForAttr(combinations, e0.id);
-            const c1 = countUniqueForAttr(combinations, e1.id);
-            outerEntry = c0 <= c1 ? e0 : e1;
-            innerEntry = outerEntry === e0 ? e1 : e0;
-          } else {
-            // All three are OTHER: fewest → stack, then: fewer → outer, more → inner
-            const sorted = otherEntries
-              .map((e) => ({ ...e, count: countUniqueForAttr(combinations, e.id) }))
-              .sort((a, b) => a.count - b.count);
-            stackId = sorted[0].id;
-            outerEntry = sorted[1];
-            innerEntry = sorted[2];
+            let stackId: string;
+            let outerEntry: { attr: (typeof attributes)[number]; id: string };
+            let innerEntry: { attr: (typeof attributes)[number]; id: string };
+
+            if (nonOtherEntry) {
+              stackId = nonOtherEntry.id;
+              const [e0, e1] = otherEntries;
+              const c0 = countUniqueForAttr(combinations, e0.id);
+              const c1 = countUniqueForAttr(combinations, e1.id);
+              outerEntry = c0 <= c1 ? e0 : e1;
+              innerEntry = outerEntry === e0 ? e1 : e0;
+            } else {
+              // All three are OTHER: fewest → stack, then: fewer → outer, more → inner
+              const sorted = otherEntries
+                .map((e) => ({ ...e, count: countUniqueForAttr(combinations, e.id) }))
+                .sort((a, b) => a.count - b.count);
+              stackId = sorted[0].id;
+              outerEntry = sorted[1];
+              innerEntry = sorted[2];
+            }
+
+            const { data, stackDimensions } = mapCombinationsForGroupedStackedColumnChart({
+              combinations,
+              outerAttributeId: outerEntry.id,
+              innerAttributeId: innerEntry.id,
+              stackAttributeId: stackId,
+            });
+
+            const innerAttributeName = pickAttributeDisplayTitle(
+              attributes.find((a) => a._id === innerEntry.id)
+            );
+
+            console.log("GROUPED STACKED COLUMN CHART", {
+              combinations,
+              data,
+              stackDimensions,
+            });
+
+            return {
+              type: "grouped-stacked-column-chart",
+              data: { data, stackDimensions, innerAttributeName },
+            };
           }
-
-          const { data, stackDimensions } = mapCombinationsForGroupedStackedColumnChart({
-            combinations,
-            outerAttributeId: outerEntry.id,
-            innerAttributeId: innerEntry.id,
-            stackAttributeId: stackId,
-          });
-
-          const innerAttributeName = pickAttributeDisplayTitle(
-            attributes.find((a) => a._id === innerEntry.id)
-          );
-
-          console.log("GROUPED STACKED COLUMN CHART", {
-            combinations,
-            data,
-            stackDimensions,
-          });
-
-          return {
-            type: "grouped-stacked-column-chart",
-            data: { data, stackDimensions, innerAttributeName },
-          };
-        }
         } // end gscA0 && gscA1 && gscA2
       }
 
@@ -1078,9 +1127,17 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
 
             const { data: columnData, seriesKeys } = mapped;
             const resolvedXAxisKey = "xAxisKey" in mapped ? mapped.xAxisKey : xAxisKey;
-            const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttrFallback._id);
+            const mapData = mapCombinationsForArmeniaProvinces(
+              combinations,
+              provinceAttrFallback._id
+            );
 
-            console.log("3-ATTR PROVINCE FALLBACK MAP + CLUSTERED COLUMN", { combinations, columnData, mapData, seriesKeys });
+            console.log("3-ATTR PROVINCE FALLBACK MAP + CLUSTERED COLUMN", {
+              combinations,
+              columnData,
+              mapData,
+              seriesKeys,
+            });
 
             return {
               type: "map-and-clustered-column-chart",
@@ -1091,16 +1148,22 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           }
 
           // No Province: true clustered+stacked across all three (rows 41, 47-49)
-          const { data, clusterKeys, stackKeys, xAxisKey } = mapCombinationsForClusteredAndStackedColumnChart({
-            combinations,
-            attributes: [
-              { id: id0, key: a0.category },
-              { id: id1, key: a1.category },
-              { id: id2, key: a2.category },
-            ],
-          });
+          const { data, clusterKeys, stackKeys, xAxisKey } =
+            mapCombinationsForClusteredAndStackedColumnChart({
+              combinations,
+              attributes: [
+                { id: id0, key: a0.category },
+                { id: id1, key: a1.category },
+                { id: id2, key: a2.category },
+              ],
+            });
 
-          console.log("3-ATTR FALLBACK CLUSTERED+STACKED COLUMN", { combinations, data, clusterKeys, stackKeys });
+          console.log("3-ATTR FALLBACK CLUSTERED+STACKED COLUMN", {
+            combinations,
+            data,
+            clusterKeys,
+            stackKeys,
+          });
 
           return { type: "clustered-column-chart-stacked", xAxisKey, clusterKeys, stackKeys, data };
         }
@@ -1111,7 +1174,9 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
       const attributeMap4 = new Map(attributes.map((a) => [a._id, a]));
       const attributeMapByCategory4 = createCombinationAttributesMap({ combinations, attributes });
 
-      const attrObjects = attributeIds.map((id) => attributeMap4.get(id)).filter(Boolean) as (typeof attributes)[number][];
+      const attrObjects = attributeIds
+        .map((id) => attributeMap4.get(id))
+        .filter(Boolean) as (typeof attributes)[number][];
       if (attrObjects.length < 4) return { type: "bar", data: [] };
 
       const categories4 = new Set(attrObjects.map((a) => a.category));
@@ -1146,23 +1211,28 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
             });
 
           console.log(`MAP+HISTORICAL-PYRAMID (frame: ${frameCategory})`, {
-            combinations, pyramidData, mapData, seriesKeys,
+            combinations,
+            pyramidData,
+            mapData,
+            seriesKeys,
           });
 
           return {
             type: "map-and-historical-population-pyramid",
             data: { pyramidData, mapData },
             seriesKeys,
-            timelineAxisAttributeName: pickTimeAttributeDisplayTitle(
-              attributes,
-              attributeMapByCategory4
+            timelineAxisAttributeName: pickAttributeLabelFromRows(
+              combinations,
+              attributeMapByCategory4.get(frameCategory)
             ),
           };
         }
 
         // ── Map + Grouped Stacked Column Chart ───────────────────────────────────
         {
-          const nonProvAttrs4 = attrObjects.filter((a) => a.category !== AttributeCategory.PROVINCE);
+          const nonProvAttrs4 = attrObjects.filter(
+            (a) => a.category !== AttributeCategory.PROVINCE
+          );
           const otherAttrs4 = nonProvAttrs4.filter((a) => a.category === AttributeCategory.OTHER);
 
           // Case 1: GENDER + PROVINCE + 2×OTHER → GENDER=inner(X), CXG between OTHERs
@@ -1174,14 +1244,18 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
             !has4(AttributeCategory.TIME)
           ) {
             const [o0, o1] = otherAttrs4;
-            const outerAttr = countUniqueForAttr(combinations, o0._id) <= countUniqueForAttr(combinations, o1._id) ? o0 : o1;
+            const outerAttr =
+              countUniqueForAttr(combinations, o0._id) <= countUniqueForAttr(combinations, o1._id)
+                ? o0
+                : o1;
             const stackAttr = outerAttr === o0 ? o1 : o0;
             const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
             console.log("MAP+GENDER+2×OTHER GROUPED STACKED COLUMN CXG", { combinations });
             return {
               type: "map-and-grouped-stacked-column-chart",
               data: {
-                mapData, provinceAttributeId,
+                mapData,
+                provinceAttributeId,
                 outerAttributeId: outerAttr._id,
                 innerAttributeId: genderAttr._id,
                 stackAttributeId: stackAttr._id,
@@ -1198,14 +1272,18 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           ) {
             const timeAttr4 = attrObjects.find((a) => a.category === AttributeCategory.TIME)!;
             const [o0, o1] = otherAttrs4;
-            const outerAttr = countUniqueForAttr(combinations, o0._id) <= countUniqueForAttr(combinations, o1._id) ? o0 : o1;
+            const outerAttr =
+              countUniqueForAttr(combinations, o0._id) <= countUniqueForAttr(combinations, o1._id)
+                ? o0
+                : o1;
             const innerAttr = outerAttr === o0 ? o1 : o0;
             const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
             console.log("MAP+TIME+2×OTHER GROUPED STACKED COLUMN CXG", { combinations });
             return {
               type: "map-and-grouped-stacked-column-chart",
               data: {
-                mapData, provinceAttributeId,
+                mapData,
+                provinceAttributeId,
                 outerAttributeId: outerAttr._id,
                 innerAttributeId: innerAttr._id,
                 stackAttributeId: timeAttr4._id,
@@ -1226,11 +1304,17 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
               .sort((x, y) => x.count - y.count);
             const [yEntry, xEntry, cEntry] = sorted;
             const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
-            console.log("MAP+3CYXG GROUPED STACKED COLUMN (no GENDER, no TIME)", { combinations, outer: cEntry.a, inner: xEntry.a, stack: yEntry.a });
+            console.log("MAP+3CYXG GROUPED STACKED COLUMN (no GENDER, no TIME)", {
+              combinations,
+              outer: cEntry.a,
+              inner: xEntry.a,
+              stack: yEntry.a,
+            });
             return {
               type: "map-and-grouped-stacked-column-chart",
               data: {
-                mapData, provinceAttributeId,
+                mapData,
+                provinceAttributeId,
                 outerAttributeId: cEntry.a._id,
                 innerAttributeId: xEntry.a._id,
                 stackAttributeId: yEntry.a._id,
@@ -1244,12 +1328,17 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         if (genderAttr) {
           const genderAttributeId = genderAttr._id;
           const nonPGAttrs = attrObjects.filter(
-            (a) => a.category !== AttributeCategory.PROVINCE && a.category !== AttributeCategory.GENDER
+            (a) =>
+              a.category !== AttributeCategory.PROVINCE && a.category !== AttributeCategory.GENDER
           );
           const firstCtgAttribute = { id: nonPGAttrs[0]._id, key: nonPGAttrs[0].category };
           const secondCtgAttribute = { id: nonPGAttrs[1]._id, key: nonPGAttrs[1].category };
 
-          const { data: columnData, seriesKeys, xAxisKey } = mapCombinationsForClusteredColumnChartStacked({
+          const {
+            data: columnData,
+            seriesKeys,
+            xAxisKey,
+          } = mapCombinationsForClusteredColumnChartStacked({
             combinations,
             genderAttributeId,
             firstCtgAttribute,
@@ -1257,7 +1346,12 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           });
           const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
 
-          console.log("MAP+GENDER+2CXG CLUSTERED COLUMN (STACKED)", { combinations, columnData, mapData, seriesKeys });
+          console.log("MAP+GENDER+2CXG CLUSTERED COLUMN (STACKED)", {
+            combinations,
+            columnData,
+            mapData,
+            seriesKeys,
+          });
 
           return {
             type: "map-and-clustered-column-chart-stacked",
@@ -1272,7 +1366,11 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           const nonProvAttrs = attrObjects.filter((a) => a.category !== AttributeCategory.PROVINCE);
           const [npa0, npa1, npa2] = nonProvAttrs;
 
-          const { data: columnData, seriesKeys, xAxisKey } = mapCombinationsForClusteredColumnChartStacked3D({
+          const {
+            data: columnData,
+            seriesKeys,
+            xAxisKey,
+          } = mapCombinationsForClusteredColumnChartStacked3D({
             combinations,
             attributes: [
               { id: npa0._id, key: npa0.category },
@@ -1282,7 +1380,12 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           });
           const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
 
-          console.log("MAP+3CYXG CLUSTERED COLUMN (STACKED)", { combinations, columnData, mapData, seriesKeys });
+          console.log("MAP+3CYXG CLUSTERED COLUMN (STACKED)", {
+            combinations,
+            columnData,
+            mapData,
+            seriesKeys,
+          });
 
           return {
             type: "map-and-clustered-column-chart-stacked",
@@ -1318,7 +1421,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           const timeAttr4 = attrObjects.find((a) => a.category === AttributeCategory.TIME)!;
           const cxgPair = nonGenderAttrs.filter((a) => a.category !== AttributeCategory.TIME);
           const [cp0, cp1] = cxgPair;
-          const innerAttr = countUniqueForAttr(combinations, cp0._id) <= countUniqueForAttr(combinations, cp1._id) ? cp0 : cp1;
+          const innerAttr =
+            countUniqueForAttr(combinations, cp0._id) <= countUniqueForAttr(combinations, cp1._id)
+              ? cp0
+              : cp1;
           const outerAttr = innerAttr === cp0 ? cp1 : cp0;
 
           const { data: chartData, stackDimensions } = mapCombinationsForGroupedStackedColumnChart({
@@ -1328,7 +1434,12 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
             stackAttributeId: timeAttr4._id,
           });
 
-          console.log("SEMI-PIE+AGE-X+TIME-Y+CXG GROUPED STACKED COLUMN", { combinations, semiPieData, chartData, stackDimensions });
+          console.log("SEMI-PIE+AGE-X+TIME-Y+CXG GROUPED STACKED COLUMN", {
+            combinations,
+            semiPieData,
+            chartData,
+            stackDimensions,
+          });
 
           return {
             type: "semi-pie-and-grouped-stacked-column-chart",
@@ -1349,17 +1460,28 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           );
           if (ageOrAreaAttr && otherAttrs.length === 2) {
             const [o0, o1] = otherAttrs;
-            const outerAttr = countUniqueForAttr(combinations, o0._id) <= countUniqueForAttr(combinations, o1._id) ? o0 : o1;
-            const { data: chartData, stackDimensions } = mapCombinationsForGroupedStackedColumnChart({
+            const outerAttr =
+              countUniqueForAttr(combinations, o0._id) <= countUniqueForAttr(combinations, o1._id)
+                ? o0
+                : o1;
+            const { data: chartData, stackDimensions } =
+              mapCombinationsForGroupedStackedColumnChart({
+                combinations,
+                outerAttributeId: outerAttr._id,
+                innerAttributeId: genderAttributeId,
+                stackAttributeId: ageOrAreaAttr._id,
+              });
+            console.log("SEMI-PIE+GENDER-X+(AGE|AREA)-Y+2×OTHER-CXG GROUPED STACKED COLUMN", {
               combinations,
-              outerAttributeId: outerAttr._id,
-              innerAttributeId: genderAttributeId,
-              stackAttributeId: ageOrAreaAttr._id,
             });
-            console.log("SEMI-PIE+GENDER-X+(AGE|AREA)-Y+2×OTHER-CXG GROUPED STACKED COLUMN", { combinations });
             return {
               type: "semi-pie-and-grouped-stacked-column-chart",
-              data: { semiPieData, data: chartData, stackDimensions, innerAttributeName: pickAttributeDisplayTitle(genderAttr) },
+              data: {
+                semiPieData,
+                data: chartData,
+                stackDimensions,
+                innerAttributeName: pickAttributeDisplayTitle(genderAttr),
+              },
             };
           }
         }
@@ -1372,22 +1494,34 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
             const sorted = otherAttrs
               .map((a) => ({ a, count: countUniqueForAttr(combinations, a._id) }))
               .sort((x, y) => x.count - y.count);
-            const { data: chartData, stackDimensions } = mapCombinationsForGroupedStackedColumnChart({
+            const { data: chartData, stackDimensions } =
+              mapCombinationsForGroupedStackedColumnChart({
+                combinations,
+                outerAttributeId: sorted[1].a._id,
+                innerAttributeId: genderAttributeId,
+                stackAttributeId: sorted[0].a._id,
+              });
+            console.log("SEMI-PIE+GENDER-X+OTHER-Y+2×OTHER-CXG GROUPED STACKED COLUMN", {
               combinations,
-              outerAttributeId: sorted[1].a._id,
-              innerAttributeId: genderAttributeId,
-              stackAttributeId: sorted[0].a._id,
             });
-            console.log("SEMI-PIE+GENDER-X+OTHER-Y+2×OTHER-CXG GROUPED STACKED COLUMN", { combinations });
             return {
               type: "semi-pie-and-grouped-stacked-column-chart",
-              data: { semiPieData, data: chartData, stackDimensions, innerAttributeName: pickAttributeDisplayTitle(genderAttr) },
+              data: {
+                semiPieData,
+                data: chartData,
+                stackDimensions,
+                innerAttributeName: pickAttributeDisplayTitle(genderAttr),
+              },
             };
           }
         }
 
         // Fallback: clustered stacked column via CYXG across 3 non-gender attrs
-        const { data: columnData, seriesKeys, xAxisKey } = mapCombinationsForClusteredColumnChartStacked3D({
+        const {
+          data: columnData,
+          seriesKeys,
+          xAxisKey,
+        } = mapCombinationsForClusteredColumnChartStacked3D({
           combinations,
           attributes: [
             { id: nga0._id, key: nga0.category },
@@ -1396,7 +1530,12 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           ],
         });
 
-        console.log("SEMI-PIE+3CYXG CLUSTERED COLUMN (STACKED)", { combinations, semiPieData, columnData, seriesKeys });
+        console.log("SEMI-PIE+3CYXG CLUSTERED COLUMN (STACKED)", {
+          combinations,
+          semiPieData,
+          columnData,
+          seriesKeys,
+        });
 
         return {
           type: "semi-pie-and-clustered-column-chart-stacked",
@@ -1429,10 +1568,15 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         const ageOrAreaAttr = nonTimeAttrs.find(
           (a) => a.category === AttributeCategory.AGE || a.category === AttributeCategory.AREA
         );
-        const otherAttrsForAgeArea = nonTimeAttrs.filter((a) => a.category === AttributeCategory.OTHER);
+        const otherAttrsForAgeArea = nonTimeAttrs.filter(
+          (a) => a.category === AttributeCategory.OTHER
+        );
         if (ageOrAreaAttr && otherAttrsForAgeArea.length === 2) {
           const [o0, o1] = otherAttrsForAgeArea;
-          const innerAttr = countUniqueForAttr(combinations, o0._id) <= countUniqueForAttr(combinations, o1._id) ? o0 : o1;
+          const innerAttr =
+            countUniqueForAttr(combinations, o0._id) <= countUniqueForAttr(combinations, o1._id)
+              ? o0
+              : o1;
           const outerAttr = innerAttr === o0 ? o1 : o0;
           const { data: chartData, stackDimensions } = mapCombinationsForGroupedStackedColumnChart({
             combinations,
@@ -1440,10 +1584,18 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
             innerAttributeId: innerAttr._id,
             stackAttributeId: ageOrAreaAttr._id,
           });
-          console.log(`LINE-GRAPH+${ageOrAreaAttr.category.toUpperCase()}-Y+2×OTHER-CXG GROUPED STACKED COLUMN`, { combinations, lineData, chartData, stackDimensions });
+          console.log(
+            `LINE-GRAPH+${ageOrAreaAttr.category.toUpperCase()}-Y+2×OTHER-CXG GROUPED STACKED COLUMN`,
+            { combinations, lineData, chartData, stackDimensions }
+          );
           return {
             type: "line-graph-and-grouped-stacked-column-chart",
-            data: { lineData, data: chartData, stackDimensions, innerAttributeName: pickAttributeDisplayTitle(innerAttr) },
+            data: {
+              lineData,
+              data: chartData,
+              stackDimensions,
+              innerAttributeName: pickAttributeDisplayTitle(innerAttr),
+            },
           };
         }
 
@@ -1456,7 +1608,10 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           const stackAttr = sorted[0].a;
           const cxg0 = sorted[1].a;
           const cxg1 = sorted[2].a;
-          const innerAttr = countUniqueForAttr(combinations, cxg0._id) <= countUniqueForAttr(combinations, cxg1._id) ? cxg0 : cxg1;
+          const innerAttr =
+            countUniqueForAttr(combinations, cxg0._id) <= countUniqueForAttr(combinations, cxg1._id)
+              ? cxg0
+              : cxg1;
           const outerAttr = innerAttr === cxg0 ? cxg1 : cxg0;
           const { data: chartData, stackDimensions } = mapCombinationsForGroupedStackedColumnChart({
             combinations,
@@ -1464,10 +1619,20 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
             innerAttributeId: innerAttr._id,
             stackAttributeId: stackAttr._id,
           });
-          console.log("LINE-GRAPH+OTHER-Y+2×OTHER-CXG GROUPED STACKED COLUMN", { combinations, lineData, chartData, stackDimensions });
+          console.log("LINE-GRAPH+OTHER-Y+2×OTHER-CXG GROUPED STACKED COLUMN", {
+            combinations,
+            lineData,
+            chartData,
+            stackDimensions,
+          });
           return {
             type: "line-graph-and-grouped-stacked-column-chart",
-            data: { lineData, data: chartData, stackDimensions, innerAttributeName: pickAttributeDisplayTitle(innerAttr) },
+            data: {
+              lineData,
+              data: chartData,
+              stackDimensions,
+              innerAttributeName: pickAttributeDisplayTitle(innerAttr),
+            },
           };
         }
       }
@@ -1501,7 +1666,11 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         const cyxgAttrs = attrObjects.filter((a) => a._id !== x1AttributeId);
         const [cya0, cya1, cya2] = cyxgAttrs;
 
-        const { data: columnData, seriesKeys, xAxisKey } = mapCombinationsForClusteredColumnChartStacked3D({
+        const {
+          data: columnData,
+          seriesKeys,
+          xAxisKey,
+        } = mapCombinationsForClusteredColumnChartStacked3D({
           combinations,
           attributes: [
             { id: cya0._id, key: cya0.category },
@@ -1510,7 +1679,12 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           ],
         });
 
-        console.log("COLUMN-ROTATED-LABELS+3CYXG CLUSTERED COLUMN (STACKED)", { combinations, rotatedLabelsData, columnData, seriesKeys });
+        console.log("COLUMN-ROTATED-LABELS+3CYXG CLUSTERED COLUMN (STACKED)", {
+          combinations,
+          rotatedLabelsData,
+          columnData,
+          seriesKeys,
+        });
 
         return {
           type: "column-with-rotated-labels-and-clustered-column-chart-stacked",

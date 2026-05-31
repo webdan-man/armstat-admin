@@ -130,11 +130,11 @@ const Chart = ({ combinations = [] }: ChartProps) => {
     case "historical-population-pyramid":
       return (
         <div>
-          {/*<HistoricalPopulationPyramidChart*/}
-          {/*  data={data}*/}
-          {/*  seriesKeys={seriesKeys}*/}
-          {/*  timelineAxisAttributeName={timelineAxisAttributeName}*/}
-          {/*/>*/}
+          <HistoricalPopulationPyramidChart
+            data={data}
+            seriesKeys={seriesKeys}
+            timelineAxisAttributeName={timelineAxisAttributeName}
+          />
         </div>
       );
     case "clustered-column-chart":
@@ -164,11 +164,11 @@ const Chart = ({ combinations = [] }: ChartProps) => {
       return (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div>
-            {/*<HistoricalPopulationPyramidChart*/}
-            {/*  data={data?.pyramidData ?? []}*/}
-            {/*  seriesKeys={seriesKeys}*/}
-            {/*  timelineAxisAttributeName={timelineAxisAttributeName}*/}
-            {/*/>*/}
+            <HistoricalPopulationPyramidChart
+              data={data?.pyramidData ?? []}
+              seriesKeys={seriesKeys}
+              timelineAxisAttributeName={timelineAxisAttributeName}
+            />
           </div>
           <div>
             <ArmeniaProvincesMap data={data?.mapData ?? []} />
