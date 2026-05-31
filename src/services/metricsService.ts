@@ -1,4 +1,5 @@
 import apiClient from "@/lib/api/api-client";
+import { defaultLocale, type Locale } from "@/lib/i18n";
 import type { IndicatorFormValues } from "@/components/indicators/indicator-form-schema";
 import { emptyIndicatorFormValues } from "@/components/indicators/indicator-form-schema";
 import {
@@ -158,6 +159,7 @@ export async function fetchMetricsByTopicId(topicId: string): Promise<MetricSele
   return data.map((metric) => ({
     id: metric._id,
     label: pickMetricTitle(metric.title),
+    title: metric.title ?? {},
     updatedAt: metric.updatedAt ?? metric.createdAt ?? null,
   }));
 }
@@ -278,8 +280,11 @@ export async function recordMetricView(metricId: string): Promise<void> {
   });
 }
 
-export async function getMetricCombinations(metricId: string): Promise<MetricCombination[]> {
+export async function getMetricCombinations(
+  metricId: string,
+  locale: Locale = defaultLocale
+): Promise<MetricCombination[]> {
   return apiClient<MetricCombination[]>(
-    `/api/metrics/${encodeURIComponent(metricId)}/combinations?locale=hy`
+    `/api/metrics/${encodeURIComponent(metricId)}/combinations?locale=${encodeURIComponent(locale)}`
   );
 }

@@ -5,6 +5,8 @@
  * For new domains (e.g. indicators), add keys here and call services from
  * `src/services/*` with `useSWR(key, () => serviceFn())` — same pattern as attributes.
  */
+import { defaultLocale, type Locale } from "@/lib/i18n";
+
 export const swrKeys = {
   /** Invalidate after create/update/delete metric; use for metric lists when implemented. */
   metrics: "metrics",
@@ -12,7 +14,8 @@ export const swrKeys = {
   /** Cached indicator form loaded for the editor (GET /metrics/:id or fallback). */
   metricForm: (metricId: string) => ["metrics", "form", metricId] as const,
   /** Cached combination rows for the data table (GET combinations API). */
-  metricCombinations: (metricId: string) => ["metrics", "combinations", metricId] as const,
+  metricCombinations: (metricId: string, locale: Locale = defaultLocale) =>
+    ["metrics", "combinations", metricId, locale] as const,
   attributes: "attributes",
   attributesCategories: "attributesCategories",
   /** useSWRMutation key for CSV export (not a GET cache). */

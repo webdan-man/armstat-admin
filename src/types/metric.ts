@@ -73,7 +73,10 @@ export type MetricResponse = {
 
 export type MetricSelectOption = {
   id: string;
+  /** Server-picked fallback label (hy → ru → en). */
   label: string;
+  /** Localized title, so the client can pick the active locale. */
+  title: Record<string, string>;
   updatedAt: string | null;
 };
 

@@ -1,6 +1,7 @@
 import { isRootTopic } from "@/lib/section-topic-utils";
 import type { Section } from "@/types/section";
 import { getSectionLocalizedText } from "@/lib/section-localization";
+import { defaultLocale, type Locale } from "@/lib/i18n";
 
 export type StatMenuItem = {
   id: string;
@@ -8,16 +9,16 @@ export type StatMenuItem = {
   children?: StatMenuItem[];
 };
 
-export function buildStatMenu(sections: Section[]): StatMenuItem[] {
+export function buildStatMenu(sections: Section[], lang: Locale = defaultLocale): StatMenuItem[] {
   return sections.map((section) => ({
     id: section._id,
-    title: getSectionLocalizedText(section.name),
+    title: getSectionLocalizedText(section.name, lang),
     children: section.topics.filter(isRootTopic).map((rootTopic) => ({
       id: rootTopic._id,
-      title: getSectionLocalizedText(rootTopic.title),
+      title: getSectionLocalizedText(rootTopic.title, lang),
       children: (rootTopic.subtopics ?? []).map((sub) => ({
         id: sub._id,
-        title: getSectionLocalizedText(sub.title),
+        title: getSectionLocalizedText(sub.title, lang),
       })),
     })),
   }));

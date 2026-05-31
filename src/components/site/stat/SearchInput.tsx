@@ -17,11 +17,13 @@ import { swrKeys } from "@/lib/swr/cache-keys";
 import { isRootTopic } from "@/lib/section-topic-utils";
 import { buildStatMenu, isSlugInStatMenu } from "@/lib/stat-menu-utils";
 import { useTranslation } from "@/hooks/useTranslation";
+import { pickLocale } from "@/lib/i18n";
 import type { Section } from "@/types/section";
 
 type SearchOption = {
   id: string;
   label: string;
+  title: Record<string, string>;
 };
 
 type SlugTarget =
@@ -64,13 +66,13 @@ export default function SearchInput({
   query: string;
   setQuery: (v: string) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, activeLang } = useTranslation();
   const router = useRouter();
   const params = useParams();
   const slug = (params?.slug as string) ?? "";
   const { data: sections = [] } = useSWR(swrKeys.sections, fetchSections);
 
-  const menu = useMemo(() => buildStatMenu(sections), [sections]);
+  const menu = useMemo(() => buildStatMenu(sections, activeLang), [sections, activeLang]);
   const slugInTree = useMemo(
     () => sections.length > 0 && isSlugInStatMenu(menu, slug),
     [menu, slug, sections.length]
@@ -103,16 +105,18 @@ export default function SearchInput({
       for (const item of list) {
         if (seen.has(item.id)) continue;
         seen.add(item.id);
-        merged.push({ id: item.id, label: item.label });
+        merged.push({ id: item.id, label: item.label, title: item.title });
       }
     }
     return merged;
   });
 
+  const labelFor = (item: SearchOption) => pickLocale(item.title, activeLang) || item.label;
+
   return (
     <Combobox
       items={indicators}
-      itemToStringValue={(item: SearchOption) => item.label}
+      itemToStringValue={(item: SearchOption) => labelFor(item)}
       onValueChange={(item: SearchOption | null) => {
         if (item) {
           setQuery("");
@@ -123,14 +127,14 @@ export default function SearchInput({
       <ComboboxInput
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="text-[rgba(55,71,79,1)] border-textBlack300 shadow-none h-10.5 w-full"
+        className="border-textBlack300 h-10.5 w-full text-[rgba(55,71,79,1)] shadow-none"
         placeholder={t("stat.search_placeholder", "Փնտրել")}
       />
       <ComboboxContent>
         <ComboboxList>
           {(item: SearchOption) => (
             <ComboboxItem key={item.id} value={item}>
-              {item.label}
+              {labelFor(item)}
             </ComboboxItem>
           )}
         </ComboboxList>

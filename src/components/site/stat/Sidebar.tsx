@@ -185,7 +185,7 @@ function MenuList({
 }
 
 export default function Sidebar() {
-  const { t } = useTranslation();
+  const { t, activeLang } = useTranslation();
   const params = useParams();
   const router = useRouter();
   const activeSlug = params.slug as string;
@@ -199,7 +199,7 @@ export default function Sidebar() {
   const { data: sections, isLoading: isSectionsLoading } = useSWR(swrKeys.sections, fetchSections);
 
   const isSidebarLoading = isSectionsLoading || sections === undefined;
-  const menu = useMemo(() => buildStatMenu(sections ?? []), [sections]);
+  const menu = useMemo(() => buildStatMenu(sections ?? [], activeLang), [sections, activeLang]);
 
   // Once sections load, check whether the active slug belongs to the tree.
   // If it doesn't, it's a metricId — fetch the metric to resolve its topicId.

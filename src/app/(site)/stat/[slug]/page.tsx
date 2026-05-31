@@ -25,6 +25,7 @@ import useSWR from "swr";
 import { useLang } from "@/providers/LangProvider";
 import { useTranslation } from "@/hooks/useTranslation";
 import { buildStatMenu, isSlugInStatMenu } from "@/lib/stat-menu-utils";
+import { getSectionLocalizedText } from "@/lib/section-localization";
 import { formatIntegerWithCommas, sexTotalPercents } from "@/lib/format-integer";
 import {
   getMetricById,
@@ -47,7 +48,7 @@ export default function StatPage() {
   const { t } = useTranslation();
 
   const { data: sections } = useSWR(swrKeys.sections, fetchSections);
-  const menu = useMemo(() => buildStatMenu(sections ?? []), [sections]);
+  const menu = useMemo(() => buildStatMenu(sections ?? [], activeLang), [sections, activeLang]);
   const activeSection = useMemo(
     () => (sections ?? []).find((section) => section._id === slug),
     [sections, slug]
@@ -79,8 +80,8 @@ export default function StatPage() {
     () => getMetricById(selectedMetricId!)
   );
   const { data: combinations = [], isLoading: isCombinationsLoading } = useSWR(
-    selectedMetricId ? swrKeys.metricCombinations(selectedMetricId) : null,
-    () => getMetricCombinations(selectedMetricId!)
+    selectedMetricId ? swrKeys.metricCombinations(selectedMetricId, activeLang) : null,
+    () => getMetricCombinations(selectedMetricId!, activeLang)
   );
 
   const isLoading =
@@ -159,7 +160,11 @@ export default function StatPage() {
   return (
     <div className="flex w-full flex-col pt-7.5 pb-10 pl-16.75">
       <TypographyH3 className="min-h-6 text-[rgba(40,40,40,1)]">
-        {isSectionSlug ? (activeSection?.name.hy ?? "") : (metric?.title?.[activeLang] ?? "")}
+        {isSectionSlug
+          ? activeSection
+            ? getSectionLocalizedText(activeSection.name, activeLang)
+            : ""
+          : (metric?.title?.[activeLang] ?? "")}
       </TypographyH3>
       <div className="mt-5 flex gap-3">
         <SearchInput query={query} setQuery={setQuery} />

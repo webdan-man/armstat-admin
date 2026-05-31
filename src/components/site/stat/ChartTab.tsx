@@ -42,7 +42,10 @@ export default function ChartTab({
           </div>
         </div>
       ) : (
-        <Chart combinations={combinations} />
+        <>
+          azffdfdfddfdaza
+          <Chart combinations={combinations} />
+        </>
       )}
       {combinations?.length > 0 && (
         <div className="flex justify-between gap-5">
