@@ -9,14 +9,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
-import useSWR from "swr";
-import { fetchSections } from "@/services/sectionsService";
-import { swrKeys } from "@/lib/swr/cache-keys";
-import { isRootTopic } from "@/lib/section-topic-utils";
 import { useLang } from "@/providers/LangProvider";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useSiteNavItems } from "@/hooks/useSiteNavItems";
 import type { ContentLangCode } from "@/types/content-entries";
 
 const languages: { labelKey: string; code: ContentLangCode; fallback: string }[] = [
@@ -25,35 +22,11 @@ const languages: { labelKey: string; code: ContentLangCode; fallback: string }[]
   { labelKey: "language.ru", code: "ru", fallback: "Russian" },
 ];
 
-const navItems = [
-  { key: "navigation.catalog", href: "catalog", fallback: "Catalog" },
-  { key: "navigation.news", href: "/news", fallback: "Publications" },
-  {
-    key: "navigation.information_center",
-    href: "/information-center",
-    fallback: "Information Center",
-  },
-  { key: "navigation.feedback", href: "/feedback", fallback: "Feedback" },
-];
-
 export default function Header() {
   const { activeLang, setActiveLang, ready } = useLang();
   const { t } = useTranslation();
-  const { data: sections = [] } = useSWR(swrKeys.sections, fetchSections);
+  const items = useSiteNavItems();
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  const catalogHref = useMemo(() => {
-    for (const section of sections) {
-      const first = section.topics.find(isRootTopic);
-      if (first) return `/stat/${first._id}`;
-    }
-    return "/stat";
-  }, [sections]);
-
-  const items = useMemo(
-    () => navItems.map((item) => (item.href === "catalog" ? { ...item, href: catalogHref } : item)),
-    [catalogHref]
-  );
 
   const pathname = usePathname();
   const activeLangLabel = languages.find((l) => l.code === activeLang);

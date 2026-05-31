@@ -3,20 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslation } from "@/hooks/useTranslation";
-
-const navItems = [
-  { key: "navigation.catalog", href: "/catalogue", fallback: "Catalog" },
-  { key: "navigation.news", href: "/publications", fallback: "Publications" },
-  {
-    key: "navigation.information_center",
-    href: "/information-center",
-    fallback: "Information Center",
-  },
-  { key: "navigation.feedback", href: "/feedback", fallback: "Feedback" },
-];
+import { useSiteNavItems } from "@/hooks/useSiteNavItems";
 
 export default function Footer() {
   const { t } = useTranslation();
+  const navItems = useSiteNavItems();
 
   return (
     <footer className="border-t-warning flex w-full flex-col items-center border-t-4 pt-12 pb-10">

@@ -110,7 +110,7 @@ export default function News({ items }: { items: NewsItem[] }) {
         <TypographyH2 className="max-w-180 text-center font-medium text-[rgba(44,44,44,1)]">
           {t("news.title", "Նորություններ")}
         </TypographyH2>
-        <div className="mt-15 grid grid-cols-3 gap-10 max-lg:flex max-lg:flex-col">
+        <div className="mt-15 grid w-full grid-cols-3 gap-10 max-lg:flex max-lg:flex-col">
           {pageItems.map((item) => (
             <NewsCard key={item._id} item={item} />
           ))}
