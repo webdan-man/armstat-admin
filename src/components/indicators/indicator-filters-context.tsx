@@ -82,10 +82,10 @@ export function IndicatorFiltersProvider({ children }: { children: React.ReactNo
   }, [selectedFilter.section, selectedFilter.subgroup, selectedFilter.subSubgroup]);
 
   const hierarchyComplete = Boolean(resolvedTopicId);
-  const canSelectIndicator = hierarchyComplete;
+  const canSelectIndicator = !!selectedFilter.section;
 
   const openCreateForm = () => {
-    if (!resolvedTopicId) return;
+    // if (!resolvedTopicId) return;
     setFormMode("create");
     setSelectedFilter((prev) => ({ ...prev, indicator: "" }));
   };

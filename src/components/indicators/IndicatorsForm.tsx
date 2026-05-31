@@ -107,7 +107,7 @@ export default function IndicatorsForm() {
 
   const submitSave = async (values: IndicatorFormValues) => {
     const metricAttributeKeys = mapFeaturesToMetricAttributeKeys(features);
-    if (!resolvedTopicId) {
+    if (!values.topicId) {
       toast.error("Ընտրեք բաժին, ենթախումբ և անհրաժեշտության դեպքում ենթա-ենթախումբ։");
       return;
     }
@@ -121,7 +121,7 @@ export default function IndicatorsForm() {
         reset({ ...values, attributes: metricAttributeKeys });
       } else {
         const created = await createMetric(
-          mapIndicatorFormToCreateMetric(resolvedTopicId, values, metricAttributeKeys)
+          mapIndicatorFormToCreateMetric(values.topicId, values, metricAttributeKeys)
         );
         setSelectedFilter((prev) => ({ ...prev, indicator: created._id }));
       }
