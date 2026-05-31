@@ -14,7 +14,6 @@ import AttributesExportButton from "@/components/attributes/AttributesExportButt
 import ImportAttributes from "@/components/attributes/ImportAttributes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LangSwitcher } from "@/components/main/LangSwitcher";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -47,12 +46,7 @@ export default function AttributesList() {
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
   const [formSaving, setFormSaving] = useState(false);
   const [formCategory, setFormCategory] = useState<string>("");
-  const [nameLang, setNameLang] = useState<"hy" | "ru" | "en">("hy");
-  const [formNames, setFormNames] = useState<{ hy: string; ru: string; en: string }>({
-    hy: "",
-    ru: "",
-    en: "",
-  });
+  const [formName, setFormName] = useState("");
 
   const attributeIds = useMemo(() => {
     if (categoryFilter === "__all__") return [];
@@ -87,8 +81,7 @@ export default function AttributesList() {
   const openCreate = () => {
     setModalMode("create");
     setFormCategory(categoryFilter !== "__all__" ? categoryFilter : "");
-    setFormNames({ hy: "", ru: "", en: "" });
-    setNameLang("hy");
+    setFormName("");
     setModalOpen(true);
   };
 
@@ -98,12 +91,7 @@ export default function AttributesList() {
 
     setModalMode("edit");
     setFormCategory(attribute.category || "");
-    setFormNames({
-      hy: String(attribute.title.hy ?? ""),
-      ru: String(attribute.title.ru ?? ""),
-      en: String(attribute.title.en ?? ""),
-    });
-    setNameLang("hy");
+    setFormName(String(attribute.title.hy ?? ""));
     setModalOpen(true);
   };
 
@@ -127,8 +115,8 @@ export default function AttributesList() {
     const id = modalMode === "edit" ? selectedAttribute?._id : undefined;
     if (modalMode === "edit" && !id) return;
 
-    if (!formNames.en) {
-      toast.error("ԱՆգլերենը դաշտը պարտադիր է");
+    if (!formName) {
+      toast.error("Հայերենը դաշտը պարտադիր է");
       return;
     }
     setFormSaving(true);
@@ -139,7 +127,7 @@ export default function AttributesList() {
             mode: modalMode,
             category: formCategory,
             id,
-            title: formNames,
+            title: { hy: formName, ru: "", en: "" },
           }),
         {
           title: modalMode === "edit" ? "Թարմացված է" : "Ստեղծված է",
@@ -266,13 +254,10 @@ export default function AttributesList() {
             </div>
 
             <div className="grid gap-3">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="text-muted-foreground text-sm">Անվանում</div>
-                <LangSwitcher value={nameLang} onChange={setNameLang} />
-              </div>
+              <div className="text-muted-foreground text-sm">Անվանում</div>
               <Input
-                value={formNames[nameLang]}
-                onChange={(e) => setFormNames((p) => ({ ...p, [nameLang]: e.target.value }))}
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
                 disabled={formSaving}
               />
             </div>
