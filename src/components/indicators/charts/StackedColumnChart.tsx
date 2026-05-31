@@ -60,7 +60,7 @@ function StackedColumnChart<T extends Record<string, string>>({
       minorGridEnabled: true,
     });
     xRenderer.labels.template.setAll({
-      rotation: -75,
+      rotation: -45,
       centerY: am5.p50,
       centerX: am5.p100,
       paddingRight: 15,

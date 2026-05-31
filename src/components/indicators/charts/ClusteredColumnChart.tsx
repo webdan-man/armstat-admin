@@ -74,10 +74,10 @@ function ClusteredColumnChart<T extends Record<string, string>>({
     xAxisRef.current = xAxis;
 
     xRenderer.labels.template.setAll({
-      rotation: 0,
+      rotation: -45,
       centerY: am5.p50,
-      centerX: am5.p50,
-      paddingTop: 10,
+      centerX: am5.p100,
+      paddingRight: 10,
       // Long category labels would eat the plot height, so cap their width and wrap them
       // onto multiple lines. The full text is still shown in the tooltip.
       maxWidth: 140,

@@ -90,7 +90,7 @@ function LineGraphChart({ data, chartTitle }: LineGraphChartProps) {
 
     // Prevent label collisions by rotating labels slightly.
     xRenderer.labels.template.setAll({
-      rotation: -35,
+      rotation: -45,
       centerY: am5.p50,
       centerX: am5.p100,
       paddingRight: 10,
