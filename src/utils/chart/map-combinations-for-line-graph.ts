@@ -1,21 +1,37 @@
 import { MetricCombination } from "@/types/metric";
 
+// Pull a 4-digit year out of a row title ("2026", "2026 թ."); null if there isn't one.
+export const parseYear = (title?: string): number | null => {
+  if (!title) return null;
+  const match = String(title).match(/\d{4}/);
+  return match ? Number(match[0]) : null;
+};
+
 export const mapCombinationsForLineGraph = (combinations: MetricCombination[]) => {
-  const data = combinations
+  const points = combinations
     .map((item) => {
-      const year = item.row?.[0]?.value?.title;
+      const title = item.row?.[0]?.value?.title;
       const value = Number(item.value);
 
-      if (!year || isNaN(value)) return null;
+      if (!title || isNaN(value)) return null;
 
-      const date = new Date(Number(year), 0, 1); // Jan 1 of that year
-
-      return {
-        date: date.getTime(),
-        value,
-      };
+      return { label: String(title), year: parseYear(title), value };
     })
-    .filter(Boolean) as { date: number; value: number }[];
+    .filter(Boolean) as { label: string; year: number | null; value: number }[];
 
-  return data.sort((a, b) => a.date - b.date);
+  // When every title is a real year, plot by actual date (chronological).
+  if (points.every((p) => p.year !== null)) {
+    return points
+      .map((p) => ({ date: new Date(p.year!, 0, 1).getTime(), value: p.value, label: p.label }))
+      .sort((a, b) => a.date - b.date);
+  }
+
+  // Otherwise the titles aren't valid dates — keep input order and spread the points over a
+  // synthetic yearly axis so the graph still renders. (The DateAxis needs valid dates.)
+  const BASE_YEAR = 2000;
+  return points.map((p, index) => ({
+    date: new Date(BASE_YEAR + index, 0, 1).getTime(),
+    value: p.value,
+    label: p.label,
+  }));
 };
