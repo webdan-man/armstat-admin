@@ -258,7 +258,7 @@ const ChartDataTabs = ({
                         </button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto max-w-150 min-w-36 p-2" align="start">
-                        <div className="flex flex-col gap-0.5">
+                        <div className="flex max-h-100 flex-col gap-0.5 overflow-y-auto">
                           {options.map((opt) => {
                             const isChecked = selected === null || (selected?.has(opt) ?? true);
                             return (
