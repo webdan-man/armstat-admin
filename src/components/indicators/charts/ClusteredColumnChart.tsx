@@ -69,6 +69,8 @@ function ClusteredColumnChart<T extends Record<string, string>>({
         renderer: xRenderer,
       })
     );
+    // Cap the label area so the plot keeps its height.
+    xAxis.set("maxHeight", 130);
     xAxisRef.current = xAxis;
 
     xRenderer.labels.template.setAll({
@@ -76,6 +78,10 @@ function ClusteredColumnChart<T extends Record<string, string>>({
       centerY: am5.p50,
       centerX: am5.p50,
       paddingTop: 10,
+      // Long category labels would eat the plot height, so cap their width and wrap them
+      // onto multiple lines. The full text is still shown in the tooltip.
+      maxWidth: 140,
+      oversizedBehavior: "wrap",
     });
 
     xRenderer.grid.template.setAll({ location: 1 });
@@ -178,7 +184,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
     seriesListRef.current.forEach((series) => series.data.setAll(data));
   }, [data]);
 
-  return <div id={containerId} style={{ width: "100%", height: "600px" }} />;
+  return <div id={containerId} style={{ width: "100%", height: "800px" }} />;
 }
 
 export default ClusteredColumnChart;

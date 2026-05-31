@@ -64,6 +64,10 @@ function StackedColumnChart<T extends Record<string, string>>({
       centerY: am5.p50,
       centerX: am5.p100,
       paddingRight: 15,
+      // Long category labels would eat the plot height, so cap their width and wrap them
+      // onto multiple lines. The full text is still shown in the tooltip.
+      maxWidth: 140,
+      oversizedBehavior: "wrap",
     });
     const xAxis = chart.xAxes.push(
       am5xy.CategoryAxis.new(root, {
@@ -72,6 +76,8 @@ function StackedColumnChart<T extends Record<string, string>>({
         tooltip: am5.Tooltip.new(root, {}),
       })
     );
+    // Cap the label area so the plot keeps its height.
+    xAxis.set("maxHeight", 130);
     xAxisRef.current = xAxis;
 
     xRenderer.grid.template.setAll({ location: 1 });
@@ -204,7 +210,7 @@ function StackedColumnChart<T extends Record<string, string>>({
 
   return (
     <div>
-      <div id={containerId} style={{ width: "100%", height: "600px" }} />
+      <div id={containerId} style={{ width: "100%", height: "800px" }} />
     </div>
   );
 }
