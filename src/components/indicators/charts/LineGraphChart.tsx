@@ -97,10 +97,12 @@ function LineGraphChart({ data, chartTitle }: LineGraphChartProps) {
     });
 
     if (isCategoryBased) {
-      // Long labels render at full length angled downward; the chart is made taller (see
-      // chartHeight) so the plot keeps its height and the rest of the label area is reached
-      // by scrolling the container vertically.
-      xRenderer.labels.template.set("rotation", -45);
+      // Long category labels would eat the plot height, so cap their width and wrap them
+      // onto multiple lines. The full text is still shown in the tooltip.
+      xRenderer.labels.template.setAll({
+        maxWidth: 140,
+        oversizedBehavior: "wrap",
+      });
     }
 
     const yAxis = chart.yAxes.push(
@@ -123,6 +125,8 @@ function LineGraphChart({ data, chartTitle }: LineGraphChartProps) {
           tooltip: am5.Tooltip.new(root, {}),
         })
       );
+      // Cap the label area so the plot keeps its height.
+      xAxis.set("maxHeight", 130);
       categoryAxisRef.current = xAxis;
       xAxis.data.setAll(data);
 
@@ -134,7 +138,7 @@ function LineGraphChart({ data, chartTitle }: LineGraphChartProps) {
           valueYField: "value",
           categoryXField: "label",
           tooltip: am5.Tooltip.new(root, {
-            labelText: "{categoryX}: {valueY}",
+            labelText: "{categoryX}     [bold]{valueY}[/]",
           }),
         })
       );
@@ -174,18 +178,14 @@ function LineGraphChart({ data, chartTitle }: LineGraphChartProps) {
     // Set data
     series.data.setAll(data);
 
-    // Category mode scrolls via the surrounding container (see chartMinWidth); a chart
-    // scrollbar would only duplicate that, so add it for the date axis only.
-    if (!isCategoryBased) {
-      // Add scrollbar
-      // https://www.amcharts.com/docs/v5/charts/xy-chart/scrollbars/
-      chart.set(
-        "scrollbarX",
-        am5.Scrollbar.new(root, {
-          orientation: "horizontal",
-        })
-      );
-    }
+    // Add scrollbar
+    // https://www.amcharts.com/docs/v5/charts/xy-chart/scrollbars/
+    chart.set(
+      "scrollbarX",
+      am5.Scrollbar.new(root, {
+        orientation: "horizontal",
+      })
+    );
 
     return () => {
       rootRef.current = null;
@@ -206,21 +206,9 @@ function LineGraphChart({ data, chartTitle }: LineGraphChartProps) {
     titleLabelRef.current?.set("text", chartTitle);
   }, [chartTitle]);
 
-  // Keep the plot tall and let long category labels overflow into a vertically scrollable
-  // area below, instead of squeezing the plot. The chart canvas grows with the longest
-  // label; the outer container stays fixed and scrolls to reveal the rest of the labels.
-  // Baseline keeps the plot at least ~500px (the extra covers the title/axis padding).
-  const PLOT_HEIGHT = 540;
-  const longestLabel = isCategoryBased
-    ? data.reduce((max, d) => Math.max(max, (d.label ?? "").length), 0)
-    : 0;
-  // Rough px the longest label needs when angled at -45°.
-  const labelAreaHeight = Math.round(longestLabel * 5) + 30;
-  const chartHeight = isCategoryBased ? Math.max(600, PLOT_HEIGHT + labelAreaHeight) : 600;
-
   return (
-    <div style={{ width: "100%", height: "600px", overflowY: "auto" }}>
-      <div id={containerId} style={{ width: "100%", height: `${chartHeight}px` }}></div>
+    <div>
+      <div id={containerId} style={{ width: "100%", height: "600px" }}></div>
     </div>
   );
 }
