@@ -31,6 +31,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
   fetchHomePage,
+  updateHomePageAdvertising,
   updateHomePageFeaturedBlocks,
   updateHomePageHero,
   updateHomePageNews,
@@ -496,11 +497,13 @@ function writeLocalizedByLang(
 export function MainPageEditor() {
   const initialJson = useRef(JSON.stringify(EMPTY_MAIN_PAGE));
   const [heroLang, setHeroLang] = useState<MainLangCode>("hy");
+  const [advertisingLang, setAdvertisingLang] = useState<MainLangCode>("hy");
   const [usefulLinksLang, setUsefulLinksLang] = useState<MainLangCode>("hy");
   const [blockLangById, setBlockLangById] = useState<Record<string, MainLangCode>>({});
   const [availableSections, setAvailableSections] = useState<Section[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [heroImageFile, setHeroImageFile] = useState<File | string | null>(null);
+  const [advertisingImageFile, setAdvertisingImageFile] = useState<File | string | null>(null);
   const [featuredBlockFiles, setFeaturedBlockFiles] = useState<Array<File | string | null>>([
     null,
     null,
@@ -549,6 +552,7 @@ export function MainPageEditor() {
         mapped.news.availableItems = Array.isArray(newsResponse) ? newsResponse : [];
         initialJson.current = JSON.stringify(mapped);
         setHeroImageFile(mapped.heroImage || null);
+        setAdvertisingImageFile(mapped.advertising.image || null);
         setFeaturedBlockFiles(mapped.blocks.map((b) => b.image || null));
         setUsefulLinkFiles(mapped.usefulLinks.links.map((l) => l.image || null));
         setData(mapped);
@@ -591,6 +595,14 @@ export function MainPageEditor() {
     };
   }
 
+  function toAdvertisingPayload() {
+    return {
+      title: ensureHyLocalized(data.advertising.title),
+      description: ensureHyLocalized(data.advertising.description),
+      image: advertisingImageFile,
+    };
+  }
+
   function toUsefulLinksPayload() {
     const usefulLinks = data.usefulLinks.links.map((link) => ({
       url: link.url,
@@ -625,10 +637,12 @@ export function MainPageEditor() {
         heroImage: heroImageFile,
       });
       await updateHomePageFeaturedBlocks(toFeaturedBlocksPayload());
+      await updateHomePageAdvertising(toAdvertisingPayload());
       await updateHomePageNews(toNewsPayload());
       await updateHomePageUsefulLinks(toUsefulLinksPayload());
       initialJson.current = JSON.stringify(data);
       setHeroImageFile(data.heroImage || null);
+      setAdvertisingImageFile(data.advertising.image || null);
       setFeaturedBlockFiles(data.blocks.map((b) => b.image || null));
       setUsefulLinkFiles(data.usefulLinks.links.map((l) => l.image || null));
       setData((d) => structuredClone(d));
@@ -764,6 +778,59 @@ export function MainPageEditor() {
             }
           />
         ))}
+
+        <ContentCard>
+          <h2 className="mb-4 text-[14px] font-medium text-[#2c2c2c]">Գովազդային բաժին</h2>
+          <div className="flex flex-col gap-4">
+            <KeyRow lang={advertisingLang} onLangChange={setAdvertisingLang} />
+            <Input
+              value={readLocalizedByLang(data.advertising.title, advertisingLang)}
+              onChange={(e) =>
+                setData((d) => ({
+                  ...d,
+                  advertising: {
+                    ...d.advertising,
+                    title: writeLocalizedByLang(
+                      d.advertising.title,
+                      e.target.value,
+                      advertisingLang
+                    ),
+                  },
+                }))
+              }
+              className={cn("h-9", fieldBorder)}
+              placeholder="Վերնագիր"
+            />
+            <Textarea
+              value={readLocalizedByLang(data.advertising.description, advertisingLang)}
+              onChange={(e) =>
+                setData((d) => ({
+                  ...d,
+                  advertising: {
+                    ...d.advertising,
+                    description: writeLocalizedByLang(
+                      d.advertising.description,
+                      e.target.value,
+                      advertisingLang
+                    ),
+                  },
+                }))
+              }
+              className={cn("min-h-[70px] resize-y", fieldBorder)}
+              placeholder="Նկարագրություն"
+            />
+            <HeroImageFileControl
+              value={data.advertising.image}
+              onChange={({ previewUrl, file }) => {
+                setAdvertisingImageFile(file);
+                setData((d) => ({
+                  ...d,
+                  advertising: { ...d.advertising, image: previewUrl },
+                }));
+              }}
+            />
+          </div>
+        </ContentCard>
 
         <ContentCard>
           <h2 className="mb-4 text-[14px] font-medium text-[#2c2c2c]">Նորություններ</h2>

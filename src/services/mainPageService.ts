@@ -94,6 +94,24 @@ export async function updateHomePageUsefulLinks(payload: UpdateHomePageUsefulLin
   });
 }
 
+export type UpdateHomePageAdvertisingPayload = {
+  title: HomePageLocalizedText;
+  description: HomePageLocalizedText;
+  image?: File | string | null;
+};
+
+export async function updateHomePageAdvertising(payload: UpdateHomePageAdvertisingPayload) {
+  const formData = new FormData();
+
+  formData.append("title", JSON.stringify(payload.title));
+  formData.append("description", JSON.stringify(payload.description));
+  appendImage(formData, "image", payload.image);
+  return apiClient<HomePageApiResponse>("/api/home-page/advertising", {
+    method: "PUT",
+    body: formData,
+  });
+}
+
 export type UpdateHomePageNewsPayload = {
   newsIds: string[];
 };

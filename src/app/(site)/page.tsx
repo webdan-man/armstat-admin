@@ -19,6 +19,11 @@ type HomePageResponse = {
     image?: string;
     sections: unknown[];
   }>;
+  advertising?: {
+    title?: Localized;
+    description?: Localized;
+    image?: string;
+  };
   newsIds?: string[];
   newsItems?: Array<{
     _id: string;
@@ -91,7 +96,11 @@ export default async function Home({ searchParams }: HomePageProps) {
           })) ?? []
         }
       />
-      <Interesting />
+      <Interesting
+        title={data?.advertising?.title ?? {}}
+        description={data?.advertising?.description ?? {}}
+        image={absolutizeUrl(data?.advertising?.image, baseUrl)}
+      />
       <LinksClient
         links={(data?.usefulLinks ?? []).map((link) => ({
           url: link.url ?? "",

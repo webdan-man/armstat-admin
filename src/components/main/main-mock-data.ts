@@ -28,6 +28,7 @@ export type MainPageMock = {
   heroTextContent: HomePageLocalizedText;
   heroImage: string;
   blocks: MainHomeBlock[];
+  advertising: MainAdvertising;
   news: {
     availableItems: HomePageNewsItem[];
     selectedIds: string[];
@@ -36,6 +37,12 @@ export type MainPageMock = {
     key: string;
     links: MainUsefulLink[];
   };
+};
+
+export type MainAdvertising = {
+  title: HomePageLocalizedText;
+  description: HomePageLocalizedText;
+  image: string;
 };
 
 const EMPTY_BLOCKS: MainHomeBlock[] = [
@@ -77,6 +84,11 @@ export const EMPTY_MAIN_PAGE: MainPageMock = {
   heroTextContent: { hy: "" },
   heroImage: "",
   blocks: EMPTY_BLOCKS,
+  advertising: {
+    title: { hy: "" },
+    description: { hy: "" },
+    image: "",
+  },
   news: {
     availableItems: [],
     selectedIds: [],
@@ -127,6 +139,12 @@ export type HomePageUsefulLink = {
   description: HomePageLocalizedText;
 };
 
+export type HomePageAdvertising = {
+  title: Record<string, string>;
+  description: Record<string, string>;
+  image: string;
+};
+
 export type HomePageApiResponse = {
   _id: string;
   heroTitle: HomePageLocalizedText;
@@ -134,6 +152,7 @@ export type HomePageApiResponse = {
   heroTextContent: HomePageLocalizedText;
   heroImage: string;
   featuredBlocks: HomePageFeaturedBlock[];
+  advertising?: HomePageAdvertising;
   newsIds: string[];
   newsItems: HomePageNewsItem[];
   usefulLinks: HomePageUsefulLink[];
@@ -141,7 +160,9 @@ export type HomePageApiResponse = {
   updatedAt: string;
 };
 
-function toRequiredLocalized(localized: HomePageLocalizedText | undefined): HomePageLocalizedText {
+function toRequiredLocalized(
+  localized: Record<string, string | undefined> | undefined
+): HomePageLocalizedText {
   return {
     hy: localized?.hy ?? "",
     ...(localized?.en ? { en: localized.en } : {}),
@@ -172,6 +193,11 @@ export function fromApiHomePage(
     heroTextContent: toRequiredLocalized(apiData.heroTextContent),
     heroImage: apiData.heroImage ?? "",
     blocks: mappedBlocks,
+    advertising: {
+      title: toRequiredLocalized(apiData.advertising?.title),
+      description: toRequiredLocalized(apiData.advertising?.description),
+      image: apiData.advertising?.image ?? "",
+    },
     news: {
       availableItems: apiData.newsItems ?? [],
       selectedIds: apiData.newsIds ?? [],
