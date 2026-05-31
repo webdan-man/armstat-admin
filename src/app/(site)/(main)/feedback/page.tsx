@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getActiveLocale } from "@/lib/get-active-locale";
 import { pickLocale, type Localized } from "@/lib/i18n";
+import { Tr } from "@/components/site/Tr";
 
 type ContactUsSection =
   | {
@@ -64,7 +65,7 @@ type FeedbackPageProps = {
 export default async function FeedbackPage({ searchParams }: FeedbackPageProps) {
   const { lang: langParam } = await searchParams;
   const [data, lang] = await Promise.all([getContactUsData(), getActiveLocale(langParam)]);
-  const title = pickLocale(data?.title, lang) ?? "Կապ մեզ հետ";
+  const title = pickLocale(data?.title, lang) ?? "";
   const description = pickLocale(data?.description, lang);
   const notificationsEmailRow = pickLocale(data?.notificationsEmailRow, lang);
   const mapTitle = data?.mapSection?.title ?? "";
@@ -87,7 +88,7 @@ export default async function FeedbackPage({ searchParams }: FeedbackPageProps) 
     <div className="flex w-full flex-col items-center overflow-x-hidden pb-55 max-md:pb-20">
       <div className="bg-blue1000 flex w-full justify-center">
         <div className="flex w-full max-w-305 flex-col px-5 py-12">
-          <TypographyH2>{title}</TypographyH2>
+          <TypographyH2>{title || <Tr k="feedback.title" fallback="Կապ մեզ հետ" />}</TypographyH2>
         </div>
       </div>
       <div className="flex w-full justify-center">
@@ -104,7 +105,9 @@ export default async function FeedbackPage({ searchParams }: FeedbackPageProps) 
                   if (section.type === "address") {
                     return (
                       <div key={`address-${idx}`} className="flex flex-col gap-3.5">
-                        <p className="font-medium text-[rgba(37,37,37,1)]">{"Հասցե"}</p>
+                        <p className="font-medium text-[rgba(37,37,37,1)]">
+                          <Tr k="feedback.address" fallback="Հասցե" />
+                        </p>
                         {section.value && (
                           <p className="text-[rgba(37,37,37,1)]">{section.value}</p>
                         )}
@@ -178,7 +181,7 @@ export default async function FeedbackPage({ searchParams }: FeedbackPageProps) 
             {socialLinks.length > 0 ? (
               <>
                 <p className="mt-12.25 text-[18px] font-semibold text-[rgba(37,37,37,1)]">
-                  Սոցիալական կայքեր՝
+                  <Tr k="feedback.social" fallback="Սոցիալական կայքեր՝" />
                 </p>
                 <nav className="mt-8.75 w-full">
                   <ul className="flex gap-2">

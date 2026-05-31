@@ -4,6 +4,7 @@ import { MarkdownText } from "@/components/site/MarkdownText";
 import { TypographyH2 } from "@/components/ui/typography";
 import { getActiveLocale } from "@/lib/get-active-locale";
 import { pickLocale, type Localized } from "@/lib/i18n";
+import { Tr } from "@/components/site/Tr";
 
 type InformationCenterSection = {
   title?: Localized;
@@ -56,12 +57,9 @@ export default async function InformationCenterPage({
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "";
   const assetBaseUrl = getOrigin(baseUrl);
   const { lang: langParam } = await searchParams;
-  const [data, lang] = await Promise.all([
-    getInformationCenterData(),
-    getActiveLocale(langParam),
-  ]);
+  const [data, lang] = await Promise.all([getInformationCenterData(), getActiveLocale(langParam)]);
 
-  const title = pickLocale(data?.title, lang) ?? "Տեղեկատվական կենտրոն";
+  const title = pickLocale(data?.title, lang) ?? "";
   const description = pickLocale(data?.description, lang);
   const heroImageSrc = absolutizeUrl(data?.image, assetBaseUrl) ?? "/images/legal-acts.jpg";
 
@@ -69,14 +67,18 @@ export default async function InformationCenterPage({
     <div className="flex w-full flex-col items-center overflow-x-hidden pb-55 max-md:pb-20">
       <div className="bg-blue1000 flex w-full justify-center">
         <div className="flex w-full max-w-305 flex-col px-5 py-12">
-          <TypographyH2>{title}</TypographyH2>
+          <TypographyH2>
+            {title || <Tr k="information_center.title" fallback="Տեղեկատվական կենտրոն" />}
+          </TypographyH2>
         </div>
       </div>
 
       <div className="flex w-full justify-center bg-[rgba(245,246,233,1)]">
         <div className="flex w-full max-w-305 px-5 max-md:flex max-md:flex-col">
           <div className="flex w-full flex-col pt-23 pb-26.5 max-md:pb-10">
-            <h3 className="text-[23px] font-semibold text-[rgba(55,55,55,1)]">{title}</h3>
+            <h3 className="text-[23px] font-semibold text-[rgba(55,55,55,1)]">
+              {title || <Tr k="information_center.title" fallback="Տեղեկատվական կենտրոն" />}
+            </h3>
             {description ? (
               <MarkdownText className="mt-8.5 text-[rgba(55,55,55,1)]">{description}</MarkdownText>
             ) : null}
@@ -90,7 +92,7 @@ export default async function InformationCenterPage({
       <div className="flex w-full max-w-305 flex-col px-5 pt-27.25 max-md:pt-10">
         <div className="flex w-full max-w-202 flex-col justify-start">
           <h3 className="text-[23px] font-semibold text-[rgba(55,55,55,1)]">
-            ԱՐՄՍՏԱՏ Տեղեկատվական ինֆորմացիա
+            <Tr k="information_center.heading" fallback="ԱՐՄՍՏԱՏ Տեղեկատվական ինֆորմացիա" />
           </h3>
 
           {(data?.sections ?? []).map((section, index) => {
@@ -119,14 +121,14 @@ export default async function InformationCenterPage({
                       className="text-link flex items-center text-[12px]"
                     >
                       <Image src="/icons/download.svg" alt="download" width={20} height={20} />{" "}
-                      Տեսնել
+                      <Tr k="information_center.view" fallback="Տեսնել" />
                     </a>
                   ) : null}
 
                   <p className="text-[12px] text-[rgba(110,127,136,1)]">
-                    Հղում՝{" "}
+                    <Tr k="information_center.link_label" fallback="Հղում՝" />{" "}
                     <Link href={link} className="text-link font-semibold">
-                      Հղման աղբյուրը
+                      <Tr k="information_center.link_source" fallback="Հղման աղբյուրը" />
                     </Link>
                   </p>
                 </div>
