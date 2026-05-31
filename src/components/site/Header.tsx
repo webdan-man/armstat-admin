@@ -22,7 +22,7 @@ import type { ContentLangCode } from "@/types/content-entries";
 const languages: { labelKey: string; code: ContentLangCode; fallback: string }[] = [
   { labelKey: "language.hy", code: "hy", fallback: "Armenian" },
   { labelKey: "language.en", code: "en", fallback: "English" },
-  // { labelKey: "language.ru", code: "ru", fallback: "Russian" },
+  { labelKey: "language.ru", code: "ru", fallback: "Russian" },
 ];
 
 const navItems = [
@@ -37,7 +37,7 @@ const navItems = [
 ];
 
 export default function Header() {
-  const { activeLang, setActiveLang } = useLang();
+  const { activeLang, setActiveLang, ready } = useLang();
   const { t } = useTranslation();
   const { data: sections = [] } = useSWR(swrKeys.sections, fetchSections);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -100,7 +100,11 @@ export default function Header() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className={pathname === item.href || pathname.startsWith(item.href + "/") ? "font-bold" : ""}
+                  className={
+                    pathname === item.href || pathname.startsWith(item.href + "/")
+                      ? "font-bold"
+                      : ""
+                  }
                 >
                   {t(item.key, item.fallback)}
                 </Link>
@@ -111,7 +115,10 @@ export default function Header() {
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="flex cursor-pointer items-center gap-1 p-[3px] outline-none"
+                aria-hidden={!ready}
+                className={`flex cursor-pointer items-center gap-1 p-[3px] outline-none ${
+                  ready ? "" : "invisible pointer-events-none"
+                }`}
               >
                 <Image src="/icons/earth.svg" alt="Earth" width={24} height={24} />
                 <span>
@@ -157,27 +164,29 @@ export default function Header() {
             </li>
           ))}
         </ul>
-        <div className="mt-8 border-t border-white/20 pt-6">
-          <ul className="flex flex-col gap-4">
-            {languages.map((lang) => (
-              <li key={lang.code}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveLang(lang.code);
-                    setMobileOpen(false);
-                  }}
-                  className={`flex items-center gap-2 text-base text-white hover:underline ${
-                    lang.code === activeLang ? "font-bold" : "font-normal"
-                  }`}
-                >
-                  <Image src="/icons/earth.svg" alt="Earth" width={18} height={18} />
-                  {t(lang.labelKey, lang.fallback)}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+        {ready && (
+          <div className="mt-8 border-t border-white/20 pt-6">
+            <ul className="flex flex-col gap-4">
+              {languages.map((lang) => (
+                <li key={lang.code}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveLang(lang.code);
+                      setMobileOpen(false);
+                    }}
+                    className={`flex items-center gap-2 text-base text-white hover:underline ${
+                      lang.code === activeLang ? "font-bold" : "font-normal"
+                    }`}
+                  >
+                    <Image src="/icons/earth.svg" alt="Earth" width={18} height={18} />
+                    {t(lang.labelKey, lang.fallback)}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </header>
   );

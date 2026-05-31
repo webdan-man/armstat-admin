@@ -3,9 +3,7 @@ import { TypographyH2 } from "@/components/ui/typography";
 import Image from "next/image";
 import Link from "next/link";
 import { getActiveLocale } from "@/lib/get-active-locale";
-import { defaultLocale, type Locale } from "@/lib/i18n";
-
-type Localized = Record<string, string | undefined>;
+import { pickLocale, type Localized } from "@/lib/i18n";
 
 type ContactUsSection =
   | {
@@ -38,11 +36,6 @@ type ContactUsResponse = {
   createdAt?: string;
   updatedAt?: string;
 };
-
-function pickLocale(value?: Localized, locale: Locale = defaultLocale) {
-  if (!value) return undefined;
-  return value[locale] ?? "";
-}
 
 function buildMapEmbedSrc(coords?: string) {
   const value = coords?.trim();

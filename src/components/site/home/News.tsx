@@ -4,6 +4,7 @@ import { useState } from "react";
 import { TypographyH2, TypographyH3, TypographyP } from "@/components/ui/typography";
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type NewsItem = {
   _id: string;
@@ -32,6 +33,7 @@ function formatDate(input?: string): string {
 }
 
 function NewsCard({ item }: { item: NewsItem }) {
+  const { t } = useTranslation();
   const imageSrc = absolutizeUrl(item.image) ?? "/news/content.jpg";
   const href = item.url && item.url.length > 0 ? item.url : `/news/${item._id}`;
 
@@ -54,7 +56,7 @@ function NewsCard({ item }: { item: NewsItem }) {
           href={href}
           className="bg-link border-blue600 mt-auto w-full rounded-sm border-2 p-2 text-center"
         >
-          Կարդալ ավելին
+          {t("news.read_more", "Կարդալ ավելին")}
         </Link>
       </div>
     </div>
@@ -89,6 +91,7 @@ function PaginationButton({
 }
 
 export default function News({ items }: { items: NewsItem[] }) {
+  const { t } = useTranslation();
   const [page, setPage] = useState(1);
 
   const totalPages = Math.ceil(items.length / PAGE_SIZE);
@@ -105,7 +108,7 @@ export default function News({ items }: { items: NewsItem[] }) {
     <section className="flex w-full flex-col items-center">
       <div className="flex w-full max-w-305 flex-col items-start px-5 py-15">
         <TypographyH2 className="max-w-180 text-center font-medium text-[rgba(44,44,44,1)]">
-          Նորություններ
+          {t("news.title", "Նորություններ")}
         </TypographyH2>
         <div className="mt-15 grid grid-cols-3 gap-10 max-lg:flex max-lg:flex-col">
           {pageItems.map((item) => (

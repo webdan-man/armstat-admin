@@ -16,6 +16,7 @@ import { fetchMetricsByTopicId, getMetricById } from "@/services/metricsService"
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { isRootTopic } from "@/lib/section-topic-utils";
 import { buildStatMenu, isSlugInStatMenu } from "@/lib/stat-menu-utils";
+import { useTranslation } from "@/hooks/useTranslation";
 import type { Section } from "@/types/section";
 
 type SearchOption = {
@@ -63,6 +64,7 @@ export default function SearchInput({
   query: string;
   setQuery: (v: string) => void;
 }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useParams();
   const slug = (params?.slug as string) ?? "";
@@ -122,7 +124,7 @@ export default function SearchInput({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         className="text-[rgba(55,71,79,1)] border-textBlack300 shadow-none h-10.5 w-full"
-        placeholder="Փնտրել"
+        placeholder={t("stat.search_placeholder", "Փնտրել")}
       />
       <ComboboxContent>
         <ComboboxList>
@@ -132,7 +134,9 @@ export default function SearchInput({
             </ComboboxItem>
           )}
         </ComboboxList>
-        <ComboboxEmpty>Որոնման արդյունքները կտեսնեք այստեղ</ComboboxEmpty>
+        <ComboboxEmpty>
+          {t("stat.search_results_placeholder", "Որոնման արդյունքները կտեսնեք այստեղ")}
+        </ComboboxEmpty>
       </ComboboxContent>
     </Combobox>
   );

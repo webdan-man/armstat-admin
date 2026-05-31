@@ -7,7 +7,6 @@ export type MainHomeBlock = {
   id: string;
   sectionLabel: string;
   accent: "#c00" | "#275199" | "#febb30";
-  titleKey: string;
   title: HomePageLocalizedText;
   subtitle: HomePageLocalizedText;
   sectionIds: string[];
@@ -44,7 +43,6 @@ const EMPTY_BLOCKS: MainHomeBlock[] = [
     id: "b1",
     sectionLabel: "Բաժին 1",
     accent: "#c00",
-    titleKey: "",
     title: { hy: "" },
     subtitle: { hy: "" },
     sectionIds: [],
@@ -55,7 +53,6 @@ const EMPTY_BLOCKS: MainHomeBlock[] = [
     id: "b2",
     sectionLabel: "Բաժին 2",
     accent: "#275199",
-    titleKey: "",
     title: { hy: "" },
     subtitle: { hy: "" },
     sectionIds: [],
@@ -66,7 +63,6 @@ const EMPTY_BLOCKS: MainHomeBlock[] = [
     id: "b3",
     sectionLabel: "Բաժին 3",
     accent: "#febb30",
-    titleKey: "",
     title: { hy: "" },
     subtitle: { hy: "" },
     sectionIds: [],
@@ -106,7 +102,8 @@ export type HomePageSection = {
 };
 
 export type HomePageFeaturedBlock = {
-  titleKey: string;
+  title: HomePageLocalizedText;
+  subtitle: HomePageLocalizedText;
   sectionIds: string[];
   sections: HomePageSection[];
   image: string;
@@ -161,7 +158,8 @@ export function fromApiHomePage(
     const apiBlock = apiData.featuredBlocks?.[index];
     return {
       ...fallbackBlock,
-      titleKey: apiBlock?.titleKey ?? "",
+      title: toRequiredLocalized(apiBlock?.title),
+      subtitle: toRequiredLocalized(apiBlock?.subtitle),
       sectionIds: apiBlock?.sectionIds ?? [],
       sections: apiBlock?.sections ?? [],
       image: apiBlock?.image ?? "",

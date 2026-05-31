@@ -6,6 +6,7 @@ import type { MetricCombination } from "@/types/metric";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MarkdownText } from "@/components/site/MarkdownText";
 import { recordMetricView } from "@/services/metricsService";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface ChartTabProps {
   combinations?: MetricCombination[];
@@ -22,6 +23,7 @@ export default function ChartTab({
   metricId,
   viewCount,
 }: ChartTabProps) {
+  const { t } = useTranslation();
   useEffect(() => {
     if (metricId) {
       recordMetricView(metricId).catch(() => {});
@@ -45,14 +47,17 @@ export default function ChartTab({
       {combinations?.length > 0 && (
         <div className="flex justify-between gap-5">
           <div className="flex gap-5">
-            <p className="text-[11px] text-[rgba(110,127,136,1)]">Թարմացված է՝ 20/05/2024, 16:43</p>
             <p className="text-[11px] text-[rgba(110,127,136,1)]">
-              Աղբյուրը՝ <MarkdownText as={"span"}>{link}</MarkdownText>
+              {t("stat.updated_at", "Թարմացված է՝")} 20/05/2024, 16:43
+            </p>
+            <p className="text-[11px] text-[rgba(110,127,136,1)]">
+              {t("stat.source", "Աղբյուրը՝")} <MarkdownText as={"span"}>{link}</MarkdownText>
             </p>
           </div>
           {viewCount != null && (
             <p className="text-[11px] text-[rgba(110,127,136,1)]">
-              Դիտված է {viewCount.toLocaleString()} անգամ
+              {t("stat.viewed_prefix", "Դիտված է")} {viewCount.toLocaleString()}{" "}
+              {t("stat.viewed_suffix", "անգամ")}
             </p>
           )}
         </div>

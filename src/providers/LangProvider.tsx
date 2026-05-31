@@ -1,63 +1,71 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import type { ContentLangCode } from "@/types/content-entries";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  LANG_COOKIE,
+  LANG_STORAGE_KEY,
+  defaultLocale,
+  parseLocale,
+  type Locale,
+} from "@/lib/i18n";
 
-export const LANG_COOKIE = "armstat_lang";
-const STORAGE_KEY = "armstat_lang";
-const VALID_LANGS: ContentLangCode[] = ["hy", "en", "ru"];
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 
 type LangContextValue = {
-  activeLang: ContentLangCode;
-  setActiveLang: (lang: ContentLangCode) => void;
+  activeLang: Locale;
+  setActiveLang: (lang: Locale) => void;
+  /** False until the persisted locale has been resolved on the client. */
+  ready: boolean;
 };
 
 const LangContext = createContext<LangContextValue>({
-  activeLang: "hy",
+  activeLang: defaultLocale,
   setActiveLang: () => {},
+  ready: false,
 });
-
-function parseLang(value: string | null | undefined): ContentLangCode | null {
-  if (value && VALID_LANGS.includes(value as ContentLangCode)) {
-    return value as ContentLangCode;
-  }
-  return null;
-}
 
 function getClientCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-function getInitialLang(): ContentLangCode {
-  if (typeof window === "undefined") return "hy";
+/** Client locale priority: URL ?lang= → cookie → localStorage → default. */
+function getInitialLang(): Locale {
+  if (typeof window === "undefined") return defaultLocale;
   return (
-    parseLang(new URLSearchParams(window.location.search).get("lang")) ??
-    parseLang(getClientCookie(LANG_COOKIE)) ??
-    parseLang(localStorage.getItem(STORAGE_KEY)) ??
-    "hy"
+    parseLocale(new URLSearchParams(window.location.search).get("lang")) ??
+    parseLocale(getClientCookie(LANG_COOKIE)) ??
+    parseLocale(localStorage.getItem(LANG_STORAGE_KEY)) ??
+    defaultLocale
   );
 }
 
 export function LangProvider({ children }: { children: React.ReactNode }) {
-  const [activeLang, setActiveLangState] = useState<ContentLangCode>("hy");
+  const router = useRouter();
+  const pathname = usePathname();
+  const [activeLang, setActiveLangState] = useState<Locale>(defaultLocale);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     setActiveLangState(getInitialLang());
+    setReady(true);
   }, []);
 
-  const setActiveLang = (lang: ContentLangCode) => {
+  const setActiveLang = (lang: Locale) => {
     setActiveLangState(lang);
     document.cookie = `${LANG_COOKIE}=${lang}; path=/; max-age=${ONE_YEAR_SECONDS}; SameSite=Lax`;
-    localStorage.setItem(STORAGE_KEY, lang);
+    localStorage.setItem(LANG_STORAGE_KEY, lang);
     const params = new URLSearchParams(window.location.search);
     params.set("lang", lang);
-    history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+    // Navigate through the Next router (not history.replaceState) so server
+    // components re-render and re-resolve the locale for SSR'd content.
+    router.replace(`${pathname}?${params.toString()}`);
+    router.refresh();
   };
 
   return (
-    <LangContext.Provider value={{ activeLang, setActiveLang }}>
+    <LangContext.Provider value={{ activeLang, setActiveLang, ready }}>
       {children}
     </LangContext.Provider>
   );

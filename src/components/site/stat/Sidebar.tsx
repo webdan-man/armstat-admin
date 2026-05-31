@@ -8,6 +8,7 @@ import { fetchMetricsByTopicId, getMetricById } from "@/services/metricsService"
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buildStatMenu, isSlugInStatMenu, type StatMenuItem } from "@/lib/stat-menu-utils";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type MenuItem = StatMenuItem;
 
@@ -184,6 +185,7 @@ function MenuList({
 }
 
 export default function Sidebar() {
+  const { t } = useTranslation();
   const params = useParams();
   const router = useRouter();
   const activeSlug = params.slug as string;
@@ -299,7 +301,9 @@ export default function Sidebar() {
   return (
     <aside className="sticky top-0 flex w-full flex-col self-start">
       <div className="flex w-full px-4 py-7.5">
-        <p className="text-fontSizeM font-semibold text-[rgba(40,40,40,1)]">Բաժիններ</p>
+        <p className="text-fontSizeM font-semibold text-[rgba(40,40,40,1)]">
+          {t("stat.sections", "Բաժիններ")}
+        </p>
       </div>
 
       <nav className="w-full">

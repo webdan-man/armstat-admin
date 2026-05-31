@@ -23,6 +23,7 @@ import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import useSWR from "swr";
 import { useLang } from "@/providers/LangProvider";
+import { useTranslation } from "@/hooks/useTranslation";
 import { buildStatMenu, isSlugInStatMenu } from "@/lib/stat-menu-utils";
 import { formatIntegerWithCommas, sexTotalPercents } from "@/lib/format-integer";
 import {
@@ -43,6 +44,7 @@ export default function StatPage() {
   const params = useParams();
   const slug = params.slug as string;
   const { activeLang } = useLang();
+  const { t } = useTranslation();
 
   const { data: sections } = useSWR(swrKeys.sections, fetchSections);
   const menu = useMemo(() => buildStatMenu(sections ?? []), [sections]);
@@ -238,7 +240,9 @@ export default function StatPage() {
                 }}
               >
                 <Image src={"/icons/download.svg"} alt="download" width={20} height={20} />
-                <p className="text-link text-[12px] font-medium">Ներբեռնել</p>
+                <p className="text-link text-[12px] font-medium">
+                  {t("stat.download", "Ներբեռնել")}
+                </p>
               </Button>
               <Button
                 variant="ghost"
@@ -247,14 +251,14 @@ export default function StatPage() {
                   const url = window.location.href;
                   try {
                     await navigator.clipboard.writeText(url);
-                    toast.success("Հղումը պատճենված է");
+                    toast.success(t("stat.link_copied", "Հղումը պատճենված է"));
                   } catch {
-                    toast.error("Չհաջողվեց պատճենել հղումը");
+                    toast.error(t("stat.link_copy_failed", "Չհաջողվեց պատճենել հղումը"));
                   }
                 }}
               >
                 <Image src={"/icons/share.svg"} alt="share" width={20} height={20} />
-                <p className="text-link text-[12px] font-medium">Կիսվել</p>
+                <p className="text-link text-[12px] font-medium">{t("stat.share", "Կիսվել")}</p>
               </Button>
             </div>
           </div>
@@ -272,7 +276,9 @@ export default function StatPage() {
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <span className="text-[14px] leading-3.5 text-[rgba(44,44,44,0.65)]">
-                  {activeFilterCount > 0 ? `Ֆիլտրեր (${activeFilterCount})` : "Ֆիլտրեր"}
+                  {activeFilterCount > 0
+                    ? `${t("stat.filters", "Ֆիլտրեր")} (${activeFilterCount})`
+                    : t("stat.filters", "Ֆիլտրեր")}
                 </span>
                 <button
                   type="button"
@@ -282,7 +288,7 @@ export default function StatPage() {
                     setColumnSelectedValues(Array.from({ length: columnCount }, () => null))
                   }
                 >
-                  Մաքրել բոլորը
+                  {t("stat.clear_all", "Մաքրել բոլորը")}
                 </button>
               </div>
               <span className="text-[14px] leading-3.5 text-[rgba(44,44,44,0.65)]">
@@ -335,21 +341,21 @@ export default function StatPage() {
               <div className="flex h-11.75 w-full items-center justify-between gap-4 border-b border-b-[rgba(178,178,178,1)] px-5">
                 <TabsList className="h-full w-auto flex-1 justify-start rounded-none border-0 bg-none p-0 shadow-none group-data-[orientation=horizontal]/tabs:h-11.75">
                   <TabsTrigger value="diagram" className="h-11.75 text-[rgba(40,40,40,1)]">
-                    Գծապատկեր
+                    {t("stat.tab_chart", "Գծապատկեր")}
                   </TabsTrigger>
                   <TabsTrigger value="data" className="h-11.75 font-medium text-[rgba(40,40,40,1)]">
-                    Տվյալներ
+                    {t("stat.tab_data", "Տվյալներ")}
                   </TabsTrigger>
                   <TabsTrigger
                     value="metadata"
                     className="h-11.75 font-medium text-[rgba(40,40,40,1)]"
                   >
-                    Մետատվյալներ
+                    {t("stat.tab_metadata", "Մետատվյալներ")}
                   </TabsTrigger>
                 </TabsList>
                 {metricUnit ? (
                   <p className="shrink-0 text-[12px] text-[rgba(131,131,131,1)]">
-                    Չափման միավոր՝ {metricUnit}
+                    {t("stat.measurement_unit", "Չափման միավոր՝")} {metricUnit}
                   </p>
                 ) : null}
               </div>
@@ -386,7 +392,7 @@ export default function StatPage() {
                   <div className="mt-7.5 flex gap-5">
                     {metric?.updatedAt && (
                       <p className="text-[11px] text-[rgba(110,127,136,1)]">
-                        Թարմացված է՝{" "}
+                        {t("stat.updated_at", "Թարմացված է՝")}{" "}
                         {new Date(metric.updatedAt).toLocaleDateString("hy-AM", {
                           day: "2-digit",
                           month: "2-digit",
@@ -397,7 +403,7 @@ export default function StatPage() {
                     {((metric?.metadata as any)?.[activeLang]?.sourceUrl ||
                       metric?.link?.[activeLang]) && (
                       <p className="text-[11px] text-[rgba(110,127,136,1)]">
-                        Աղբյուրը՝{" "}
+                        {t("stat.source", "Աղբյուրը՝")}{" "}
                         <MarkdownText as={"span"}>
                           {(metric?.metadata as any)?.[activeLang]?.sourceUrl ??
                             metric?.link?.[activeLang]}
@@ -415,7 +421,7 @@ export default function StatPage() {
           <div className="flex flex-col items-center justify-center gap-1">
             <Image src="/empty.png" alt="empty" width={210} height={112} />
             <p className="text-textBlack600 text-fontSizeS leading-7.25 font-medium">
-              Որոնման արդյունքները կտեսնեք այստեղ
+              {t("stat.search_results_placeholder", "Որոնման արդյունքները կտեսնեք այստեղ")}
             </p>
           </div>
         </div>

@@ -39,7 +39,8 @@ export async function updateHomePageHero(payload: UpdateHomePageHeroPayload) {
 
 export type UpdateHomePageFeaturedBlocksPayload = {
   featuredBlocks: Array<{
-    titleKey: string;
+    title: HomePageLocalizedText;
+    subtitle: HomePageLocalizedText;
     sectionIds: string[];
   }>;
   featuredBlockImages: Array<File | string | null | undefined>;
@@ -54,7 +55,8 @@ export async function updateHomePageFeaturedBlocks(payload: UpdateHomePageFeatur
     "featuredBlocks",
     JSON.stringify(
       blocks.map((b) => ({
-        titleKey: b.titleKey,
+        title: b.title,
+        subtitle: b.subtitle,
         sectionIds: b.sectionIds,
       }))
     )

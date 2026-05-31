@@ -3,9 +3,7 @@ import Link from "next/link";
 import { MarkdownText } from "@/components/site/MarkdownText";
 import { TypographyH2 } from "@/components/ui/typography";
 import { getActiveLocale } from "@/lib/get-active-locale";
-import { defaultLocale, type Locale } from "@/lib/i18n";
-
-type Localized = Record<string, string | undefined>;
+import { pickLocale, type Localized } from "@/lib/i18n";
 
 type InformationCenterSection = {
   title?: Localized;
@@ -23,11 +21,6 @@ type InformationCenterResponse = {
   createdAt?: string;
   updatedAt?: string;
 };
-
-function pickLocale(value?: Localized, locale: Locale = defaultLocale) {
-  if (!value) return undefined;
-  return value[locale] ?? "";
-}
 
 function absolutizeUrl(pathOrUrl: string | undefined, baseUrl: string) {
   if (!pathOrUrl) return undefined;

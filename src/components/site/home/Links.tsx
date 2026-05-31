@@ -6,12 +6,14 @@ import { useCallback, useEffect, useState } from "react";
 import { MarkdownText } from "@/components/site/MarkdownText";
 import { TypographyH2, TypographyH3, TypographyP } from "@/components/ui/typography";
 import Image from "next/image";
+import { useTranslation } from "@/hooks/useTranslation";
+import { pickLocale, type Localized } from "@/lib/i18n";
 
 type UsefulLink = {
   url: string;
   image: string;
-  name: string;
-  description: string;
+  name: Localized;
+  description: Localized;
 };
 
 export type LinksProps = {
@@ -19,6 +21,7 @@ export type LinksProps = {
 };
 
 export default function Links({ links }: LinksProps) {
+  const { t, activeLang } = useTranslation();
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     containScroll: "trimSnaps",
@@ -60,7 +63,7 @@ export default function Links({ links }: LinksProps) {
     <section className="flex w-full flex-col items-center overflow-hidden py-30">
       <div className="flex w-full max-w-305 flex-col items-start px-5">
         <TypographyH2 className="max-w-180 text-center font-medium text-[rgba(44,44,44,1)]">
-          Օգտակար հղումներ
+          {t("home.links.title", "Օգտակար հղումներ")}
         </TypographyH2>
       </div>
 
@@ -79,12 +82,12 @@ export default function Links({ links }: LinksProps) {
                     </div>
 
                     <TypographyH3 className="text-textBlack800 mt-4">
-                      {item.name || "Վերնագրիրը այստեղ"}
+                      {pickLocale(item.name, activeLang)}
                     </TypographyH3>
 
                     <TypographyP className="text-textBlack700 mt-4 line-clamp-2">
                       <MarkdownText as="span">
-                        {item.description || "Լրացուցիչ տեղեկություններն այստեղ"}
+                        {pickLocale(item.description, activeLang)}
                       </MarkdownText>
                     </TypographyP>
                   </div>

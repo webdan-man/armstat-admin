@@ -12,7 +12,7 @@ export function useTranslation() {
     if (!data) return fallback;
     const entries = data[activeLang] ?? [];
     const entry = entries.find((e) => e.key === key);
-    return entry?.value ?? fallback;
+    return entry?.value ?? key;
   }
 
   return { t, activeLang };

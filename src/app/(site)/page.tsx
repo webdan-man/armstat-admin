@@ -5,9 +5,7 @@ import Interesting from "@/components/site/home/Interesting";
 import Statistics from "@/components/site/home/Statistics";
 import Footer from "@/components/site/Footer";
 import { getActiveLocale } from "@/lib/get-active-locale";
-import { defaultLocale, type Locale } from "@/lib/i18n";
-
-type Localized = Record<string, string | undefined>;
+import { pickLocale, type Localized } from "@/lib/i18n";
 
 type HomePageResponse = {
   _id: string;
@@ -15,7 +13,8 @@ type HomePageResponse = {
   heroShortDescription?: Localized;
   heroImage?: string;
   featuredBlocks?: Array<{
-    titleKey: string;
+    title?: Localized;
+    subtitle?: Localized;
     sectionIds: string[];
     image?: string;
     sections: unknown[];
@@ -39,11 +38,6 @@ type HomePageResponse = {
   createdAt?: string;
   updatedAt?: string;
 };
-
-function pickLocale(value?: Localized, locale: Locale = defaultLocale) {
-  if (!value) return undefined;
-  return value[locale] ?? "";
-}
 
 function absolutizeUrl(pathOrUrl: string | undefined, baseUrl: string) {
   if (!pathOrUrl) return undefined;
@@ -80,14 +74,13 @@ export default async function Home({ searchParams }: HomePageProps) {
       />
       <Statistics
         blocks={(data?.featuredBlocks ?? []).map((b) => ({
-          titleKey: b.titleKey,
+          title: b.title ?? {},
+          subtitle: b.subtitle ?? {},
           image: absolutizeUrl(b.image, baseUrl),
           sections:
-            ((b.sections as Array<{ name?: { hy?: string; ru?: string; en?: string } }> | undefined) ?? [])
-              .map((s) => ({
-                name: { hy: s.name?.hy ?? "" },
-              }))
-              .filter((s) => Boolean(s.name.hy)) ?? [],
+            ((b.sections as Array<{ name?: Localized }> | undefined) ?? [])
+              .map((s) => ({ name: s.name ?? {} }))
+              .filter((s) => Object.values(s.name).some(Boolean)),
         }))}
       />
       <News
@@ -103,8 +96,8 @@ export default async function Home({ searchParams }: HomePageProps) {
         links={(data?.usefulLinks ?? []).map((link) => ({
           url: link.url ?? "",
           image: absolutizeUrl(link.image, baseUrl) ?? "",
-          name: pickLocale(link.name, lang) ?? "",
-          description: pickLocale(link.description, lang) ?? "",
+          name: link.name ?? {},
+          description: link.description ?? {},
         }))}
       />
       <Footer />

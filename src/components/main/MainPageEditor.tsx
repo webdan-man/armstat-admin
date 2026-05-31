@@ -54,11 +54,11 @@ const heroFormSchema = z.object({
     en: z.string().optional(),
     ru: z.string().optional(),
   }),
-  heroTextContent: z.object({
-    hy: z.string().min(1, "Տեքստային բովանդակությունը պարտադիր է"),
-    en: z.string().optional(),
-    ru: z.string().optional(),
-  }),
+  // heroTextContent: z.object({
+  //   hy: z.string().min(1, "Տեքստային բովանդակությունը պարտադիր է"),
+  //   en: z.string().optional(),
+  //   ru: z.string().optional(),
+  // }),
   heroImage: z.string().min(1, "Նկարը պարտադիր է"),
 });
 type HeroFormValues = z.infer<typeof heroFormSchema>;
@@ -318,15 +318,6 @@ function BlockCard({
       <div className="flex flex-col gap-4">
         <KeyRow lang={lang} onLangChange={onLangChange} />
 
-        <div className="flex flex-col gap-1">
-          <span className="text-[12px] text-[#575757]">Title key</span>
-          <Input
-            value={block.titleKey}
-            onChange={(e) => onChange({ ...block, titleKey: e.target.value })}
-            className={cn("h-9", fieldBorder)}
-          />
-        </div>
-
         <Input
           value={readLocalizedByLang(block.title, lang)}
           onChange={(e) =>
@@ -522,7 +513,7 @@ export function MainPageEditor() {
     defaultValues: {
       heroTitle: EMPTY_MAIN_PAGE.heroTitle,
       heroShortDescription: EMPTY_MAIN_PAGE.heroShortDescription,
-      heroTextContent: EMPTY_MAIN_PAGE.heroTextContent,
+      // heroTextContent: EMPTY_MAIN_PAGE.heroTextContent,
       heroImage: EMPTY_MAIN_PAGE.heroImage,
     },
     mode: "onSubmit",
@@ -565,7 +556,7 @@ export function MainPageEditor() {
         form.reset({
           heroTitle: mapped.heroTitle,
           heroShortDescription: mapped.heroShortDescription,
-          heroTextContent: mapped.heroTextContent,
+          // heroTextContent: mapped.heroTextContent,
           heroImage: mapped.heroImage,
         });
       } catch (error) {
@@ -592,7 +583,8 @@ export function MainPageEditor() {
   function toFeaturedBlocksPayload() {
     return {
       featuredBlocks: data.blocks.map((block) => ({
-        titleKey: block.titleKey,
+        title: block.title,
+        subtitle: block.subtitle,
         sectionIds: block.sectionIds,
       })),
       featuredBlockImages: featuredBlockFiles,
@@ -716,23 +708,23 @@ export function MainPageEditor() {
               }
               className={cn("min-h-[70px] resize-y", fieldBorder)}
             />
-            <Textarea
-              value={readLocalized(data.heroTextContent)}
-              onChange={(e) =>
-                setData((d) => {
-                  const heroTextContent = writeLocalized(d.heroTextContent, e.target.value);
-                  form.setValue("heroTextContent", ensureHyLocalized(heroTextContent), {
-                    shouldValidate: true,
-                  });
-                  return {
-                    ...d,
-                    heroTextContent,
-                  };
-                })
-              }
-              placeholder="Տեքստային բովանդակություն"
-              className={cn("min-h-[70px] resize-y", fieldBorder)}
-            />
+            {/*<Textarea*/}
+            {/*  value={readLocalized(data.heroTextContent)}*/}
+            {/*  onChange={(e) =>*/}
+            {/*    setData((d) => {*/}
+            {/*      const heroTextContent = writeLocalized(d.heroTextContent, e.target.value);*/}
+            {/*      form.setValue("heroTextContent", ensureHyLocalized(heroTextContent), {*/}
+            {/*        shouldValidate: true,*/}
+            {/*      });*/}
+            {/*      return {*/}
+            {/*        ...d,*/}
+            {/*        heroTextContent,*/}
+            {/*      };*/}
+            {/*    })*/}
+            {/*  }*/}
+            {/*  placeholder="Տեքստային բովանդակություն"*/}
+            {/*  className={cn("min-h-[70px] resize-y", fieldBorder)}*/}
+            {/*/>*/}
             <HeroImageFileControl
               value={data.heroImage}
               onChange={({ previewUrl, file }) => {

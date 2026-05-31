@@ -9,6 +9,7 @@ import {
 } from "@/components/indicators/metric-combinations-table-utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MarkdownText } from "@/components/site/MarkdownText";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const PAGE_SIZE = 20;
 
@@ -31,6 +32,7 @@ const TableTab = ({
   updatedAt,
   viewCount,
 }: TableTabProps) => {
+  const { t } = useTranslation();
   const columnCount = useMemo(() => maxRowLength(combinations), [combinations]);
   const columnIndexes = useMemo(
     () => Array.from({ length: columnCount }, (_, i) => i),
@@ -43,9 +45,9 @@ const TableTab = ({
         label: headerForColumnIndex(combinations, i),
         key: i as SortKey,
       })),
-      { label: "Արժեք", key: "value" as SortKey },
+      { label: t("stat.table.value", "Արժեք"), key: "value" as SortKey },
     ],
-    [columnIndexes, combinations]
+    [columnIndexes, combinations, t]
   );
 
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -99,7 +101,11 @@ const TableTab = ({
   }
 
   if (!combinations.length) {
-    return <p className="text-[14px] text-[rgba(44,44,44,0.65)]">Տվյալներ չկան</p>;
+    return (
+      <p className="text-[14px] text-[rgba(44,44,44,0.65)]">
+        {t("stat.table.no_data", "Տվյալներ չկան")}
+      </p>
+    );
   }
 
   return (
@@ -143,7 +149,7 @@ const TableTab = ({
             ref={observerRef}
             className="flex h-10 items-center justify-center text-xs text-gray-400"
           >
-            Բեռնվում է…
+            {t("stat.table.loading", "Բեռնվում է…")}
           </div>
         )}
       </div>
@@ -152,7 +158,7 @@ const TableTab = ({
         <div className="flex gap-5">
           {updatedAt ? (
             <p className="text-[11px] text-[rgba(110,127,136,1)]">
-              Թարմացված է՝{" "}
+              {t("stat.updated_at", "Թարմացված է՝")}{" "}
               {new Date(updatedAt).toLocaleString("hy-AM", {
                 day: "2-digit",
                 month: "2-digit",
@@ -164,13 +170,14 @@ const TableTab = ({
           ) : null}
           {link && (
             <p className="text-[11px] text-[rgba(110,127,136,1)]">
-              Աղբյուրը՝ <MarkdownText as={"span"}>{link}</MarkdownText>
+              {t("stat.source", "Աղբյուրը՝")} <MarkdownText as={"span"}>{link}</MarkdownText>
             </p>
           )}
         </div>
         {viewCount != null && (
           <p className="text-[11px] text-[rgba(110,127,136,1)]">
-            Դիտված է {viewCount.toLocaleString()} անգամ
+            {t("stat.viewed_prefix", "Դիտված է")} {viewCount.toLocaleString()}{" "}
+            {t("stat.viewed_suffix", "անգամ")}
           </p>
         )}
       </div>
