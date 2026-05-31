@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useForm, useFormState } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import { toast } from "sonner";
 
 import {
@@ -59,6 +59,8 @@ export default function IndicatorsForm() {
   const { features, replaceFeatures } = useIndicatorFeatures();
   const committedFeaturesRef = useRef<IndicatorFeature[]>([]);
   const csvInputRef = useRef<HTMLInputElement>(null);
+
+  const { mutate } = useSWRConfig();
 
   const indicatorId = selectedFilter.indicator;
   const { data: loadedMetricData } = useSWR(
@@ -184,6 +186,9 @@ export default function IndicatorsForm() {
     setCsvUploading(true);
     try {
       await uploadMetricCsv(indicatorId, file);
+      // Combinations are cached per metric (see ChartDataTabs); revalidate so the chart/table
+      // reflect the freshly uploaded rows.
+      await mutate(swrKeys.metricCombinations(indicatorId));
       toast.success("CSV-ն վերբեռնված է");
     } catch (err) {
       toast.error(
