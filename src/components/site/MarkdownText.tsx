@@ -2,12 +2,13 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import { cn } from "@/lib/utils";
 
 type MarkdownTextProps = {
   children?: string | null;
   className?: string;
-  as?: "p" | "div" | "span";
+  as?: "p" | "div" | "span" | "h1";
 };
 
 export function MarkdownText({ children, className, as: Tag = "p" }: MarkdownTextProps) {
@@ -19,7 +20,7 @@ export function MarkdownText({ children, className, as: Tag = "p" }: MarkdownTex
   return (
     <WrapperTag className={cn(className)}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkBreaks]}
         components={{
           a: ({ href, children: linkChildren }) => (
             <a

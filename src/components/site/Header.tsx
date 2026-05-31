@@ -15,6 +15,7 @@ import { useLang } from "@/providers/LangProvider";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useSiteNavItems } from "@/hooks/useSiteNavItems";
 import type { ContentLangCode } from "@/types/content-entries";
+import { MarkdownText } from "@/components/site/MarkdownText";
 
 const languages: { labelKey: string; code: ContentLangCode; fallback: string }[] = [
   { labelKey: "language.hy", code: "hy", fallback: "Armenian" },
@@ -34,11 +35,20 @@ export default function Header() {
   return (
     <header className="bg-blue1000 relative flex w-full flex-col items-center">
       <div className="flex w-full max-w-305 items-center justify-between px-5 py-4 max-md:gap-5">
-        <Link href="/">
-          <Image src={"/logo.svg"} alt={"Logo"} width={506} height={58} />
-          <TypographyH1 className="hidden">
+        <Link href="/" className="flex w-full items-center gap-4 max-md:gap-2">
+          <Image
+            className="max-md:w-[25%]"
+            src={"/logo.svg"}
+            alt={"Logo"}
+            width={190}
+            height={58}
+          />
+          <MarkdownText
+            className="text-fontSizeM leading-fontLine-heightMD shrink-0 font-semibold max-md:text-[12px] max-md:leading-[14px]"
+            as="h1"
+          >
             {t("header.site_title", "Statistical Committee of the Republic of Armenia ARMSTAT")}
-          </TypographyH1>
+          </MarkdownText>
         </Link>
         {/* Mobile hamburger */}
         <button
@@ -90,7 +100,7 @@ export default function Header() {
                 type="button"
                 aria-hidden={!ready}
                 className={`flex cursor-pointer items-center gap-1 p-[3px] outline-none ${
-                  ready ? "" : "invisible pointer-events-none"
+                  ready ? "" : "pointer-events-none invisible"
                 }`}
               >
                 <Image src="/icons/earth.svg" alt="Earth" width={24} height={24} />

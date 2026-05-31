@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useSiteNavItems } from "@/hooks/useSiteNavItems";
+import { MarkdownText } from "@/components/site/MarkdownText";
 
 export default function Footer() {
   const { t } = useTranslation();
@@ -13,8 +14,20 @@ export default function Footer() {
     <footer className="border-t-warning flex w-full flex-col items-center border-t-4 pt-12 pb-10">
       <div className="flex w-full max-w-305 flex-col px-5">
         <div className="flex w-full items-center justify-between py-4 max-md:flex-col max-md:items-start max-md:gap-4">
-          <Link href="/">
-            <Image src={"/logo-dark.svg"} alt={"Logo"} width={506} height={58} />
+          <Link href="/" className="flex w-full items-center gap-4 max-md:gap-2">
+            <Image
+              className="max-md:w-[25%]"
+              src={"/logo-dark.svg"}
+              alt={"Logo"}
+              width={192}
+              height={58}
+            />
+            <MarkdownText
+              className="text-fontSizeM leading-fontLine-heightMD shrink-0 font-semibold text-[rgba(26,26,26,1)] max-md:text-[12px] max-md:leading-[14px]"
+              as="h1"
+            >
+              {t("header.site_title", "Statistical Committee of the Republic of Armenia ARMSTAT")}
+            </MarkdownText>
           </Link>
           <Link href="/">
             <Image src={"/giz-logo.svg"} alt={"Logo"} width={191} height={52} />
