@@ -44,18 +44,29 @@ function StackedAreaChart<T extends Record<string, string>>({
     const cursor = chart.set("cursor", am5xy.XYCursor.new(root, { behavior: "none" }));
     cursor.lineY.set("visible", false);
 
+    const xRenderer = am5xy.AxisRendererX.new(root, {
+      minorGridEnabled: true,
+      minGridDistance: 70,
+    });
+
+    // Long category labels would eat the plot height, so cap their width and wrap them
+    // onto multiple lines. The full text is still shown in the tooltip.
+    xRenderer.labels.template.setAll({
+      maxWidth: 140,
+      oversizedBehavior: "wrap",
+    });
+
     const xAxis = chart.xAxes.push(
       am5xy.CategoryAxis.new(root, {
         categoryField: "year",
         startLocation: 0.5,
         endLocation: 0.5,
-        renderer: am5xy.AxisRendererX.new(root, {
-          minorGridEnabled: true,
-          minGridDistance: 70,
-        }),
+        renderer: xRenderer,
         tooltip: am5.Tooltip.new(root, {}),
       })
     );
+    // Cap the label area so the plot keeps its height.
+    xAxis.set("maxHeight", 130);
     xAxisRef.current = xAxis;
 
     xAxis.data.setAll(data);
