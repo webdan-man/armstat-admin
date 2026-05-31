@@ -169,16 +169,13 @@ export async function fetchMetricForForm(metricId: string): Promise<{
 }> {
   const raw = await getMetricById(metricId);
 
-  console.log({
-    metric: raw,
-    form: mapApiMetricToIndicatorForm(raw),
-    features: mapMetricAttributesToFeatures(raw.attributes ?? []),
-  });
-  return {
+  const result = {
     metric: raw,
     form: mapApiMetricToIndicatorForm(raw),
     features: mapMetricAttributesToFeatures(raw.attributes ?? []),
   };
+
+  return result;
 }
 
 function hasSecondaryLabelContent(

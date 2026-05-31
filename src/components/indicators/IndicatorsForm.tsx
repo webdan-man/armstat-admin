@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useForm, useFormState } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import useSWR, { useSWRConfig } from "swr";
+import useSWR from "swr";
 import { toast } from "sonner";
 
 import {
@@ -48,24 +48,17 @@ import {
 import { ApiError } from "@/lib/api/api-error";
 import { useIndicatorFeatures } from "@/components/indicators/indicator-features-context";
 import type { IndicatorFeature } from "@/types/indicator-feature";
-import type { MetricAttribute, MetricResponse, MetricSelectOption } from "@/types/metric";
+import type { MetricAttribute } from "@/types/metric";
 
 const cardSurface =
   "ring-0 rounded-[10px] border-0 bg-white text-[#2c2c2c] shadow-[0_6px_14px_rgba(0,0,0,0.05)]";
 
 export default function IndicatorsForm() {
-  const {
-    selectedFilter,
-    resolvedTopicId,
-    formMode,
-    markIndicatorEdit,
-    setSelectedFilter,
-    closeForm,
-  } = useIndicatorFilters();
+  const { selectedFilter, resolvedTopicId, formMode, setSelectedFilter, closeForm } =
+    useIndicatorFilters();
   const { features, replaceFeatures } = useIndicatorFeatures();
-  const { mutate } = useSWRConfig();
-  const committedRef = useRef<IndicatorFormValues>(emptyIndicatorFormValues());
   const committedFeaturesRef = useRef<IndicatorFeature[]>([]);
+  const csvInputRef = useRef<HTMLInputElement>(null);
 
   const indicatorId = selectedFilter.indicator;
   const { data: loadedMetricData } = useSWR(
@@ -78,136 +71,63 @@ export default function IndicatorsForm() {
     defaultValues: emptyIndicatorFormValues(),
   });
 
-  const { getValues, reset, setValue } = form;
+  const { setValue, getValues, reset } = form;
+
   const { isDirty, isSubmitting } = useFormState({ control: form.control });
-  const [featuresDirty, setFeaturesDirty] = useState(false);
-  const csvInputRef = useRef<HTMLInputElement>(null);
   const [csvUploading, setCsvUploading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const initializedForIndicatorIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!indicatorId) {
-      const empty = emptyIndicatorFormValues();
-      committedRef.current = empty;
+    if (!indicatorId || !loadedMetricData || loadedMetricData.metric._id !== indicatorId) {
       committedFeaturesRef.current = [];
-      setFeaturesDirty(false);
-      reset(empty);
+      reset(emptyIndicatorFormValues());
       replaceFeatures([]);
-      initializedForIndicatorIdRef.current = null;
       return;
     }
-
-    const loadedMetricId = loadedMetricData?.metric?._id;
-    const metricDataMatchesIndicator = !!loadedMetricData && loadedMetricId === indicatorId;
-
-    if (!metricDataMatchesIndicator || !loadedMetricData) {
-      if (initializedForIndicatorIdRef.current !== indicatorId) {
-        initializedForIndicatorIdRef.current = null;
-        const empty = emptyIndicatorFormValues();
-        committedRef.current = empty;
-        committedFeaturesRef.current = [];
-        setFeaturesDirty(false);
-        reset(empty);
-        replaceFeatures([]);
-      }
-      return;
-    }
-
-    if (initializedForIndicatorIdRef.current === indicatorId) return;
-
-    initializedForIndicatorIdRef.current = indicatorId;
     const metricAttributeKeys = mapFeaturesToMetricAttributeKeys(loadedMetricData.features);
-    committedRef.current = {
+    committedFeaturesRef.current = loadedMetricData.features;
+
+    reset({
       ...loadedMetricData.form,
       attributes: metricAttributeKeys,
-    };
-    committedFeaturesRef.current = loadedMetricData.features;
-    setFeaturesDirty(false);
-    reset(committedRef.current);
+    });
+
+    setValue("sectionId", selectedFilter.section);
+    setValue("topicId", selectedFilter.subSubgroup || selectedFilter.subgroup);
     replaceFeatures(loadedMetricData.features);
-  }, [indicatorId, loadedMetricData, reset, replaceFeatures]);
+  }, [indicatorId, loadedMetricData, replaceFeatures, reset, selectedFilter, setValue]);
 
   useEffect(() => {
     const nextAttributeKeys = mapFeaturesToMetricAttributeKeys(features);
-    const currentAttributeKeys = getValues("attributes");
-    const sameAttributeKeys = areMetricAttributeKeysEqual(currentAttributeKeys, nextAttributeKeys);
-    if (!sameAttributeKeys) {
+    if (!areMetricAttributeKeysEqual(getValues("attributes"), nextAttributeKeys)) {
       setValue("attributes", nextAttributeKeys, { shouldDirty: true });
     }
-    setFeaturesDirty(
-      !areMetricAttributeKeysEqual(
-        mapFeaturesToMetricAttributeKeys(committedFeaturesRef.current),
-        nextAttributeKeys
-      )
-    );
   }, [features, getValues, setValue]);
 
   const submitSave = async (values: IndicatorFormValues) => {
     const metricAttributeKeys = mapFeaturesToMetricAttributeKeys(features);
-
     if (!resolvedTopicId) {
       toast.error("Ընտրեք բաժին, ենթախումբ և անհրաժեշտության դեպքում ենթա-ենթախումբ։");
       return;
     }
     try {
-      const isEditing = formMode === "edit" && Boolean(selectedFilter.indicator);
-      let finalIndicatorId: string;
-
-      let createdMetric: MetricResponse | null = null;
-      if (isEditing) {
-        const patchBody = mapIndicatorFormToUpdateMetric(values, metricAttributeKeys);
-        await patchMetric(selectedFilter.indicator, patchBody);
-        finalIndicatorId = selectedFilter.indicator;
+      if (formMode === "edit" && selectedFilter.indicator) {
+        await patchMetric(
+          selectedFilter.indicator,
+          mapIndicatorFormToUpdateMetric(values, metricAttributeKeys)
+        );
+        committedFeaturesRef.current = features;
+        reset({ ...values, attributes: metricAttributeKeys });
       } else {
-        const createBody = mapIndicatorFormToCreateMetric(
-          resolvedTopicId,
-          values,
-          metricAttributeKeys
+        const created = await createMetric(
+          mapIndicatorFormToCreateMetric(resolvedTopicId, values, metricAttributeKeys)
         );
-        createdMetric = await createMetric(createBody);
-        finalIndicatorId = createdMetric._id;
+        setSelectedFilter((prev) => ({ ...prev, indicator: created._id }));
       }
-
-      const committedValues = { ...values, attributes: metricAttributeKeys };
-      committedRef.current = committedValues;
-      committedFeaturesRef.current = features;
-      setFeaturesDirty(false);
-      form.reset(committedValues);
-
-      initializedForIndicatorIdRef.current = finalIndicatorId;
-      if (!isEditing && createdMetric) {
-        // Inject the new indicator into the topic's list cache before changing the
-        // selected indicator. Otherwise Filters' "auto-clear if missing" effect
-        // would immediately reset selectedFilter.indicator and wipe the form.
-        const newOption: MetricSelectOption = {
-          id: createdMetric._id,
-          label:
-            values.title.hy?.trim() || values.title.ru?.trim() || values.title.en?.trim() || "—",
-          updatedAt: createdMetric.updatedAt ?? createdMetric.createdAt ?? null,
-        };
-        await mutate(
-          swrKeys.metricsByTopic(resolvedTopicId),
-          (current: MetricSelectOption[] | undefined) => {
-            const list = current ?? [];
-            if (list.some((option) => option.id === newOption.id)) return list;
-            return [...list, newOption];
-          },
-          { revalidate: false }
-        );
-        markIndicatorEdit(finalIndicatorId);
-      }
-
       toast.success("Պահպանված է");
-
-      void mutate(swrKeys.metrics);
-      void mutate(swrKeys.metricsByTopic(resolvedTopicId));
-      void mutate(swrKeys.metricForm(finalIndicatorId));
-      void mutate(swrKeys.metricCombinations(finalIndicatorId));
     } catch (e) {
-      const message = e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Սխալ";
-      toast.error(message);
+      toast.error(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Սխալ");
     }
   };
 
@@ -218,25 +138,18 @@ export default function IndicatorsForm() {
     }
     try {
       await publishMetric(selectedFilter.indicator);
-      await mutate(swrKeys.metrics);
-      await mutate(swrKeys.metricForm(selectedFilter.indicator));
       toast.success("Հրապարակված է");
       const metricAttributeKeys = mapFeaturesToMetricAttributeKeys(features);
-      const committedValues = { ...values, attributes: metricAttributeKeys };
-      committedRef.current = committedValues;
       committedFeaturesRef.current = features;
-      setFeaturesDirty(false);
-      form.reset(committedValues);
+      reset({ ...values, attributes: metricAttributeKeys });
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Սխալ";
-      toast.error(message);
+      toast.error(e instanceof Error ? e.message : "Սխալ");
     }
   };
 
   const onCancel = () => {
-    form.reset(committedRef.current);
+    form.reset();
     replaceFeatures(committedFeaturesRef.current);
-    setFeaturesDirty(false);
   };
 
   const deleteDialogTitle =
@@ -250,34 +163,12 @@ export default function IndicatorsForm() {
     setIsDeleting(true);
     try {
       await deleteMetric(indicatorId);
-
-      if (resolvedTopicId) {
-        await mutate(
-          swrKeys.metricsByTopic(resolvedTopicId),
-          (current: MetricSelectOption[] | undefined) =>
-            (current ?? []).filter((option) => option.id !== indicatorId),
-          { revalidate: false }
-        );
-      }
-
-      void mutate(swrKeys.metrics);
-
       setSelectedFilter((prev) => ({ ...prev, indicator: "" }));
       closeForm();
-
-      const empty = emptyIndicatorFormValues();
-      committedRef.current = empty;
-      committedFeaturesRef.current = [];
-      setFeaturesDirty(false);
-      reset(empty);
-      replaceFeatures([]);
-      initializedForIndicatorIdRef.current = null;
-
       toast.success("Ջնջված է");
       setDeleteDialogOpen(false);
     } catch (e) {
-      const message = e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Սխալ";
-      toast.error(message);
+      toast.error(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Սխալ");
     } finally {
       setIsDeleting(false);
     }
@@ -293,12 +184,11 @@ export default function IndicatorsForm() {
     setCsvUploading(true);
     try {
       await uploadMetricCsv(indicatorId, file);
-      await mutate(swrKeys.metricCombinations(indicatorId));
       toast.success("CSV-ն վերբեռնված է");
     } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : err instanceof Error ? err.message : "Սխալ";
-      toast.error(message);
+      toast.error(
+        err instanceof ApiError ? err.message : err instanceof Error ? err.message : "Սխալ"
+      );
     } finally {
       input.value = "";
       setCsvUploading(false);
@@ -391,7 +281,7 @@ export default function IndicatorsForm() {
           <Button
             type="button"
             variant="outline"
-            disabled={!isDirty && !featuresDirty}
+            disabled={!isDirty}
             className="h-11 min-w-[131px] rounded-lg border-[#c7c7c7] bg-white text-[#2c2c2c] hover:bg-[#fafafa] disabled:opacity-50"
             onClick={onCancel}
           >
@@ -399,7 +289,7 @@ export default function IndicatorsForm() {
           </Button>
           <Button
             type="button"
-            disabled={(!isDirty && !featuresDirty) || isSubmitting}
+            disabled={!isDirty || isSubmitting}
             className="h-11 min-w-[132px] rounded-lg border-transparent bg-[#282828] text-white hover:bg-[#282828]/90 disabled:opacity-50"
             onClick={() => void form.handleSubmit(submitSave, (errors) => console.log(errors))()}
           >

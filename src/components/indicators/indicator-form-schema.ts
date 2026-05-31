@@ -56,6 +56,8 @@ const trimmedString = z.string().transform((s) => s.trim());
 
 export const indicatorFormSchema = z.object({
   topicId: z.string(),
+  // UI-only: remembers the chosen section while no topic is selected yet. Not sent to the API.
+  sectionId: z.string(),
   title: perLangStrings,
   description: perLangStrings,
   link: perLangStrings,
@@ -103,6 +105,7 @@ function emptyMetadata(): z.infer<typeof metadataBlock> {
 export function emptyIndicatorFormValues(): IndicatorFormValues {
   return {
     topicId: "",
+    sectionId: "",
     title: emptyPerLangStrings(),
     description: emptyPerLangStrings(),
     link: emptyPerLangStrings(),
@@ -181,7 +184,10 @@ export function mapIndicatorFormToCreateMetric(
 ): CreateMetricBody {
   const metadata: Record<string, { body: string; sourceUrl: string }> = {};
   for (const lang of localeKeys) {
-    metadata[lang] = { body: values.metadata[lang].body, sourceUrl: values.metadata[lang].sourceUrl };
+    metadata[lang] = {
+      body: values.metadata[lang].body,
+      sourceUrl: values.metadata[lang].sourceUrl,
+    };
   }
 
   return {
@@ -215,7 +221,10 @@ export function mapIndicatorFormToUpdateMetric(
 ): UpdateMetricBody {
   const metadata: Record<string, { body: string; sourceUrl: string }> = {};
   for (const lang of localeKeys) {
-    metadata[lang] = { body: values.metadata[lang].body, sourceUrl: values.metadata[lang].sourceUrl };
+    metadata[lang] = {
+      body: values.metadata[lang].body,
+      sourceUrl: values.metadata[lang].sourceUrl,
+    };
   }
 
   return {

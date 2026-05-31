@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import { Input } from "@/components/ui/input";
@@ -128,69 +128,55 @@ function IsCumulativeCheckbox() {
 }
 
 function TopicIdSelect() {
-  const { control, setValue } = useFormContext<IndicatorFormValues>();
+  const { control, setValue, watch } = useFormContext<IndicatorFormValues>();
   const { sections } = useIndicatorSections();
-  const topicId = useWatch({ control, name: "topicId" });
-
-  const [localSection, setLocalSection] = useState("");
-  const [localTopic, setLocalTopic] = useState("");
-  const [localSubtopic, setLocalSubtopic] = useState("");
-  const initialized = useRef(false);
-
-  useEffect(() => {
-    if (initialized.current || !topicId || sections.length === 0) return;
-    for (const section of sections) {
-      for (const topic of section.topics) {
-        if (!isRootTopic(topic)) continue;
-        if (topic._id === topicId) {
-          setLocalSection(section._id);
-          setLocalTopic(topic._id);
-          initialized.current = true;
-          return;
-        }
-        for (const sub of topic.subtopics ?? []) {
-          if (sub._id === topicId) {
-            setLocalSection(section._id);
-            setLocalTopic(topic._id);
-            setLocalSubtopic(sub._id);
-            initialized.current = true;
-            return;
-          }
-        }
-      }
-    }
-  }, [topicId, sections]);
+  const topicId = watch("topicId");
+  const sectionId = watch("sectionId");
 
   const rootTopics = useMemo(() => {
-    const section = sections.find((s) => s._id === localSection);
+    const section = sections.find((s) => s._id === sectionId);
     return section ? section.topics.filter(isRootTopic) : [];
-  }, [sections, localSection]);
+  }, [sections, sectionId]);
+
+  // topicId may hold either a root topic or one of its sub-subtopics, so resolve
+  // which root is selected by checking both levels.
+  const selectedRootId = useMemo(() => {
+    for (const root of rootTopics) {
+      if (root._id === topicId) return root._id;
+      if (root.subtopics?.some((s) => s._id === topicId)) return root._id;
+    }
+    return "";
+  }, [rootTopics, topicId]);
 
   const childTopics = useMemo(() => {
-    const topic = rootTopics.find((t) => t._id === localTopic);
+    const topic = rootTopics.find((t) => t._id === selectedRootId);
     return topic?.subtopics ?? [];
-  }, [rootTopics, localTopic]);
+  }, [rootTopics, selectedRootId]);
+
+  // Only show a value here when topicId actually points at a sub-subtopic.
+  const subSubtopicId = childTopics.some((c) => c._id === topicId) ? topicId : "";
 
   const handleSectionChange = (val: string) => {
-    setLocalSection(val);
-    setLocalTopic("");
-    setLocalSubtopic("");
+    if (!val) {
+      return;
+    }
+    setValue("sectionId", val, { shouldDirty: true });
     setValue("topicId", "", { shouldDirty: true });
   };
 
+  // Selecting a topic links the metric to it directly; the sub-topic is optional and overrides it.
   const handleTopicChange = (val: string) => {
-    setLocalTopic(val);
-    setLocalSubtopic("");
-    const topic = rootTopics.find((t) => t._id === val);
-    if ((topic?.subtopics ?? []).length === 0) {
-      setValue("topicId", val, { shouldDirty: true });
-    } else {
-      setValue("topicId", "", { shouldDirty: true });
+    if (!val) {
+      return;
     }
+    setValue("topicId", val, { shouldDirty: true });
   };
 
   const handleSubtopicChange = (val: string) => {
-    setLocalSubtopic(val);
+    if (!val) {
+      return;
+    }
+
     setValue("topicId", val, { shouldDirty: true });
   };
 
@@ -198,7 +184,7 @@ function TopicIdSelect() {
     <>
       <div className="grid grid-cols-[1fr_3fr] gap-5">
         <Label className="text-sm font-medium text-[#575757]">Բաժին</Label>
-        <Select value={localSection || ""} onValueChange={handleSectionChange}>
+        <Select value={sectionId} onValueChange={handleSectionChange}>
           <SelectTrigger className={`${fieldBorder} w-full`}>
             <SelectValue placeholder="Ընտրեք…" />
           </SelectTrigger>
@@ -214,12 +200,7 @@ function TopicIdSelect() {
 
       <div className="grid grid-cols-[1fr_3fr] gap-5">
         <Label className="text-sm font-medium text-[#575757]">Ենթախումբ</Label>
-        <Select
-          key={localSection || "empty-section"}
-          disabled={!localSection}
-          value={localTopic || ""}
-          onValueChange={handleTopicChange}
-        >
+        <Select disabled={!sectionId} value={selectedRootId} onValueChange={handleTopicChange}>
           <SelectTrigger className={`${fieldBorder} w-full`}>
             <SelectValue placeholder="Ընտրեք…" />
           </SelectTrigger>
@@ -236,12 +217,7 @@ function TopicIdSelect() {
       {childTopics.length > 0 && (
         <div className="grid grid-cols-[1fr_3fr] gap-5">
           <Label className="text-sm font-medium text-[#575757]">Ենթա-ենթախումբ</Label>
-          <Select
-            key={localTopic || "empty-topic"}
-            disabled={!localTopic}
-            value={localSubtopic || ""}
-            onValueChange={handleSubtopicChange}
-          >
+          <Select value={subSubtopicId} onValueChange={handleSubtopicChange}>
             <SelectTrigger className={`${fieldBorder} w-full`}>
               <SelectValue placeholder="Ընտրեք…" />
             </SelectTrigger>

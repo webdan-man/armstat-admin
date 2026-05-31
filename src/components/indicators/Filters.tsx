@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import useSWR from "swr";
 import {
   Select,
@@ -49,21 +49,6 @@ export default function Filters() {
     resolvedTopicId ? swrKeys.metricsByTopic(resolvedTopicId) : null,
     () => fetchMetricsByTopicId(resolvedTopicId!)
   );
-  const previousResolvedTopicId = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (previousResolvedTopicId.current === resolvedTopicId) return;
-    previousResolvedTopicId.current = resolvedTopicId;
-    if (!selectedFilter.indicator) return;
-    setSelectedFilter((prev) => ({ ...prev, indicator: "" }));
-  }, [resolvedTopicId, selectedFilter.indicator, setSelectedFilter]);
-
-  useEffect(() => {
-    if (!selectedFilter.indicator) return;
-    const exists = indicators.some((indicator) => indicator.id === selectedFilter.indicator);
-    if (exists) return;
-    setSelectedFilter((prev) => ({ ...prev, indicator: "" }));
-  }, [indicators, selectedFilter.indicator, setSelectedFilter]);
 
   return (
     <>
