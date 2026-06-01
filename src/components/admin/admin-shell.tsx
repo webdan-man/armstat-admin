@@ -19,6 +19,7 @@ const navItems = [
   { href: "/admin/news", label: "Նորություններ" },
   { href: "/admin/attributes", label: "Հատկանիշներ" },
   { href: "/admin/content", label: "Բովանդակություն" },
+  { href: "/admin/update-password", label: "Փոխել գաղտնաբառը" },
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
