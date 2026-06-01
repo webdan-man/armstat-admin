@@ -5,11 +5,12 @@ import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 
 type ChartDatum = Record<string, string | number>;
 
-// Field names read off each `data` row (one row per gender × age × year combination).
+// Field names read off each `data` row (one row per gender × age × frame combination).
 const SEX_FIELD = "sex";
 const AGE_FIELD = "age";
 const YEAR_FIELD = "year";
 const VALUE_FIELD = "value";
+const FRAME_LABEL_FIELD = "frameLabel";
 
 const DEFAULT_MALE_LABEL = "Արական";
 const DEFAULT_FEMALE_LABEL = "Իգական";
@@ -20,6 +21,12 @@ interface HistoricalPopulationPyramidChartProps<T extends ChartDatum> {
   seriesKeys?: string[];
   /** Title shown above the population timeline chart. */
   timelineAxisAttributeName?: string;
+  /**
+   * Timeline (X2) axis kind:
+   * - "time": a DateAxis of real calendar years (GENDER X1, AGE Y1, TIME X2).
+   * - "category": a CategoryAxis of frame labels — area/other (GENDER X1, AGE Y1, AREA/OTHER X2).
+   */
+  timelineMode?: "time" | "category";
 }
 
 const containerId = "historical-pyramid-chartdiv";
@@ -32,7 +39,10 @@ interface PyramidRow {
 }
 
 interface TimelineRow {
+  /** Timeline position as a timestamp (used by the time-mode DateAxis). */
   date: number;
+  /** Frame label — the CategoryAxis category, and shown in category-mode tooltips. */
+  frameLabel: string;
   male: number;
   female: number;
   lineSettings?: { strokeDasharray: number[]; strokeOpacity: number; fillOpacity: number };
@@ -58,13 +68,26 @@ function getAgeGroups<T extends ChartDatum>(data: T[]): string[] {
   return out;
 }
 
+// Frame positions (calendar years in time mode, synthetic ordinals in category mode), ascending.
 function getYears<T extends ChartDatum>(data: T[]): number[] {
   const years = new Set<number>();
   for (const row of data) years.add(Number(row[YEAR_FIELD]));
   return Array.from(years).sort((a, b) => a - b);
 }
 
-// One pyramid row per age group for a single year.
+// Maps each frame position to its display label, for categorical timelines.
+function getFrameLabelByYear<T extends ChartDatum>(data: T[]): Map<number, string> {
+  const map = new Map<number, string>();
+  for (const row of data) {
+    const label = row[FRAME_LABEL_FIELD];
+    if (label == null) continue;
+    const year = Number(row[YEAR_FIELD]);
+    if (!map.has(year)) map.set(year, String(label));
+  }
+  return map;
+}
+
+// One pyramid row per age group for a single frame.
 function buildPyramidData<T extends ChartDatum>(
   data: T[],
   ageGroups: string[],
@@ -91,11 +114,12 @@ function buildPyramidData<T extends ChartDatum>(
   return ageGroups.map((age) => byAge.get(age)!);
 }
 
-// One timeline row per year with total male and female population.
+// One timeline row per frame with total male and female population.
 function buildTimelineData<T extends ChartDatum>(
   data: T[],
   cfg: ChartConfig,
-  projectionYear: number
+  projectionYear: number,
+  options: { isCategory: boolean; frameLabelByYear: Map<number, string> }
 ): TimelineRow[] {
   const byYear = new Map<number, { male: number; female: number }>();
   for (const row of data) {
@@ -115,11 +139,13 @@ function buildTimelineData<T extends ChartDatum>(
     const entry = byYear.get(year)!;
     const item: TimelineRow = {
       date: new Date(year, 0, 1).getTime(),
+      frameLabel: options.frameLabelByYear.get(year) ?? String(year),
       male: entry.male,
       female: entry.female,
     };
-    // Mark the latest (projection) year with a dashed, faded line.
-    if (year === projectionYear) {
+    // Mark the latest (projection) year with a dashed, faded line — only meaningful for a
+    // real time axis; categorical frames have no "projection".
+    if (!options.isCategory && year === projectionYear) {
       item.lineSettings = { strokeDasharray: [3, 3], strokeOpacity: 0.3, fillOpacity: 0.3 };
     }
     return item;
@@ -139,6 +165,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
   data,
   seriesKeys = [],
   timelineAxisAttributeName = "Հատկանիշի անվանում",
+  timelineMode = "time",
 }: HistoricalPopulationPyramidChartProps<T>) {
   const rootRef = useRef<am5.Root | null>(null);
   // Latest props, read by the (create-once) chart internals on every data update.
@@ -152,9 +179,11 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
   // Re-applies the current data to the existing chart; set up inside the layout effect.
   const applyDataRef = useRef<(() => void) | null>(null);
 
+  // Rebuilt whenever the timeline (X2) axis kind changes — a DateAxis of years ("time") or a
+  // CategoryAxis of frame labels ("category"). Data updates are applied without a rebuild
+  // (see applyDataRef), so amCharts doesn't replay intro animations on every data change.
   useLayoutEffect(() => {
-    // Create the chart once; otherwise amCharts replays intro animations on every data update.
-    if (rootRef.current) return;
+    const isCategory = timelineMode === "category";
 
     const root = am5.Root.new(containerId);
     rootRef.current = root;
@@ -173,7 +202,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
     );
 
     // ---------------------------------------------------------------
-    // Pyramid chart (left)
+    // Pyramid chart (left) — GENDER on X1, AGE on Y1. Identical in both modes.
     // ---------------------------------------------------------------
     const pyramidChart = container.children.push(
       am5xy.XYChart.new(root, {
@@ -275,7 +304,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
     pyramidCursor.lineY.set("visible", false);
 
     // ---------------------------------------------------------------
-    // Population timeline chart (right)
+    // Timeline chart (right) — the X2 frame dimension (TIME, or AREA/OTHER).
     // ---------------------------------------------------------------
     const popChart = container.children.push(
       am5xy.XYChart.new(root, {
@@ -305,16 +334,6 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       })
     );
 
-    const popXAxis = popChart.xAxes.push(
-      am5xy.DateAxis.new(root, {
-        maxDeviation: 0.1,
-        groupData: false,
-        baseInterval: { timeUnit: "year", count: 1 },
-        renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 40 }),
-        tooltip: am5.Tooltip.new(root, {}),
-      })
-    );
-
     const popYAxis = popChart.yAxes.push(
       am5xy.ValueAxis.new(root, {
         min: 0,
@@ -324,48 +343,16 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       })
     );
 
-    const popSeriesMale = popChart.series.push(
-      am5xy.LineSeries.new(root, {
-        minBulletDistance: 10,
-        xAxis: popXAxis,
-        yAxis: popYAxis,
-        valueYField: "male",
-        valueXField: "date",
-        stacked: true,
-      })
-    );
-    popSeriesMale.strokes.template.setAll({ strokeWidth: 2, templateField: "lineSettings" });
-    popSeriesMale.fills.template.setAll({
-      visible: true,
-      fillOpacity: 0.5,
-      templateField: "lineSettings",
-    });
+    // Frame label lookup + display order, refreshed by applyData; read by the cursor + title.
+    let frameLabelByYear = new Map<number, string>();
+    let frameYears: number[] = [];
 
-    const popSeriesFemale = popChart.series.push(
-      am5xy.LineSeries.new(root, {
-        minBulletDistance: 10,
-        xAxis: popXAxis,
-        yAxis: popYAxis,
-        valueYField: "female",
-        valueXField: "date",
-        stacked: true,
-        tooltip: am5.Tooltip.new(root, { pointerOrientation: "horizontal" }),
-      })
-    );
-    popSeriesFemale.strokes.template.setAll({ strokeWidth: 2, templateField: "lineSettings" });
-    popSeriesFemale.fills.template.setAll({
-      visible: true,
-      fillOpacity: 0.5,
-      templateField: "lineSettings",
-    });
+    // Pyramid heading for a frame: its label when categorical, else the year.
+    function frameTitleForYear(year: number): string {
+      return isCategory ? (frameLabelByYear.get(year) ?? "") : String(year);
+    }
 
-    const popCursor = popChart.set(
-      "cursor",
-      am5xy.XYCursor.new(root, { xAxis: popXAxis, yAxis: popYAxis })
-    );
-    popCursor.lineY.set("visible", false);
-
-    // Redraw the pyramid for the year under the timeline cursor.
+    // Redraw the pyramid for the frame under the timeline cursor.
     function updatePyramidForYear(year: number) {
       const rows = buildPyramidData(
         dataRef.current,
@@ -378,28 +365,157 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         pyramidSeriesMale.data.setIndex(i, row);
         pyramidSeriesFemale.data.setIndex(i, row);
       });
-      pyramidTitle.set("text", String(year));
+      pyramidTitle.set("text", frameTitleForYear(year));
     }
 
-    popCursor.events.on("cursormoved", (ev) => {
-      const positionX = ev.target.getPrivate("positionX");
-      if (positionX == null) return;
-      const year = popXAxis.positionToDate(positionX).getFullYear();
-      if (year !== currentYearRef.current) {
-        currentYearRef.current = year;
-        updatePyramidForYear(year);
-      }
-    });
+    // Mode-specific timeline axis/series. `pushTimeline` feeds the (possibly axis-bound) data;
+    // `tooltipHeader` is the per-point header populated in applyData.
+    let popSeriesMale: am5xy.XYSeries;
+    let popSeriesFemale: am5xy.XYSeries;
+    let pushTimeline: (rows: TimelineRow[]) => void;
+    let tooltipHeader: string;
+
+    if (isCategory) {
+      // AREA / OTHER on X2 → categorical axis labelled by frame, stacked male+female columns.
+      const popXRenderer = am5xy.AxisRendererX.new(root, { minGridDistance: 30 });
+      // Tilt the (often long) frame labels 45° so they don't overlap.
+      popXRenderer.labels.template.setAll({
+        rotation: -45,
+        centerY: am5.p50,
+        centerX: am5.p100,
+      });
+      const popXAxis = popChart.xAxes.push(
+        am5xy.CategoryAxis.new(root, {
+          categoryField: FRAME_LABEL_FIELD,
+          renderer: popXRenderer,
+          tooltip: am5.Tooltip.new(root, {}),
+        })
+      );
+
+      const male = popChart.series.push(
+        am5xy.ColumnSeries.new(root, {
+          xAxis: popXAxis,
+          yAxis: popYAxis,
+          valueYField: "male",
+          categoryXField: FRAME_LABEL_FIELD,
+          stacked: true,
+        })
+      );
+
+      const female = popChart.series.push(
+        am5xy.ColumnSeries.new(root, {
+          xAxis: popXAxis,
+          yAxis: popYAxis,
+          valueYField: "female",
+          categoryXField: FRAME_LABEL_FIELD,
+          stacked: true,
+          tooltip: am5.Tooltip.new(root, { pointerOrientation: "horizontal" }),
+        })
+      );
+
+      const popCursor = popChart.set(
+        "cursor",
+        am5xy.XYCursor.new(root, { xAxis: popXAxis, yAxis: popYAxis })
+      );
+      popCursor.lineY.set("visible", false);
+
+      popCursor.events.on("cursormoved", (ev) => {
+        const positionX = ev.target.getPrivate("positionX");
+        if (positionX == null) return;
+        const year = frameYears[popXAxis.axisPositionToIndex(positionX)];
+        if (year != null && year !== currentYearRef.current) {
+          currentYearRef.current = year;
+          updatePyramidForYear(year);
+        }
+      });
+
+      popSeriesMale = male;
+      popSeriesFemale = female;
+      // The CategoryAxis needs the category list too, in the same order as the series data.
+      pushTimeline = (rows) => {
+        popXAxis.data.setAll(rows);
+        male.data.setAll(rows);
+        female.data.setAll(rows);
+      };
+      tooltipHeader = "{categoryX}";
+    } else {
+      // TIME on X2 → real calendar-year date axis, stacked male+female area lines.
+      const popXAxis = popChart.xAxes.push(
+        am5xy.DateAxis.new(root, {
+          maxDeviation: 0.1,
+          groupData: false,
+          baseInterval: { timeUnit: "year", count: 1 },
+          renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 40 }),
+          tooltip: am5.Tooltip.new(root, {}),
+        })
+      );
+
+      const male = popChart.series.push(
+        am5xy.LineSeries.new(root, {
+          minBulletDistance: 10,
+          xAxis: popXAxis,
+          yAxis: popYAxis,
+          valueYField: "male",
+          valueXField: "date",
+          stacked: true,
+        })
+      );
+      male.strokes.template.setAll({ strokeWidth: 2, templateField: "lineSettings" });
+      male.fills.template.setAll({ visible: true, fillOpacity: 0.5, templateField: "lineSettings" });
+
+      const female = popChart.series.push(
+        am5xy.LineSeries.new(root, {
+          minBulletDistance: 10,
+          xAxis: popXAxis,
+          yAxis: popYAxis,
+          valueYField: "female",
+          valueXField: "date",
+          stacked: true,
+          tooltip: am5.Tooltip.new(root, { pointerOrientation: "horizontal" }),
+        })
+      );
+      female.strokes.template.setAll({ strokeWidth: 2, templateField: "lineSettings" });
+      female.fills.template.setAll({
+        visible: true,
+        fillOpacity: 0.5,
+        templateField: "lineSettings",
+      });
+
+      const popCursor = popChart.set(
+        "cursor",
+        am5xy.XYCursor.new(root, { xAxis: popXAxis, yAxis: popYAxis })
+      );
+      popCursor.lineY.set("visible", false);
+
+      popCursor.events.on("cursormoved", (ev) => {
+        const positionX = ev.target.getPrivate("positionX");
+        if (positionX == null) return;
+        const year = popXAxis.positionToDate(positionX).getFullYear();
+        if (year !== currentYearRef.current) {
+          currentYearRef.current = year;
+          updatePyramidForYear(year);
+        }
+      });
+
+      popSeriesMale = male;
+      popSeriesFemale = female;
+      pushTimeline = (rows) => {
+        male.data.setAll(rows);
+        female.data.setAll(rows);
+      };
+      tooltipHeader = "{valueX.formatDate('yyyy')}";
+    }
 
     // (Re-)apply the current data to the already-built chart.
     function applyData() {
       const rows = dataRef.current;
       const cfg = configRef.current;
+      frameLabelByYear = getFrameLabelByYear(rows);
       const ageGroups = getAgeGroups(rows);
-      const years = getYears(rows);
-      const projectionYear = years.length ? years[years.length - 1] : 0;
+      frameYears = getYears(rows);
+      const projectionYear = frameYears.length ? frameYears[frameYears.length - 1] : 0;
 
-      if (!years.includes(currentYearRef.current)) {
+      if (!frameYears.includes(currentYearRef.current)) {
         currentYearRef.current = projectionYear;
       }
 
@@ -410,23 +526,21 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         .get("tooltip")
         ?.set(
           "labelText",
-          `[bold]{valueX.formatDate('yyyy')}[/]\n[font-size: 20]${cfg.maleLabel}     [bold]{male}[/]\n${cfg.femaleLabel}     [bold]{female}[/]`
+          `[bold]${tooltipHeader}[/]\n[font-size: 20]${cfg.maleLabel}     [bold]{male}[/]\n${cfg.femaleLabel}     [bold]{female}[/]`
         );
 
       const pyramid = buildPyramidData(rows, ageGroups, currentYearRef.current, cfg);
       pyramidYAxis.data.setAll(pyramid);
       pyramidSeriesMale.data.setAll(pyramid);
       pyramidSeriesFemale.data.setAll(pyramid);
-      pyramidTitle.set("text", String(currentYearRef.current));
+      pyramidTitle.set("text", frameTitleForYear(currentYearRef.current));
 
-      // Fixed, symmetric bounds let users compare the pyramid shape across years.
+      // Fixed, symmetric bounds let users compare the pyramid shape across frames.
       const pad = getMaxValue(rows) * 1.1 || 1;
       pyramidXAxis.set("min", -pad);
       pyramidXAxis.set("max", pad);
 
-      const timeline = buildTimelineData(rows, cfg, projectionYear);
-      popSeriesMale.data.setAll(timeline);
-      popSeriesFemale.data.setAll(timeline);
+      pushTimeline(buildTimelineData(rows, cfg, projectionYear, { isCategory, frameLabelByYear }));
     }
 
     applyDataRef.current = applyData;
@@ -441,7 +555,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       applyDataRef.current = null;
       root.dispose();
     };
-  }, []);
+  }, [timelineMode]);
 
   useEffect(() => {
     dataRef.current = data;

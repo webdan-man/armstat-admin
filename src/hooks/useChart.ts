@@ -111,6 +111,8 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
   stackKeys?: string[];
   /** Localized name of the TIME attribute (timeline header on historical population pyramid). */
   timelineAxisAttributeName?: string;
+  /** Pyramid timeline (X2) axis kind: real years ("time") or categorical frame ("category"). */
+  timelineMode?: "time" | "category";
 } {
   const { data: attributes = [] } = useSWR(swrKeys.attributes, fetchAttributes);
   // const { data: categories = [] } = useSWR(swrKeys.attributesCategories, fetchAttributeCategories);
@@ -914,7 +916,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
         has(AttributeCategory.AGE) &&
         has(AttributeCategory.TIME)
       ) {
-        const { data, seriesKeys } = mapCombinationsForPyramid({
+        const { data, seriesKeys, timelineMode } = mapCombinationsForPyramid({
           combinations,
           attributeMapByCategory,
         });
@@ -928,6 +930,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           type: "historical-population-pyramid",
           data,
           seriesKeys,
+          timelineMode,
           timelineAxisAttributeName: pickAttributeLabelFromRows(
             combinations,
             attributeMapByCategory.get(AttributeCategory.TIME)
@@ -947,7 +950,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           : AttributeCategory.OTHER;
         const frameAttributeId = attributeMapByCategory.get(frameCategory)!._id;
 
-        const { data, seriesKeys } = mapCombinationsForPyramidByFrameCategory({
+        const { data, seriesKeys, timelineMode } = mapCombinationsForPyramidByFrameCategory({
           combinations,
           attributeMapByCategory,
           frameAttributeId,
@@ -962,6 +965,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
           type: "historical-population-pyramid",
           data,
           seriesKeys,
+          timelineMode,
           timelineAxisAttributeName: pickAttributeLabelFromRows(
             combinations,
             attributeMapByCategory.get(frameCategory)
@@ -1202,7 +1206,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
               ? attributeMapByCategory4.get(frameCategory)!._id
               : undefined;
 
-          const { pyramidData, mapData, seriesKeys } =
+          const { pyramidData, mapData, seriesKeys, timelineMode } =
             mapCombinationsForMapAndHistoricalPopulationPyramid({
               combinations,
               provinceAttributeId,
@@ -1221,6 +1225,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
             type: "map-and-historical-population-pyramid",
             data: { pyramidData, mapData },
             seriesKeys,
+            timelineMode,
             timelineAxisAttributeName: pickAttributeLabelFromRows(
               combinations,
               attributeMapByCategory4.get(frameCategory)

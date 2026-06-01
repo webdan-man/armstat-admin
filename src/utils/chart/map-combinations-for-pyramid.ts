@@ -9,12 +9,19 @@ export type PyramidRow = {
   /** Numeric position on the timeline axis (calendar year, or a frame ordinal). */
   year: number;
   value: number;
+  /** Display label for the frame on the timeline (X2) axis — the area/other value title. */
+  frameLabel: string;
 };
 
 export type PyramidResult = {
   data: PyramidRow[];
   /** [maleLabel, femaleLabel] — the gender titles found, male first. */
   seriesKeys: string[];
+  /**
+   * Whether the timeline (X2) axis represents real calendar years ("time") or a
+   * categorical frame dimension — area/other — rendered by label ("category").
+   */
+  timelineMode: "time" | "category";
 };
 
 // The pyramid chart treats this gender as the right-hand (positive) side.
@@ -37,6 +44,17 @@ function toYear(title: string): number {
   return match ? Number(match[0]) : NaN;
 }
 
+// Distinct frame value titles present for an attribute across all combinations.
+function collectFrameTitles(combinations: MetricCombination[], attributeId: string): string[] {
+  const titles = new Set<string>();
+  for (const item of combinations) {
+    for (const row of item.row) {
+      if (row.attributeId === attributeId && row.value?.title) titles.add(row.value.title);
+    }
+  }
+  return Array.from(titles);
+}
+
 // Shared builder: `resolveYear` turns the frame value title into a timeline position.
 function buildPyramidRows(payload: {
   combinations: MetricCombination[];
@@ -44,7 +62,7 @@ function buildPyramidRows(payload: {
   ageAttributeId: string;
   frameAttributeId: string;
   resolveYear: (frameTitle: string, frameValueId: string) => number;
-}): PyramidResult {
+}): Omit<PyramidResult, "timelineMode"> {
   const { combinations, genderAttributeId, ageAttributeId, frameAttributeId, resolveYear } =
     payload;
 
@@ -74,14 +92,19 @@ function buildPyramidRows(payload: {
     if (!Number.isFinite(year)) continue;
 
     genders.add(gender);
-    data.push({ sex: gender, age, year, value: Number(item.value) });
+    data.push({ sex: gender, age, year, value: Number(item.value), frameLabel: frameTitle });
   }
 
   return { data, seriesKeys: orderGenders(genders) };
 }
 
 /**
- * Gender + Age + Time → population pyramid with a real calendar-year timeline.
+ * Gender + Age + Time → population pyramid framed by the TIME dimension.
+ *
+ * A TIME attribute can hold real calendar years (e.g. 2015, 2016 → a continuous date axis)
+ * or categorical periods such as days of the week or months (→ labelled, ordinal frames).
+ * We use a real-year timeline only when every time value is a distinct calendar year;
+ * otherwise we frame by label, exactly like Area/Other.
  */
 export function mapCombinationsForPyramid(payload: {
   combinations: MetricCombination[];
@@ -93,28 +116,46 @@ export function mapCombinationsForPyramid(payload: {
   const ageAttributeId = attributeMapByCategory.get(AttributeCategory.AGE)!._id;
   const timeAttributeId = attributeMapByCategory.get(AttributeCategory.TIME)!._id;
 
-  return buildPyramidRows({
-    combinations,
-    genderAttributeId,
-    ageAttributeId,
-    frameAttributeId: timeAttributeId,
-    resolveYear: (frameTitle) => toYear(frameTitle),
-  });
+  const timeTitles = collectFrameTitles(combinations, timeAttributeId);
+  const years = timeTitles.map(toYear);
+  const allRealYears =
+    timeTitles.length > 0 &&
+    years.every((y) => Number.isFinite(y)) &&
+    new Set(years).size === timeTitles.length;
+
+  // Categorical time (days, months, …) → frame by label, just like Area/Other.
+  if (!allRealYears) {
+    return mapCombinationsForPyramidByFrameCategory({
+      combinations,
+      attributeMapByCategory,
+      frameAttributeId: timeAttributeId,
+    });
+  }
+
+  return {
+    ...buildPyramidRows({
+      combinations,
+      genderAttributeId,
+      ageAttributeId,
+      frameAttributeId: timeAttributeId,
+      resolveYear: (frameTitle) => toYear(frameTitle),
+    }),
+    timelineMode: "time",
+  };
 }
 
 /**
- * Gender + Age + (Area OR Other) → population pyramid framed by a non-time dimension.
+ * Gender + Age + (Area OR Other), or categorical Time → pyramid framed by a labelled dimension.
  *
- * The chart's timeline axis is date-based, so each frame value is mapped to a synthetic
- * sequential year (ordered by the frame attribute's value `number`). The pyramid still
- * steps through frames correctly; only the timeline tick labels read as ordinals.
+ * Each frame value gets a sequential integer position (ordered by the frame attribute's value
+ * `number`, falling back to first appearance) used purely as the internal frame key; the chart
+ * renders the frame's title on a categorical X2 axis via each row's `frameLabel`.
  */
 export function mapCombinationsForPyramidByFrameCategory(payload: {
   combinations: MetricCombination[];
   attributeMapByCategory: Map<string, Attribute>;
   frameAttributeId: string;
 }): PyramidResult {
-  console.log("asdsds");
   const { combinations, attributeMapByCategory, frameAttributeId } = payload;
 
   const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
@@ -124,7 +165,6 @@ export function mapCombinationsForPyramidByFrameCategory(payload: {
   const frameAttribute = Array.from(attributeMapByCategory.values()).find(
     (attr) => attr._id === frameAttributeId
   );
-  console.log("frameAttribute", frameAttribute);
   const orderByValueId = new Map<string, number>();
   frameAttribute?.values
     .slice()
@@ -135,23 +175,26 @@ export function mapCombinationsForPyramidByFrameCategory(payload: {
   const BASE_YEAR = 2000;
   const fallbackOrder = new Map<string, number>();
 
-  return buildPyramidRows({
-    combinations,
-    genderAttributeId,
-    ageAttributeId,
-    frameAttributeId,
-    resolveYear: (frameTitle, frameValueId) => {
-      let index = orderByValueId.get(frameValueId);
-      if (index === undefined) {
-        // Frame value not declared on the attribute — keep a stable order by first appearance.
-        index = fallbackOrder.get(frameTitle);
+  return {
+    ...buildPyramidRows({
+      combinations,
+      genderAttributeId,
+      ageAttributeId,
+      frameAttributeId,
+      resolveYear: (frameTitle, frameValueId) => {
+        let index = orderByValueId.get(frameValueId);
         if (index === undefined) {
-          index = fallbackOrder.size;
-          fallbackOrder.set(frameTitle, index);
+          // Frame value not declared on the attribute — keep a stable order by first appearance.
+          index = fallbackOrder.get(frameTitle);
+          if (index === undefined) {
+            index = fallbackOrder.size;
+            fallbackOrder.set(frameTitle, index);
+          }
+          index += orderByValueId.size;
         }
-        index += orderByValueId.size;
-      }
-      return BASE_YEAR + index;
-    },
-  });
+        return BASE_YEAR + index;
+      },
+    }),
+    timelineMode: "category",
+  };
 }

@@ -37,6 +37,7 @@ const Chart = ({ combinations = [] }: ChartProps) => {
     clusterKeys,
     stackKeys,
     timelineAxisAttributeName,
+    timelineMode,
   } = useChart({
     combinations,
   });
@@ -134,6 +135,7 @@ const Chart = ({ combinations = [] }: ChartProps) => {
             data={data}
             seriesKeys={seriesKeys}
             timelineAxisAttributeName={timelineAxisAttributeName}
+            timelineMode={timelineMode}
           />
         </div>
       );
@@ -168,6 +170,7 @@ const Chart = ({ combinations = [] }: ChartProps) => {
               data={data?.pyramidData ?? []}
               seriesKeys={seriesKeys}
               timelineAxisAttributeName={timelineAxisAttributeName}
+              timelineMode={timelineMode}
             />
           </div>
           <div>

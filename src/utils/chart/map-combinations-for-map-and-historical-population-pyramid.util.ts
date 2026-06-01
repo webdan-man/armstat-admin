@@ -40,5 +40,6 @@ export const mapCombinationsForMapAndHistoricalPopulationPyramid = (payload: {
     pyramidData: pyramidResult.data,
     mapData,
     seriesKeys: pyramidResult.seriesKeys,
+    timelineMode: pyramidResult.timelineMode,
   };
 };
