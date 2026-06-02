@@ -13,7 +13,7 @@ export const mapCombinationsForClusteredColumnChart = (payload: {
   // - X axis: many categories (e.g. `other`)
   // - Series: few keys (e.g. "Քաղաք"/"Գյուղ")
   //
-  // For some indicators we need the opposite:
+  // For some metrics we need the opposite:
   // - X axis: the few keys (e.g. "Քաղաք"/"Գյուղ") => 2 columns/groups
   // - Series: the many categories (e.g. each "other" label)
   //

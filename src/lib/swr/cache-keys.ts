@@ -2,7 +2,7 @@
  * Central SWR cache keys. Use these everywhere you `useSWR`, `mutate`, or
  * `useSWRMutation` so keys stay consistent.
  *
- * For new domains (e.g. indicators), add keys here and call services from
+ * For new domains (e.g. metrics), add keys here and call services from
  * `src/services/*` with `useSWR(key, () => serviceFn())` — same pattern as attributes.
  */
 import { defaultLocale, type Locale } from "@/lib/i18n";

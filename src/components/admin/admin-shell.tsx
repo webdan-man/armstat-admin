@@ -9,21 +9,20 @@ import Image from "next/image";
 import React from "react";
 import { ShellLink } from "@/components/ui/ShellLink";
 import { SwrProvider } from "@/lib/swr/swr-provider";
-
-const navItems = [
-  { href: "/admin/main", label: "Գլխավոր էջ" },
-  { href: "/admin/groups", label: "Բաժիններ" },
-  { href: "/admin/indicators", label: "Ցուցանիշներ" },
-  { href: "/admin/information-centre", label: "Տեղեկատվական կենտրոն" },
-  { href: "/admin/contact-us", label: "Հետադարձ կապ" },
-  { href: "/admin/news", label: "Նորություններ" },
-  { href: "/admin/attributes", label: "Հատկանիշներ" },
-  { href: "/admin/content", label: "Բովանդակություն" },
-  { href: "/admin/update-password", label: "Փոխել գաղտնաբառը" },
-];
+import { useUser } from "@/hooks/useUser";
+import { siteSections } from "@/constants/sections";
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+
+  const user = useUser();
+
+  const userPermissionKeys = user.permissions.map((p) => p.key);
+  console.log(userPermissionKeys);
+  const hasPermission = (perm: string) =>
+    userPermissionKeys.includes("*") ||
+    userPermissionKeys.includes(perm) ||
+    userPermissionKeys.includes(perm.split(".")[0] + ".*");
 
   function handleLogout() {
     router.push("/admin/logout");
@@ -50,9 +49,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </div>
           <Separator className="mb-4 bg-[#e6e7eb]" />
           <nav className="space-y-1 pb-5">
-            {navItems.map((item, index) => (
-              <ShellLink href={item.href} label={item.label} key={item.href} />
-            ))}
+            {siteSections
+              .filter((item) => {
+                if (!item.permissionKey || userPermissionKeys.includes("*")) return true;
+
+                return hasPermission(item.permissionKey);
+              })
+
+              .map((item, index) => (
+                <ShellLink href={item.href} label={item.label} key={item.href} />
+              ))}
           </nav>
           <Separator className="mb-4 bg-[#e6e7eb]" />
           <Button variant="outline" className="h-9 rounded-[9px]" onClick={handleLogout}>

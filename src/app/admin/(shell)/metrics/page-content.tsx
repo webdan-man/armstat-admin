@@ -1,16 +1,10 @@
 "use client";
 
-import React from "react";
-
 import Filters from "@/components/indicators/Filters";
 import IndicatorsForm from "@/components/indicators/IndicatorsForm";
-import { IndicatorFeaturesProvider } from "@/components/indicators/indicator-features-context";
-import {
-  IndicatorFiltersProvider,
-  useIndicatorFilters,
-} from "@/components/indicators/indicator-filters-context";
+import { useIndicatorFilters } from "@/components/indicators/indicator-filters-context";
 
-function IndicatorsContent() {
+export default function IndicatorsContent() {
   const { isFormVisible } = useIndicatorFilters();
 
   return (
@@ -21,15 +15,5 @@ function IndicatorsContent() {
       <Filters />
       {isFormVisible && <IndicatorsForm />}
     </div>
-  );
-}
-
-export default function IndicatorsPage() {
-  return (
-    <IndicatorFiltersProvider>
-      <IndicatorFeaturesProvider>
-        <IndicatorsContent />
-      </IndicatorFeaturesProvider>
-    </IndicatorFiltersProvider>
   );
 }

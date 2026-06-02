@@ -79,7 +79,7 @@ export default function SearchInput({
   );
 
   // When the slug is a metric ID (not a section/topic/subtopic), fetch the
-  // metric so we can surface its sibling indicators via topicId.
+  // metric so we can surface its sibling metrics via topicId.
   const { data: activeMetric } = useSWR(
     slug && sections.length > 0 && !slugInTree ? swrKeys.metricForm(slug) : null,
     () => getMetricById(slug)
@@ -93,7 +93,7 @@ export default function SearchInput({
   }, [slug, sections, activeMetric]);
 
   const indicatorsKey = useMemo(
-    () => (topicIds.length === 0 ? null : (["search-indicators", ...topicIds] as const)),
+    () => (topicIds.length === 0 ? null : (["search-metrics", ...topicIds] as const)),
     [topicIds]
   );
 
