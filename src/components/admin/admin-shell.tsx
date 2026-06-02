@@ -31,7 +31,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   return (
     <SwrProvider>
       <div className="flex min-h-screen bg-[#f9fafb]">
-        <aside className="w-60 shrink-0 border-r border-[#e6e7eb] bg-white px-4 pt-5">
+        <aside className="w-70 shrink-0 border-r border-[#e6e7eb] bg-white px-4 pt-5">
           <div className="mb-6">
             <Link href="/admin" className="flex items-center gap-[5px]">
               <Image width={47} height={34} src="/logo.png" alt={"Logo"} />
@@ -56,7 +56,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 return hasPermission(item.permissionKey);
               })
 
-              .map((item, index) => (
+              .map((item) => (
                 <ShellLink href={item.href} label={item.label} key={item.href} />
               ))}
           </nav>

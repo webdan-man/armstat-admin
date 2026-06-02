@@ -12,6 +12,7 @@ export const siteSections = [
   { permissionKey: "attributes", href: "/admin/attributes", label: "Հատկանիշներ" },
   { permissionKey: "content", href: "/admin/content", label: "Բովանդակություն" },
   { permissionKey: "user", href: "/admin/users", label: "Օգտատերերի կառավարում" },
+  { permissionKey: "audit-log", href: "/admin/audit-logs", label: "Աուդիտ լոգեր" },
 
   { href: "/admin/update-password", label: "Փոխել գաղտնաբառը" },
 ];
