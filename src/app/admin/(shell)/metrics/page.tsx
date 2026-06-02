@@ -5,7 +5,7 @@ import { requirePermission } from "@/lib/require-permission";
 import IndicatorsContent from "@/app/admin/(shell)/metrics/page-content";
 
 export default async function IndicatorsPage() {
-  await requirePermission("metrics");
+  await requirePermission("metric");
 
   return (
     <IndicatorFiltersProvider>
