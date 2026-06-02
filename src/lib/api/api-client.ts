@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 async function apiClient<T>(
   url: string,
-  options: RequestInit & { parseAsText?: boolean } = {}
+  options: RequestInit & { parseAsText?: boolean; parseAsBlob?: boolean } = {}
 ): Promise<T> {
   try {
     const isFormData = options.body instanceof FormData;
@@ -32,6 +32,11 @@ async function apiClient<T>(
         errorBody = await res.json();
       } catch {}
       throw new ApiError(errorBody?.message || res.statusText, res.status, errorBody);
+    }
+
+    if (options.parseAsBlob) {
+      const blob = await res.blob();
+      return blob as T;
     }
 
     if (res.status === 204) return {} as T;

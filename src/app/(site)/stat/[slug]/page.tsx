@@ -32,6 +32,7 @@ import {
   getMetricCombinations,
   fetchMetricsByTopicId,
   downloadMetricCombinationsCSV,
+  downloadMetricCombinationsPDF,
 } from "@/services/metricsService";
 import { fetchSections } from "@/services/sectionsService";
 import { swrKeys } from "@/lib/swr/cache-keys";
@@ -40,6 +41,7 @@ import {
   maxRowLength,
   valueAtColumnIndex,
 } from "@/components/indicators/metric-combinations-table-utils";
+import { pickLocale } from "@/lib/i18n";
 
 export default function StatPage() {
   const params = useParams();
@@ -236,6 +238,27 @@ export default function StatPage() {
               </div>
             </div>
             <div className="flex">
+              <Button
+                variant="ghost"
+                className="flex items-center gap-1"
+                disabled={!selectedMetricId}
+                onClick={() => {
+                  if (selectedMetricId)
+                    void downloadMetricCombinationsPDF(
+                      selectedMetricId,
+                      metric
+                        ? (pickLocale(metric.title, activeLang) ?? selectedMetricId)
+                        : selectedMetricId,
+                      activeLang
+                    );
+                }}
+              >
+                <Image src={"/icons/download.svg"} alt="download" width={20} height={20} />
+                <p className="text-link text-[12px] font-medium">
+                  {t("stat.download_pdf", "Ներբեռնել")}
+                </p>
+              </Button>
+
               <Button
                 variant="ghost"
                 className="flex items-center gap-1"

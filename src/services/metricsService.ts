@@ -274,6 +274,31 @@ export async function downloadMetricCombinationsCSV(metricId: string): Promise<v
   URL.revokeObjectURL(url);
 }
 
+export async function downloadMetricCombinationsPDF(
+  metricId: string,
+  metricName: string,
+  locale: string
+): Promise<void> {
+  const blob = await apiClient<any>(
+    `/api/metrics/${metricId}/pdf?locale=${locale}&url=${window.location.href}`,
+    {
+      parseAsBlob: true,
+    }
+  );
+
+  const url = window.URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", `${metricName}.pdf`);
+
+  document.body.appendChild(link);
+  link.click();
+
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 export async function recordMetricView(metricId: string): Promise<void> {
   await apiClient<unknown>(`/api/metrics/${encodeURIComponent(metricId)}/view`, {
     method: "POST",
