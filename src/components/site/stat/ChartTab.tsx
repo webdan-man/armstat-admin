@@ -43,7 +43,6 @@ export default function ChartTab({
         </div>
       ) : (
         <>
-          azffdfdfddfdaza
           <Chart combinations={combinations} />
         </>
       )}
