@@ -133,29 +133,19 @@ export default function StatPage() {
   const metricUnit = metric?.unit?.[activeLang];
 
   const sexTotals = useMemo(() => {
-    const male = Number(metric?.total?.male ?? 0);
-    const female = Number(metric?.total?.female ?? 0);
-
     const hasTotals =
-      male + female > 0 || metric?.total?.femalePercentage || metric?.total?.malePercentage;
+      !!metric?.total?.femalePercentage?.length || !!metric?.total?.malePercentage?.length;
 
     return {
       hasTotals,
-      male: {
-        count: formatIntegerWithCommas(male),
-        percent: metric?.total?.malePercentage,
-      },
-      female: {
-        count: formatIntegerWithCommas(female),
-        percent: metric?.total?.femalePercentage,
-      },
+      male: metric?.total?.malePercentage,
+      female: metric?.total?.femalePercentage,
     };
   }, [metric?.total]);
 
   const sexTotalsPlaceholder = (
     <>
       <p className="text-fontSizeXS font-semibold text-[rgba(56,56,56,1)]">-</p>
-      <p className="text-[11px] text-[rgba(110,127,136,1)]">-</p>
     </>
   );
 
@@ -198,16 +188,16 @@ export default function StatPage() {
                   {isMetricLoading ? (
                     <>
                       <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-3 w-10" />
+                      {/*<Skeleton className="h-3 w-10" />*/}
                     </>
                   ) : sexTotals.hasTotals ? (
                     <>
                       <p className="text-fontSizeXS font-semibold text-[rgba(56,56,56,1)]">
-                        {sexTotals.male.count}
+                        {sexTotals.male}
                       </p>
-                      <p className="text-[11px] text-[rgba(110,127,136,1)]">
-                        {sexTotals.male.percent}
-                      </p>
+                      {/*<p className="text-[11px] text-[rgba(110,127,136,1)]">*/}
+                      {/*  {sexTotals.male.percent}*/}
+                      {/*</p>*/}
                     </>
                   ) : (
                     sexTotalsPlaceholder
@@ -220,16 +210,16 @@ export default function StatPage() {
                   {isMetricLoading ? (
                     <>
                       <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-3 w-10" />
+                      {/*<Skeleton className="h-3 w-10" />*/}
                     </>
                   ) : sexTotals.hasTotals ? (
                     <>
                       <p className="text-fontSizeXS font-semibold text-[rgba(56,56,56,1)]">
-                        {sexTotals.female.count}
+                        {sexTotals.female}
                       </p>
-                      <p className="text-[11px] text-[rgba(110,127,136,1)]">
-                        {sexTotals.female.percent}
-                      </p>
+                      {/*<p className="text-[11px] text-[rgba(110,127,136,1)]">*/}
+                      {/*  {sexTotals.female.percent}*/}
+                      {/*</p>*/}
                     </>
                   ) : (
                     sexTotalsPlaceholder

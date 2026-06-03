@@ -293,21 +293,21 @@ const ChartDataTabs = ({
           <div className="flex items-center gap-3">
             <Image src="/icons/man.svg" width={17} height={27} alt="man" />
             <div className="flex items-center gap-1.5">
-              <span className="text-sm font-medium text-[#575757]">#</span>
-              <FormField
-                control={control}
-                name="total.male"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input className={cn(fieldBorder, "w-32")} type="text" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/*<span className="text-sm font-medium text-[#575757]">#</span>*/}
+              {/*<FormField*/}
+              {/*  control={control}*/}
+              {/*  name="total.male"*/}
+              {/*  render={({ field }) => (*/}
+              {/*    <FormItem>*/}
+              {/*      <FormControl>*/}
+              {/*        <Input className={cn(fieldBorder, "w-32")} type="text" {...field} />*/}
+              {/*      </FormControl>*/}
+              {/*      <FormMessage />*/}
+              {/*    </FormItem>*/}
+              {/*  )}*/}
+              {/*/>*/}
 
-              <span className="text-sm font-medium text-[#575757]">%</span>
+              {/*<span className="text-sm font-medium text-[#575757]">%</span>*/}
               <FormField
                 control={control}
                 name="total.malePercentage"
@@ -325,21 +325,21 @@ const ChartDataTabs = ({
           <div className="flex items-center gap-3">
             <Image src="/icons/women.svg" width={17} height={27} alt="women" />
             <div className="flex items-center gap-1.5">
-              <span className="text-sm font-medium text-[#575757]">#</span>
-              <FormField
-                control={control}
-                name="total.female"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input className={cn(fieldBorder, "w-32")} type="text" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/*<span className="text-sm font-medium text-[#575757]">#</span>*/}
+              {/*<FormField*/}
+              {/*  control={control}*/}
+              {/*  name="total.female"*/}
+              {/*  render={({ field }) => (*/}
+              {/*    <FormItem>*/}
+              {/*      <FormControl>*/}
+              {/*        <Input className={cn(fieldBorder, "w-32")} type="text" {...field} />*/}
+              {/*      </FormControl>*/}
+              {/*      <FormMessage />*/}
+              {/*    </FormItem>*/}
+              {/*  )}*/}
+              {/*/>*/}
 
-              <span className="text-sm font-medium text-[#575757]">%</span>
+              {/*<span className="text-sm font-medium text-[#575757]">%</span>*/}
               <FormField
                 control={control}
                 name="total.femalePercentage"

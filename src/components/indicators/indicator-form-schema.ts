@@ -24,8 +24,8 @@ const chartBlock = z.object({
 });
 
 const metricTotalFormBlock = z.object({
-  male: z.string(),
-  female: z.string(),
+  male: z.string().optional(),
+  female: z.string().optional(),
   malePercentage: z.string(),
   femalePercentage: z.string(),
 });
@@ -39,8 +39,8 @@ export function parseMetricTotalForApi(total: z.infer<typeof metricTotalFormBloc
     return Number.isFinite(n) ? n : 0;
   };
   return {
-    male: toNumber(total.male),
-    female: toNumber(total.female),
+    male: 0,
+    female: 0,
     malePercentage: total.malePercentage.trim(),
     femalePercentage: total.femalePercentage.trim(),
   };
