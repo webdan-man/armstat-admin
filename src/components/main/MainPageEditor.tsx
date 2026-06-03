@@ -31,12 +31,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
   fetchHomePage,
+  updateActiveLocales,
   updateHomePageAdvertising,
   updateHomePageFeaturedBlocks,
   updateHomePageHero,
   updateHomePageNews,
   updateHomePageUsefulLinks,
 } from "@/services/mainPageService";
+import { Checkbox } from "@/components/ui/checkbox";
 import { fetchNews } from "@/services/newsService";
 import { fetchSections } from "@/services/sectionsService";
 import type { Section } from "@/types/section";
@@ -508,13 +510,19 @@ function writeLocalizedByLang(
   return ensureHyLocalized(next);
 }
 
+const ALL_LOCALES = ["hy", "en", "ru"] as const;
+type LocaleCode = (typeof ALL_LOCALES)[number];
+const LOCALE_LABELS: Record<LocaleCode, string> = { hy: "Հայերեն", en: "English", ru: "Русский" };
+
 export function MainPageEditor() {
   const initialJson = useRef(JSON.stringify(EMPTY_MAIN_PAGE));
+  const initialActiveLocalesRef = useRef<string[]>([]);
   const [heroLang, setHeroLang] = useState<MainLangCode>("hy");
   const [advertisingLang, setAdvertisingLang] = useState<MainLangCode>("hy");
   const [usefulLinksLang, setUsefulLinksLang] = useState<MainLangCode>("hy");
   const [blockLangById, setBlockLangById] = useState<Record<string, MainLangCode>>({});
   const [availableSections, setAvailableSections] = useState<Section[]>([]);
+  const [activeLocales, setActiveLocales] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [heroImageFile, setHeroImageFile] = useState<File | string | null>(null);
   const [advertisingImageFile, setAdvertisingImageFile] = useState<File | string | null>(null);
@@ -535,7 +543,10 @@ export function MainPageEditor() {
     },
     mode: "onSubmit",
   });
-  const dirty = JSON.stringify(data) !== initialJson.current;
+  const dirty =
+    JSON.stringify(data) !== initialJson.current ||
+    JSON.stringify([...activeLocales].sort()) !==
+      JSON.stringify([...initialActiveLocalesRef.current].sort());
 
   function getBlockLang(blockId: string): MainLangCode {
     return blockLangById[blockId] ?? "hy";
@@ -571,6 +582,9 @@ export function MainPageEditor() {
         setUsefulLinkFiles(mapped.usefulLinks.links.map((l) => l.image || null));
         setData(mapped);
         setAvailableSections(sectionsResponse);
+        const locales = homeResponse.activeLocales ?? [...ALL_LOCALES];
+        initialActiveLocalesRef.current = locales;
+        setActiveLocales(locales);
         form.reset({
           heroTitle: mapped.heroTitle,
           heroShortDescription: mapped.heroShortDescription,
@@ -654,6 +668,8 @@ export function MainPageEditor() {
       await updateHomePageAdvertising(toAdvertisingPayload());
       await updateHomePageNews(toNewsPayload());
       await updateHomePageUsefulLinks(toUsefulLinksPayload());
+      await updateActiveLocales(activeLocales);
+      initialActiveLocalesRef.current = activeLocales;
       initialJson.current = JSON.stringify(data);
       setHeroImageFile(data.heroImage || null);
       setAdvertisingImageFile(data.advertising.image || null);
@@ -990,6 +1006,26 @@ export function MainPageEditor() {
                 />
               ))}
             </div>
+          </div>
+        </ContentCard>
+
+        <ContentCard>
+          <h2 className="mb-4 text-[14px] font-medium text-[#2c2c2c]">Ակտիվ լեզուներ</h2>
+          <div className="flex flex-col gap-3">
+            {ALL_LOCALES.map((code) => (
+              <label key={code} className="flex cursor-pointer items-center gap-3">
+                <Checkbox
+                  checked={activeLocales.includes(code)}
+                  onCheckedChange={(checked) =>
+                    setActiveLocales((prev) =>
+                      checked ? [...prev, code] : prev.filter((l) => l !== code)
+                    )
+                  }
+                  disabled={activeLocales.length === 1 && activeLocales.includes(code)}
+                />
+                <span className="text-[14px] text-[#2c2c2c]">{LOCALE_LABELS[code]}</span>
+              </label>
+            ))}
           </div>
         </ContentCard>
       </form>

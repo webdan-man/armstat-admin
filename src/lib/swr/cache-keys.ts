@@ -24,4 +24,5 @@ export const swrKeys = {
   /** Base prefix for paginated news list (used by useSWRInfinite). */
   newsList: ["news", "list"] as const,
   contentEntries: "contentEntries",
+  homePage: "homePage",
 } as const;

@@ -9,13 +9,16 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import useSWR from "swr";
 import { useLang } from "@/providers/LangProvider";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useSiteNavItems } from "@/hooks/useSiteNavItems";
 import type { ContentLangCode } from "@/types/content-entries";
 import { MarkdownText } from "@/components/site/MarkdownText";
+import { swrKeys } from "@/lib/swr/cache-keys";
+import { fetchHomePage } from "@/services/mainPageService";
 
 const languages: { labelKey: string; code: ContentLangCode; fallback: string }[] = [
   { labelKey: "language.hy", code: "hy", fallback: "Armenian" },
@@ -28,6 +31,18 @@ export default function Header() {
   const { t } = useTranslation();
   const items = useSiteNavItems();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const { data: homePageData } = useSWR(swrKeys.homePage, fetchHomePage);
+  const visibleLanguages = homePageData?.activeLocales
+    ? languages.filter((l) => homePageData.activeLocales!.includes(l.code))
+    : languages;
+
+  useEffect(() => {
+    if (!homePageData?.activeLocales || visibleLanguages.length === 0) return;
+    if (!visibleLanguages.find((l) => l.code === activeLang)) {
+      setActiveLang(visibleLanguages[0].code);
+    }
+  }, [homePageData, activeLang, visibleLanguages, setActiveLang]);
 
   const pathname = usePathname();
   const activeLangLabel = languages.find((l) => l.code === activeLang);
@@ -110,7 +125,7 @@ export default function Header() {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              {languages.map((lang) => (
+              {visibleLanguages.map((lang) => (
                 <DropdownMenuItem
                   key={lang.code}
                   onClick={() => setActiveLang(lang.code)}
@@ -150,7 +165,7 @@ export default function Header() {
         {ready && (
           <div className="mt-8 border-t border-white/20 pt-6">
             <ul className="flex flex-col gap-4">
-              {languages.map((lang) => (
+              {visibleLanguages.map((lang) => (
                 <li key={lang.code}>
                   <button
                     type="button"

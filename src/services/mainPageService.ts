@@ -122,3 +122,10 @@ export async function updateHomePageNews(payload: UpdateHomePageNewsPayload) {
     body: JSON.stringify(payload),
   });
 }
+
+export async function updateActiveLocales(activeLocales: string[]): Promise<void> {
+  return apiClient<void>("/api/home-page/active-locales", {
+    method: "PUT",
+    body: JSON.stringify({ activeLocales }),
+  });
+}

@@ -156,6 +156,7 @@ export type HomePageApiResponse = {
   newsIds: string[];
   newsItems: HomePageNewsItem[];
   usefulLinks: HomePageUsefulLink[];
+  activeLocales?: string[];
   createdAt: string;
   updatedAt: string;
 };
