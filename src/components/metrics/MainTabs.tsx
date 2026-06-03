@@ -248,10 +248,18 @@ function TopicIdSelect() {
 const triggerClass =
   "h-8 min-w-[64px] rounded-lg px-2 py-0 text-[13px] font-normal text-black hover:bg-white/50 group-data-[variant=default]/tabs-list:data-[state=active]:bg-white group-data-[variant=default]/tabs-list:data-[state=active]:border-b-0 data-[state=active]:shadow-[0px_4px_4px_0px_rgba(0,0,0,0.05)]";
 
-const MainTabs = ({ className }: { className?: string }) => {
+const MainTabs = ({
+  className,
+  lang,
+  onLangChange,
+}: {
+  className?: string;
+  lang: string;
+  onLangChange: (v: string) => void;
+}) => {
   return (
     <div className={cn("flex w-full flex-col gap-5", className)}>
-      <Tabs defaultValue="hy" className="w-full gap-5">
+      <Tabs value={lang} onValueChange={onLangChange} className="w-full gap-5">
         <TabsList className="h-9 gap-0 rounded-[9px] bg-[#e6e7eb] p-0.5">
           <TabsTrigger value="hy" className={triggerClass}>
             HY

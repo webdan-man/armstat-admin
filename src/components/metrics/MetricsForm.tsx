@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { useForm, useFormState } from "react-hook-form";
+import { useForm, useFormState, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import useSWR, { useSWRConfig } from "swr";
 import { toast } from "sonner";
@@ -75,9 +75,27 @@ export default function MetricsForm() {
   const { setValue, getValues, reset } = form;
 
   const { isDirty, isSubmitting } = useFormState({ control: form.control });
+  const [lang, setLang] = useState<"hy" | "en" | "ru">("hy");
   const [csvUploading, setCsvUploading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const onInvalid = (errors: FieldErrors<MetricFormValues>) => {
+    const locales = ["hy", "en", "ru"] as const;
+    for (const locale of locales) {
+      if (
+        errors.title?.[locale] ||
+        errors.description?.[locale] ||
+        errors.link?.[locale] ||
+        errors.unit?.[locale] ||
+        errors.metadata?.[locale]?.body ||
+        errors.metadata?.[locale]?.sourceUrl
+      ) {
+        setLang(locale);
+        return;
+      }
+    }
+  };
 
   useEffect(() => {
     if (!metricId || !loadedMetricData || loadedMetricData.metric._id !== metricId) {
@@ -213,7 +231,7 @@ export default function MetricsForm() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 px-8 pt-6 pb-8">
-            <MainTabs />
+            <MainTabs lang={lang} onLangChange={setLang} />
           </CardContent>
         </Card>
 
@@ -277,7 +295,7 @@ export default function MetricsForm() {
             <CardTitle className="text-base font-medium text-[#2c2c2c]">Մետատվյալներ</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 px-8 pt-6 pb-8">
-            <MetadataTabs />
+            <MetadataTabs lang={lang} onLangChange={setLang} />
           </CardContent>
         </Card>
 
@@ -295,7 +313,7 @@ export default function MetricsForm() {
             type="button"
             disabled={!isDirty || isSubmitting}
             className="h-11 min-w-[132px] rounded-lg border-transparent bg-[#282828] text-white hover:bg-[#282828]/90 disabled:opacity-50"
-            onClick={() => void form.handleSubmit(submitSave, (errors) => console.log(errors))()}
+            onClick={() => void form.handleSubmit(submitSave, onInvalid)()}
           >
             Պահպանել
           </Button>
@@ -303,7 +321,7 @@ export default function MetricsForm() {
             type="button"
             disabled
             className="h-11 min-w-[132px] rounded-lg border-transparent bg-[#004d99] text-white hover:bg-[#004d99]/90 disabled:opacity-50"
-            onClick={() => void form.handleSubmit(submitPublish)()}
+            onClick={() => void form.handleSubmit(submitPublish, onInvalid)()}
           >
             Հաստատել
           </Button>
