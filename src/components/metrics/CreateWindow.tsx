@@ -42,17 +42,17 @@ import {
   getLibraryFromAttributeById,
 } from "@/services/attributeService";
 import { swrKeys } from "@/lib/swr/cache-keys";
-import { useIndicatorFeatures } from "@/components/indicators/indicator-features-context";
+import { useMetricFeatures } from "@/components/metrics/metric-features-context";
 import {
   buildLibraryOptions,
   libraryHasTwoLevels,
   sameValueIds,
-} from "@/components/indicators/attribute-library-helpers";
+} from "@/components/metrics/attribute-library-helpers";
 import {
-  emptyIndicatorFeatureRow,
-  indicatorFeaturesBatchFormSchema,
-  type IndicatorFeaturesBatchFormValues,
-} from "@/components/indicators/indicator-feature-form-schema";
+  emptyMetricFeatureRow,
+  metricFeaturesBatchFormSchema,
+  type MetricFeaturesBatchFormValues,
+} from "@/components/metrics/metric-feature-form-schema";
 import type { Attribute } from "@/types/attribute";
 import { cn } from "@/lib/utils";
 import { LangSwitcher } from "@/components/main/LangSwitcher";
@@ -100,7 +100,7 @@ function buildLibraryValuesDisplay(
 }
 
 function buildFeaturePayload(
-  row: IndicatorFeaturesBatchFormValues["rows"][number],
+  row: MetricFeaturesBatchFormValues["rows"][number],
   attribute: Attribute | null | undefined
 ) {
   const libraryDisplay = buildLibraryValuesDisplay(attribute, row.valueIds);
@@ -130,7 +130,7 @@ export default function CreateWindow() {
     addFeature,
     updateFeature,
     removeFeature,
-  } = useIndicatorFeatures();
+  } = useMetricFeatures();
 
   const { data: attributesCategories = [] } = useSWR(
     swrKeys.attributesCategories,
@@ -140,10 +140,10 @@ export default function CreateWindow() {
   const editing = editingId ? features.find((f) => f.id === editingId) : undefined;
   const isEdit = Boolean(editingId && editing);
 
-  const form = useForm<IndicatorFeaturesBatchFormValues>({
-    resolver: zodResolver(indicatorFeaturesBatchFormSchema),
+  const form = useForm<MetricFeaturesBatchFormValues>({
+    resolver: zodResolver(metricFeaturesBatchFormSchema),
     defaultValues: {
-      rows: [emptyIndicatorFeatureRow()],
+      rows: [emptyMetricFeatureRow()],
     },
   });
 
@@ -224,7 +224,7 @@ export default function CreateWindow() {
       });
     } else {
       reset({
-        rows: [emptyIndicatorFeatureRow()],
+        rows: [emptyMetricFeatureRow()],
       });
     }
   }, [dialogOpen, editingId, editing, features, reset]);
@@ -300,11 +300,11 @@ export default function CreateWindow() {
   };
 
   const handleAppendRow = () => {
-    append(emptyIndicatorFeatureRow());
+    append(emptyMetricFeatureRow());
     setOpenLastCollapsibleOnAppend(true);
   };
 
-  const validateRows = (rows: IndicatorFeaturesBatchFormValues["rows"]): boolean => {
+  const validateRows = (rows: MetricFeaturesBatchFormValues["rows"]): boolean => {
     for (const row of rows) {
       const selectedAttribute = attributeByKey[row.libraryOption];
       const twoLevels = libraryHasTwoLevels(selectedAttribute);
@@ -328,7 +328,7 @@ export default function CreateWindow() {
     return true;
   };
 
-  const upsertFeatureRows = (row: IndicatorFeaturesBatchFormValues["rows"][number]) => {
+  const upsertFeatureRows = (row: MetricFeaturesBatchFormValues["rows"][number]) => {
     const selectedAttribute = attributeByKey[row.libraryOption];
     const payload = buildFeaturePayload(row, selectedAttribute);
     const twoLevels = libraryHasTwoLevels(selectedAttribute);
@@ -342,7 +342,7 @@ export default function CreateWindow() {
     addFeature({ ...payload, level: "primary" });
   };
 
-  const onSubmit = (values: IndicatorFeaturesBatchFormValues) => {
+  const onSubmit = (values: MetricFeaturesBatchFormValues) => {
     if (!attributes?.length) return;
     if (!validateRows(values.rows)) {
       toast.error(VALIDATION_ERROR_MESSAGE);
@@ -388,7 +388,7 @@ export default function CreateWindow() {
     setDialogOpen(false);
   };
 
-  const onInvalid: SubmitErrorHandler<IndicatorFeaturesBatchFormValues> = (errors) => {
+  const onInvalid: SubmitErrorHandler<MetricFeaturesBatchFormValues> = (errors) => {
     toast.error(VALIDATION_ERROR_MESSAGE);
     const rowErrors = errors.rows;
     if (!Array.isArray(rowErrors) || rowErrors.length === 0) return;

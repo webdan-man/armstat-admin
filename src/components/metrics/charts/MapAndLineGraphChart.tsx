@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useCallback, useMemo, useState } from "react";
-import LineGraphChart from "@/components/indicators/charts/LineGraphChart";
-import ArmeniaProvincesMap from "@/components/indicators/charts/Map/MapChart";
+import LineGraphChart from "@/components/metrics/charts/LineGraphChart";
+import ArmeniaProvincesMap from "@/components/metrics/charts/Map/MapChart";
 import type { MetricCombination } from "@/types/metric";
 import { aggregateByAttributeTitle } from "@/utils/chart/aggregate-by-attribute-title";
 import {

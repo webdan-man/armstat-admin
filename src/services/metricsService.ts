@@ -1,7 +1,7 @@
 import apiClient from "@/lib/api/api-client";
 import { defaultLocale, type Locale } from "@/lib/i18n";
-import type { IndicatorFormValues } from "@/components/indicators/indicator-form-schema";
-import { emptyIndicatorFormValues } from "@/components/indicators/indicator-form-schema";
+import type { MetricFormValues } from "@/components/metrics/metric-form-schema";
+import { emptyMetricFormValues } from "@/components/metrics/metric-form-schema";
 import {
   CreateMetricBody,
   MetricAttribute,
@@ -11,7 +11,7 @@ import {
   MetricSelectOption,
   UpdateMetricBody,
 } from "@/types/metric";
-import type { IndicatorFeature } from "@/types/indicator-feature";
+import type { MetricFeature } from "@/types/metric-feature";
 
 export async function createMetric(body: CreateMetricBody): Promise<MetricResponse> {
   const url = "/api/metrics";
@@ -56,8 +56,8 @@ function normalizeMetricAttributesFromApi(
   }));
 }
 
-function mapApiMetricToIndicatorForm(raw: MetricResponse): IndicatorFormValues {
-  const empty = emptyIndicatorFormValues();
+function mapApiMetricToMetricForm(raw: MetricResponse): MetricFormValues {
+  const empty = emptyMetricFormValues();
   const title = raw.title ?? {};
   const description = raw.description ?? {};
   const unit = raw.unit ?? {};
@@ -166,14 +166,14 @@ export async function fetchMetricsByTopicId(topicId: string): Promise<MetricSele
 
 export async function fetchMetricForForm(metricId: string): Promise<{
   metric: MetricResponse;
-  form: IndicatorFormValues;
-  features: IndicatorFeature[];
+  form: MetricFormValues;
+  features: MetricFeature[];
 }> {
   const raw = await getMetricById(metricId);
 
   const result = {
     metric: raw,
-    form: mapApiMetricToIndicatorForm(raw),
+    form: mapApiMetricToMetricForm(raw),
     features: mapMetricAttributesToFeatures(raw.attributes ?? []),
   };
 
@@ -188,8 +188,8 @@ function hasSecondaryLabelContent(
   );
 }
 
-function mapMetricAttributesToFeatures(attributes: MetricAttributeFromApi[]): IndicatorFeature[] {
-  const features: IndicatorFeature[] = [];
+function mapMetricAttributesToFeatures(attributes: MetricAttributeFromApi[]): MetricFeature[] {
+  const features: MetricFeature[] = [];
 
   attributes.forEach((item, index) => {
     const label = {

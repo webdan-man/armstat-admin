@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { Loader2 } from "lucide-react";
-import { useIndicatorFilters } from "@/components/indicators/indicator-filters-context";
+import { useMetricFilters } from "@/components/metrics/metric-filters-context";
 import { getSectionLocalizedText } from "@/lib/section-localization";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { fetchMetricsByTopicId } from "@/services/metricsService";
@@ -40,12 +40,12 @@ export default function Filters() {
     isLoading,
     rootTopics,
     childTopics,
-    canSelectIndicator,
+    canSelectMetric,
     resolvedTopicId,
-  } = useIndicatorFilters();
-  const controlsDisabled = isLoading || !canSelectIndicator;
+  } = useMetricFilters();
+  const controlsDisabled = false;
 
-  const { data: indicators = [], isLoading: isIndicatorsLoading } = useSWR(
+  const { data: metrics = [], isLoading: isMetricsLoading } = useSWR(
     resolvedTopicId ? swrKeys.metricsByTopic(resolvedTopicId) : null,
     () => fetchMetricsByTopicId(resolvedTopicId!)
   );
@@ -74,7 +74,7 @@ export default function Filters() {
                 section: val,
                 subgroup: "",
                 subSubgroup: "",
-                indicator: "",
+                metric: "",
               })
             }
           >
@@ -101,7 +101,7 @@ export default function Filters() {
                 ...prev,
                 subgroup: val,
                 subSubgroup: "",
-                indicator: "",
+                metric: "",
               }))
             }
           >
@@ -130,7 +130,7 @@ export default function Filters() {
                   setSelectedFilter((prev) => ({
                     ...prev,
                     subSubgroup: val,
-                    indicator: "",
+                    metric: "",
                   }))
                 }
               >
@@ -151,7 +151,7 @@ export default function Filters() {
               <Button
                 className="bg-destructive"
                 onClick={() =>
-                  setSelectedFilter((prev) => ({ ...prev, subSubgroup: "", indicator: "" }))
+                  setSelectedFilter((prev) => ({ ...prev, subSubgroup: "", metric: "" }))
                 }
               >
                 X
@@ -162,18 +162,18 @@ export default function Filters() {
       </div>
       <div className={"grid min-h-11 w-full grid-cols-[5fr_1fr] items-center gap-6"}>
         <div className="flex flex-col items-start">
-          {Boolean(selectedFilter.indicator) && <FilterChip>Ցուցանիշ</FilterChip>}
+          {Boolean(selectedFilter.metric) && <FilterChip>Ցուցանիշ</FilterChip>}
           <Select
             key={`${resolvedTopicId || "empty-topic"}-${formMode}`}
             disabled={controlsDisabled}
-            value={selectedFilter.indicator || undefined}
-            onValueChange={(val) => setSelectedFilter((prev) => ({ ...prev, indicator: val }))}
+            value={selectedFilter.metric || undefined}
+            onValueChange={(val) => setSelectedFilter((prev) => ({ ...prev, metric: val }))}
           >
             <SelectTrigger className={selectTriggerClass}>
               <SelectValue placeholder="Ցուցանիշ" />
             </SelectTrigger>
             <SelectContent>
-              {indicators.map((option) => {
+              {metrics.map((option) => {
                 let formatted = null;
 
                 if (option.updatedAt) {
@@ -199,7 +199,7 @@ export default function Filters() {
                   </SelectItem>
                 );
               })}
-              {!isIndicatorsLoading && indicators.length === 0 && (
+              {!isMetricsLoading && metrics.length === 0 && (
                 <SelectItem value="__empty" disabled>
                   Ցուցանիշներ չկան
                 </SelectItem>
@@ -210,8 +210,7 @@ export default function Filters() {
         <button
           type="button"
           onClick={openCreateForm}
-          disabled={controlsDisabled}
-          className={`flex cursor-pointer items-center gap-3.25 self-center ${controlsDisabled ? "opacity-50" : ""}`}
+          className={`flex cursor-pointer items-center gap-3.25 self-center`}
         >
           <Image src="/add.svg" width={24} height={24} alt={"add"} />
           <span className="text-[14px] leading-3.5 font-medium text-[rgba(39,81,153,1)]">

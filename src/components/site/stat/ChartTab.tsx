@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import Chart from "@/components/indicators/charts/Chart";
+import Chart from "@/components/metrics/charts/Chart";
 import type { MetricCombination } from "@/types/metric";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MarkdownText } from "@/components/site/MarkdownText";

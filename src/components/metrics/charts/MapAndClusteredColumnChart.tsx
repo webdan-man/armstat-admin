@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useMemo } from "react";
-import ClusteredColumnChart from "@/components/indicators/charts/ClusteredColumnChart";
-import ArmeniaProvincesMap from "@/components/indicators/charts/Map/MapChart";
+import ClusteredColumnChart from "@/components/metrics/charts/ClusteredColumnChart";
+import ArmeniaProvincesMap from "@/components/metrics/charts/Map/MapChart";
 import type { MetricCombination } from "@/types/metric";
 import { useProvinceHoverSelection } from "@/hooks/useProvinceHoverSelection";
 import { filterCombinationsByProvinceMapId } from "@/utils/chart/map-combinations-for-armenia-provinces";

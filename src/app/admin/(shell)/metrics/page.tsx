@@ -1,17 +1,17 @@
 import React from "react";
-import { IndicatorFeaturesProvider } from "@/components/indicators/indicator-features-context";
-import { IndicatorFiltersProvider } from "@/components/indicators/indicator-filters-context";
+import { MetricFeaturesProvider } from "@/components/metrics/metric-features-context";
+import { MetricFiltersProvider } from "@/components/metrics/metric-filters-context";
 import { requirePermission } from "@/lib/require-permission";
-import IndicatorsContent from "@/app/admin/(shell)/metrics/page-content";
+import MetricsContent from "@/app/admin/(shell)/metrics/page-content";
 
-export default async function IndicatorsPage() {
+export default async function MetricsPage() {
   await requirePermission("metric");
 
   return (
-    <IndicatorFiltersProvider>
-      <IndicatorFeaturesProvider>
-        <IndicatorsContent />
-      </IndicatorFeaturesProvider>
-    </IndicatorFiltersProvider>
+    <MetricFiltersProvider>
+      <MetricFeaturesProvider>
+        <MetricsContent />
+      </MetricFeaturesProvider>
+    </MetricFiltersProvider>
   );
 }

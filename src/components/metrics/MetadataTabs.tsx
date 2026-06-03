@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
-import type { IndicatorFormValues } from "@/components/indicators/indicator-form-schema";
+import type { MetricFormValues } from "@/components/metrics/metric-form-schema";
 
 const fieldBorder =
   "h-9 rounded-[8.5px] border-[rgba(230,231,235,1)] bg-white text-sm text-[#2c2c2c] md:text-sm";
@@ -18,7 +18,7 @@ const fieldBorder =
 const locales = ["en", "hy", "ru"] as const;
 
 function MetadataLocaleContent({ lang }: { lang: (typeof locales)[number] }) {
-  const { control } = useFormContext<IndicatorFormValues>();
+  const { control } = useFormContext<MetricFormValues>();
 
   return (
     <TabsContent className="flex w-full flex-col gap-9.25" value={lang}>

@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useMemo } from "react";
-import ColumnWithRotatedLabelsChart from "@/components/indicators/charts/ColumnWithRotatedLabelsChart";
-import ArmeniaProvincesMap from "@/components/indicators/charts/Map/MapChart";
+import SemiCircleChart from "@/components/metrics/charts/SemiCircleChart";
+import ArmeniaProvincesMap from "@/components/metrics/charts/Map/MapChart";
 import type { MetricCombination } from "@/types/metric";
 import { aggregateByAttributeTitle } from "@/utils/chart/aggregate-by-attribute-title";
 import { useProvinceHoverSelection } from "@/hooks/useProvinceHoverSelection";
@@ -16,45 +16,33 @@ interface MapDataItem {
   value: number;
 }
 
-function getBreakdownRowLabel(combinations: MetricCombination[], attributeId: string): string {
-  for (const item of combinations) {
-    const entry = (item.row ?? []).find((r) => r.attributeId === attributeId);
-    if (entry?.label) return entry.label;
-  }
-  return "Հատկանիշ";
-}
-
-interface MapAndColumnWithRotatedLabelsChartProps {
+interface MapAndSemiPieChartProps {
   combinations: MetricCombination[];
   data: {
     mapData: MapDataItem[];
     provinceAttributeId: string;
-    breakdownAttributeId: string;
+    genderAttributeId: string;
   };
 }
 
-const MapAndColumnWithRotatedLabelsChart = ({
-  combinations,
-  data,
-}: MapAndColumnWithRotatedLabelsChartProps) => {
-  const { mapData = [], provinceAttributeId, breakdownAttributeId } = data;
+const MapAndSemiPieChart = ({ combinations, data }: MapAndSemiPieChartProps) => {
+  const { mapData = [], provinceAttributeId, genderAttributeId } = data;
   const { activeProvinceMapId, onPolygonHover, onPolygonSelect } = useProvinceHoverSelection();
 
-  const columnData = useMemo(() => {
+  const pieData = useMemo(() => {
     const scoped = filterCombinationsByProvinceMapId(
       combinations,
       provinceAttributeId,
       activeProvinceMapId
     );
-    const label = getBreakdownRowLabel(scoped, breakdownAttributeId);
-    return Array.from(aggregateByAttributeTitle(scoped, breakdownAttributeId).entries()).map(
-      ([xAxisKey, value]) => ({
+
+    return Array.from(aggregateByAttributeTitle(scoped, genderAttributeId).entries()).map(
+      ([category, value]) => ({
         value,
-        xAxisKey,
-        label,
+        category,
       })
     );
-  }, [combinations, provinceAttributeId, breakdownAttributeId, activeProvinceMapId]);
+  }, [combinations, provinceAttributeId, genderAttributeId, activeProvinceMapId]);
 
   const chartTitle = useMemo(() => {
     if (!activeProvinceMapId) return "Հայաստան";
@@ -74,10 +62,10 @@ const MapAndColumnWithRotatedLabelsChart = ({
         />
       </div>
       <div>
-        <ColumnWithRotatedLabelsChart data={columnData} chartTitle={chartTitle} />
+        <SemiCircleChart data={pieData} chartTitle={chartTitle} />
       </div>
     </div>
   );
 };
 
-export default MapAndColumnWithRotatedLabelsChart;
+export default MapAndSemiPieChart;

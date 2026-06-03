@@ -1,26 +1,26 @@
 "use client";
 
-import SemiCircleChart from "@/components/indicators/charts/SemiCircleChart";
+import SemiCircleChart from "@/components/metrics/charts/SemiCircleChart";
 import type { MetricCombination } from "@/types/metric";
 import { useChart } from "@/hooks/useChart";
-import LineGraphChart from "@/components/indicators/charts/LineGraphChart";
-import ArmeniaProvincesMap from "@/components/indicators/charts/Map/MapChart";
-import ColumnWithRotatedLabelsChart from "@/components/indicators/charts/ColumnWithRotatedLabelsChart";
-import StackedAreaChart from "@/components/indicators/charts/StackedAreaChart";
-import StackedColumnChart from "@/components/indicators/charts/StackedColumnChart";
-import StackedBartWithNegativeValuesChart from "@/components/indicators/charts/StackedBartWithNegativeValuesChart";
-import HistoricalPopulationPyramidChart from "@/components/indicators/charts/HistoricalPopulationPyramidChart";
-import ClusteredColumnChart from "@/components/indicators/charts/ClusteredColumnChart";
-import StackedAndClusteredColumnChart from "@/components/indicators/charts/StackedAndClusteredColumnChart";
-import MapAndSemiPieChart from "@/components/indicators/charts/MapAndSemiPieChart";
-import MapAndLineGraphChart from "@/components/indicators/charts/MapAndLineGraphChart";
-import MapAndColumnWithRotatedLabelsChart from "@/components/indicators/charts/MapAndColumnWithRotatedLabelsChart";
-import MapAndStackedAreaChart from "@/components/indicators/charts/MapAndStackedAreaChart";
-import MapAndStackedColumnChart from "@/components/indicators/charts/MapAndStackedColumnChart";
-import MapAndStackedBarWithNegativeValuesChart from "@/components/indicators/charts/MapAndStackedBarWithNegativeValuesChart";
-import MapAndClusteredColumnChart from "@/components/indicators/charts/MapAndClusteredColumnChart";
-import GroupedStackedColumnChart from "@/components/indicators/charts/GroupedStackedColumnChart";
-import MapAndGroupedStackedColumnChart from "@/components/indicators/charts/MapAndGroupedStackedColumnChart";
+import LineGraphChart from "@/components/metrics/charts/LineGraphChart";
+import ArmeniaProvincesMap from "@/components/metrics/charts/Map/MapChart";
+import ColumnWithRotatedLabelsChart from "@/components/metrics/charts/ColumnWithRotatedLabelsChart";
+import StackedAreaChart from "@/components/metrics/charts/StackedAreaChart";
+import StackedColumnChart from "@/components/metrics/charts/StackedColumnChart";
+import StackedBartWithNegativeValuesChart from "@/components/metrics/charts/StackedBartWithNegativeValuesChart";
+import HistoricalPopulationPyramidChart from "@/components/metrics/charts/HistoricalPopulationPyramidChart";
+import ClusteredColumnChart from "@/components/metrics/charts/ClusteredColumnChart";
+import StackedAndClusteredColumnChart from "@/components/metrics/charts/StackedAndClusteredColumnChart";
+import MapAndSemiPieChart from "@/components/metrics/charts/MapAndSemiPieChart";
+import MapAndLineGraphChart from "@/components/metrics/charts/MapAndLineGraphChart";
+import MapAndColumnWithRotatedLabelsChart from "@/components/metrics/charts/MapAndColumnWithRotatedLabelsChart";
+import MapAndStackedAreaChart from "@/components/metrics/charts/MapAndStackedAreaChart";
+import MapAndStackedColumnChart from "@/components/metrics/charts/MapAndStackedColumnChart";
+import MapAndStackedBarWithNegativeValuesChart from "@/components/metrics/charts/MapAndStackedBarWithNegativeValuesChart";
+import MapAndClusteredColumnChart from "@/components/metrics/charts/MapAndClusteredColumnChart";
+import GroupedStackedColumnChart from "@/components/metrics/charts/GroupedStackedColumnChart";
+import MapAndGroupedStackedColumnChart from "@/components/metrics/charts/MapAndGroupedStackedColumnChart";
 
 interface ChartProps {
   combinations?: MetricCombination[];

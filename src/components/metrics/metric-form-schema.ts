@@ -6,7 +6,7 @@ import type {
   MetricTotal,
   UpdateMetricBody,
 } from "@/types/metric";
-import type { IndicatorFeature } from "@/types/indicator-feature";
+import type { MetricFeature } from "@/types/metric-feature";
 
 const perLangStrings = z.object({
   en: z.string(),
@@ -54,7 +54,7 @@ const trimmedNonEmpty = (message: string) =>
 
 const trimmedString = z.string().transform((s) => s.trim());
 
-export const indicatorFormSchema = z.object({
+export const metricFormSchema = z.object({
   topicId: z.string(),
   // UI-only: remembers the chosen section while no topic is selected yet. Not sent to the API.
   sectionId: z.string(),
@@ -89,7 +89,7 @@ export const indicatorFormSchema = z.object({
   ),
 });
 
-export type IndicatorFormValues = z.infer<typeof indicatorFormSchema>;
+export type MetricFormValues = z.infer<typeof metricFormSchema>;
 
 function emptyPerLangStrings(): z.infer<typeof perLangStrings> {
   return { en: "", hy: "", ru: "" };
@@ -102,7 +102,7 @@ function emptyMetadata(): z.infer<typeof metadataBlock> {
   };
 }
 
-export function emptyIndicatorFormValues(): IndicatorFormValues {
+export function emptyMetricFormValues(): MetricFormValues {
   return {
     topicId: "",
     sectionId: "",
@@ -124,14 +124,14 @@ export function emptyIndicatorFormValues(): IndicatorFormValues {
 }
 
 /** Мок-дані при виборі індикатора у фільтрах (до появи API). */
-export function mockIndicatorFormValues(indicatorId: string): IndicatorFormValues {
-  const n = Number.parseInt(indicatorId, 10);
-  const suffix = Number.isNaN(n) ? indicatorId : String(n);
-  const base = emptyIndicatorFormValues();
+export function mockMetricFormValues(metricId: string): MetricFormValues {
+  const n = Number.parseInt(metricId, 10);
+  const suffix = Number.isNaN(n) ? metricId : String(n);
+  const base = emptyMetricFormValues();
   return {
     ...base,
     title: {
-      en: `Indicator ${suffix} (EN)`,
+      en: `Metric ${suffix} (EN)`,
       hy: `Ցուցանիշ ${suffix} (HY)`,
       ru: `Показатель ${suffix} (RU)`,
     },
@@ -153,7 +153,7 @@ export function mockIndicatorFormValues(indicatorId: string): IndicatorFormValue
     isCumulative: n % 2 === 0,
     metadata: {
       en: {
-        body: `Metadata body EN for indicator ${suffix}.`,
+        body: `Metadata body EN for metric ${suffix}.`,
         sourceUrl: `https://source.example/en/${suffix}`,
       },
       hy: {
@@ -177,9 +177,9 @@ export function mockIndicatorFormValues(indicatorId: string): IndicatorFormValue
 const localeKeys = ["en", "hy", "ru"] as const;
 
 /** Плоскі об'єкти для API (ключі мов — як очікує бекенд). */
-export function mapIndicatorFormToCreateMetric(
+export function mapMetricFormToCreateMetric(
   topicId: string,
-  values: IndicatorFormValues,
+  values: MetricFormValues,
   attributes: MetricAttribute[]
 ): CreateMetricBody {
   const metadata: Record<string, { body: string; sourceUrl: string }> = {};
@@ -215,8 +215,8 @@ export function mapIndicatorFormToCreateMetric(
   };
 }
 
-export function mapIndicatorFormToUpdateMetric(
-  values: IndicatorFormValues,
+export function mapMetricFormToUpdateMetric(
+  values: MetricFormValues,
   attributes: MetricAttribute[]
 ): UpdateMetricBody {
   const metadata: Record<string, { body: string; sourceUrl: string }> = {};
@@ -257,7 +257,7 @@ export function mapIndicatorFormToUpdateMetric(
   };
 }
 
-export function mapFeaturesToMetricAttributeKeys(features: IndicatorFeature[]): MetricAttribute[] {
+export function mapFeaturesToMetricAttributeKeys(features: MetricFeature[]): MetricAttribute[] {
   const seen = new Set<string>();
   const result: MetricAttribute[] = [];
 

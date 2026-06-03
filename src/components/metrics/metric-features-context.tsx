@@ -2,26 +2,26 @@
 
 import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 
-import { sameValueIds } from "@/components/indicators/attribute-library-helpers";
-import type { IndicatorFeature } from "@/types/indicator-feature";
+import { sameValueIds } from "@/components/metrics/attribute-library-helpers";
+import type { MetricFeature } from "@/types/metric-feature";
 
-type IndicatorFeaturesContextValue = {
-  features: IndicatorFeature[];
+type MetricFeaturesContextValue = {
+  features: MetricFeature[];
   dialogOpen: boolean;
   editingId: string | null;
   setDialogOpen: (open: boolean) => void;
   startCreate: () => void;
   startEdit: (id: string) => void;
-  addFeature: (input: Omit<IndicatorFeature, "id">) => void;
-  replaceFeatures: (next: IndicatorFeature[]) => void;
-  updateFeature: (id: string, patch: Partial<IndicatorFeature>) => void;
+  addFeature: (input: Omit<MetricFeature, "id">) => void;
+  replaceFeatures: (next: MetricFeature[]) => void;
+  updateFeature: (id: string, patch: Partial<MetricFeature>) => void;
   removeFeature: (id: string, options?: { cascade?: boolean }) => void;
 };
 
-const IndicatorFeaturesContext = createContext<IndicatorFeaturesContextValue | null>(null);
+const MetricFeaturesContext = createContext<MetricFeaturesContextValue | null>(null);
 
-export function IndicatorFeaturesProvider({ children }: { children: React.ReactNode }) {
-  const [features, setFeatures] = useState<IndicatorFeature[]>([]);
+export function MetricFeaturesProvider({ children }: { children: React.ReactNode }) {
+  const [features, setFeatures] = useState<MetricFeature[]>([]);
   const [dialogOpen, setDialogOpenState] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -42,14 +42,14 @@ export function IndicatorFeaturesProvider({ children }: { children: React.ReactN
     setDialogOpenState(true);
   }, []);
 
-  const addFeature = useCallback((input: Omit<IndicatorFeature, "id">) => {
+  const addFeature = useCallback((input: Omit<MetricFeature, "id">) => {
     setFeatures((prev) => [...prev, { ...input, id: crypto.randomUUID() }]);
   }, []);
-  const replaceFeatures = useCallback((next: IndicatorFeature[]) => {
+  const replaceFeatures = useCallback((next: MetricFeature[]) => {
     setFeatures(next);
   }, []);
 
-  const updateFeature = useCallback((id: string, patch: Partial<IndicatorFeature>) => {
+  const updateFeature = useCallback((id: string, patch: Partial<MetricFeature>) => {
     setFeatures((prev) => prev.map((f) => (f.id === id ? { ...f, ...patch } : f)));
   }, []);
 
@@ -99,14 +99,14 @@ export function IndicatorFeaturesProvider({ children }: { children: React.ReactN
   );
 
   return (
-    <IndicatorFeaturesContext.Provider value={value}>{children}</IndicatorFeaturesContext.Provider>
+    <MetricFeaturesContext.Provider value={value}>{children}</MetricFeaturesContext.Provider>
   );
 }
 
-export function useIndicatorFeatures() {
-  const ctx = useContext(IndicatorFeaturesContext);
+export function useMetricFeatures() {
+  const ctx = useContext(MetricFeaturesContext);
   if (!ctx) {
-    throw new Error("useIndicatorFeatures must be used within IndicatorFeaturesProvider");
+    throw new Error("useMetricFeatures must be used within MetricFeaturesProvider");
   }
   return ctx;
 }

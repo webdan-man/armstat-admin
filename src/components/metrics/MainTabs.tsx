@@ -20,8 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import type { IndicatorFormValues } from "@/components/indicators/indicator-form-schema";
-import { useIndicatorSections } from "@/components/indicators/indicator-filters-context";
+import type { MetricFormValues } from "@/components/metrics/metric-form-schema";
+import { useMetricSections } from "@/components/metrics/metric-filters-context";
 import { getSectionLocalizedText } from "@/lib/section-localization";
 import { isRootTopic } from "@/lib/section-topic-utils";
 
@@ -31,7 +31,7 @@ const fieldBorder =
 const locales = ["en", "hy", "ru"] as const;
 
 function LocaleTabContent({ lang }: { lang: (typeof locales)[number] }) {
-  const { control } = useFormContext<IndicatorFormValues>();
+  const { control } = useFormContext<MetricFormValues>();
 
   return (
     <TabsContent className="flex w-full flex-col gap-5" value={lang}>
@@ -103,7 +103,7 @@ function LocaleTabContent({ lang }: { lang: (typeof locales)[number] }) {
 }
 
 function IsCumulativeCheckbox() {
-  const { control } = useFormContext<IndicatorFormValues>();
+  const { control } = useFormContext<MetricFormValues>();
   return (
     <FormField
       control={control}
@@ -128,8 +128,8 @@ function IsCumulativeCheckbox() {
 }
 
 function TopicIdSelect() {
-  const { control, setValue, watch } = useFormContext<IndicatorFormValues>();
-  const { sections } = useIndicatorSections();
+  const { control, setValue, watch } = useFormContext<MetricFormValues>();
+  const { sections } = useMetricSections();
   const topicId = watch("topicId");
   const sectionId = watch("sectionId");
 

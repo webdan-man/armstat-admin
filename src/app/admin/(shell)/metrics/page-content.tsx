@@ -1,11 +1,11 @@
 "use client";
 
-import Filters from "@/components/indicators/Filters";
-import IndicatorsForm from "@/components/indicators/IndicatorsForm";
-import { useIndicatorFilters } from "@/components/indicators/indicator-filters-context";
+import Filters from "@/components/metrics/Filters";
+import MetricsForm from "@/components/metrics/MetricsForm";
+import { useMetricFilters } from "@/components/metrics/metric-filters-context";
 
-export default function IndicatorsContent() {
-  const { isFormVisible } = useIndicatorFilters();
+export default function MetricsContent() {
+  const { isFormVisible } = useMetricFilters();
 
   return (
     <div className="flex w-full flex-col gap-2.5">
@@ -13,7 +13,7 @@ export default function IndicatorsContent() {
         <h1 className="justify-start text-xl leading-4 font-semibold text-zinc-800">Ցուցանիշներ</h1>
       </div>
       <Filters />
-      {isFormVisible && <IndicatorsForm />}
+      {isFormVisible && <MetricsForm />}
     </div>
   );
 }

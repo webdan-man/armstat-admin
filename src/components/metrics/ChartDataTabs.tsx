@@ -12,17 +12,17 @@ import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/f
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import type { IndicatorFormValues } from "@/components/indicators/indicator-form-schema";
+import type { MetricFormValues } from "@/components/metrics/metric-form-schema";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { getMetricCombinations } from "@/services/metricsService";
 import type { MetricCombination, MetricCombinationRowEntry, MetricResponse } from "@/types/metric";
-import Chart from "@/components/indicators/charts/Chart";
-import CombinationsTable from "@/components/indicators/CombinationsTable";
+import Chart from "@/components/metrics/charts/Chart";
+import CombinationsTable from "@/components/metrics/CombinationsTable";
 import {
   headerForColumnIndex,
   maxRowLength,
   valueAtColumnIndex,
-} from "@/components/indicators/metric-combinations-table-utils";
+} from "@/components/metrics/metric-combinations-table-utils";
 import Image from "next/image";
 
 const fieldBorder =
@@ -37,7 +37,7 @@ const ChartDataTabs = ({
   metricId: string;
   metric?: MetricResponse;
 }) => {
-  const { control } = useFormContext<IndicatorFormValues>();
+  const { control } = useFormContext<MetricFormValues>();
 
   // columnVisible[i] = false means column i is hidden; undefined/true = visible
   const [columnVisible, setColumnVisible] = useState<boolean[]>([]);

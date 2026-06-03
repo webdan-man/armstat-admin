@@ -8,28 +8,28 @@ import { swrKeys } from "@/lib/swr/cache-keys";
 import type { Section, Topic } from "@/types/section";
 import { isRootTopic } from "@/lib/section-topic-utils";
 
-export type IndicatorSelectedFilter = {
+export type MetricSelectedFilter = {
   section: string;
   subgroup: string;
   subSubgroup: string;
-  indicator: string;
+  metric: string;
 };
-export type IndicatorFormMode = "closed" | "create" | "edit";
+export type MetricFormMode = "closed" | "create" | "edit";
 
-type IndicatorSectionsContextValue = {
+type MetricSectionsContextValue = {
   sections: Section[];
   isLoading: boolean;
 };
 
-type IndicatorFilterStateContextValue = {
-  selectedFilter: IndicatorSelectedFilter;
-  setSelectedFilter: React.Dispatch<React.SetStateAction<IndicatorSelectedFilter>>;
-  formMode: IndicatorFormMode;
+type MetricFilterStateContextValue = {
+  selectedFilter: MetricSelectedFilter;
+  setSelectedFilter: React.Dispatch<React.SetStateAction<MetricSelectedFilter>>;
+  formMode: MetricFormMode;
   isFormVisible: boolean;
-  canSelectIndicator: boolean;
+  canSelectMetric: boolean;
   openCreateForm: () => void;
   closeForm: () => void;
-  markIndicatorEdit: (indicatorId: string) => void;
+  markMetricEdit: (metricId: string) => void;
   selectedSection: Section | undefined;
   rootTopics: Topic[];
   childTopics: Topic[];
@@ -39,21 +39,21 @@ type IndicatorFilterStateContextValue = {
   resolvedTopicId: string | null;
 };
 
-const IndicatorSectionsContext = createContext<IndicatorSectionsContextValue | null>(null);
-const IndicatorFilterStateContext = createContext<IndicatorFilterStateContextValue | null>(null);
+const MetricSectionsContext = createContext<MetricSectionsContextValue | null>(null);
+const MetricFilterStateContext = createContext<MetricFilterStateContextValue | null>(null);
 
-export function IndicatorFiltersProvider({ children }: { children: React.ReactNode }) {
+export function MetricFiltersProvider({ children }: { children: React.ReactNode }) {
   const { data: sections = [], isLoading } = useSWR(swrKeys.sections, fetchSections);
 
-  const [selectedFilter, setSelectedFilter] = useState<IndicatorSelectedFilter>({
+  const [selectedFilter, setSelectedFilter] = useState<MetricSelectedFilter>({
     section: "",
     subgroup: "",
     subSubgroup: "",
-    indicator: "",
+    metric: "",
   });
-  const [formMode, setFormMode] = useState<IndicatorFormMode>("closed");
+  const [formMode, setFormMode] = useState<MetricFormMode>("closed");
 
-  const sectionsValue = useMemo<IndicatorSectionsContextValue>(
+  const sectionsValue = useMemo<MetricSectionsContextValue>(
     () => ({ sections, isLoading }),
     [sections, isLoading]
   );
@@ -82,21 +82,21 @@ export function IndicatorFiltersProvider({ children }: { children: React.ReactNo
   }, [selectedFilter.section, selectedFilter.subgroup, selectedFilter.subSubgroup]);
 
   const hierarchyComplete = Boolean(resolvedTopicId);
-  const canSelectIndicator = !!selectedFilter.section;
+  const canSelectMetric = !!selectedFilter.section;
 
   const openCreateForm = () => {
     // if (!resolvedTopicId) return;
     setFormMode("create");
-    setSelectedFilter((prev) => ({ ...prev, indicator: "" }));
+    setSelectedFilter((prev) => ({ ...prev, metric: "" }));
   };
   const closeForm = () => setFormMode("closed");
-  const markIndicatorEdit = (indicatorId: string) => {
-    setSelectedFilter((prev) => ({ ...prev, indicator: indicatorId }));
+  const markMetricEdit = (metricId: string) => {
+    setSelectedFilter((prev) => ({ ...prev, metric: metricId }));
     setFormMode("edit");
   };
 
   React.useEffect(() => {
-    if (selectedFilter.indicator) {
+    if (selectedFilter.metric) {
       setFormMode("edit");
       return;
     }
@@ -106,18 +106,18 @@ export function IndicatorFiltersProvider({ children }: { children: React.ReactNo
     if (formMode === "edit") {
       setFormMode("closed");
     }
-  }, [selectedFilter.indicator, formMode]);
+  }, [selectedFilter.metric, formMode]);
 
-  const filterStateValue = useMemo<IndicatorFilterStateContextValue>(
+  const filterStateValue = useMemo<MetricFilterStateContextValue>(
     () => ({
       selectedFilter,
       setSelectedFilter,
       formMode,
       isFormVisible: formMode !== "closed",
-      canSelectIndicator,
+      canSelectMetric,
       openCreateForm,
       closeForm,
-      markIndicatorEdit,
+      markMetricEdit,
       selectedSection,
       rootTopics,
       childTopics,
@@ -129,7 +129,7 @@ export function IndicatorFiltersProvider({ children }: { children: React.ReactNo
       selectedFilter,
       setSelectedFilter,
       formMode,
-      canSelectIndicator,
+      canSelectMetric,
       selectedSection,
       rootTopics,
       childTopics,
@@ -138,39 +138,39 @@ export function IndicatorFiltersProvider({ children }: { children: React.ReactNo
       resolvedTopicId,
       openCreateForm,
       closeForm,
-      markIndicatorEdit,
+      markMetricEdit,
     ]
   );
 
   return (
-    <IndicatorSectionsContext.Provider value={sectionsValue}>
-      <IndicatorFilterStateContext.Provider value={filterStateValue}>
+    <MetricSectionsContext.Provider value={sectionsValue}>
+      <MetricFilterStateContext.Provider value={filterStateValue}>
         {children}
-      </IndicatorFilterStateContext.Provider>
-    </IndicatorSectionsContext.Provider>
+      </MetricFilterStateContext.Provider>
+    </MetricSectionsContext.Provider>
   );
 }
 
 /** Subscribes only to sections SWR data — stable when only the selection changes (same cache). */
-export function useIndicatorSections() {
-  const ctx = useContext(IndicatorSectionsContext);
+export function useMetricSections() {
+  const ctx = useContext(MetricSectionsContext);
   if (!ctx) {
-    throw new Error("useIndicatorSections must be used within IndicatorFiltersProvider");
+    throw new Error("useMetricSections must be used within MetricFiltersProvider");
   }
   return ctx;
 }
 
-export function useIndicatorFilterState() {
-  const ctx = useContext(IndicatorFilterStateContext);
+export function useMetricFilterState() {
+  const ctx = useContext(MetricFilterStateContext);
   if (!ctx) {
-    throw new Error("useIndicatorFilterState must be used within IndicatorFiltersProvider");
+    throw new Error("useMetricFilterState must be used within MetricFiltersProvider");
   }
   return ctx;
 }
 
-export function useIndicatorFilters() {
-  const { sections, isLoading } = useIndicatorSections();
-  const filter = useIndicatorFilterState();
+export function useMetricFilters() {
+  const { sections, isLoading } = useMetricSections();
+  const filter = useMetricFilterState();
   return {
     sections,
     isLoading,

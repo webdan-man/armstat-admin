@@ -6,7 +6,7 @@ import {
   headerForColumnIndex,
   maxRowLength,
   valueAtColumnIndex,
-} from "@/components/indicators/metric-combinations-table-utils";
+} from "@/components/metrics/metric-combinations-table-utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MarkdownText } from "@/components/site/MarkdownText";
 import { useTranslation } from "@/hooks/useTranslation";

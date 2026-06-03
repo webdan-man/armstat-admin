@@ -92,12 +92,12 @@ export default function SearchInput({
     return activeMetric?.topicId ? [activeMetric.topicId] : [];
   }, [slug, sections, activeMetric]);
 
-  const indicatorsKey = useMemo(
+  const metricsKey = useMemo(
     () => (topicIds.length === 0 ? null : (["search-metrics", ...topicIds] as const)),
     [topicIds]
   );
 
-  const { data: indicators = [] } = useSWR(indicatorsKey, async () => {
+  const { data: metrics = [] } = useSWR(metricsKey, async () => {
     const lists = await Promise.all(topicIds.map((id) => fetchMetricsByTopicId(id)));
     const seen = new Set<string>();
     const merged: SearchOption[] = [];
@@ -115,7 +115,7 @@ export default function SearchInput({
 
   return (
     <Combobox
-      items={indicators}
+      items={metrics}
       itemToStringValue={(item: SearchOption) => labelFor(item)}
       onValueChange={(item: SearchOption | null) => {
         if (item) {

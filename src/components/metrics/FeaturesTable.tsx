@@ -21,12 +21,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useIndicatorFeatures } from "@/components/indicators/indicator-features-context";
+import { useMetricFeatures } from "@/components/metrics/metric-features-context";
 import { fetchAttributeCategories, getLibraryFromAttributeById } from "@/services/attributeService";
 import type { Attribute } from "@/types/attribute";
 import { swrKeys } from "@/lib/swr/cache-keys";
 function FeaturesTable() {
-  const { features, startEdit, removeFeature } = useIndicatorFeatures();
+  const { features, startEdit, removeFeature } = useMetricFeatures();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { data: attributesCategories = [] } = useSWR(
     swrKeys.attributesCategories,

@@ -1,4 +1,4 @@
-export type IndicatorFeature = {
+export type MetricFeature = {
   id: string;
   category: string;
   attributeKey: string;

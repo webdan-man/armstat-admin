@@ -21,20 +21,20 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/componen
 import { Form } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import CreateWindow from "@/components/indicators/CreateWindow";
-import MainTabs from "@/components/indicators/MainTabs";
-import MetadataTabs from "@/components/indicators/MetadataTabs";
-import ChartDataTabs from "@/components/indicators/ChartDataTabs";
-import FeaturesTable from "@/components/indicators/FeaturesTable";
-import { useIndicatorFilters } from "@/components/indicators/indicator-filters-context";
+import CreateWindow from "@/components/metrics/CreateWindow";
+import MainTabs from "@/components/metrics/MainTabs";
+import MetadataTabs from "@/components/metrics/MetadataTabs";
+import ChartDataTabs from "@/components/metrics/ChartDataTabs";
+import FeaturesTable from "@/components/metrics/FeaturesTable";
+import { useMetricFilters } from "@/components/metrics/metric-filters-context";
 import {
-  emptyIndicatorFormValues,
-  indicatorFormSchema,
+  emptyMetricFormValues,
+  metricFormSchema,
   mapFeaturesToMetricAttributeKeys,
-  mapIndicatorFormToCreateMetric,
-  mapIndicatorFormToUpdateMetric,
-  type IndicatorFormValues,
-} from "@/components/indicators/indicator-form-schema";
+  mapMetricFormToCreateMetric,
+  mapMetricFormToUpdateMetric,
+  type MetricFormValues,
+} from "@/components/metrics/metric-form-schema";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import {
   createMetric,
@@ -46,31 +46,31 @@ import {
   downloadMetricCombinationsCSV,
 } from "@/services/metricsService";
 import { ApiError } from "@/lib/api/api-error";
-import { useIndicatorFeatures } from "@/components/indicators/indicator-features-context";
-import type { IndicatorFeature } from "@/types/indicator-feature";
+import { useMetricFeatures } from "@/components/metrics/metric-features-context";
+import type { MetricFeature } from "@/types/metric-feature";
 import type { MetricAttribute } from "@/types/metric";
 
 const cardSurface =
   "ring-0 rounded-[10px] border-0 bg-white text-[#2c2c2c] shadow-[0_6px_14px_rgba(0,0,0,0.05)]";
 
-export default function IndicatorsForm() {
+export default function MetricsForm() {
   const { selectedFilter, resolvedTopicId, formMode, setSelectedFilter, closeForm } =
-    useIndicatorFilters();
-  const { features, replaceFeatures } = useIndicatorFeatures();
-  const committedFeaturesRef = useRef<IndicatorFeature[]>([]);
+    useMetricFilters();
+  const { features, replaceFeatures } = useMetricFeatures();
+  const committedFeaturesRef = useRef<MetricFeature[]>([]);
   const csvInputRef = useRef<HTMLInputElement>(null);
 
   const { mutate } = useSWRConfig();
 
-  const indicatorId = selectedFilter.indicator;
+  const metricId = selectedFilter.metric;
   const { data: loadedMetricData } = useSWR(
-    indicatorId ? swrKeys.metricForm(indicatorId) : null,
-    () => fetchMetricForForm(indicatorId!)
+    metricId ? swrKeys.metricForm(metricId) : null,
+    () => fetchMetricForForm(metricId!)
   );
 
-  const form = useForm<IndicatorFormValues>({
-    resolver: zodResolver(indicatorFormSchema),
-    defaultValues: emptyIndicatorFormValues(),
+  const form = useForm<MetricFormValues>({
+    resolver: zodResolver(metricFormSchema),
+    defaultValues: emptyMetricFormValues(),
   });
 
   const { setValue, getValues, reset } = form;
@@ -81,9 +81,9 @@ export default function IndicatorsForm() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    if (!indicatorId || !loadedMetricData || loadedMetricData.metric._id !== indicatorId) {
+    if (!metricId || !loadedMetricData || loadedMetricData.metric._id !== metricId) {
       committedFeaturesRef.current = [];
-      reset(emptyIndicatorFormValues());
+      reset(emptyMetricFormValues());
       replaceFeatures([]);
       return;
     }
@@ -98,7 +98,7 @@ export default function IndicatorsForm() {
     setValue("sectionId", selectedFilter.section);
     setValue("topicId", selectedFilter.subSubgroup || selectedFilter.subgroup);
     replaceFeatures(loadedMetricData.features);
-  }, [indicatorId, loadedMetricData, replaceFeatures, reset, selectedFilter, setValue]);
+  }, [metricId, loadedMetricData, replaceFeatures, reset, selectedFilter, setValue]);
 
   useEffect(() => {
     const nextAttributeKeys = mapFeaturesToMetricAttributeKeys(features);
@@ -107,25 +107,25 @@ export default function IndicatorsForm() {
     }
   }, [features, getValues, setValue]);
 
-  const submitSave = async (values: IndicatorFormValues) => {
+  const submitSave = async (values: MetricFormValues) => {
     const metricAttributeKeys = mapFeaturesToMetricAttributeKeys(features);
     if (!values.topicId) {
       toast.error("Ընտրեք բաժին, ենթախումբ և անհրաժեշտության դեպքում ենթա-ենթախումբ։");
       return;
     }
     try {
-      if (formMode === "edit" && selectedFilter.indicator) {
+      if (formMode === "edit" && selectedFilter.metric) {
         await patchMetric(
-          selectedFilter.indicator,
-          mapIndicatorFormToUpdateMetric(values, metricAttributeKeys)
+          selectedFilter.metric,
+          mapMetricFormToUpdateMetric(values, metricAttributeKeys)
         );
         committedFeaturesRef.current = features;
         reset({ ...values, attributes: metricAttributeKeys });
       } else {
         const created = await createMetric(
-          mapIndicatorFormToCreateMetric(values.topicId, values, metricAttributeKeys)
+          mapMetricFormToCreateMetric(values.topicId, values, metricAttributeKeys)
         );
-        setSelectedFilter((prev) => ({ ...prev, indicator: created._id }));
+        setSelectedFilter((prev) => ({ ...prev, metric: created._id }));
       }
       toast.success("Պահպանված է");
     } catch (e) {
@@ -133,13 +133,13 @@ export default function IndicatorsForm() {
     }
   };
 
-  const submitPublish = async (values: IndicatorFormValues) => {
-    if (!selectedFilter.indicator) {
+  const submitPublish = async (values: MetricFormValues) => {
+    if (!selectedFilter.metric) {
       toast.error("Ընտրեք ցուցանիշ։");
       return;
     }
     try {
-      await publishMetric(selectedFilter.indicator);
+      await publishMetric(selectedFilter.metric);
       toast.success("Հրապարակված է");
       const metricAttributeKeys = mapFeaturesToMetricAttributeKeys(features);
       committedFeaturesRef.current = features;
@@ -161,11 +161,11 @@ export default function IndicatorsForm() {
     "—";
 
   const submitDelete = async () => {
-    if (!indicatorId || formMode !== "edit") return;
+    if (!metricId || formMode !== "edit") return;
     setIsDeleting(true);
     try {
-      await deleteMetric(indicatorId);
-      setSelectedFilter((prev) => ({ ...prev, indicator: "" }));
+      await deleteMetric(metricId);
+      setSelectedFilter((prev) => ({ ...prev, metric: "" }));
       closeForm();
       toast.success("Ջնջված է");
       setDeleteDialogOpen(false);
@@ -179,16 +179,16 @@ export default function IndicatorsForm() {
   const onMetricCsvSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target;
     const file = input.files?.[0];
-    if (!file || !indicatorId) {
+    if (!file || !metricId) {
       input.value = "";
       return;
     }
     setCsvUploading(true);
     try {
-      await uploadMetricCsv(indicatorId, file);
+      await uploadMetricCsv(metricId, file);
       // Combinations are cached per metric (see ChartDataTabs); revalidate so the chart/table
       // reflect the freshly uploaded rows.
-      await mutate(swrKeys.metricCombinations(indicatorId));
+      await mutate(swrKeys.metricCombinations(metricId));
       toast.success("CSV-ն վերբեռնված է");
     } catch (err) {
       toast.error(
@@ -203,7 +203,7 @@ export default function IndicatorsForm() {
   return (
     <Form {...form}>
       <form
-        id="indicator-form"
+        id="metric-form"
         className="mt-7.5 flex w-full flex-col gap-7.5 pb-20"
         onSubmit={(e) => e.preventDefault()}
       >
@@ -239,9 +239,9 @@ export default function IndicatorsForm() {
               <Button
                 type="button"
                 size="lg"
-                disabled={!indicatorId}
+                disabled={!metricId}
                 onClick={() => {
-                  if (indicatorId) void downloadMetricCombinationsCSV(indicatorId);
+                  if (metricId) void downloadMetricCombinationsCSV(metricId);
                 }}
               >
                 Արտահանել CSV
@@ -252,12 +252,12 @@ export default function IndicatorsForm() {
                 accept=".csv,text/csv"
                 className="sr-only"
                 aria-label="Մուտքագրել CSV"
-                disabled={!indicatorId || csvUploading}
+                disabled={!metricId || csvUploading}
                 onChange={(ev) => void onMetricCsvSelected(ev)}
               />
               <button
                 type="button"
-                disabled={!indicatorId || csvUploading}
+                disabled={!metricId || csvUploading}
                 className="flex cursor-pointer items-center gap-3.25 self-center disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={() => csvInputRef.current?.click()}
               >
@@ -269,7 +269,7 @@ export default function IndicatorsForm() {
             </CardAction>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 px-8 pt-6 pb-8">
-            <ChartDataTabs metricId={indicatorId} metric={loadedMetricData?.metric} />
+            <ChartDataTabs metricId={metricId} metric={loadedMetricData?.metric} />
           </CardContent>
         </Card>
 
@@ -309,7 +309,7 @@ export default function IndicatorsForm() {
             Հաստատել
           </Button>
 
-          {formMode === "edit" && indicatorId ? (
+          {formMode === "edit" && metricId ? (
             <Button
               type="button"
               variant="outline"

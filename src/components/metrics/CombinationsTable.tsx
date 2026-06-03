@@ -15,7 +15,7 @@ import {
   headerForColumnIndex,
   maxRowLength,
   valueAtColumnIndex,
-} from "@/components/indicators/metric-combinations-table-utils";
+} from "@/components/metrics/metric-combinations-table-utils";
 
 export default function CombinationsTable({
   combinations,

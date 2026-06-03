@@ -8,7 +8,7 @@ const trimmedNonEmpty = (message: string) =>
 
 const trimmedString = z.string().transform((s) => s.trim());
 
-export const indicatorFeatureRowSchema = z.object({
+export const metricFeatureRowSchema = z.object({
   category: z.string().min(1, "Ընտրեք հատկանիշի կատեգորիան"),
   libraryOption: z.string().min(1, "Ընտրեք գրադարանը"),
   valueIds: z.array(z.string().min(1)).min(1, "Ընտրեք գրադարան արժեքները"),
@@ -24,16 +24,16 @@ export const indicatorFeatureRowSchema = z.object({
   }),
 });
 
-/** @deprecated use indicatorFeatureRowSchema */
-export const indicatorFeatureFormSchema = indicatorFeatureRowSchema;
+/** @deprecated use metricFeatureRowSchema */
+export const metricFeatureFormSchema = metricFeatureRowSchema;
 
-export const indicatorFeaturesBatchFormSchema = z.object({
-  rows: z.array(indicatorFeatureRowSchema).min(1, "Ավելացրեք առնվազն մեկ հատկանիշ"),
+export const metricFeaturesBatchFormSchema = z.object({
+  rows: z.array(metricFeatureRowSchema).min(1, "Ավելացրեք առնվազն մեկ հատկանիշ"),
 });
 
-export type IndicatorFeatureRowValues = z.infer<typeof indicatorFeatureRowSchema>;
-export type IndicatorFeatureFormValues = IndicatorFeatureRowValues;
-export type IndicatorFeaturesBatchFormValues = z.infer<typeof indicatorFeaturesBatchFormSchema>;
+export type MetricFeatureRowValues = z.infer<typeof metricFeatureRowSchema>;
+export type MetricFeatureFormValues = MetricFeatureRowValues;
+export type MetricFeaturesBatchFormValues = z.infer<typeof metricFeaturesBatchFormSchema>;
 
 export function parseLibraryOption(s: string): { attributeKey: string; valueKey: string } | null {
   const i = s.indexOf(":");
@@ -41,7 +41,7 @@ export function parseLibraryOption(s: string): { attributeKey: string; valueKey:
   return { attributeKey: s.slice(0, i), valueKey: s.slice(i + 1) };
 }
 
-export function emptyIndicatorFeatureRow(): IndicatorFeatureRowValues {
+export function emptyMetricFeatureRow(): MetricFeatureRowValues {
   return {
     category: "",
     libraryOption: "",
