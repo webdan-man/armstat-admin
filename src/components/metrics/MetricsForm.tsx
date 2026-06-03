@@ -63,9 +63,8 @@ export default function MetricsForm() {
   const { mutate } = useSWRConfig();
 
   const metricId = selectedFilter.metric;
-  const { data: loadedMetricData } = useSWR(
-    metricId ? swrKeys.metricForm(metricId) : null,
-    () => fetchMetricForForm(metricId!)
+  const { data: loadedMetricData } = useSWR(metricId ? swrKeys.metricForm(metricId) : null, () =>
+    fetchMetricForForm(metricId!)
   );
 
   const form = useForm<MetricFormValues>({
@@ -241,7 +240,7 @@ export default function MetricsForm() {
                 size="lg"
                 disabled={!metricId}
                 onClick={() => {
-                  if (metricId) void downloadMetricCombinationsCSV(metricId);
+                  if (metricId) void downloadMetricCombinationsCSV(metricId, metricId, "hy");
                 }}
               >
                 Արտահանել CSV
