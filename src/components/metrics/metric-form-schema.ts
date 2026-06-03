@@ -54,19 +54,30 @@ const trimmedNonEmpty = (message: string) =>
 
 const trimmedString = z.string().transform((s) => s.trim());
 
+const requiredPerLangStrings = z.object({
+  hy: trimmedNonEmpty("Պարտադիր (հայ.)"),
+  en: trimmedNonEmpty("Required (en)"),
+  ru: trimmedNonEmpty("Обязательно (рус.)"),
+});
+
+const requiredMetadataBlock = z.object({
+  body: trimmedNonEmpty("Պարտադիր"),
+  sourceUrl: trimmedNonEmpty("Պարտադիր"),
+});
+
 export const metricFormSchema = z.object({
-  topicId: z.string(),
+  topicId: trimmedNonEmpty("Ընտրեք թեման"),
   // UI-only: remembers the chosen section while no topic is selected yet. Not sent to the API.
-  sectionId: z.string(),
-  title: perLangStrings,
-  description: perLangStrings,
-  link: perLangStrings,
-  unit: perLangStrings,
+  sectionId: trimmedNonEmpty("Ընտրեք բաժինը"),
+  title: requiredPerLangStrings,
+  description: requiredPerLangStrings,
+  link: requiredPerLangStrings,
+  unit: requiredPerLangStrings,
   isCumulative: z.boolean(),
   metadata: z.object({
-    en: metadataBlock,
-    hy: metadataBlock,
-    ru: metadataBlock,
+    en: requiredMetadataBlock,
+    hy: requiredMetadataBlock,
+    ru: requiredMetadataBlock,
   }),
   charts: z.tuple([chartBlock, chartBlock]),
   order: z.number().int(),
