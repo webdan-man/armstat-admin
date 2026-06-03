@@ -25,10 +25,69 @@ import useSWR from "swr";
 import { getAuditLogs } from "@/services/auditLogsService";
 import { Loader2 } from "lucide-react";
 
+const PAGE_SIZE = 20;
+
+function PaginationButton({
+  onClick,
+  disabled,
+  active,
+  children,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  active?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={[
+        "flex h-9 min-w-9 items-center justify-center rounded-sm border px-2 text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-40",
+        active
+          ? "bg-link border-blue600 border-2 text-white"
+          : "border-textBlack300 text-textBlack700 hover:bg-gray-100",
+      ].join(" ")}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function AuditLogs() {
   const [selectedItem, setSelectedItem] = useState<AuditLog>();
+  const [page, setPage] = useState(1);
 
-  const result = useSWR("/api/audit-logs", () => getAuditLogs());
+  const result = useSWR(["/api/audit-logs", page], () =>
+    getAuditLogs({ page, limit: PAGE_SIZE })
+  );
+
+  const total = result.data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  const goTo = (p: number) => {
+    if (p < 1 || p > totalPages) return;
+    setPage(p);
+  };
+
+  // Window the page buttons around the current page so large logs don't render
+  // hundreds of buttons. "..." marks a gap to the first/last page.
+  const pageNumbers: (number | "...")[] = (() => {
+    const window = 2;
+    const pages = new Set<number>([1, totalPages]);
+    for (let p = page - window; p <= page + window; p++) {
+      if (p >= 1 && p <= totalPages) pages.add(p);
+    }
+    const sorted = [...pages].sort((a, b) => a - b);
+    const result: (number | "...")[] = [];
+    let prev = 0;
+    for (const p of sorted) {
+      if (prev && p - prev > 1) result.push("...");
+      result.push(p);
+      prev = p;
+    }
+    return result;
+  })();
 
   const thClass = "bg-background sticky top-0 z-20";
 
@@ -89,6 +148,30 @@ export default function AuditLogs() {
           </div>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 py-4">
+          <PaginationButton onClick={() => goTo(page - 1)} disabled={page === 1}>
+            ‹
+          </PaginationButton>
+
+          {pageNumbers.map((n, i) =>
+            n === "..." ? (
+              <span key={`ellipsis-${i}`} className="text-textBlack700 px-1">
+                …
+              </span>
+            ) : (
+              <PaginationButton key={n} onClick={() => goTo(n)} active={n === page}>
+                {n}
+              </PaginationButton>
+            )
+          )}
+
+          <PaginationButton onClick={() => goTo(page + 1)} disabled={page === totalPages}>
+            ›
+          </PaginationButton>
+        </div>
+      )}
       <AlertDialog open={!!selectedItem}>
         <AlertDialogContent>
           <AlertDialogHeader>

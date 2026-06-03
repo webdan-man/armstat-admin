@@ -60,10 +60,12 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
         wheelY: "zoomX",
         pinchZoomX: true,
         paddingLeft: 0,
-        paddingRight: 1,
+        paddingRight: 30,
         height: am5.percent(90),
       })
     );
+
+    chart.set("scrollbarX", am5.Scrollbar.new(root, { orientation: "horizontal" }));
 
     // Cursor
     const cursor = chart.set("cursor", am5xy.XYCursor.new(root, {}));
@@ -77,9 +79,8 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
 
     xRenderer.labels.template.setAll({
       rotation: -45,
-      centerY: am5.p50,
-      centerX: am5.p100,
-      paddingRight: 15,
+      // centerY: am5.p50,
+      // centerX: am5.p100,
       // Long category labels would eat the plot height, so cap their width and wrap them
       // onto multiple lines. The full text is still shown in the tooltip.
       maxWidth: 140,
@@ -158,8 +159,6 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
         width: am5.percent(100),
         paddingTop: 10,
         paddingBottom: 10,
-        paddingLeft: 20,
-        paddingRight: 20,
         height: am5.percent(10),
       })
     );

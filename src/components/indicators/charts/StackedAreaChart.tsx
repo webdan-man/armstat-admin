@@ -54,6 +54,7 @@ function StackedAreaChart<T extends Record<string, string>>({
     xRenderer.labels.template.setAll({
       maxWidth: 140,
       oversizedBehavior: "wrap",
+      rotation: -45,
     });
 
     const xAxis = chart.xAxes.push(

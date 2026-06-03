@@ -254,8 +254,12 @@ export async function uploadMetricCsv(metricId: string, file: File): Promise<voi
   });
 }
 
-export async function downloadMetricCombinationsCSV(metricId: string): Promise<void> {
-  const csvText = await apiClient<string>(`/api/metrics/${metricId}/csv?locale=hy`, {
+export async function downloadMetricCombinationsCSV(
+  metricId: string,
+  metricName: string,
+  locale: string
+): Promise<void> {
+  const csvText = await apiClient<string>(`/api/metrics/${metricId}/csv?locale=${locale}`, {
     headers: { Accept: "text/csv" },
     parseAsText: true,
   });
@@ -266,7 +270,7 @@ export async function downloadMetricCombinationsCSV(metricId: string): Promise<v
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${metricId}-combinations.csv`;
+  a.download = `${metricName}.csv`;
   document.body.appendChild(a);
   a.click();
 

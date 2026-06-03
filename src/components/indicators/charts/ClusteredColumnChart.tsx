@@ -41,7 +41,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
         wheelY: "zoomX",
         pinchZoomX: true,
         paddingLeft: 0,
-        paddingRight: 1,
+        paddingRight: 20,
         height: am5.percent(70),
       })
     );

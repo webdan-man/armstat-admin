@@ -264,7 +264,14 @@ export default function StatPage() {
                 className="flex items-center gap-1"
                 disabled={!selectedMetricId}
                 onClick={() => {
-                  if (selectedMetricId) void downloadMetricCombinationsCSV(selectedMetricId);
+                  if (selectedMetricId)
+                    void downloadMetricCombinationsCSV(
+                      selectedMetricId,
+                      metric
+                        ? (pickLocale(metric.title, activeLang) ?? selectedMetricId)
+                        : selectedMetricId,
+                      activeLang
+                    );
                 }}
               >
                 <Image src={"/icons/download.svg"} alt="download" width={20} height={20} />
