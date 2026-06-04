@@ -121,7 +121,7 @@ export default function AttributesList() {
     }
     setFormSaving(true);
     try {
-      await withToastError(
+      const saved = await withToastError(
         () =>
           saveAttributeLibrary({
             mode: modalMode,
@@ -135,6 +135,12 @@ export default function AttributesList() {
       );
 
       await mutate(swrKeys.attributes);
+
+      if (modalMode === "create" && saved) {
+        setCategoryFilter(saved.category);
+        setIdFilter(saved._id);
+      }
+
       setModalOpen(false);
     } catch (e) {
       const message = e instanceof Error ? e.message : "Սխալ";
