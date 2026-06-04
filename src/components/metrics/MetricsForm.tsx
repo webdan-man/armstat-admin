@@ -75,7 +75,7 @@ export default function MetricsForm() {
   const { setValue, getValues, reset } = form;
 
   const { isDirty, isSubmitting } = useFormState({ control: form.control });
-  const [lang, setLang] = useState<"hy" | "en" | "ru">("hy");
+  const [lang, setLang] = useState<"hy" | "en" | "ru" | string>("hy");
   const [csvUploading, setCsvUploading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);

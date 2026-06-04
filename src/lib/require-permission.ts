@@ -17,8 +17,6 @@ function safeParsePermissions(raw: string | undefined): Permission[] {
 }
 
 export async function requirePermission(permissionKey: string) {
-  console.log("requirePermission", permissionKey);
-
   const allowed = await hasPermissionByKey(permissionKey);
   if (!allowed) {
     forbidden(); // renders the 403 page
@@ -28,13 +26,10 @@ export async function requirePermission(permissionKey: string) {
 export async function hasPermissionByKey(permissionKey: string) {
   const cookiesData = await cookies();
 
-  const cookie = await cookiesData.get("userPermissions")?.value;
-
-  console.log("cookie", cookie);
+  const cookie = cookiesData.get("userPermissions")?.value;
 
   const permissions = safeParsePermissions(cookie);
 
-  console.log("hasPermissionByKey", permissions);
   const userPermissionKeys = permissions.map((p) => p.key);
 
   return hasPermission(userPermissionKeys, permissionKey);
