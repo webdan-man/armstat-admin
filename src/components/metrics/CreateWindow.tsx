@@ -80,6 +80,7 @@ const FEATURE_SECONDARY_LABEL_LANG_BY_KEY = Object.fromEntries(
 ) as Record<MainLangCode, string>;
 
 const VALIDATION_ERROR_MESSAGE = "Հատկանիշն ավելացնելու համար խնդրում ենք լրացնել բոլոր դաշտերը";
+const DUPLICATE_ATTRIBUTE_ERROR_MESSAGE = "Նույն հատկանիշը չի կարող ավելացվել երկու անգամ";
 
 const featureLabelInputClass =
   "h-9 rounded-[8.5px] border-[rgba(230,231,235,1)] bg-white text-sm text-[#2c2c2c] md:text-sm";
@@ -305,16 +306,7 @@ export default function CreateWindow() {
   };
 
   const validateRows = (rows: MetricFeaturesBatchFormValues["rows"]) => {
-    const existingKeys = new Set(features.map((f) => f.attributeKey));
-    const batchKeys = new Set<string>();
-
     for (const row of rows) {
-      const key = row.libraryOption;
-      if (existingKeys.has(key) || batchKeys.has(key)) {
-        throw new Error("Այս հատկանիշն արդեն ավելացված է");
-      }
-      batchKeys.add(key);
-
       const selectedAttribute = attributeByKey[row.libraryOption];
       const twoLevels = libraryHasTwoLevels(selectedAttribute);
       if (
@@ -356,8 +348,18 @@ export default function CreateWindow() {
 
       validateRows(values.rows);
 
+      const rowKeys = values.rows.map((r) => r.libraryOption);
+      const hasDuplicateWithinRows = rowKeys.length !== new Set(rowKeys).size;
+      if (hasDuplicateWithinRows) throw new Error(DUPLICATE_ATTRIBUTE_ERROR_MESSAGE);
+
       if (isEdit && editing) {
         const row = values.rows[0];
+        const existingKeysExceptEdited = features
+          .filter((f) => f.attributeKey !== editing.attributeKey)
+          .map((f) => f.attributeKey);
+        if (existingKeysExceptEdited.includes(row.libraryOption)) {
+          throw new Error(DUPLICATE_ATTRIBUTE_ERROR_MESSAGE);
+        }
         const selectedAttribute = attributeByKey[row.libraryOption];
         const payload = buildFeaturePayload(row, selectedAttribute);
         const twoLevels = libraryHasTwoLevels(selectedAttribute);
@@ -388,6 +390,10 @@ export default function CreateWindow() {
           }
         }
       } else {
+        const existingKeys = new Set(features.map((f) => f.attributeKey));
+        const conflicting = rowKeys.find((k) => existingKeys.has(k));
+        if (conflicting) throw new Error(DUPLICATE_ATTRIBUTE_ERROR_MESSAGE);
+
         for (const row of values.rows) {
           upsertFeatureRows(row);
         }
