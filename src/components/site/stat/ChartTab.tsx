@@ -52,9 +52,11 @@ export default function ChartTab({
             <p className="text-[11px] text-[rgba(110,127,136,1)]">
               {t("stat.updated_at", "Թարմացված է՝")} 20/05/2024, 16:43
             </p>
-            <p className="text-[11px] text-[rgba(110,127,136,1)]">
-              {t("stat.source", "Աղբյուրը՝")} <MarkdownText as={"span"}>{link}</MarkdownText>
-            </p>
+            {link && (
+              <p className="flex gap-1 text-[11px] text-[rgba(110,127,136,1)]">
+                {t("stat.source", "Աղբյուրը՝")} <MarkdownText as={"span"}>{link}</MarkdownText>
+              </p>
+            )}
           </div>
           {viewCount != null && (
             <p className="text-[11px] text-[rgba(110,127,136,1)]">

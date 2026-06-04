@@ -6,19 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import ChartTab from "@/components/site/stat/ChartTab";
 import SearchInput from "@/components/site/stat/SearchInput";
 import TableTab from "@/components/site/stat/TableTab";
 import React, { useState, useMemo } from "react";
+import { useColumnFilters } from "@/components/metrics/useColumnFilters";
+import { ColumnFilters } from "@/components/metrics/ColumnFilters";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import useSWR from "swr";
@@ -26,7 +19,6 @@ import { useLang } from "@/providers/LangProvider";
 import { useTranslation } from "@/hooks/useTranslation";
 import { buildStatMenu, isSlugInStatMenu } from "@/lib/stat-menu-utils";
 import { getSectionLocalizedText } from "@/lib/section-localization";
-import { formatIntegerWithCommas, sexTotalPercents } from "@/lib/format-integer";
 import {
   getMetricById,
   getMetricCombinations,
@@ -36,11 +28,6 @@ import {
 } from "@/services/metricsService";
 import { fetchSections } from "@/services/sectionsService";
 import { swrKeys } from "@/lib/swr/cache-keys";
-import {
-  headerForColumnIndex,
-  maxRowLength,
-  valueAtColumnIndex,
-} from "@/components/metrics/metric-combinations-table-utils";
 import { pickLocale } from "@/lib/i18n";
 
 export default function StatPage() {
@@ -91,41 +78,12 @@ export default function StatPage() {
     isTopicMetricsLoading ||
     (!!selectedMetricId && (isMetricLoading || isCombinationsLoading));
 
-  const [columnSelectedValues, setColumnSelectedValues] = useState<(string | null)[]>([]);
-
-  const columnCount = useMemo(() => maxRowLength(combinations), [combinations]);
-  const columnIndexes = useMemo(
-    () => Array.from({ length: columnCount }, (_, i) => i),
-    [columnCount]
+  const columnFilters = useColumnFilters(
+    combinations,
+    metric?.isCumulative,
+    selectedMetricId ?? undefined
   );
-
-  const ensureLength = (next: (string | null)[]) =>
-    next.length >= columnCount
-      ? next
-      : Array.from({ length: columnCount }, (_, i) => next[i] ?? null);
-
-  const activeFilterCount = useMemo(
-    () => columnSelectedValues.reduce((sum, v) => sum + (v ? 1 : 0), 0),
-    [columnSelectedValues]
-  );
-
-  const columnValueOptions = useMemo(() => {
-    if (columnCount === 0) return [];
-    return Array.from({ length: columnCount }, (_, ci) => {
-      const uniq = new Set<string>();
-      for (const combo of combinations) uniq.add(valueAtColumnIndex(combo, ci));
-      return Array.from(uniq).sort((a, b) => a.localeCompare(b));
-    });
-  }, [columnCount, combinations]);
-
-  const filteredCombinations = useMemo(() => {
-    if (columnCount === 0) return combinations;
-    const active = columnSelectedValues.map((v, i) => ({ i, v })).filter(({ v }) => Boolean(v));
-    if (active.length === 0) return combinations;
-    return combinations.filter((combo) =>
-      active.every(({ i, v }) => valueAtColumnIndex(combo, i) === v)
-    );
-  }, [columnCount, columnSelectedValues, combinations]);
+  const { projectedCombinations } = columnFilters;
 
   const [query, setQuery] = useState<string>("");
 
@@ -297,69 +255,13 @@ export default function StatPage() {
               <MarkdownText as="span">{metric.description[activeLang]}</MarkdownText>
             </TypographyP>
           )}
-          <div className="mt-10 border-t border-[rgba(15,104,192,1)] bg-[rgba(241,245,248,1)] px-3 pt-4.25 pb-4.75">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <span className="text-[14px] leading-3.5 text-[rgba(44,44,44,0.65)]">
-                  {activeFilterCount > 0
-                    ? `${t("stat.filters", "Ֆիլտրեր")} (${activeFilterCount})`
-                    : t("stat.filters", "Ֆիլտրեր")}
-                </span>
-                <button
-                  type="button"
-                  className="text-xs font-medium text-[rgba(39,81,153,1)] hover:underline disabled:opacity-50"
-                  disabled={activeFilterCount === 0}
-                  onClick={() =>
-                    setColumnSelectedValues(Array.from({ length: columnCount }, () => null))
-                  }
-                >
-                  {t("stat.clear_all", "Մաքրել բոլորը")}
-                </button>
-              </div>
-              <span className="text-[14px] leading-3.5 text-[rgba(44,44,44,0.65)]">
-                {filteredCombinations.length} / {combinations.length}
-              </span>
-            </div>
-            <div className="flex gap-4 overflow-x-auto">
-              {columnIndexes.map((ci) => {
-                const options = columnValueOptions[ci] ?? [];
-                const selected = columnSelectedValues[ci] ?? null;
-                const label = headerForColumnIndex(combinations, ci);
-                return (
-                  <Select
-                    key={ci}
-                    value={selected ?? "__all__"}
-                    onValueChange={(val) =>
-                      setColumnSelectedValues((prev) => {
-                        const copy = ensureLength([...prev]);
-                        copy[ci] = val === "__all__" ? null : val;
-                        return copy;
-                      })
-                    }
-                  >
-                    <SelectTrigger className="h-9 border-none bg-transparent px-2 text-[rgba(44,44,44,1)] shadow-none">
-                      <SelectValue placeholder={label} />
-                    </SelectTrigger>
-                    <SelectContent className="max-w-[30vw]">
-                      <SelectGroup>
-                        <SelectItem
-                          value="__all__"
-                          className="font-semibold text-[rgba(44,44,44,1)]"
-                        >
-                          {label}
-                        </SelectItem>
-                        <SelectSeparator className="bg-[rgba(178,178,178,1)]" />
-                        {options.map((opt) => (
-                          <SelectItem key={opt} value={opt}>
-                            {opt}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                );
-              })}
-            </div>
+          <div className="mt-10 border-t border-[rgba(15,104,192,1)] px-3 pt-4.25 pb-4.75">
+            <ColumnFilters
+              combinations={combinations}
+              filters={columnFilters}
+              totalCount={combinations.length}
+              filteredCount={projectedCombinations.length}
+            />
           </div>
           <div className="mt-6 min-h-[975px] overflow-hidden rounded-2xl border border-[rgba(178,178,178,1)]">
             <Tabs defaultValue="diagram" className="w-full">
@@ -387,7 +289,7 @@ export default function StatPage() {
               <TabsContent value="diagram">
                 <div className="p-7.5">
                   <ChartTab
-                    combinations={filteredCombinations}
+                    combinations={projectedCombinations}
                     isLoading={isLoading}
                     link={metric?.link?.[activeLang]}
                     metricId={metric?._id}
@@ -399,7 +301,7 @@ export default function StatPage() {
                 <div className="w-full px-7.5 py-5">
                   <TableTab
                     combinations={combinations}
-                    filteredCombinations={filteredCombinations}
+                    filteredCombinations={projectedCombinations}
                     isLoading={isLoading}
                     link={metric?.link?.[activeLang]}
                     updatedAt={metric?.updatedAt}
@@ -427,7 +329,7 @@ export default function StatPage() {
                     )}
                     {((metric?.metadata as any)?.[activeLang]?.sourceUrl ||
                       metric?.link?.[activeLang]) && (
-                      <p className="text-[11px] text-[rgba(110,127,136,1)]">
+                      <p className="flex text-[11px] text-[rgba(110,127,136,1)]">
                         {t("stat.source", "Աղբյուրը՝")}{" "}
                         <MarkdownText as={"span"}>
                           {(metric?.metadata as any)?.[activeLang]?.sourceUrl ??
