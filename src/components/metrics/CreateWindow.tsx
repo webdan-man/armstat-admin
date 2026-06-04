@@ -661,9 +661,9 @@ export default function CreateWindow() {
                               <div className="flex items-center justify-between">
                                 <div />
                                 <LangSwitcher
-                                  value={secondaryLabelLang}
+                                  value={labelLang}
                                   onChange={(nextLang) =>
-                                    setSecondaryLabelLangByRow((prev) => ({
+                                    setLabelLangByRow((prev) => ({
                                       ...prev,
                                       [field.id]: nextLang,
                                     }))
@@ -674,11 +674,11 @@ export default function CreateWindow() {
                               <div className="grid w-full gap-3">
                                 <FormField
                                   control={control}
-                                  name={`rows.${index}.secondaryLabel.${secondaryLabelLang}`}
+                                  name={`rows.${index}.secondaryLabel.${labelLang}`}
                                   render={({ field: f }) => (
                                     <FormItem className="w-full">
                                       <FormLabel className="text-[12px] leading-3.5 font-semibold text-black">
-                                        {FEATURE_SECONDARY_LABEL_LANG_BY_KEY[secondaryLabelLang]}
+                                        {FEATURE_SECONDARY_LABEL_LANG_BY_KEY[labelLang]}
                                       </FormLabel>
                                       <FormControl>
                                         <Input
