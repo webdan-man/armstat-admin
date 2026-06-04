@@ -32,8 +32,6 @@ export async function POST(req: Request) {
     });
   }
 
-  console.log("login data", data);
-
   if (data._id) {
     const cookieOptions: Partial<ResponseCookie> = {
       httpOnly: false,

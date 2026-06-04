@@ -56,7 +56,7 @@ export type UpdateMetricBody = {
 
 export type MetricResponse = {
   _id: string;
-  topicId?: string;
+  topicId: string;
   title?: Record<string, string> & { am?: string; hy?: string; ru?: string; en?: string };
   description?: Record<string, string> & { am?: string; hy?: string; ru?: string; en?: string };
   metadata?: Record<string, unknown>;

@@ -26,7 +26,7 @@ import MainTabs from "@/components/metrics/MainTabs";
 import MetadataTabs from "@/components/metrics/MetadataTabs";
 import ChartDataTabs from "@/components/metrics/ChartDataTabs";
 import FeaturesTable from "@/components/metrics/FeaturesTable";
-import { useMetricFilters } from "@/components/metrics/metric-filters-context";
+import { useMetricFilters, useMetricSections } from "@/components/metrics/metric-filters-context";
 import {
   emptyMetricFormValues,
   metricFormSchema,
@@ -112,10 +112,27 @@ export default function MetricsForm() {
       attributes: metricAttributeKeys,
     });
 
-    setValue("sectionId", selectedFilter.section);
-    setValue("topicId", selectedFilter.subSubgroup || selectedFilter.subgroup);
     replaceFeatures(loadedMetricData.features);
   }, [metricId, loadedMetricData, replaceFeatures, reset, selectedFilter, setValue]);
+
+  const { sections } = useMetricSections();
+
+  useEffect(() => {
+    if (!loadedMetricData?.metric) {
+      return;
+    }
+
+    const { topicId } = loadedMetricData.metric;
+    setValue("topicId", topicId);
+
+    const owningSection = sections.find((s) =>
+      s.topics.some((t) => t._id === topicId || t.subtopics?.some((st) => st._id === topicId))
+    );
+
+    if (owningSection) {
+      setValue("sectionId", owningSection._id);
+    }
+  }, [loadedMetricData, sections, setValue]);
 
   useEffect(() => {
     const nextAttributeKeys = mapFeaturesToMetricAttributeKeys(features);
