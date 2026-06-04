@@ -304,8 +304,17 @@ export default function CreateWindow() {
     setOpenLastCollapsibleOnAppend(true);
   };
 
-  const validateRows = (rows: MetricFeaturesBatchFormValues["rows"]): boolean => {
+  const validateRows = (rows: MetricFeaturesBatchFormValues["rows"]) => {
+    const existingKeys = new Set(features.map((f) => f.attributeKey));
+    const batchKeys = new Set<string>();
+
     for (const row of rows) {
+      const key = row.libraryOption;
+      if (existingKeys.has(key) || batchKeys.has(key)) {
+        throw new Error("Այս հատկանիշն արդեն ավելացված է");
+      }
+      batchKeys.add(key);
+
       const selectedAttribute = attributeByKey[row.libraryOption];
       const twoLevels = libraryHasTwoLevels(selectedAttribute);
       if (
@@ -313,7 +322,7 @@ export default function CreateWindow() {
         !hasTextValue(row.label.en) ||
         !hasTextValue(row.label.ru)
       ) {
-        return false;
+        throw new Error(VALIDATION_ERROR_MESSAGE);
       }
       if (twoLevels) {
         if (
@@ -321,11 +330,10 @@ export default function CreateWindow() {
           !hasTextValue(row.secondaryLabel.en) ||
           !hasTextValue(row.secondaryLabel.ru)
         ) {
-          return false;
+          throw new Error(VALIDATION_ERROR_MESSAGE);
         }
       }
     }
-    return true;
   };
 
   const upsertFeatureRows = (row: MetricFeaturesBatchFormValues["rows"][number]) => {
@@ -343,49 +351,51 @@ export default function CreateWindow() {
   };
 
   const onSubmit = (values: MetricFeaturesBatchFormValues) => {
-    if (!attributes?.length) return;
-    if (!validateRows(values.rows)) {
-      toast.error(VALIDATION_ERROR_MESSAGE);
-      return;
-    }
+    try {
+      if (!attributes?.length) return;
 
-    if (isEdit && editing) {
-      const row = values.rows[0];
-      const selectedAttribute = attributeByKey[row.libraryOption];
-      const payload = buildFeaturePayload(row, selectedAttribute);
-      const twoLevels = libraryHasTwoLevels(selectedAttribute);
-      const pairedFeatures = features.filter(
-        (feature) =>
-          feature.attributeKey === editing.attributeKey &&
-          sameValueIds(feature.valueIds, editing.valueIds)
-      );
+      validateRows(values.rows);
 
-      if (twoLevels) {
-        const primary = pairedFeatures.find((feature) => feature.level === "primary");
-        const secondary = pairedFeatures.find((feature) => feature.level === "secondary");
-        if (primary) {
+      if (isEdit && editing) {
+        const row = values.rows[0];
+        const selectedAttribute = attributeByKey[row.libraryOption];
+        const payload = buildFeaturePayload(row, selectedAttribute);
+        const twoLevels = libraryHasTwoLevels(selectedAttribute);
+        const pairedFeatures = features.filter(
+          (feature) =>
+            feature.attributeKey === editing.attributeKey &&
+            sameValueIds(feature.valueIds, editing.valueIds)
+        );
+
+        if (twoLevels) {
+          const primary = pairedFeatures.find((feature) => feature.level === "primary");
+          const secondary = pairedFeatures.find((feature) => feature.level === "secondary");
+          if (primary) {
+            updateFeature(primary.id, { ...payload, level: "primary" });
+          } else {
+            addFeature({ ...payload, level: "primary" });
+          }
+          if (secondary) {
+            updateFeature(secondary.id, { ...payload, level: "secondary" });
+          } else {
+            addFeature({ ...payload, level: "secondary" });
+          }
+        } else {
+          const primary = pairedFeatures.find((feature) => feature.level === "primary") ?? editing;
           updateFeature(primary.id, { ...payload, level: "primary" });
-        } else {
-          addFeature({ ...payload, level: "primary" });
-        }
-        if (secondary) {
-          updateFeature(secondary.id, { ...payload, level: "secondary" });
-        } else {
-          addFeature({ ...payload, level: "secondary" });
+          for (const feature of pairedFeatures.filter((item) => item.level === "secondary")) {
+            removeFeature(feature.id, { cascade: false });
+          }
         }
       } else {
-        const primary = pairedFeatures.find((feature) => feature.level === "primary") ?? editing;
-        updateFeature(primary.id, { ...payload, level: "primary" });
-        for (const feature of pairedFeatures.filter((item) => item.level === "secondary")) {
-          removeFeature(feature.id, { cascade: false });
+        for (const row of values.rows) {
+          upsertFeatureRows(row);
         }
       }
-    } else {
-      for (const row of values.rows) {
-        upsertFeatureRows(row);
-      }
+      setDialogOpen(false);
+    } catch (e: unknown) {
+      toast.error((e as Error).message);
     }
-    setDialogOpen(false);
   };
 
   const onInvalid: SubmitErrorHandler<MetricFeaturesBatchFormValues> = (errors) => {
