@@ -24,6 +24,20 @@ export function buildStatMenu(sections: Section[], lang: Locale = defaultLocale)
   }));
 }
 
+/** Returns the title of the menu item (section/topic/subtopic) matching slug, or null. */
+export function getStatMenuTitle(menu: StatMenuItem[], slug: string): string | null {
+  for (const section of menu) {
+    if (section.id === slug) return section.title;
+    for (const topic of section.children ?? []) {
+      if (topic.id === slug) return topic.title;
+      for (const sub of topic.children ?? []) {
+        if (sub.id === slug) return sub.title;
+      }
+    }
+  }
+  return null;
+}
+
 /** True when slug matches a section, topic, or subtopic (not a bare metric id). */
 export function isSlugInStatMenu(menu: StatMenuItem[], slug: string): boolean {
   for (const section of menu) {

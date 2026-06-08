@@ -8,7 +8,7 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { fetchSections } from "@/services/sectionsService";
@@ -113,10 +113,37 @@ export default function SearchInput({
 
   const labelFor = (item: SearchOption) => pickLocale(item.title, activeLang) || item.label;
 
+  const isSectionSlug = useMemo(() => menu.some((section) => section.id === slug), [menu, slug]);
+
+  // Mirrors the page's selectedMetricId logic so the input reflects the metric
+  // currently shown on the page: a section has none, a topic/subtopic auto-selects
+  // its first metric, and a bare metric id selects itself.
+  const selectedOption = useMemo<SearchOption | null>(() => {
+    if (metrics.length === 0 || isSectionSlug) return null;
+    if (!slugInTree) return metrics.find((m) => m.id === slug) ?? null;
+    return metrics[0] ?? null;
+  }, [metrics, isSectionSlug, slugInTree, slug]);
+
+  const selectedLabel = selectedOption ? labelFor(selectedOption) : "";
+
+  const [isFocused, setIsFocused] = useState(false);
+
+  // While the input is focused, reflect exactly what the user typed (so it can be
+  // cleared). When unfocused and not searching, show the selected metric's name.
+  const inputValue = isFocused ? query : query !== "" ? query : selectedLabel;
+
   return (
     <Combobox
       items={metrics}
+      value={selectedOption}
       itemToStringValue={(item: SearchOption) => labelFor(item)}
+      inputValue={inputValue}
+      onInputValueChange={(value, details) => {
+        const reason = details.reason;
+        if (reason === "input-change" || reason === "input-clear") {
+          setQuery(value);
+        }
+      }}
       onValueChange={(item: SearchOption | null) => {
         if (item) {
           setQuery("");
@@ -125,8 +152,8 @@ export default function SearchInput({
       }}
     >
       <ComboboxInput
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
         className="border-textBlack300 h-10.5 w-full text-[rgba(55,71,79,1)] shadow-none"
         placeholder={t("stat.search_placeholder", "Փնտրել")}
       />

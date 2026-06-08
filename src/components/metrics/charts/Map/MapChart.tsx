@@ -105,12 +105,12 @@ export default function ArmeniaMapChart({
     const COLORS = {
       low: 0x8ab7ff,
       high: 0x25529a,
-      selected: 0xffd700,
+      selected: 0x4f2897,
     };
 
     const hexFlat = 0x8ab7ff;
     const hexHover = 0x5d96e8;
-    const hexSelected = 0xffd700;
+    const hexSelected = 0x4f2897;
 
     polygonSeries.mapPolygons.template.setAll({
       tooltipText: showValueInTooltip ? "{name} - {value}" : "{name}",

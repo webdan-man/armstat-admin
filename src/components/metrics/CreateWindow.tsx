@@ -154,6 +154,7 @@ export default function CreateWindow() {
     Record<string, MainLangCode>
   >({});
   const [valuesPopoverOpenByRow, setValuesPopoverOpenByRow] = useState<Record<number, boolean>>({});
+  const [librarySearchByRow, setLibrarySearchByRow] = useState<Record<string, string>>({});
   const [openCollapsibleId, setOpenCollapsibleId] = useState<string | null>(null);
   const [openLastCollapsibleOnAppend, setOpenLastCollapsibleOnAppend] = useState(false);
   const wasDialogOpenRef = useRef(false);
@@ -477,6 +478,13 @@ export default function CreateWindow() {
                     ? attributeByKey[selectedLibrary]
                     : undefined;
                   const libraryOptions = buildLibraryOptions(attributes, selectedCategory);
+                  const librarySearch = librarySearchByRow[field.id] ?? "";
+                  const sortedLibraryOptions = [...libraryOptions].sort((a, b) =>
+                    a.label.localeCompare(b.label)
+                  );
+                  const filteredLibraryOptions = sortedLibraryOptions.filter((opt) =>
+                    opt.label.toLowerCase().includes(librarySearch.trim().toLowerCase())
+                  );
                   const hasSelectedCategoryInOptions = attributesCategories.some(
                     (category) => category.value === selectedCategory
                   );
@@ -628,6 +636,14 @@ export default function CreateWindow() {
                                   f.onChange(val);
                                   setValue(`rows.${index}.valueIds`, []);
                                 }}
+                                onOpenChange={(open) => {
+                                  if (!open) {
+                                    setLibrarySearchByRow((prev) => ({
+                                      ...prev,
+                                      [field.id]: "",
+                                    }));
+                                  }
+                                }}
                                 disabled={
                                   isLoading || !selectedCategory || libraryOptions.length === 0
                                 }
@@ -637,16 +653,38 @@ export default function CreateWindow() {
                                     <SelectValue placeholder="Ընտրել" />
                                   </SelectTrigger>
                                 </FormControl>
-                                <SelectContent>
+                                <SelectContent
+                                  position="popper"
+                                  className="w-(--radix-select-trigger-width)"
+                                >
+                                  <div className="sticky top-0 z-10 bg-popover p-1">
+                                    <Input
+                                      autoFocus
+                                      value={librarySearch}
+                                      placeholder="Որոնել"
+                                      className="h-8"
+                                      onChange={(e) =>
+                                        setLibrarySearchByRow((prev) => ({
+                                          ...prev,
+                                          [field.id]: e.target.value,
+                                        }))
+                                      }
+                                      onKeyDown={(e) => e.stopPropagation()}
+                                    />
+                                  </div>
                                   <SelectGroup>
                                     <div className="max-h-100 overflow-y-auto">
-                                      {libraryOptions
-                                        .sort((a, b) => a.label.localeCompare(b.label))
-                                        .map((opt) => (
+                                      {filteredLibraryOptions.length === 0 ? (
+                                        <div className="px-2 py-2 text-sm text-muted-foreground">
+                                          Արդյունք չկա
+                                        </div>
+                                      ) : (
+                                        filteredLibraryOptions.map((opt) => (
                                           <SelectItem key={opt.value} value={opt.value}>
                                             {opt.label}
                                           </SelectItem>
-                                        ))}
+                                        ))
+                                      )}
                                     </div>
                                   </SelectGroup>
                                 </SelectContent>

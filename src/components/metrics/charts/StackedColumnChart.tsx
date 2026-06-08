@@ -122,6 +122,7 @@ function StackedColumnChart<T extends Record<string, string>>({
     );
 
     legend.labels.template.setAll({
+      fontSize: 14,
       maxWidth: 200,
       oversizedBehavior: "wrap",
       textAlign: "left",

@@ -21,12 +21,14 @@ import MapAndStackedBarWithNegativeValuesChart from "@/components/metrics/charts
 import MapAndClusteredColumnChart from "@/components/metrics/charts/MapAndClusteredColumnChart";
 import GroupedStackedColumnChart from "@/components/metrics/charts/GroupedStackedColumnChart";
 import MapAndGroupedStackedColumnChart from "@/components/metrics/charts/MapAndGroupedStackedColumnChart";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface ChartProps {
   combinations?: MetricCombination[];
 }
 
 const Chart = ({ combinations = [] }: ChartProps) => {
+  const { t } = useTranslation();
   const {
     type: chartType,
     data,
@@ -41,6 +43,13 @@ const Chart = ({ combinations = [] }: ChartProps) => {
   } = useChart({
     combinations,
   });
+
+  const noChartMessage = (
+    <div className="text-textBlack600 flex flex-col gap-1">
+      <p>{t("stat.chart_unavailable_line1")}</p>
+      <p>{t("stat.chart_unavailable_line2")}</p>
+    </div>
+  );
 
   switch (chartType) {
     case "map-and-semi-pie":
@@ -283,11 +292,11 @@ const Chart = ({ combinations = [] }: ChartProps) => {
     case "map-and-grouped-stacked-column-chart":
       return <MapAndGroupedStackedColumnChart combinations={combinations} data={data} />;
     case "bar":
-      return <div className="text-textBlack600">bar</div>;
+      return noChartMessage;
     case "pie":
-      return <div className="text-textBlack600">pie</div>;
+      return noChartMessage;
     default:
-      return <div className="text-textBlack600">default</div>;
+      return noChartMessage;
   }
 };
 

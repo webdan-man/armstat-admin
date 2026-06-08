@@ -17,8 +17,7 @@ import { toast } from "sonner";
 import useSWR from "swr";
 import { useLang } from "@/providers/LangProvider";
 import { useTranslation } from "@/hooks/useTranslation";
-import { buildStatMenu, isSlugInStatMenu } from "@/lib/stat-menu-utils";
-import { getSectionLocalizedText } from "@/lib/section-localization";
+import { buildStatMenu, isSlugInStatMenu, getStatMenuTitle } from "@/lib/stat-menu-utils";
 import {
   getMetricById,
   getMetricCombinations,
@@ -90,6 +89,12 @@ export default function StatPage() {
   const shouldShowMetricPanel = Boolean(slug) && !isSectionSlug && !query;
   const metricUnit = metric?.unit?.[activeLang];
 
+  const pageTitle = useMemo(() => {
+    const menuTitle = getStatMenuTitle(menu, slug);
+    if (menuTitle !== null) return menuTitle;
+    return metric?.title?.[activeLang] ?? "";
+  }, [menu, slug, metric, activeLang]);
+
   const sexTotals = useMemo(() => {
     const hasTotals =
       !!metric?.total?.femalePercentage?.length || !!metric?.total?.malePercentage?.length;
@@ -109,13 +114,7 @@ export default function StatPage() {
 
   return (
     <div className="flex w-full flex-col pt-7.5 pb-10 pl-16.75">
-      <TypographyH3 className="min-h-6 text-[rgba(40,40,40,1)]">
-        {isSectionSlug
-          ? activeSection
-            ? getSectionLocalizedText(activeSection.name, activeLang)
-            : ""
-          : (metric?.title?.[activeLang] ?? "")}
-      </TypographyH3>
+      <TypographyH3 className="min-h-6 text-[rgba(40,40,40,1)]">{pageTitle}</TypographyH3>
       <div className="mt-5 flex gap-3">
         <SearchInput query={query} setQuery={setQuery} />
         <Button
