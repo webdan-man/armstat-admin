@@ -217,7 +217,7 @@ export default function ArmeniaMapChart({
         am5.Triangle.new(root, {
           width: 10,
           height: 10,
-          fill: am5.color(0xccac00),
+          fill: am5.color(COLORS.selected),
           stroke: am5.color(0xffffff),
           strokeWidth: 1,
           rotation: 270,
@@ -228,9 +228,9 @@ export default function ArmeniaMapChart({
       pinnedLabel = markerGroup.children.push(
         am5.Label.new(root, {
           text: "",
-          fill: am5.color(0xccac00),
+          fill: am5.color(COLORS.selected),
           fontWeight: "bold",
-          fontSize: 14,
+          fontSize: 16,
           paddingLeft: 8,
           centerY: am5.p50,
         })
@@ -253,7 +253,7 @@ export default function ArmeniaMapChart({
           text: "",
           fill: am5.color(COLORS.high),
           fontWeight: "bold",
-          fontSize: 14,
+          fontSize: 16,
           paddingRight: 8,
           centerY: am5.p50,
         })

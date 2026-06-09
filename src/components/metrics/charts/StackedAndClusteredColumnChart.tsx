@@ -44,12 +44,15 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
           wheelY: "zoomX",
           pinchZoomX: true,
           paddingLeft: 0,
-          paddingRight: 1,
+          paddingRight: 15,
           height: am5.percent(70),
         })
       );
 
-      chart.set("scrollbarX", am5.Scrollbar.new(root, { orientation: "horizontal" }));
+      chart.set(
+        "scrollbarX",
+        am5.Scrollbar.new(root, { orientation: "horizontal", marginLeft: 5, marginRight: 5 })
+      );
 
       const cursor = chart.set("cursor", am5xy.XYCursor.new(root, { behavior: "none" }));
       cursor.lineY.set("visible", false);
@@ -147,7 +150,8 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
           series.columns.template.setAll({
             strokeOpacity: 0,
             width: am5.percent(90),
-            tooltipText: `${stackKey} - {valueY}`,
+            tooltipHTML: `<div style="max-width: 250px">${stackKey} <br/> <span style="font-weight: bold">{valueY}</span></div>`,
+            // tooltipText: `${stackKey} - [bold]{valueY}`,
             // Rounded corners only on the topmost stack layer.
             cornerRadiusTL: stackIdx === totalStacks - 1 ? 5 : 0,
             cornerRadiusTR: stackIdx === totalStacks - 1 ? 5 : 0,

@@ -67,6 +67,7 @@ function StackedColumnChart<T extends Record<string, string>>({
       // Long category labels would eat the plot height, so cap their width and wrap them
       // onto multiple lines. The full text is still shown in the tooltip.
       maxWidth: 140,
+      fontSize: 16,
       oversizedBehavior: "wrap",
     });
     const xAxis = chart.xAxes.push(
@@ -95,7 +96,7 @@ function StackedColumnChart<T extends Record<string, string>>({
     chart.children.push(
       am5.Label.new(root, {
         text: yAxisLabel,
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: "600",
         textAlign: "center",
         x: am5.p50,
@@ -122,7 +123,7 @@ function StackedColumnChart<T extends Record<string, string>>({
     );
 
     legend.labels.template.setAll({
-      fontSize: 14,
+      fontSize: 16,
       maxWidth: 200,
       oversizedBehavior: "wrap",
       textAlign: "left",

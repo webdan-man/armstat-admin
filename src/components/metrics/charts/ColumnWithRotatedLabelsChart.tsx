@@ -170,7 +170,7 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
         text: data[0]?.label || "Հատկանիշ",
         centerY: am5.p50,
         paddingRight: 15,
-        fontSize: 14,
+        fontSize: 16,
       })
     );
 

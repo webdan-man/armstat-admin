@@ -54,15 +54,22 @@ const trimmedNonEmpty = (message: string) =>
 
 const trimmedString = z.string().transform((s) => s.trim());
 
+// Armenian (hy) is the primary language and is the only one required per block.
+// Once a block is filled in Armenian, the other languages stay optional.
 const requiredPerLangStrings = z.object({
   hy: trimmedNonEmpty("Պարտադիր (հայ.)"),
-  en: trimmedNonEmpty("Required (en)"),
-  ru: trimmedNonEmpty("Обязательно (рус.)"),
+  en: trimmedString,
+  ru: trimmedString,
 });
 
 const requiredMetadataBlock = z.object({
   body: trimmedNonEmpty("Պարտադիր"),
   sourceUrl: trimmedNonEmpty("Պարտադիր"),
+});
+
+const optionalMetadataBlock = z.object({
+  body: trimmedString,
+  sourceUrl: trimmedString,
 });
 
 export const metricFormSchema = z.object({
@@ -75,9 +82,9 @@ export const metricFormSchema = z.object({
   unit: requiredPerLangStrings,
   isCumulative: z.boolean(),
   metadata: z.object({
-    en: requiredMetadataBlock,
+    en: optionalMetadataBlock,
     hy: requiredMetadataBlock,
-    ru: requiredMetadataBlock,
+    ru: optionalMetadataBlock,
   }),
   charts: z.tuple([chartBlock, chartBlock]),
   order: z.number().int(),
