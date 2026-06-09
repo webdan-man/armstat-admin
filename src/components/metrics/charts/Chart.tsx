@@ -43,13 +43,13 @@ const Chart = ({ combinations = [] }: ChartProps) => {
   } = useChart({
     combinations,
   });
-
   const noChartMessage = (
     <div className="text-textBlack600 flex flex-col gap-1">
       <p>{t("stat.chart_unavailable_line1")}</p>
       <p>{t("stat.chart_unavailable_line2")}</p>
     </div>
   );
+  console.log(chartType);
 
   switch (chartType) {
     case "map-and-semi-pie":

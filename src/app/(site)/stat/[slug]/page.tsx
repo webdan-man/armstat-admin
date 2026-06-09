@@ -56,7 +56,11 @@ export default function StatPage() {
 
   const selectedMetricId = useMemo(() => {
     if (!slug || isSectionSlug) return null;
-    if (sectionsReady && slugInTree) {
+    // Wait for sections so we can tell whether the slug is a topic id or a bare
+    // metric id. Returning `slug` early fires requests against /api/metrics/<topicId>
+    // which 404 until the topic resolves to its real metric id.
+    if (!sectionsReady) return null;
+    if (slugInTree) {
       if (topicMetrics.length > 0) return topicMetrics[0].id;
       return null;
     }

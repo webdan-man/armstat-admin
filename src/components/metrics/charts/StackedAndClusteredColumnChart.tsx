@@ -45,7 +45,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
           pinchZoomX: true,
           paddingLeft: 0,
           paddingRight: 15,
-          height: am5.percent(70),
+          height: am5.percent(82),
         })
       );
 
@@ -66,10 +66,14 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
       });
 
       xRenderer.labels.template.setAll({
-        rotation: 0,
+        rotation: -45,
         centerY: am5.p50,
-        centerX: am5.p50,
-        paddingTop: 10,
+        centerX: am5.p100,
+        paddingTop: 0,
+        // Long category labels would eat the plot height, so cap their width and wrap
+        // them onto multiple lines. The full text is still shown in the tooltip.
+        maxWidth: 140,
+        oversizedBehavior: "wrap",
       });
 
       xRenderer.grid.template.setAll({ location: 1 });
@@ -81,6 +85,8 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
           renderer: xRenderer,
         })
       );
+      // Cap the label area so the plot keeps its height.
+      xAxis.set("maxHeight", 130);
       xAxis.data.setAll(data);
 
       const yAxis = chart.yAxes.push(
@@ -95,10 +101,10 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
         am5.Legend.new(root, {
           centerX: am5.p50,
           x: am5.p50,
-          marginTop: 15,
-          marginBottom: 15,
+          marginTop: 5,
+          marginBottom: 10,
           width: am5.percent(95),
-          height: am5.percent(20),
+          height: am5.percent(15),
           layout: root.gridLayout,
           verticalScrollbar: am5.Scrollbar.new(root, { orientation: "vertical" }),
         })
@@ -150,8 +156,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
           series.columns.template.setAll({
             strokeOpacity: 0,
             width: am5.percent(90),
-            tooltipHTML: `<div style="max-width: 250px">${stackKey} <br/> <span style="font-weight: bold">{valueY}</span></div>`,
-            // tooltipText: `${stackKey} - [bold]{valueY}`,
+            tooltipText: `${stackKey}     [bold]{valueY}[/]`,
             // Rounded corners only on the topmost stack layer.
             cornerRadiusTL: stackIdx === totalStacks - 1 ? 5 : 0,
             cornerRadiusTR: stackIdx === totalStacks - 1 ? 5 : 0,

@@ -165,7 +165,7 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
           name: field,
           tooltip: am5.Tooltip.new(root, {
             pointerOrientation,
-            labelText: `${field} - {valueX.formatNumber('#.###')}`,
+            labelText: `${field}     [bold]{valueX.formatNumber('#.###')}[/]`,
           }),
         })
       );
@@ -180,7 +180,7 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
         const dataItem = target.dataItem as am5.DataItem<am5xy.IXYSeriesDataItem> | undefined;
         const value = dataItem?.get("valueX");
         if (value == null) return text;
-        return `${field} - ${formatValueXForDisplay(value)}`;
+        return `${field}     [bold]${formatValueXForDisplay(value)}[/]`;
       });
 
       series.bullets.push(function () {

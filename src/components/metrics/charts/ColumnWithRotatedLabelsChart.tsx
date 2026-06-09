@@ -61,7 +61,7 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
         pinchZoomX: true,
         paddingLeft: 0,
         paddingRight: 30,
-        height: am5.percent(90),
+        height: am5.percent(80),
       })
     );
 
@@ -152,14 +152,14 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
 
     const greyColor = am5.color(0xaaaaaa);
 
-    // Legend bar container
+    // Legend bar container: label on the left, legend area on the right.
     const legendBar = root.container.children.push(
       am5.Container.new(root, {
         layout: root.horizontalLayout,
         width: am5.percent(100),
         paddingTop: 10,
         paddingBottom: 10,
-        height: am5.percent(10),
+        height: am5.percent(20),
       })
     );
 
@@ -168,21 +168,45 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
     legendLabelRef.current = legendBar.children.push(
       am5.Label.new(root, {
         text: data[0]?.label || "Հատկանիշ",
+        // Vertically center within the horizontal bar: centerY anchors the label's
+        // middle, y positions that middle at 50% of the bar height.
         centerY: am5.p50,
+        y: am5.p50,
         paddingRight: 15,
         fontSize: 16,
       })
     );
 
+    // Legend wrapper: takes the remaining horizontal space and gives the legend a
+    // DEFINITE width. A GridLayout legend only wraps when it has a definite width;
+    // placing it directly in the horizontal layout never gives it one, so it would
+    // overflow to the right. Nesting it in this full-width vertical wrapper fixes that.
+    // No layout here so the legend can be vertically centered via centerY/y. The
+    // wrapper still has a definite width, which is what the GridLayout needs to wrap.
+    const legendWrapper = legendBar.children.push(
+      am5.Container.new(root, {
+        width: am5.percent(100),
+        height: am5.percent(100),
+      })
+    );
+
     // Legend
-    const legend = legendBar.children.push(
+    const legend = legendWrapper.children.push(
       am5.Legend.new(root, {
-        centerY: am5.p50,
         layout: am5.GridLayout.new(root, {
           fixedWidthGrid: false,
           maxColumns: 100,
         }),
         width: am5.percent(100),
+        // Let the legend size to its content and center it vertically. maxHeight caps
+        // it so that, combined with verticalScrollbar, many items wrap into rows and
+        // scroll vertically instead of overflowing and disappearing.
+        centerY: am5.p50,
+        y: am5.p50,
+        // Reserve room on the right for the scrollbar so the grid wraps before it
+        // instead of having its last column cut off behind the scrollbar.
+        paddingRight: 30,
+        verticalScrollbar: am5.Scrollbar.new(root, { orientation: "vertical" }),
       })
     );
     legendRef.current = legend;
