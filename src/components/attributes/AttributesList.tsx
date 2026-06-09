@@ -41,6 +41,7 @@ export default function AttributesList() {
 
   const [categoryFilter, setCategoryFilter] = useState<string>("__all__");
   const [idFilter, setIdFilter] = useState<string>("__all__");
+  const [librarySearch, setLibrarySearch] = useState("");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
@@ -69,6 +70,13 @@ export default function AttributesList() {
     const attribute = data?.find((item) => item._id === id);
     return attribute?.title?.hy ?? id;
   };
+
+  const filteredAttributeIds = useMemo(() => {
+    const query = librarySearch.trim().toLowerCase();
+    if (!query) return attributeIds;
+    return attributeIds.filter((id) => getAttributeLabel(id).toLowerCase().includes(query));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attributeIds, librarySearch, data]);
 
   const filtered = useMemo(() => {
     if (!data || idFilter === "__all__") return [];
@@ -195,18 +203,38 @@ export default function AttributesList() {
               <Select
                 value={idFilter}
                 onValueChange={(value) => setIdFilter(value)}
+                onOpenChange={(open) => {
+                  if (!open) setLibrarySearch("");
+                }}
                 disabled={categoryFilter === "__all__" || attributeIds.length === 0}
               >
                 <SelectTrigger className="h-9 w-full">
                   <SelectValue placeholder="Ընտրել գրադարան" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent
+                  position="popper"
+                  className="w-(--radix-select-trigger-width)"
+                >
+                  <div className="sticky top-0 z-10 bg-popover p-1">
+                    <Input
+                      autoFocus
+                      value={librarySearch}
+                      placeholder="Որոնել"
+                      className="h-8"
+                      onChange={(e) => setLibrarySearch(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    />
+                  </div>
                   <SelectItem value="__all__">Ընտրել գրադարան</SelectItem>
-                  {attributeIds.map((id) => (
-                    <SelectItem key={id} value={id}>
-                      {getAttributeLabel(id)}
-                    </SelectItem>
-                  ))}
+                  {filteredAttributeIds.length === 0 ? (
+                    <div className="px-2 py-2 text-sm text-muted-foreground">Արդյունք չկա</div>
+                  ) : (
+                    filteredAttributeIds.map((id) => (
+                      <SelectItem key={id} value={id}>
+                        {getAttributeLabel(id)}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </FormItem>
