@@ -45,7 +45,9 @@ export default function GroupsPage() {
       {isLoading && <p className="text-sm text-[#646464]">Բեռնվում է…</p>}
       {isEmpty && <p className="text-sm text-[#646464]">Բաժիններ չկան։</p>}
       {isNoResults && <p className="text-sm text-[#646464]">Ոչինչ չի գտնվել։</p>}
-      {showAccordion && <SectionAccordion sections={filteredSections} />}
+      {showAccordion && (
+        <SectionAccordion sections={filteredSections} reorderEnabled={search.trim() === ""} />
+      )}
       <CreateSectionDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
     </div>
   );

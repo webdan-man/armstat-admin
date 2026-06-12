@@ -26,6 +26,14 @@ type SectionTopicRowProps = {
   showHeadingPrefix: boolean;
   siblingTopics: Topic[];
   isSubtopic?: boolean;
+  dragHandle?: React.ReactNode;
+  rootRef?: (node: HTMLElement | null) => void;
+  rootStyle?: React.CSSProperties;
+  isDragging?: boolean;
+  /** Hides the bottom divider (used for the very last row of a section card). */
+  isLastRow?: boolean;
+  /** For subtopics: last child of its parent — the tree guide line stops at the connector. */
+  isLastChild?: boolean;
 };
 
 export function SectionTopicRow({
@@ -33,6 +41,12 @@ export function SectionTopicRow({
   showHeadingPrefix,
   siblingTopics,
   isSubtopic = false,
+  dragHandle,
+  rootRef,
+  rootStyle,
+  isDragging = false,
+  isLastRow = false,
+  isLastChild = false,
 }: SectionTopicRowProps) {
   const [open, setOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -77,12 +91,26 @@ export function SectionTopicRow({
   return (
     <>
       <div
+        ref={rootRef}
+        style={rootStyle}
         className={cn(
-          "flex h-[45px] items-center justify-between gap-4 border-b border-[#e6e7eb] px-4 last:border-b-0 sm:pl-[29px]",
-          isSubtopic && "pl-[40px] sm:pl-[40px]"
+          "relative flex h-[45px] items-center justify-between gap-4 border-b border-[#e6e7eb] pr-4",
+          isLastRow && "border-b-0",
+          // indentation per nesting level
+          !isSubtopic && "pl-2",
+          isSubtopic && (dragHandle ? "pl-[34px]" : "pl-[40px]"),
+          // tree guides: vertical line under the parent topic + horizontal connector
+          isSubtopic &&
+            dragHandle &&
+            "before:absolute before:top-0 before:left-[19px] before:h-full before:w-px before:bg-[#e6e7eb] after:absolute after:top-[22px] after:left-[19px] after:h-px after:w-[14px] after:bg-[#e6e7eb]",
+          isSubtopic && dragHandle && isLastChild && "before:h-[23px]",
+          isDragging && "z-10 bg-white shadow-[0px_6px_7px_0px_rgba(0,0,0,0.08)]"
         )}
       >
-        <p className="min-w-0 flex-1 text-[14px] leading-[14px] text-[#2c2c2c]">{titleContent}</p>
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          {dragHandle}
+          <p className="min-w-0 flex-1 text-[14px] leading-[14px] text-[#2c2c2c]">{titleContent}</p>
+        </div>
         <div className="flex shrink-0 items-center gap-6">
           <button
             type="button"

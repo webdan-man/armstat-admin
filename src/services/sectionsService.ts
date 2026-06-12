@@ -65,3 +65,17 @@ export async function deleteTopic(topicId: string): Promise<void> {
 export async function deleteSection(sectionId: string): Promise<void> {
   return apiClient<void>(`/api/sections/${sectionId}`, { method: "DELETE" });
 }
+
+export async function reorderSections(ids: string[]): Promise<void> {
+  return apiClient<void>("/api/sections/reorder", {
+    method: "PATCH",
+    body: JSON.stringify({ ids }),
+  });
+}
+
+export async function reorderTopics(ids: string[]): Promise<void> {
+  return apiClient<void>("/api/topics/reorder", {
+    method: "PATCH",
+    body: JSON.stringify({ ids }),
+  });
+}
