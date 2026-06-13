@@ -119,6 +119,8 @@ function StackedAreaChart<T extends Record<string, string>>({
       })
     );
 
+    legend.labels.template.setAll({ fontSize: 16 });
+
     legend.markers.template.setAll({ width: 22, height: 22 });
 
     legend.markerRectangles.template.setAll({

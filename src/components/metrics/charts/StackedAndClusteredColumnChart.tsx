@@ -111,6 +111,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
       );
 
       legend.labels.template.setAll({
+        fontSize: 16,
         maxWidth: 300,
         oversizedBehavior: "wrap",
       });

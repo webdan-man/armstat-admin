@@ -310,19 +310,11 @@ export default function CreateWindow() {
     for (const row of rows) {
       const selectedAttribute = attributeByKey[row.libraryOption];
       const twoLevels = libraryHasTwoLevels(selectedAttribute);
-      if (
-        !hasTextValue(row.label.hy) ||
-        !hasTextValue(row.label.en) ||
-        !hasTextValue(row.label.ru)
-      ) {
+      if (!hasTextValue(row.label.hy)) {
         throw new Error(VALIDATION_ERROR_MESSAGE);
       }
       if (twoLevels) {
-        if (
-          !hasTextValue(row.secondaryLabel.hy) ||
-          !hasTextValue(row.secondaryLabel.en) ||
-          !hasTextValue(row.secondaryLabel.ru)
-        ) {
+        if (!hasTextValue(row.secondaryLabel.hy)) {
           throw new Error(VALIDATION_ERROR_MESSAGE);
         }
       }
@@ -501,12 +493,7 @@ export default function CreateWindow() {
                     hasTextValue(currentRow.libraryOption) &&
                     currentRow.valueIds.length > 0 &&
                     hasTextValue(currentRow.label?.hy) &&
-                    hasTextValue(currentRow.label?.en) &&
-                    hasTextValue(currentRow.label?.ru) &&
-                    (!isTwoLevelLibrary ||
-                      (hasTextValue(currentRow.secondaryLabel?.hy) &&
-                        hasTextValue(currentRow.secondaryLabel?.en) &&
-                        hasTextValue(currentRow.secondaryLabel?.ru)))
+                    (!isTwoLevelLibrary || hasTextValue(currentRow.secondaryLabel?.hy))
                   );
                   const selectedValueIds = currentRow?.valueIds ?? [];
                   const isLevelsLoading = Boolean(

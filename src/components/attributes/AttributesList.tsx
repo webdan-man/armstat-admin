@@ -22,13 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { FormItem } from "@/components/ui/form";
 import { FieldLabel } from "@/components/ui/field";
 import { withToastError } from "@/lib/withToastError";
@@ -41,7 +35,6 @@ export default function AttributesList() {
 
   const [categoryFilter, setCategoryFilter] = useState<string>("__all__");
   const [idFilter, setIdFilter] = useState<string>("__all__");
-  const [librarySearch, setLibrarySearch] = useState("");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
@@ -70,13 +63,6 @@ export default function AttributesList() {
     const attribute = data?.find((item) => item._id === id);
     return attribute?.title?.hy ?? id;
   };
-
-  const filteredAttributeIds = useMemo(() => {
-    const query = librarySearch.trim().toLowerCase();
-    if (!query) return attributeIds;
-    return attributeIds.filter((id) => getAttributeLabel(id).toLowerCase().includes(query));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [attributeIds, librarySearch, data]);
 
   const filtered = useMemo(() => {
     if (!data || idFilter === "__all__") return [];
@@ -177,66 +163,30 @@ export default function AttributesList() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             <FormItem className="flex w-full max-w-[320px] flex-col gap-2 text-sm">
               <FieldLabel className="text-muted-foreground">Հատկանիշի կատեգորիա</FieldLabel>
-              <Select
+              <SearchableSelect
                 value={categoryFilter}
                 onValueChange={(value) => {
                   setCategoryFilter(value);
                   setIdFilter("__all__");
                 }}
-              >
-                <SelectTrigger className="h-9 w-full">
-                  <SelectValue placeholder="Ընտրել տեսակ" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Ընտրել տեսակ</SelectItem>
-                  {categories.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      {c.title.hy}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Ընտրել տեսակ"
+                triggerClassName="h-9 w-full"
+                leadingOptions={[{ value: "__all__", label: "Ընտրել տեսակ" }]}
+                options={categories.map((c) => ({ value: c.value, label: c.title.hy }))}
+              />
             </FormItem>
 
             <FormItem className="flex w-full max-w-[320px] flex-col gap-2 text-sm">
               <FieldLabel className="text-muted-foreground">Գրադարան</FieldLabel>
-              <Select
+              <SearchableSelect
                 value={idFilter}
                 onValueChange={(value) => setIdFilter(value)}
-                onOpenChange={(open) => {
-                  if (!open) setLibrarySearch("");
-                }}
                 disabled={categoryFilter === "__all__" || attributeIds.length === 0}
-              >
-                <SelectTrigger className="h-9 w-full">
-                  <SelectValue placeholder="Ընտրել գրադարան" />
-                </SelectTrigger>
-                <SelectContent
-                  position="popper"
-                  className="w-(--radix-select-trigger-width)"
-                >
-                  <div className="sticky top-0 z-10 bg-popover p-1">
-                    <Input
-                      autoFocus
-                      value={librarySearch}
-                      placeholder="Որոնել"
-                      className="h-8"
-                      onChange={(e) => setLibrarySearch(e.target.value)}
-                      onKeyDown={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                  <SelectItem value="__all__">Ընտրել գրադարան</SelectItem>
-                  {filteredAttributeIds.length === 0 ? (
-                    <div className="px-2 py-2 text-sm text-muted-foreground">Արդյունք չկա</div>
-                  ) : (
-                    filteredAttributeIds.map((id) => (
-                      <SelectItem key={id} value={id}>
-                        {getAttributeLabel(id)}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                placeholder="Ընտրել գրադարան"
+                triggerClassName="h-9 w-full"
+                leadingOptions={[{ value: "__all__", label: "Ընտրել գրադարան" }]}
+                options={attributeIds.map((id) => ({ value: id, label: getAttributeLabel(id) }))}
+              />
             </FormItem>
           </div>
 
@@ -289,22 +239,14 @@ export default function AttributesList() {
           <div className="grid gap-4">
             <div className="grid gap-2">
               <div className="text-muted-foreground text-sm">Կատեգորիա</div>
-              <Select
+              <SearchableSelect
                 value={formCategory || undefined}
                 onValueChange={(v) => setFormCategory(v)}
                 disabled={formSaving}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Ընտրել" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      {c.title.hy}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Ընտրել"
+                triggerClassName="w-full"
+                options={categories.map((c) => ({ value: c.value, label: c.title.hy }))}
+              />
             </div>
 
             <div className="grid gap-3">

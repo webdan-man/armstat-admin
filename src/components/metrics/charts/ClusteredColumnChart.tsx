@@ -109,6 +109,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
     );
 
     legend.labels.template.setAll({
+      fontSize: 16,
       maxWidth: 300,
       oversizedBehavior: "wrap",
     });

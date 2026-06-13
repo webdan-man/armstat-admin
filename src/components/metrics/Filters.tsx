@@ -2,13 +2,7 @@
 
 import React from "react";
 import useSWR from "swr";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { Loader2 } from "lucide-react";
@@ -66,7 +60,7 @@ export default function Filters() {
       >
         <div className="flex flex-col items-start">
           {selectedFilter.section && <FilterChip>Բաժին</FilterChip>}
-          <Select
+          <SearchableSelect
             disabled={isLoading}
             value={selectedFilter.section || undefined}
             onValueChange={(val) =>
@@ -77,22 +71,17 @@ export default function Filters() {
                 metric: "",
               })
             }
-          >
-            <SelectTrigger className={selectTriggerClass}>
-              <SelectValue placeholder="Բաժին" />
-            </SelectTrigger>
-            <SelectContent>
-              {sections.map((section) => (
-                <SelectItem key={section._id} value={section._id}>
-                  {getSectionLocalizedText(section.name)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            placeholder="Բաժին"
+            triggerClassName={selectTriggerClass}
+            options={sections.map((section) => ({
+              value: section._id,
+              label: getSectionLocalizedText(section.name),
+            }))}
+          />
         </div>
         <div className="flex flex-col items-start">
           {selectedFilter.subgroup && <FilterChip>Ենթախումբ</FilterChip>}
-          <Select
+          <SearchableSelect
             key={selectedFilter.section || "empty-section"}
             disabled={isLoading || !selectedFilter.section || rootTopics.length === 0}
             value={selectedFilter.subgroup || undefined}
@@ -104,25 +93,20 @@ export default function Filters() {
                 metric: "",
               }))
             }
-          >
-            <SelectTrigger className={selectTriggerClass}>
-              <SelectValue placeholder="Ենթախումբ" />
-            </SelectTrigger>
-            <SelectContent>
-              {rootTopics.map((topic) => (
-                <SelectItem key={topic._id} value={topic._id}>
-                  {getSectionLocalizedText(topic.title)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            placeholder="Ենթախումբ"
+            triggerClassName={selectTriggerClass}
+            options={rootTopics.map((topic) => ({
+              value: topic._id,
+              label: getSectionLocalizedText(topic.title),
+            }))}
+          />
         </div>
 
         {!!childTopics.length && (
           <div className="flex w-full items-end justify-between gap-6">
             <div className="flex w-full flex-col items-start">
               <FilterChip>Ենթա-ենթախումբ</FilterChip>
-              <Select
+              <SearchableSelect
                 key={selectedFilter.subSubgroup || "empty-subgroup"}
                 disabled={isLoading || !selectedFilter.subgroup}
                 value={selectedFilter.subSubgroup || undefined}
@@ -133,18 +117,13 @@ export default function Filters() {
                     metric: "",
                   }))
                 }
-              >
-                <SelectTrigger className={selectTriggerClass}>
-                  <SelectValue placeholder={"Ենթա-ենթախումբ"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {childTopics.map((topic) => (
-                    <SelectItem key={topic._id} value={topic._id}>
-                      {getSectionLocalizedText(topic.title)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Ենթա-ենթախումբ"
+                triggerClassName={selectTriggerClass}
+                options={childTopics.map((topic) => ({
+                  value: topic._id,
+                  label: getSectionLocalizedText(topic.title),
+                }))}
+              />
             </div>
 
             {selectedFilter.subSubgroup && (
@@ -163,49 +142,41 @@ export default function Filters() {
       <div className={"grid min-h-11 w-full grid-cols-[5fr_1fr] items-center gap-6"}>
         <div className="flex flex-col items-start">
           {Boolean(selectedFilter.metric) && <FilterChip>Ցուցանիշ</FilterChip>}
-          <Select
+          <SearchableSelect
             key={`${resolvedTopicId || "empty-topic"}-${formMode}`}
             disabled={controlsDisabled}
             value={selectedFilter.metric || undefined}
             onValueChange={(val) => setSelectedFilter((prev) => ({ ...prev, metric: val }))}
-          >
-            <SelectTrigger className={selectTriggerClass}>
-              <SelectValue placeholder="Ցուցանիշ" />
-            </SelectTrigger>
-            <SelectContent>
-              {metrics.map((option) => {
-                let formatted = null;
+            placeholder="Ցուցանիշ"
+            triggerClassName={selectTriggerClass}
+            emptyText={isMetricsLoading ? "Բեռնում…" : "Ցուցանիշներ չկան"}
+            options={metrics.map((option) => {
+              let formatted = null;
 
-                if (option.updatedAt) {
-                  const date = new Date(option.updatedAt);
+              if (option.updatedAt) {
+                const date = new Date(option.updatedAt);
 
-                  formatted = `${date.getDate()}.${date.getMonth()}.${date.getFullYear()}`;
-                }
+                formatted = `${date.getDate()}.${date.getMonth()}.${date.getFullYear()}`;
+              }
 
-                return (
-                  <SelectItem
-                    className={
-                      "flex w-full items-center justify-between rounded-none border-b border-b-[rgba(234,234,234,1)] py-5 *:[span]:last:w-full"
-                    }
-                    key={option.id}
-                    value={option.id}
-                  >
+              return {
+                value: option.id,
+                label: option.label,
+                itemClassName:
+                  "flex w-full items-center justify-between rounded-none border-b border-b-[rgba(234,234,234,1)] py-5 *:[span]:last:w-full",
+                node: (
+                  <>
                     {option.label}{" "}
                     {formatted && (
                       <div className="relative ml-auto justify-start pl-5 text-xs leading-4 font-medium text-zinc-800 before:absolute before:top-[2px] before:left-0 before:h-[7px] before:w-[7px] before:translate-1/2 before:rounded-full before:bg-[rgba(37,201,34,1)]">
                         {formatted}
                       </div>
                     )}
-                  </SelectItem>
-                );
-              })}
-              {!isMetricsLoading && metrics.length === 0 && (
-                <SelectItem value="__empty" disabled>
-                  Ցուցանիշներ չկան
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
+                  </>
+                ),
+              };
+            })}
+          />
         </div>
         <button
           type="button"

@@ -255,19 +255,20 @@ export default function Sidebar() {
   }, [activeSlug, menu]);
 
   const navigateToItem = (itemId: string, level: number, canExpand: boolean) => {
-    setPendingSlug(itemId);
+    let targetSlug = itemId;
     if (canExpand) {
       if (level === 0) {
-        const isSectionOpen = expandedPathRef.current[0] === itemId;
-        if (isSectionOpen) {
-          setCollapsedSectionIds((prev) => new Set(prev).add(itemId));
-          setOverrideExpandedPath([]);
+        setCollapsedSectionIds((prev) => {
+          const next = new Set(prev);
+          next.delete(itemId);
+          return next;
+        });
+        // Clicking a section always opens it and selects its first child.
+        const firstChild = menu.find((section) => section.id === itemId)?.children?.[0];
+        if (firstChild) {
+          targetSlug = firstChild.id;
+          setOverrideExpandedPath(expandedPathForSlug(menu, firstChild.id, null));
         } else {
-          setCollapsedSectionIds((prev) => {
-            const next = new Set(prev);
-            next.delete(itemId);
-            return next;
-          });
           setOverrideExpandedPath([itemId]);
         }
       } else {
@@ -276,7 +277,8 @@ export default function Sidebar() {
         );
       }
     }
-    router.push(`/stat/${itemId}`, { scroll: false });
+    setPendingSlug(targetSlug);
+    router.push(`/stat/${targetSlug}`, { scroll: false });
   };
 
   // Pre-fetch metrics for every leaf topic so the cache is warm before any topic is expanded.

@@ -13,6 +13,9 @@ interface StackedBartWithNegativeValuesChartProps<T extends ChartDatum> {
 
 const containerId = "stacked-bar-negative-chartdiv";
 
+const LEFT_COLOR_HEX = "#60a5fa";
+const RIGHT_COLOR_HEX = "#7dd3fc";
+
 function toChartData(data: ChartDatum[], leftKey: string, rightKey: string) {
   return data.map((row) => {
     const leftVal = Number(row[leftKey]);
@@ -79,8 +82,8 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
     const [rightKey, leftKey] = seriesKeys;
     seriesKeysRef.current = seriesKeys;
 
-    const leftColor = am5.color(0x60a5fa);
-    const rightColor = am5.color(0x7dd3fc);
+    const leftColor = am5.color(LEFT_COLOR_HEX);
+    const rightColor = am5.color(RIGHT_COLOR_HEX);
 
     const chartData = toChartData(data, leftKey, rightKey);
     const axisMax = computeAxisMax(chartData, leftKey, rightKey);
@@ -121,31 +124,6 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
       })
     );
     xAxisRef.current = xAxis;
-
-    chart.plotContainer.children.push(
-      am5.Label.new(root, {
-        text: leftKey ?? "",
-        fontSize: "1.1em",
-        fill: leftColor,
-        x: am5.percent(25),
-        centerX: am5.p50,
-        y: 0,
-        centerY: 0,
-        isMeasured: false,
-      })
-    );
-    chart.plotContainer.children.push(
-      am5.Label.new(root, {
-        text: rightKey ?? "",
-        fontSize: "1.1em",
-        fill: rightColor,
-        x: am5.percent(75),
-        centerX: am5.p50,
-        y: 0,
-        centerY: 0,
-        isMeasured: false,
-      })
-    );
 
     const seriesList: am5xy.ColumnSeries[] = [];
 
@@ -252,8 +230,24 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
     seriesListRef.current.forEach((series) => series.data.setAll(chartData));
   }, [data]);
 
+  const [rightKey, leftKey] = seriesKeys;
+
   return (
     <div>
+      <div className="flex w-full items-start gap-4 px-2 pb-2">
+        <div
+          className="flex-1 break-words text-center text-sm font-medium leading-tight"
+          style={{ color: LEFT_COLOR_HEX }}
+        >
+          {leftKey ?? ""}
+        </div>
+        <div
+          className="flex-1 break-words text-center text-sm font-medium leading-tight"
+          style={{ color: RIGHT_COLOR_HEX }}
+        >
+          {rightKey ?? ""}
+        </div>
+      </div>
       <div id={containerId} style={{ width: "100%", height: "600px" }} />
     </div>
   );

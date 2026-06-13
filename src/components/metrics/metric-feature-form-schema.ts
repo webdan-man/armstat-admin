@@ -14,8 +14,8 @@ export const metricFeatureRowSchema = z.object({
   valueIds: z.array(z.string().min(1)).min(1, "Ընտրեք գրադարան արժեքները"),
   label: z.object({
     hy: trimmedNonEmpty("Լրացրեք հայերեն անվանումը"),
-    en: trimmedNonEmpty("Լրացրեք անգլերեն անվանումը"),
-    ru: trimmedNonEmpty("Լրացրեք ռուսերեն անվանումը"),
+    en: trimmedString,
+    ru: trimmedString,
   }),
   secondaryLabel: z.object({
     hy: trimmedString,

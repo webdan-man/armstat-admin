@@ -309,7 +309,7 @@ function GroupedStackedColumnChart({
 
     legend.labels.template.setAll({
       text: "{name}",
-      fontSize: 11,
+      fontSize: 16,
       maxWidth: 270,
       oversizedBehavior: "wrap",
     });
