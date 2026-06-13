@@ -89,6 +89,7 @@ export default function StatPage() {
   const { projectedCombinations } = columnFilters;
 
   const [query, setQuery] = useState<string>("");
+  const [searchOpen, setSearchOpen] = useState<boolean>(false);
 
   const shouldShowMetricPanel = Boolean(slug) && !isSectionSlug && !query;
   const metricUnit = metric?.unit?.[activeLang];
@@ -120,11 +121,18 @@ export default function StatPage() {
     <div className="flex w-full flex-col pt-7.5 pb-10 pl-16.75">
       <TypographyH3 className="min-h-6 text-[rgba(40,40,40,1)]">{pageTitle}</TypographyH3>
       <div className="mt-5 flex gap-3">
-        <SearchInput query={query} setQuery={setQuery} />
+        <SearchInput
+          query={query}
+          setQuery={setQuery}
+          open={searchOpen}
+          onOpenChange={setSearchOpen}
+        />
         <Button
           onClick={() => {
             if (query) {
               setQuery("");
+            } else {
+              setSearchOpen(true);
             }
           }}
           variant="secondary"

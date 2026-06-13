@@ -62,9 +62,13 @@ function resolveSlug(sections: Section[], slug: string): SlugTarget | null {
 export default function SearchInput({
   query,
   setQuery,
+  open,
+  onOpenChange,
 }: {
   query: string;
   setQuery: (v: string) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const { t, activeLang } = useTranslation();
   const router = useRouter();
@@ -134,6 +138,8 @@ export default function SearchInput({
 
   return (
     <Combobox
+      open={open}
+      onOpenChange={onOpenChange}
       items={metrics}
       value={selectedOption}
       itemToStringValue={(item: SearchOption) => labelFor(item)}
