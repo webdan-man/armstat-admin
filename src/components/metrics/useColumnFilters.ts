@@ -78,11 +78,11 @@ export function useColumnFilters(
   const projectedCombinations = useMemo((): MetricCombination[] => {
     if (visibleColumnIndexes.length === columnCount) return valueFilteredCombinations;
 
+    // Collapse duplicate projections into a single row. isCumulative=true means values are
+    // summable counts → add them; otherwise values can't be added, so keep the first occurrence.
     const isSummable = isCumulative === true;
-    const groupMap = new Map<string, { combo: MetricCombination; numValue: number }>();
-    let hasDuplicates = false;
 
-    for (const combo of valueFilteredCombinations) {
+    const project = (combo: MetricCombination): MetricCombination => {
       const projectedRow = visibleColumnIndexes
         .map((i) => combo.row?.[i])
         .filter((e): e is MetricCombinationRowEntry => Boolean(e));
@@ -96,21 +96,19 @@ export function useColumnFilters(
         }
       }
 
-      const key = visibleColumnIndexes.map((i) => valueAtColumnIndex(combo, i)).join("\0");
+      return { ...combo, row: projectedRow, attributes: projectedAttributes };
+    };
 
-      if (groupMap.has(key)) {
-        hasDuplicates = true;
-        if (!isSummable) break;
-        groupMap.get(key)!.numValue += Number(combo.value) || 0;
+    const groupMap = new Map<string, { combo: MetricCombination; numValue: number }>();
+    for (const combo of valueFilteredCombinations) {
+      const key = visibleColumnIndexes.map((i) => valueAtColumnIndex(combo, i)).join("\0");
+      const existing = groupMap.get(key);
+      if (existing) {
+        if (isSummable) existing.numValue += Number(combo.value) || 0;
       } else {
-        groupMap.set(key, {
-          combo: { ...combo, row: projectedRow, attributes: projectedAttributes },
-          numValue: Number(combo.value) || 0,
-        });
+        groupMap.set(key, { combo: project(combo), numValue: Number(combo.value) || 0 });
       }
     }
-
-    if (hasDuplicates && !isSummable) return [];
 
     return Array.from(groupMap.values()).map(({ combo, numValue }) => ({
       ...combo,
@@ -152,10 +150,7 @@ export function useColumnFilters(
 
   const toggleColumnValue = (i: number, opt: string, checked: boolean) => {
     setColumnSelectedValues((prev) => {
-      const copy = Array.from(
-        { length: Math.max(prev.length, i + 1) },
-        (_, j) => prev[j] ?? null
-      );
+      const copy = Array.from({ length: Math.max(prev.length, i + 1) }, (_, j) => prev[j] ?? null);
       const allOptions = columnValueOptions[i] ?? [];
       const current = copy[i] === null ? new Set(allOptions) : new Set(copy[i] as Set<string>);
 
