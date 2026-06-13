@@ -297,16 +297,17 @@ export default function StatPage() {
                     link={metric?.link?.[activeLang]}
                     metricId={metric?._id}
                     viewCount={metric?.viewCount}
+                    updatedAt={metric?.updatedAt}
                   />
                 </div>
               </TabsContent>
               <TabsContent value="data">
                 <div className="w-full px-7.5 py-5">
                   <TableTab
-                    combinations={combinations}
-                    filteredCombinations={projectedCombinations}
+                    combinations={projectedCombinations}
                     isLoading={isLoading}
                     link={metric?.link?.[activeLang]}
+                    metricUnit={metric?.unit?.[activeLang]}
                     updatedAt={metric?.updatedAt}
                     viewCount={metric?.viewCount}
                   />

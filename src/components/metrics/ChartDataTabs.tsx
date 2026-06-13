@@ -18,6 +18,7 @@ import CombinationsTable from "@/components/metrics/CombinationsTable";
 import Image from "next/image";
 import { useColumnFilters } from "./useColumnFilters";
 import { ColumnFilters } from "./ColumnFilters";
+import { useLang } from "@/providers/LangProvider";
 
 const fieldBorder =
   "h-9 rounded-[8.5px] border-[rgba(230,231,235,1)] bg-white text-sm text-[#2c2c2c] md:text-sm";
@@ -32,6 +33,7 @@ const ChartDataTabs = ({
   metric?: MetricResponse;
 }) => {
   const { control } = useFormContext<MetricFormValues>();
+  const { activeLang } = useLang();
 
   const { data, error, isLoading } = useSWR(
     metricId ? swrKeys.metricCombinations(metricId) : null,
@@ -149,8 +151,7 @@ const ChartDataTabs = ({
         ) : (
           <CombinationsTable
             combinations={projectedCombinations}
-            filteredCombinations={projectedCombinations}
-            metricUnit={metric?.unit?.["hy"]}
+            metricUnit={metric?.unit?.[activeLang]}
           />
         )}
       </TabsContent>
