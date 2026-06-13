@@ -32,7 +32,7 @@ export default function CombinationsTable({
 
   const columnIndexes = Array.from({ length: columnCount }, (_, i) => i);
 
-  const cellClassName = "w-[1%] text-[14px] leading-3.5 text-black";
+  const cellClassName = "w-full text-[14px] leading-3.5 text-black";
 
   const [sortKey, setSortKey] = useState<SortKey>("value");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
@@ -93,7 +93,7 @@ export default function CombinationsTable({
       <Table className="table-fixed">
         <TableHeader>
           <TableRow>
-            <TableHead className={cellClassName}>ID</TableHead>
+            <TableHead className={cn(cellClassName, "w-15")}>ID</TableHead>
             {columnIndexes.map((i) => (
               <SortableHead key={i} sortBy={i}>
                 {headerForColumnIndex(combinations, i)}

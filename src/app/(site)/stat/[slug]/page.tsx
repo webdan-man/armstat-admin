@@ -258,7 +258,7 @@ export default function StatPage() {
               <MarkdownText as="span">{metric.description[activeLang]}</MarkdownText>
             </TypographyP>
           )}
-          <div className="mt-10 border-t border-[rgba(15,104,192,1)] px-3 pt-4.25 pb-4.75">
+          <div className="mt-10 border-t border-[rgba(15,104,192,1)] pt-4.25">
             <ColumnFilters
               combinations={combinations}
               filters={columnFilters}
