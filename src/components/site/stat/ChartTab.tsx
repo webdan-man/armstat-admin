@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import Chart from "@/components/metrics/charts/Chart";
 import type { MetricCombination } from "@/types/metric";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,6 +13,7 @@ interface ChartTabProps {
   isLoading?: boolean;
   link?: string;
   metricId?: string;
+  updatedAt?: string;
   viewCount?: number;
 }
 
@@ -22,6 +23,7 @@ export default function ChartTab({
   link,
   metricId,
   viewCount,
+  updatedAt,
 }: ChartTabProps) {
   const { t } = useTranslation();
   useEffect(() => {
@@ -49,9 +51,18 @@ export default function ChartTab({
       {combinations?.length > 0 && (
         <div className="flex justify-between gap-5">
           <div className="flex gap-5">
-            <p className="text-[11px] text-[rgba(110,127,136,1)]">
-              {t("stat.updated_at", "Թարմացված է՝")} 20/05/2024, 16:43
-            </p>
+            {updatedAt ? (
+              <p className="text-[11px] text-[rgba(110,127,136,1)]">
+                {t("stat.updated_at", "Թարմացված է՝")}{" "}
+                {new Date(updatedAt).toLocaleString("hy-AM", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            ) : null}
             {link && (
               <p className="flex gap-1 text-[11px] text-[rgba(110,127,136,1)]">
                 {t("stat.source", "Աղբյուրը՝")} <MarkdownText as={"span"}>{link}</MarkdownText>
