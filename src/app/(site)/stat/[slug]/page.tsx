@@ -8,6 +8,7 @@ import Image from "next/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ChartTab from "@/components/site/stat/ChartTab";
 import SearchInput from "@/components/site/stat/SearchInput";
+import GlobalSearchResults from "@/components/site/stat/GlobalSearchResults";
 import TableTab from "@/components/site/stat/TableTab";
 import React, { useState, useMemo } from "react";
 import { useColumnFilters } from "@/components/metrics/useColumnFilters";
@@ -18,6 +19,7 @@ import useSWR from "swr";
 import { useLang } from "@/providers/LangProvider";
 import { useTranslation } from "@/hooks/useTranslation";
 import { buildStatMenu, isSlugInStatMenu, getStatMenuTitle } from "@/lib/stat-menu-utils";
+import { getGlobalSearchGroups } from "@/lib/stat-search-utils";
 import {
   getMetricById,
   getMetricCombinations,
@@ -90,8 +92,20 @@ export default function StatPage() {
 
   const [query, setQuery] = useState<string>("");
   const [searchOpen, setSearchOpen] = useState<boolean>(false);
+  const [isGlobalSearch, setIsGlobalSearch] = useState<boolean>(false);
 
-  const shouldShowMetricPanel = Boolean(slug) && !isSectionSlug && !query;
+  const normalizedQuery = query.trim().toLowerCase();
+  const globalSearchGroups = useMemo(
+    () => (isGlobalSearch ? getGlobalSearchGroups(menu, normalizedQuery) : []),
+    [isGlobalSearch, menu, normalizedQuery]
+  );
+
+  const shouldShowGlobalResults =
+    isGlobalSearch && normalizedQuery.length > 0 && globalSearchGroups.length > 0;
+  const shouldShowPlaceholder =
+    (isGlobalSearch && !shouldShowGlobalResults) || (query.length > 0 && !isGlobalSearch);
+  const shouldShowMetricPanel =
+    Boolean(slug) && !isSectionSlug && !isGlobalSearch && query.length === 0;
   const metricUnit = metric?.unit?.[activeLang];
 
   const pageTitle = useMemo(() => {
@@ -117,6 +131,12 @@ export default function StatPage() {
     </>
   );
 
+  const exitGlobalSearch = () => {
+    setIsGlobalSearch(false);
+    setQuery("");
+    setSearchOpen(false);
+  };
+
   return (
     <div className="flex w-full flex-col pt-7.5 pb-10 pl-16.75">
       <TypographyH3 className="min-h-6 text-[rgba(40,40,40,1)]">{pageTitle}</TypographyH3>
@@ -126,13 +146,15 @@ export default function StatPage() {
           setQuery={setQuery}
           open={searchOpen}
           onOpenChange={setSearchOpen}
+          globalMode={isGlobalSearch}
         />
         <Button
           onClick={() => {
-            if (query) {
-              setQuery("");
+            if (isGlobalSearch) {
+              exitGlobalSearch();
             } else {
-              setSearchOpen(true);
+              setIsGlobalSearch(true);
+              setSearchOpen(false);
             }
           }}
           variant="secondary"
@@ -140,7 +162,7 @@ export default function StatPage() {
           className="size-10.5 cursor-pointer"
         >
           <Image
-            src={query ? "/icons/close.svg" : "/icons/search-blue.svg"}
+            src={isGlobalSearch ? "/icons/close.svg" : "/icons/search-blue.svg"}
             alt="search"
             width={24}
             height={24}
@@ -274,7 +296,7 @@ export default function StatPage() {
               filteredCount={projectedCombinations.length}
             />
           </div>
-          <div className="mt-6 min-h-[975px] overflow-hidden rounded-2xl border border-[rgba(178,178,178,1)]">
+          <div className="mt-6 overflow-hidden rounded-2xl border border-[rgba(178,178,178,1)]">
             <Tabs defaultValue="diagram" className="w-full">
               <div className="flex h-11.75 w-full items-center justify-between gap-4 border-b border-b-[rgba(178,178,178,1)] px-5">
                 <TabsList className="h-full w-auto flex-1 justify-start rounded-none border-0 bg-none p-0 shadow-none group-data-[orientation=horizontal]/tabs:h-11.75">
@@ -355,6 +377,8 @@ export default function StatPage() {
             </Tabs>
           </div>
         </div>
+      ) : shouldShowGlobalResults ? (
+        <GlobalSearchResults menu={menu} query={normalizedQuery} onNavigate={exitGlobalSearch} />
       ) : (
         <div className="flex h-[calc(100vh-304px)] w-full flex-col items-center justify-center">
           <div className="flex flex-col items-center justify-center gap-1">

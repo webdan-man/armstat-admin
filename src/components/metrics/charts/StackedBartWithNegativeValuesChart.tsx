@@ -85,6 +85,31 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
     const leftColor = am5.color(LEFT_COLOR_HEX);
     const rightColor = am5.color(RIGHT_COLOR_HEX);
 
+    // Titles live inside the chart's top axes container so they stay aligned
+    // with the plot area (which is offset by the Y-axis), regardless of how
+    // long the field names are.
+    const titlesContainer = chart.topAxesContainer.children.push(
+      am5.Container.new(root, {
+        width: am5.p100,
+        layout: root.horizontalLayout,
+        paddingBottom: 8,
+      })
+    );
+
+    const makeTitle = (label: string | undefined, colorHex: string) =>
+      am5.Label.new(root, {
+        text: label ?? "",
+        width: am5.p50,
+        textAlign: "center",
+        fontSize: 13,
+        fontWeight: "500",
+        fill: am5.color(colorHex),
+        oversizedBehavior: "wrap",
+      });
+
+    titlesContainer.children.push(makeTitle(leftKey, LEFT_COLOR_HEX));
+    titlesContainer.children.push(makeTitle(rightKey, RIGHT_COLOR_HEX));
+
     const chartData = toChartData(data, leftKey, rightKey);
     const axisMax = computeAxisMax(chartData, leftKey, rightKey);
 
@@ -230,24 +255,8 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
     seriesListRef.current.forEach((series) => series.data.setAll(chartData));
   }, [data]);
 
-  const [rightKey, leftKey] = seriesKeys;
-
   return (
     <div>
-      <div className="flex w-full items-start gap-4 px-2 pb-2">
-        <div
-          className="flex-1 break-words text-center text-sm font-medium leading-tight"
-          style={{ color: LEFT_COLOR_HEX }}
-        >
-          {leftKey ?? ""}
-        </div>
-        <div
-          className="flex-1 break-words text-center text-sm font-medium leading-tight"
-          style={{ color: RIGHT_COLOR_HEX }}
-        >
-          {rightKey ?? ""}
-        </div>
-      </div>
       <div id={containerId} style={{ width: "100%", height: "600px" }} />
     </div>
   );

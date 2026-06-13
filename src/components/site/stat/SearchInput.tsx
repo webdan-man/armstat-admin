@@ -3,72 +3,63 @@
 import {
   Combobox,
   ComboboxContent,
-  ComboboxEmpty,
   ComboboxInput,
-  ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
+import { ChevronDown } from "lucide-react";
 import { fetchSections } from "@/services/sectionsService";
-import { fetchMetricsByTopicId, getMetricById } from "@/services/metricsService";
+import { getMetricById } from "@/services/metricsService";
 import { swrKeys } from "@/lib/swr/cache-keys";
-import { isRootTopic } from "@/lib/section-topic-utils";
-import { buildStatMenu, isSlugInStatMenu } from "@/lib/stat-menu-utils";
+import {
+  buildStatMenu,
+  getStatMenuTitle,
+  isSlugInStatMenu,
+  type StatMenuItem,
+} from "@/lib/stat-menu-utils";
+import {
+  buildSearchTreeRows,
+  hasVisibleChildren,
+  type SearchTreeRow,
+} from "@/lib/stat-search-utils";
 import { useTranslation } from "@/hooks/useTranslation";
 import { pickLocale } from "@/lib/i18n";
-import type { Section } from "@/types/section";
+import { cn } from "@/lib/utils";
 
-type SearchOption = {
-  id: string;
-  label: string;
-  title: Record<string, string>;
-};
-
-type SlugTarget =
-  | { kind: "section"; topicIds: string[] }
-  | { kind: "topic"; topicIds: [string] }
-  | { kind: "subtopic"; topicIds: [string] };
-
-function collectTopicIdsForSection(section: Section): string[] {
-  const ids: string[] = [];
-  for (const topic of section.topics) {
-    ids.push(topic._id);
-    for (const sub of topic.subtopics ?? []) ids.push(sub._id);
-  }
-  return ids;
-}
-
-function resolveSlug(sections: Section[], slug: string): SlugTarget | null {
-  for (const section of sections) {
-    if (section._id === slug) {
-      return { kind: "section", topicIds: collectTopicIdsForSection(section) };
+/** Returns the section whose subtree contains the given id (topic/subtopic). */
+function findSectionForId(menu: StatMenuItem[], id: string): StatMenuItem | undefined {
+  const containsId = (items: StatMenuItem[]): boolean => {
+    for (const item of items) {
+      if (item.id === id) return true;
+      if (item.children?.length && containsId(item.children)) return true;
     }
-    for (const topic of section.topics) {
-      if (topic._id === slug) {
-        return isRootTopic(topic)
-          ? { kind: "topic", topicIds: [topic._id] }
-          : { kind: "subtopic", topicIds: [topic._id] };
-      }
-      for (const sub of topic.subtopics ?? []) {
-        if (sub._id === slug) return { kind: "subtopic", topicIds: [sub._id] };
-      }
+    return false;
+  };
+
+  for (const section of menu) {
+    if (section.id === id || containsId(section.children ?? [])) {
+      return section;
     }
   }
-  return null;
+  return undefined;
 }
+
+type VisibleRow = SearchTreeRow;
 
 export default function SearchInput({
   query,
   setQuery,
   open,
   onOpenChange,
+  globalMode = false,
 }: {
   query: string;
   setQuery: (v: string) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  globalMode?: boolean;
 }) {
   const { t, activeLang } = useTranslation();
   const router = useRouter();
@@ -82,78 +73,94 @@ export default function SearchInput({
     [menu, slug, sections.length]
   );
 
-  // When the slug is a metric ID (not a section/topic/subtopic), fetch the
-  // metric so we can surface its sibling metrics via topicId.
   const { data: activeMetric } = useSWR(
     slug && sections.length > 0 && !slugInTree ? swrKeys.metricForm(slug) : null,
     () => getMetricById(slug)
   );
 
-  const topicIds = useMemo<string[]>(() => {
-    if (!slug || sections.length === 0) return [];
-    const target = resolveSlug(sections, slug);
-    if (target) return target.topicIds;
-    return activeMetric?.topicId ? [activeMetric.topicId] : [];
-  }, [slug, sections, activeMetric]);
+  const activeSection = useMemo(() => {
+    if (!menu.length) return undefined;
+    const direct = findSectionForId(menu, slug);
+    if (direct) return direct;
+    if (activeMetric?.topicId) return findSectionForId(menu, activeMetric.topicId);
+    return undefined;
+  }, [menu, slug, activeMetric]);
 
-  const metricsKey = useMemo(
-    () => (topicIds.length === 0 ? null : (["search-metrics", ...topicIds] as const)),
-    [topicIds]
+  const treeItems = useMemo(() => activeSection?.children ?? [], [activeSection]);
+
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() => new Set());
+
+  const normalizedQuery = query.trim().toLowerCase();
+
+  useEffect(() => {
+    setExpandedIds(new Set());
+    setCollapsedIds(new Set());
+  }, [normalizedQuery]);
+
+  const visibleRows = useMemo(
+    () => buildSearchTreeRows(treeItems, normalizedQuery, expandedIds, collapsedIds),
+    [treeItems, normalizedQuery, expandedIds, collapsedIds]
   );
 
-  const { data: metrics = [] } = useSWR(metricsKey, async () => {
-    const lists = await Promise.all(topicIds.map((id) => fetchMetricsByTopicId(id)));
-    const seen = new Set<string>();
-    const merged: SearchOption[] = [];
-    for (const list of lists) {
-      for (const item of list) {
-        if (seen.has(item.id)) continue;
-        seen.add(item.id);
-        merged.push({ id: item.id, label: item.label, title: item.title });
-      }
-    }
-    return merged;
-  });
-
-  const labelFor = (item: SearchOption) => pickLocale(item.title, activeLang) || item.label;
-
-  const isSectionSlug = useMemo(() => menu.some((section) => section.id === slug), [menu, slug]);
-
-  // Mirrors the page's selectedMetricId logic so the input reflects the metric
-  // currently shown on the page: a section has none, a topic/subtopic auto-selects
-  // its first metric, and a bare metric id selects itself.
-  const selectedOption = useMemo<SearchOption | null>(() => {
-    if (metrics.length === 0 || isSectionSlug) return null;
-    if (!slugInTree) return metrics.find((m) => m.id === slug) ?? null;
-    return metrics[0] ?? null;
-  }, [metrics, isSectionSlug, slugInTree, slug]);
-
-  const selectedLabel = selectedOption ? labelFor(selectedOption) : "";
+  const currentLabel = useMemo(() => {
+    const menuTitle = getStatMenuTitle(menu, slug);
+    if (menuTitle) return menuTitle;
+    return activeMetric ? (pickLocale(activeMetric.title, activeLang) ?? "") : "";
+  }, [menu, slug, activeMetric, activeLang]);
 
   const [isFocused, setIsFocused] = useState(false);
+  const inputValue = isFocused ? query : query !== "" ? query : currentLabel;
 
-  // While the input is focused, reflect exactly what the user typed (so it can be
-  // cleared). When unfocused and not searching, show the selected metric's name.
-  const inputValue = isFocused ? query : query !== "" ? query : selectedLabel;
+  const toggleExpand = (row: VisibleRow) => {
+    const autoExpanded =
+      normalizedQuery !== "" && hasVisibleChildren(row.item, normalizedQuery);
+
+    if (autoExpanded) {
+      setCollapsedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(row.item.id)) next.delete(row.item.id);
+        else next.add(row.item.id);
+        return next;
+      });
+      return;
+    }
+
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(row.item.id)) next.delete(row.item.id);
+      else next.add(row.item.id);
+      return next;
+    });
+  };
+
+  const handleRowClick = (row: VisibleRow) => {
+    if (row.hasChildren) {
+      toggleExpand(row);
+      onOpenChange?.(true);
+      return;
+    }
+
+    navigateTo(row.item.id);
+  };
+
+  const navigateTo = (id: string) => {
+    setQuery("");
+    onOpenChange?.(false);
+    router.push(`/stat/${id}`);
+  };
 
   return (
     <Combobox
-      open={open}
-      onOpenChange={onOpenChange}
-      items={metrics}
-      value={selectedOption}
-      itemToStringValue={(item: SearchOption) => labelFor(item)}
+      open={globalMode ? false : open}
+      onOpenChange={(nextOpen) => {
+        if (!globalMode) onOpenChange?.(nextOpen);
+      }}
       inputValue={inputValue}
       onInputValueChange={(value, details) => {
         const reason = details.reason;
         if (reason === "input-change" || reason === "input-clear") {
           setQuery(value);
-        }
-      }}
-      onValueChange={(item: SearchOption | null) => {
-        if (item) {
-          setQuery("");
-          router.push(`/stat/${item.id}`);
         }
       }}
     >
@@ -163,18 +170,52 @@ export default function SearchInput({
         className="border-textBlack300 h-10.5 w-full text-[rgba(55,71,79,1)] shadow-none"
         placeholder={t("stat.search_placeholder", "Փնտրել")}
       />
-      <ComboboxContent>
-        <ComboboxList>
-          {(item: SearchOption) => (
-            <ComboboxItem key={item.id} value={item}>
-              {labelFor(item)}
-            </ComboboxItem>
-          )}
-        </ComboboxList>
-        <ComboboxEmpty>
-          {t("stat.search_results_placeholder", "Որոնման արդյունքները կտեսնեք այստեղ")}
-        </ComboboxEmpty>
-      </ComboboxContent>
+      {!globalMode && (
+        <ComboboxContent>
+          <ComboboxList>
+            {visibleRows.length === 0 ? (
+              <div className="flex w-full justify-center py-4 text-center text-sm text-muted-foreground">
+                {t("stat.search_results_placeholder", "Որոնման արդյունքները կտեսնեք այստեղ")}
+              </div>
+            ) : (
+              visibleRows.map((row, index) => {
+                const isActive = row.item.id === slug;
+                const isFirstNested =
+                  row.level > 0 && (index === 0 || visibleRows[index - 1].level < row.level);
+
+                return (
+                  <button
+                    key={row.item.id}
+                    type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleRowClick(row);
+                    }}
+                    style={{ paddingLeft: 8 + row.level * 16 }}
+                    className={cn(
+                      "flex w-full cursor-pointer items-center gap-2 border-b border-b-[rgba(193,192,192,1)] pr-4 pt-4 pb-5 text-left text-sm text-textBlack800 outline-hidden hover:bg-textBlack300/50",
+                      row.level > 0 && "bg-[rgba(241,245,248,1)]",
+                      isFirstNested && "border-t border-t-[rgba(15,104,192,1)]",
+                      isActive && "font-semibold text-[rgba(15,104,192,1)]"
+                    )}
+                  >
+                    <span className="flex-1">{row.item.title}</span>
+                    {row.hasChildren && (
+                      <ChevronDown
+                        className={cn(
+                          "size-4 shrink-0 transition-transform",
+                          row.expanded ? "" : "-rotate-90"
+                        )}
+                      />
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </ComboboxList>
+        </ComboboxContent>
+      )}
     </Combobox>
   );
 }
