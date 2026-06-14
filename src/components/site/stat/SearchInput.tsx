@@ -121,33 +121,33 @@ export default function SearchInput({
     return metrics[0]?.id;
   }, [metrics, isSectionSlug, slugInTree, slug]);
 
-  if (globalMode) {
-    return (
-      <Input
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        className="border-textBlack300 h-10.5 w-full text-[rgba(55,71,79,1)] shadow-none"
-        placeholder={t("stat.search_placeholder", "Փնտրել")}
-      />
-    );
-  }
-
   return (
-    <Select
-      value={selectedMetricId}
-      disabled={metrics.length === 0 || isSectionSlug}
-      onValueChange={(metricId) => router.push(`/stat/${metricId}`)}
-    >
-      <SelectTrigger className="border-textBlack300 h-10.5 w-full text-[rgba(55,71,79,1)] shadow-none">
-        <SelectValue placeholder={t("stat.indicator_placeholder", "Ցուցանիշ")} />
-      </SelectTrigger>
-      <SelectContent position="popper" className="w-(--radix-select-trigger-width)">
-        {metrics.map((metric) => (
-          <SelectItem key={metric.id} value={metric.id}>
-            {labelFor(metric)}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className="flex min-w-0 flex-1 flex-col gap-3">
+      <Select
+        value={selectedMetricId}
+        disabled={metrics.length === 0 || isSectionSlug}
+        onValueChange={(metricId) => router.push(`/stat/${metricId}`)}
+      >
+        <SelectTrigger className="border-textBlack300 h-10.5 w-full text-[rgba(55,71,79,1)] shadow-none">
+          <SelectValue placeholder={t("stat.indicator_placeholder", "Ցուցանիշ")} />
+        </SelectTrigger>
+        <SelectContent position="popper" className="w-(--radix-select-trigger-width)">
+          {metrics.map((metric) => (
+            <SelectItem key={metric.id} value={metric.id}>
+              {labelFor(metric)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {globalMode && (
+        <Input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          className="border-textBlack300 h-10.5 w-full text-[rgba(55,71,79,1)] shadow-none"
+          placeholder={t("stat.search_placeholder", "Փնտրել")}
+          autoFocus
+        />
+      )}
+    </div>
   );
 }
