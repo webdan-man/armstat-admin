@@ -1,4 +1,6 @@
 import { hasMenuChildren, type StatMenuItem } from "@/lib/stat-menu-utils";
+import { pickLocale, type Locale } from "@/lib/i18n";
+import type { MetricSelectOption } from "@/types/metric";
 
 export type SearchResultGroup = {
   header: string;
@@ -8,6 +10,17 @@ export type SearchResultGroup = {
   showAllNodes?: boolean;
   /** When true with showAllNodes, level-0 rows use menu structure for expand (section topics). */
   structuralLevel0?: boolean;
+};
+
+export type IndicatorSearchResult = {
+  id: string;
+  title: string;
+};
+
+export type IndicatorSearchGroup = {
+  header: string;
+  headerId: string;
+  indicators: IndicatorSearchResult[];
 };
 
 export type SearchResultItem = {
@@ -137,7 +150,101 @@ export function buildSearchTreeRows(
   return rows;
 }
 
-/** Collects global search results grouped by section or parent topic. */
+/** Collects global indicator search results grouped by parent category (topic/subtopic). */
+export function getGlobalIndicatorSearchGroups(
+  menu: StatMenuItem[],
+  metricsByTopicId: Record<string, MetricSelectOption[]>,
+  query: string,
+  lang: Locale
+): IndicatorSearchGroup[] {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) return [];
+
+  const groupMap = new Map<string, IndicatorSearchGroup>();
+
+  const addIndicator = (topic: StatMenuItem, metric: MetricSelectOption) => {
+    const title = pickLocale(metric.title, lang) || metric.label;
+    let group = groupMap.get(topic.id);
+    if (!group) {
+      group = { header: topic.title, headerId: topic.id, indicators: [] };
+      groupMap.set(topic.id, group);
+    }
+    if (!group.indicators.some((indicator) => indicator.id === metric.id)) {
+      group.indicators.push({ id: metric.id, title });
+    }
+  };
+
+  const topicInMatchedBranch = (
+    topicId: string,
+    section: StatMenuItem,
+    normalizedQuery: string
+  ): boolean => {
+    if (titleMatches(section, normalizedQuery)) return true;
+
+    const walk = (items: StatMenuItem[], ancestors: StatMenuItem[]): boolean => {
+      for (const item of items) {
+        const path = [...ancestors, item];
+        if (item.id === topicId) {
+          return path.some((node) => titleMatches(node, normalizedQuery));
+        }
+        if (item.children?.length && walk(item.children, path)) return true;
+      }
+      return false;
+    };
+
+    return walk(section.children ?? [], []);
+  };
+
+  const walkTopics = (section: StatMenuItem, items: StatMenuItem[]) => {
+    for (const topic of items) {
+      const metrics = metricsByTopicId[topic.id] ?? [];
+      const categoryMatches = topicInMatchedBranch(topic.id, section, normalizedQuery);
+
+      for (const metric of metrics) {
+        if (categoryMatches || metricTitleMatches(metric, normalizedQuery)) {
+          addIndicator(topic, metric);
+        }
+      }
+
+      if (topic.children?.length) walkTopics(section, topic.children);
+    }
+  };
+
+  for (const section of menu) {
+    walkTopics(section, section.children ?? []);
+  }
+
+  const orderedGroups: IndicatorSearchGroup[] = [];
+
+  const collectGroups = (items: StatMenuItem[]) => {
+    for (const item of items) {
+      const group = groupMap.get(item.id);
+      if (group) orderedGroups.push(group);
+      if (item.children?.length) collectGroups(item.children);
+    }
+  };
+
+  for (const section of menu) {
+    collectGroups(section.children ?? []);
+  }
+
+  return orderedGroups;
+}
+
+function metricTitleMatches(metric: MetricSelectOption, query: string): boolean {
+  const candidates = [
+    metric.title.hy,
+    metric.title.ru,
+    metric.title.en,
+    (metric.title as { am?: string }).am,
+    metric.label,
+  ];
+  return candidates.some(
+    (title) => typeof title === "string" && title.trim() !== "" && title.toLowerCase().includes(query)
+  );
+}
+
+/** @deprecated Use getGlobalIndicatorSearchGroups for site global search. */
 export function getGlobalSearchGroups(menu: StatMenuItem[], query: string): SearchResultGroup[] {
   const normalizedQuery = query.trim().toLowerCase();
   if (!normalizedQuery) return [];

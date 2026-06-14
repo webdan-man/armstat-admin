@@ -117,3 +117,21 @@ export function trimStatMenuToCategoryDepth(menu: StatMenuItem[]): StatMenuItem[
     })),
   }));
 }
+
+/** Collects every topic/subtopic id from the stat menu tree. */
+export function collectTopicIdsFromMenu(menu: StatMenuItem[]): string[] {
+  const ids: string[] = [];
+
+  const walk = (items: StatMenuItem[]) => {
+    for (const item of items) {
+      ids.push(item.id);
+      if (item.children?.length) walk(item.children);
+    }
+  };
+
+  for (const section of menu) {
+    walk(section.children ?? []);
+  }
+
+  return ids;
+}

@@ -19,7 +19,7 @@ import useSWR from "swr";
 import { useLang } from "@/providers/LangProvider";
 import { useTranslation } from "@/hooks/useTranslation";
 import { buildStatMenu, isSlugInStatMenu, getStatMenuTitle } from "@/lib/stat-menu-utils";
-import { getGlobalSearchGroups } from "@/lib/stat-search-utils";
+import { useGlobalIndicatorSearchGroups } from "@/hooks/useGlobalIndicatorSearchGroups";
 import {
   getMetricById,
   getMetricCombinations,
@@ -94,10 +94,7 @@ export default function StatPage() {
   const [isGlobalSearch, setIsGlobalSearch] = useState<boolean>(false);
 
   const normalizedQuery = query.trim().toLowerCase();
-  const globalSearchGroups = useMemo(
-    () => (isGlobalSearch ? getGlobalSearchGroups(menu, normalizedQuery) : []),
-    [isGlobalSearch, menu, normalizedQuery]
-  );
+  const globalSearchGroups = useGlobalIndicatorSearchGroups(menu, normalizedQuery, isGlobalSearch);
 
   const shouldShowGlobalResults =
     isGlobalSearch && normalizedQuery.length > 0 && globalSearchGroups.length > 0;
@@ -367,7 +364,7 @@ export default function StatPage() {
           </div>
         </div>
       ) : shouldShowGlobalResults ? (
-        <GlobalSearchResults menu={menu} query={normalizedQuery} onNavigate={exitGlobalSearch} />
+        <GlobalSearchResults groups={globalSearchGroups} onNavigate={exitGlobalSearch} />
       ) : (
         <div className="flex h-[calc(100vh-304px)] w-full flex-col items-center justify-center">
           <div className="flex flex-col items-center justify-center gap-1">

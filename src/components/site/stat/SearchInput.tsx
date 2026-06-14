@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import { Search } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { fetchSections } from "@/services/sectionsService";
@@ -11,7 +12,11 @@ import { buildStatMenu, isSlugInStatMenu } from "@/lib/stat-menu-utils";
 import { useTranslation } from "@/hooks/useTranslation";
 import { pickLocale } from "@/lib/i18n";
 import type { Section } from "@/types/section";
-import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import {
   Select,
   SelectContent,
@@ -140,13 +145,18 @@ export default function SearchInput({
         </SelectContent>
       </Select>
       {globalMode && (
-        <Input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          className="border-textBlack300 h-10.5 w-full text-[rgba(55,71,79,1)] shadow-none"
-          placeholder={t("stat.search_placeholder", "Փնտրել")}
-          autoFocus
-        />
+        <InputGroup className="border-textBlack300 h-10.5 w-full shadow-none">
+          <InputGroupAddon align="inline-start" className="pl-3">
+            <Search className="size-5 text-[rgba(15,104,192,1)]" strokeWidth={2} aria-hidden />
+          </InputGroupAddon>
+          <InputGroupInput
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            className="text-[rgba(55,71,79,1)]"
+            placeholder={t("stat.search_placeholder", "Փնտրել")}
+            autoFocus
+          />
+        </InputGroup>
       )}
     </div>
   );
