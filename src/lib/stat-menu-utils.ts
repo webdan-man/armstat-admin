@@ -103,3 +103,17 @@ export function isSlugInStatMenu(menu: StatMenuItem[], slug: string): boolean {
 export function hasMenuChildren(item: StatMenuItem): boolean {
   return (item.children?.length ?? 0) > 0;
 }
+
+/** Limits the sidebar to Group → Sub-Category → Sub-Sub Category (no deeper nesting). */
+export function trimStatMenuToCategoryDepth(menu: StatMenuItem[]): StatMenuItem[] {
+  return menu.map((section) => ({
+    ...section,
+    children: (section.children ?? []).map((topic) => ({
+      ...topic,
+      children: (topic.children ?? []).map((subtopic) => ({
+        ...subtopic,
+        children: undefined,
+      })),
+    })),
+  }));
+}

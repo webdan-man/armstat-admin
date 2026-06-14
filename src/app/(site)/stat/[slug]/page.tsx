@@ -91,7 +91,6 @@ export default function StatPage() {
   const { projectedCombinations } = columnFilters;
 
   const [query, setQuery] = useState<string>("");
-  const [searchOpen, setSearchOpen] = useState<boolean>(false);
   const [isGlobalSearch, setIsGlobalSearch] = useState<boolean>(false);
 
   const normalizedQuery = query.trim().toLowerCase();
@@ -102,10 +101,8 @@ export default function StatPage() {
 
   const shouldShowGlobalResults =
     isGlobalSearch && normalizedQuery.length > 0 && globalSearchGroups.length > 0;
-  const shouldShowPlaceholder =
-    (isGlobalSearch && !shouldShowGlobalResults) || (query.length > 0 && !isGlobalSearch);
-  const shouldShowMetricPanel =
-    Boolean(slug) && !isSectionSlug && !isGlobalSearch && query.length === 0;
+  const shouldShowPlaceholder = isGlobalSearch && !shouldShowGlobalResults;
+  const shouldShowMetricPanel = Boolean(slug) && !isSectionSlug && !isGlobalSearch;
   const metricUnit = metric?.unit?.[activeLang];
 
   const pageTitle = useMemo(() => {
@@ -134,27 +131,19 @@ export default function StatPage() {
   const exitGlobalSearch = () => {
     setIsGlobalSearch(false);
     setQuery("");
-    setSearchOpen(false);
   };
 
   return (
     <div className="flex w-full flex-col pt-7.5 pb-10 pl-16.75">
       <TypographyH3 className="min-h-6 text-[rgba(40,40,40,1)]">{pageTitle}</TypographyH3>
       <div className="mt-5 flex gap-3">
-        <SearchInput
-          query={query}
-          setQuery={setQuery}
-          open={searchOpen}
-          onOpenChange={setSearchOpen}
-          globalMode={isGlobalSearch}
-        />
+        <SearchInput query={query} setQuery={setQuery} globalMode={isGlobalSearch} />
         <Button
           onClick={() => {
             if (isGlobalSearch) {
               exitGlobalSearch();
             } else {
               setIsGlobalSearch(true);
-              setSearchOpen(false);
             }
           }}
           variant="secondary"

@@ -7,7 +7,12 @@ import { fetchSections } from "@/services/sectionsService";
 import { fetchMetricsByTopicId, getMetricById } from "@/services/metricsService";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { Skeleton } from "@/components/ui/skeleton";
-import { buildStatMenu, isSlugInStatMenu, type StatMenuItem } from "@/lib/stat-menu-utils";
+import {
+  buildStatMenu,
+  isSlugInStatMenu,
+  trimStatMenuToCategoryDepth,
+  type StatMenuItem,
+} from "@/lib/stat-menu-utils";
 import { useTranslation } from "@/hooks/useTranslation";
 
 type MenuItem = StatMenuItem;
@@ -199,7 +204,10 @@ export default function Sidebar() {
   const { data: sections, isLoading: isSectionsLoading } = useSWR(swrKeys.sections, fetchSections);
 
   const isSidebarLoading = isSectionsLoading || sections === undefined;
-  const menu = useMemo(() => buildStatMenu(sections ?? [], activeLang), [sections, activeLang]);
+  const menu = useMemo(
+    () => trimStatMenuToCategoryDepth(buildStatMenu(sections ?? [], activeLang)),
+    [sections, activeLang]
+  );
 
   // Once sections load, check whether the active slug belongs to the tree.
   // If it doesn't, it's a metricId — fetch the metric to resolve its topicId.
