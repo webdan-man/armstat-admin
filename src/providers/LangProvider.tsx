@@ -41,16 +41,28 @@ function getInitialLang(): Locale {
   );
 }
 
-export function LangProvider({ children }: { children: React.ReactNode }) {
+export function LangProvider({
+  children,
+  initialLang = defaultLocale,
+}: {
+  children: React.ReactNode;
+  /** Locale resolved on the server (URL ?lang= → cookie → default) to seed first render. */
+  initialLang?: Locale;
+}) {
   const router = useRouter();
   const pathname = usePathname();
-  const [activeLang, setActiveLangState] = useState<Locale>(defaultLocale);
-  const [ready, setReady] = useState(false);
+  // Seeded from the server so the first paint already uses the right locale —
+  // no default→actual flash on load.
+  const [activeLang, setActiveLangState] = useState<Locale>(initialLang);
+  const [ready, setReady] = useState(true);
 
   useEffect(() => {
-    setActiveLangState(getInitialLang());
+    // Reconcile with client-only sources (localStorage / a ?lang= the layout
+    // can't read). Normally matches the server value, so no visible change.
+    const clientLang = getInitialLang();
+    if (clientLang !== initialLang) setActiveLangState(clientLang);
     setReady(true);
-  }, []);
+  }, [initialLang]);
 
   const setActiveLang = (lang: Locale) => {
     setActiveLangState(lang);
