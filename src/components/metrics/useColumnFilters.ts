@@ -81,8 +81,10 @@ export function useColumnFilters(
     // Collapse duplicate projections into a single row. isCumulative=true means values are
     // summable counts → add them; otherwise values can't be added, so keep the first occurrence.
     const isSummable = isCumulative === true;
+    const groupMap = new Map<string, { combo: MetricCombination; numValue: number }>();
+    let hasDuplicates = false;
 
-    const project = (combo: MetricCombination): MetricCombination => {
+    for (const combo of valueFilteredCombinations) {
       const projectedRow = visibleColumnIndexes
         .map((i) => combo.row?.[i])
         .filter((e): e is MetricCombinationRowEntry => Boolean(e));
@@ -96,19 +98,21 @@ export function useColumnFilters(
         }
       }
 
-      return { ...combo, row: projectedRow, attributes: projectedAttributes };
-    };
-
-    const groupMap = new Map<string, { combo: MetricCombination; numValue: number }>();
-    for (const combo of valueFilteredCombinations) {
       const key = visibleColumnIndexes.map((i) => valueAtColumnIndex(combo, i)).join("\0");
-      const existing = groupMap.get(key);
-      if (existing) {
-        if (isSummable) existing.numValue += Number(combo.value) || 0;
+
+      if (groupMap.has(key)) {
+        hasDuplicates = true;
+        if (!isSummable) break;
+        groupMap.get(key)!.numValue += Number(combo.value) || 0;
       } else {
-        groupMap.set(key, { combo: project(combo), numValue: Number(combo.value) || 0 });
+        groupMap.set(key, {
+          combo: { ...combo, row: projectedRow, attributes: projectedAttributes },
+          numValue: Number(combo.value) || 0,
+        });
       }
     }
+
+    if (hasDuplicates && !isSummable) return [];
 
     return Array.from(groupMap.values()).map(({ combo, numValue }) => ({
       ...combo,
