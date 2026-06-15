@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5map from "@amcharts/amcharts5/map";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
+import { useLang } from "@/providers/LangProvider";
 
 type MainLangCode = "hy" | "ru" | "en";
 
@@ -21,11 +22,18 @@ const PROVINCE_NAMES_BY_ID: Record<string, { hy: string; en: string; ru: string 
   "AM-VD": { hy: "Վայոց Ձոր", en: "Vayots Dzor", ru: "Вайоц Дзор" },
 };
 
-function normalizeToMainLangCode(locale: string | undefined): MainLangCode {
-  // const lower = (locale ?? "").toLowerCase();
-  // if (lower.startsWith("en")) return "en";
-  // if (lower.startsWith("ru")) return "ru";
-  return "hy";
+/** Builds amCharts polygon data with province names in the given locale. */
+function buildMapData(
+  geoData: any,
+  valueData: { id: string; value: number }[],
+  lang: MainLangCode
+) {
+  const valueByProvinceId = new Map(valueData.map((d) => [d.id, d.value]));
+  return geoData.features.map(({ id, properties }: any) => ({
+    id,
+    name: PROVINCE_NAMES_BY_ID[id]?.[lang] ?? properties?.name ?? id,
+    value: valueByProvinceId.get(id) ?? 0,
+  }));
 }
 
 interface ArmeniaMapChartProps {
@@ -57,10 +65,13 @@ export default function ArmeniaMapChart({
   onPolygonSelect,
   onPolygonHover,
 }: ArmeniaMapChartProps) {
+  const { activeLang } = useLang();
+
   const containerRef = useRef<HTMLDivElement | null>(null);
   const onPolygonSelectRef = useRef(onPolygonSelect);
   const onPolygonHoverRef = useRef(onPolygonHover);
   const dataRef = useRef<ArmeniaMapChartProps["data"]>(data);
+  const activeLangRef = useRef<MainLangCode>(activeLang);
 
   const rootRef = useRef<am5.Root | null>(null);
   const polygonSeriesRef = useRef<am5map.MapPolygonSeries | null>(null);
@@ -353,18 +364,8 @@ export default function ArmeniaMapChart({
     polygonSeriesRef.current = polygonSeries;
 
     const buildAndSetMapData = (geoData: any, valueData: ArmeniaMapChartProps["data"]) => {
-      const valueByProvinceId = new Map(valueData.map((d) => [d.id, d.value]));
-      const lang = normalizeToMainLangCode(
-        typeof navigator !== "undefined" ? navigator.language : undefined
-      );
-      const mapData = geoData.features.map(({ id, properties }: any) => ({
-        id,
-        name: PROVINCE_NAMES_BY_ID[id]?.[lang] ?? properties?.name ?? id,
-        value: valueByProvinceId.get(id) ?? 0,
-      }));
-
       polygonSeries.set("geoJSON", geoData);
-      polygonSeries.data.setAll(mapData);
+      polygonSeries.data.setAll(buildMapData(geoData, valueData, activeLangRef.current));
     };
 
     am5.net.load("/api/chart/map").then(({ response }: any) => {
@@ -415,17 +416,17 @@ export default function ArmeniaMapChart({
       return;
     }
 
-    const valueByProvinceId = new Map(data.map((d) => [d.id, d.value]));
-    const lang = normalizeToMainLangCode(
-      typeof navigator !== "undefined" ? navigator.language : undefined
-    );
-    const mapData = geoData.features.map(({ id, properties }: any) => ({
-      id,
-      name: PROVINCE_NAMES_BY_ID[id]?.[lang] ?? properties?.name ?? id,
-      value: valueByProvinceId.get(id) ?? 0,
-    }));
-    polygonSeries.data.setAll(mapData);
+    polygonSeries.data.setAll(buildMapData(geoData, data, activeLangRef.current));
   }, [data]);
+
+  // Re-render province names when the active locale changes (tooltip/hover text).
+  useEffect(() => {
+    activeLangRef.current = activeLang;
+    const geoData = geoJsonRef.current;
+    const polygonSeries = polygonSeriesRef.current;
+    if (!polygonSeries || !geoData) return;
+    polygonSeries.data.setAll(buildMapData(geoData, dataRef.current, activeLang));
+  }, [activeLang]);
 
   return <div ref={containerRef} style={{ width: "100%", height: "500px" }} />;
 }
