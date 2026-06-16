@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { TypographyH1 } from "@/components/ui/typography";
+import { MarkdownText } from "@/components/site/MarkdownText";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -15,8 +15,8 @@ import useSWR from "swr";
 import { useLang } from "@/providers/LangProvider";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useSiteNavItems } from "@/hooks/useSiteNavItems";
+import HeaderSearchButton from "@/components/site/HeaderSearchButton";
 import type { ContentLangCode } from "@/types/content-entries";
-import { MarkdownText } from "@/components/site/MarkdownText";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { fetchHomePage } from "@/services/mainPageService";
 
@@ -25,6 +25,51 @@ const languages: { labelKey: string; code: ContentLangCode; fallback: string }[]
   { labelKey: "language.en", code: "en", fallback: "English" },
   { labelKey: "language.ru", code: "ru", fallback: "Russian" },
 ];
+
+function LanguageDropdown({
+  activeLang,
+  setActiveLang,
+  visibleLanguages,
+  ready,
+}: {
+  activeLang: ContentLangCode;
+  setActiveLang: (code: ContentLangCode) => void;
+  visibleLanguages: typeof languages;
+  ready: boolean;
+}) {
+  const { t } = useTranslation();
+  const activeLangLabel = languages.find((l) => l.code === activeLang);
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-hidden={!ready}
+          className={`flex cursor-pointer items-center gap-1 p-[3px] text-white outline-none ${
+            ready ? "" : "pointer-events-none invisible"
+          }`}
+        >
+          <Image src="/icons/earth.svg" alt="Earth" width={24} height={24} />
+          <span className="max-md:hidden">
+            {activeLangLabel ? t(activeLangLabel.labelKey, activeLangLabel.fallback) : ""}
+          </span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {visibleLanguages.map((lang) => (
+          <DropdownMenuItem
+            key={lang.code}
+            onClick={() => setActiveLang(lang.code)}
+            className={lang.code === activeLang ? "font-bold" : ""}
+          >
+            {t(lang.labelKey, lang.fallback)}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export default function Header() {
   const { activeLang, setActiveLang, ready } = useLang();
@@ -45,12 +90,11 @@ export default function Header() {
   }, [homePageData, activeLang, visibleLanguages, setActiveLang]);
 
   const pathname = usePathname();
-  const activeLangLabel = languages.find((l) => l.code === activeLang);
 
   return (
     <header className="bg-blue1000 relative flex w-full flex-col items-center">
-      <div className="flex w-full max-w-305 items-center justify-between px-5 py-4 max-md:gap-5">
-        <Link href="/" className="flex w-full items-center gap-4 max-md:gap-2">
+      <div className="flex w-full max-w-305 items-center justify-between gap-4 px-5 py-4">
+        <Link href="/" className="flex min-w-0 flex-1 items-center gap-4 max-md:gap-2">
           <Image
             className="max-md:w-[25%]"
             src={"/logo.svg"}
@@ -65,29 +109,38 @@ export default function Header() {
             {t("header.site_title", "Statistical Committee of the Republic of Armenia ARMSTAT")}
           </MarkdownText>
         </Link>
-        {/* Mobile hamburger */}
-        <button
-          type="button"
-          onClick={() => setMobileOpen((v) => !v)}
-          className="hidden h-8 w-8 flex-col items-center justify-center gap-[5px] focus:outline-none max-md:flex"
-          aria-label="Toggle menu"
-        >
-          <span
-            className={`h-[2px] w-6 rounded-full bg-white transition-all duration-300 ${
-              mobileOpen ? "translate-y-[7px] rotate-45" : ""
-            }`}
-          />
-          <span
-            className={`h-[2px] w-6 rounded-full bg-white transition-all duration-300 ${
-              mobileOpen ? "opacity-0" : ""
-            }`}
-          />
-          <span
-            className={`h-[2px] w-6 rounded-full bg-white transition-all duration-300 ${
-              mobileOpen ? "-translate-y-[7px] -rotate-45" : ""
-            }`}
-          />
-        </button>
+        <div className="flex shrink-0 items-center gap-3">
+          {ready ? (
+            <LanguageDropdown
+              activeLang={activeLang}
+              setActiveLang={setActiveLang}
+              visibleLanguages={visibleLanguages}
+              ready={ready}
+            />
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setMobileOpen((v) => !v)}
+            className="hidden h-8 w-8 flex-col items-center justify-center gap-[5px] focus:outline-none max-md:flex"
+            aria-label="Toggle menu"
+          >
+            <span
+              className={`h-[2px] w-6 rounded-full bg-white transition-all duration-300 ${
+                mobileOpen ? "translate-y-[7px] rotate-45" : ""
+              }`}
+            />
+            <span
+              className={`h-[2px] w-6 rounded-full bg-white transition-all duration-300 ${
+                mobileOpen ? "opacity-0" : ""
+              }`}
+            />
+            <span
+              className={`h-[2px] w-6 rounded-full bg-white transition-all duration-300 ${
+                mobileOpen ? "-translate-y-[7px] -rotate-45" : ""
+              }`}
+            />
+          </button>
+        </div>
       </div>
 
       {/* Desktop nav */}
@@ -109,33 +162,7 @@ export default function Header() {
               </li>
             ))}
           </ul>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                aria-hidden={!ready}
-                className={`flex cursor-pointer items-center gap-1 p-[3px] outline-none ${
-                  ready ? "" : "pointer-events-none invisible"
-                }`}
-              >
-                <Image src="/icons/earth.svg" alt="Earth" width={24} height={24} />
-                <span>
-                  {activeLangLabel ? t(activeLangLabel.labelKey, activeLangLabel.fallback) : ""}
-                </span>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              {visibleLanguages.map((lang) => (
-                <DropdownMenuItem
-                  key={lang.code}
-                  onClick={() => setActiveLang(lang.code)}
-                  className={lang.code === activeLang ? "font-bold" : ""}
-                >
-                  {t(lang.labelKey, lang.fallback)}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <HeaderSearchButton />
         </nav>
       </div>
 
@@ -162,29 +189,9 @@ export default function Header() {
             </li>
           ))}
         </ul>
-        {ready && (
-          <div className="mt-8 border-t border-white/20 pt-6">
-            <ul className="flex flex-col gap-4">
-              {visibleLanguages.map((lang) => (
-                <li key={lang.code}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveLang(lang.code);
-                      setMobileOpen(false);
-                    }}
-                    className={`flex items-center gap-2 text-base text-white hover:underline ${
-                      lang.code === activeLang ? "font-bold" : "font-normal"
-                    }`}
-                  >
-                    <Image src="/icons/earth.svg" alt="Earth" width={18} height={18} />
-                    {t(lang.labelKey, lang.fallback)}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <div className="mt-8 border-t border-white/20 pt-6">
+          <HeaderSearchButton className="text-white" />
+        </div>
       </div>
     </header>
   );

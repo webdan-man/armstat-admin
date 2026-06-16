@@ -23,10 +23,33 @@ function getSearchTitles(value: SectionLocalizedText): string[] {
 }
 
 /** Mirrors Sidebar: children come only from nested `subtopics`, never flat topic lists. */
-function getChildTopics(topic: Topic): Topic[] {
+export function getChildTopics(topic: Topic): Topic[] {
   return (topic.subtopics ?? []).filter(
     (candidate) => candidate._id && candidate._id !== topic._id
   );
+}
+
+function topicToListItem(topic: Topic, lang: Locale): StatMenuItem {
+  return {
+    id: topic._id,
+    title: getSectionLocalizedText(topic.title, lang),
+    searchTitles: getSearchTitles(topic.title),
+  };
+}
+
+/** Flat topic/subtopic rows for a section using raw API topics (all top-level topics). */
+export function getFlatListItemsForSection(section: Section, lang: Locale): StatMenuItem[] {
+  const rows: StatMenuItem[] = [];
+  const topLevelTopics = section.topics.filter(isRootTopic);
+
+  for (const topic of topLevelTopics) {
+    rows.push(topicToListItem(topic, lang));
+    for (const sub of getChildTopics(topic)) {
+      rows.push(topicToListItem(sub, lang));
+    }
+  }
+
+  return rows;
 }
 
 function mapTopicToMenuItem(
@@ -116,6 +139,68 @@ export function trimStatMenuToCategoryDepth(menu: StatMenuItem[]): StatMenuItem[
       })),
     })),
   }));
+}
+
+function findMenuItem(items: StatMenuItem[], slug: string): StatMenuItem | null {
+  for (const item of items) {
+    if (item.id === slug) return item;
+    if (item.children?.length) {
+      const nested = findMenuItem(item.children, slug);
+      if (nested) return nested;
+    }
+  }
+  return null;
+}
+
+/** Returns the menu item (section/topic/subtopic) matching slug, or null. */
+export function findStatMenuItem(menu: StatMenuItem[], slug: string): StatMenuItem | null {
+  for (const section of menu) {
+    if (section.id === slug) return section;
+    const nested = findMenuItem(section.children ?? [], slug);
+    if (nested) return nested;
+  }
+  return null;
+}
+
+/** Flattens topic + subtopics for list display (no nesting). */
+function flattenTopicList(topic: StatMenuItem): StatMenuItem[] {
+  const result: StatMenuItem[] = [topic];
+  for (const child of topic.children ?? []) {
+    result.push(child);
+  }
+  return result;
+}
+
+/**
+ * Returns flat topic/subtopic rows to show for a section, topic, or subtopic slug.
+ * Section: all root topics and their subtopics as separate rows.
+ * Topic: topic + its subtopics.
+ * Subtopic: single row.
+ */
+export function getFlatListItemsForSlug(menu: StatMenuItem[], slug: string): StatMenuItem[] {
+  const item = findStatMenuItem(menu, slug);
+  if (!item) return [];
+
+  const isSection = menu.some((section) => section.id === slug);
+  if (isSection) {
+    const rows: StatMenuItem[] = [];
+    for (const topic of item.children ?? []) {
+      rows.push(topic);
+      for (const sub of topic.children ?? []) {
+        rows.push(sub);
+      }
+    }
+    return rows;
+  }
+
+  const isRootTopic = menu.some((section) =>
+    (section.children ?? []).some((topic) => topic.id === slug)
+  );
+  if (isRootTopic) {
+    return flattenTopicList(item);
+  }
+
+  return [item];
 }
 
 /** Collects every topic/subtopic id from the stat menu tree. */

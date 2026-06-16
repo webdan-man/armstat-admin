@@ -82,10 +82,12 @@ export default async function Home({ searchParams }: HomePageProps) {
           title: b.title ?? {},
           subtitle: b.subtitle ?? {},
           image: absolutizeUrl(b.image, baseUrl),
-          sections:
-            ((b.sections as Array<{ name?: Localized }> | undefined) ?? [])
-              .map((s) => ({ name: s.name ?? {} }))
-              .filter((s) => Object.values(s.name).some(Boolean)),
+          sections: ((b.sections as Array<{ _id?: string; name?: Localized }> | undefined) ?? [])
+            .map((s, index) => ({
+              id: s._id ?? b.sectionIds[index] ?? "",
+              name: s.name ?? {},
+            }))
+            .filter((s) => s.id && Object.values(s.name).some(Boolean)),
         }))}
       />
       <News

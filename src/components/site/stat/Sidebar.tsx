@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, usePathname } from "next/navigation";
 import useSWR, { preload } from "swr";
 import { fetchSections } from "@/services/sectionsService";
 import { fetchMetricsByTopicId, getMetricById } from "@/services/metricsService";
@@ -193,13 +193,13 @@ export default function Sidebar() {
   const { t, activeLang } = useTranslation();
   const params = useParams();
   const router = useRouter();
-  const activeSlug = params.slug as string;
+  const pathname = usePathname();
+  const activeSlug = params.slug as string | undefined;
+  const isCatalogRoot = pathname === "/stat";
 
   const [pendingSlug, setPendingSlug] = useState<string | null>(null);
   const [overrideExpandedPath, setOverrideExpandedPath] = useState<string[] | null>(null);
   const [collapsedSectionIds, setCollapsedSectionIds] = useState<Set<string>>(() => new Set());
-
-  const effectiveSlug = pendingSlug ?? activeSlug;
 
   const { data: sections, isLoading: isSectionsLoading } = useSWR(swrKeys.sections, fetchSections);
 
@@ -208,6 +208,10 @@ export default function Sidebar() {
     () => trimStatMenuToCategoryDepth(buildStatMenu(sections ?? [], activeLang)),
     [sections, activeLang]
   );
+
+  const defaultSectionId = menu[0]?.id;
+  const resolvedSlug = activeSlug ?? (isCatalogRoot ? defaultSectionId : undefined);
+  const effectiveSlug = pendingSlug ?? resolvedSlug ?? "";
 
   // Once sections load, check whether the active slug belongs to the tree.
   // If it doesn't, it's a metricId — fetch the metric to resolve its topicId.
@@ -241,10 +245,10 @@ export default function Sidebar() {
   expandedPathRef.current = expandedPath;
 
   useLayoutEffect(() => {
-    if (pendingSlug !== null && pendingSlug === activeSlug) {
+    if (pendingSlug !== null && pendingSlug === resolvedSlug) {
       setPendingSlug(null);
     }
-  }, [activeSlug, pendingSlug]);
+  }, [resolvedSlug, pendingSlug]);
 
   useLayoutEffect(() => {
     if (pendingSlug !== null) return;
@@ -254,13 +258,13 @@ export default function Sidebar() {
       if (pathsEqual(prev, autoExpandedPath)) return null;
       return prev;
     });
-  }, [activeSlug, autoExpandedPath, pendingSlug]);
+  }, [resolvedSlug, autoExpandedPath, pendingSlug]);
 
   useEffect(() => {
-    if (!menu.some((section) => section.id === activeSlug)) {
+    if (!resolvedSlug || !menu.some((section) => section.id === resolvedSlug)) {
       setCollapsedSectionIds(new Set());
     }
-  }, [activeSlug, menu]);
+  }, [resolvedSlug, menu]);
 
   const navigateToItem = (itemId: string, level: number, canExpand: boolean) => {
     let targetSlug = itemId;
@@ -271,14 +275,7 @@ export default function Sidebar() {
           next.delete(itemId);
           return next;
         });
-        // Clicking a section always opens it and selects its first child.
-        const firstChild = menu.find((section) => section.id === itemId)?.children?.[0];
-        if (firstChild) {
-          targetSlug = firstChild.id;
-          setOverrideExpandedPath(expandedPathForSlug(menu, firstChild.id, null));
-        } else {
-          setOverrideExpandedPath([itemId]);
-        }
+        setOverrideExpandedPath([itemId]);
       } else {
         setOverrideExpandedPath(
           resolveExpandedPathOnClick(menu, itemId, level, expandedPathRef.current)

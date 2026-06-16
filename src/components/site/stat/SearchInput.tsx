@@ -1,22 +1,15 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Search } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { fetchSections } from "@/services/sectionsService";
 import { fetchMetricsByTopicId, getMetricById } from "@/services/metricsService";
 import { swrKeys } from "@/lib/swr/cache-keys";
-import { isRootTopic } from "@/lib/section-topic-utils";
 import { buildStatMenu, isSlugInStatMenu } from "@/lib/stat-menu-utils";
 import { useTranslation } from "@/hooks/useTranslation";
 import { pickLocale } from "@/lib/i18n";
 import type { Section } from "@/types/section";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
 import {
   Select,
   SelectContent,
@@ -52,9 +45,7 @@ function resolveSlug(sections: Section[], slug: string): SlugTarget | null {
     }
     for (const topic of section.topics) {
       if (topic._id === slug) {
-        return isRootTopic(topic)
-          ? { kind: "topic", topicIds: [topic._id] }
-          : { kind: "subtopic", topicIds: [topic._id] };
+        return { kind: "topic", topicIds: [topic._id] };
       }
       for (const sub of topic.subtopics ?? []) {
         if (sub._id === slug) return { kind: "subtopic", topicIds: [sub._id] };
@@ -64,15 +55,7 @@ function resolveSlug(sections: Section[], slug: string): SlugTarget | null {
   return null;
 }
 
-export default function SearchInput({
-  query,
-  setQuery,
-  globalMode = false,
-}: {
-  query: string;
-  setQuery: (v: string) => void;
-  globalMode?: boolean;
-}) {
+export default function SearchInput() {
   const { t, activeLang } = useTranslation();
   const router = useRouter();
   const params = useParams();
@@ -118,19 +101,16 @@ export default function SearchInput({
 
   const labelFor = (item: MetricOption) => pickLocale(item.title, activeLang) || item.label;
 
-  const isSectionSlug = useMemo(() => menu.some((section) => section.id === slug), [menu, slug]);
-
   const selectedMetricId = useMemo(() => {
-    if (metrics.length === 0 || isSectionSlug) return undefined;
-    if (!slugInTree) return metrics.find((metric) => metric.id === slug)?.id;
-    return metrics[0]?.id;
-  }, [metrics, isSectionSlug, slugInTree, slug]);
+    if (metrics.length === 0 || slugInTree) return undefined;
+    return metrics.find((metric) => metric.id === slug)?.id;
+  }, [metrics, slugInTree, slug]);
 
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-3">
       <Select
         value={selectedMetricId}
-        disabled={metrics.length === 0 || isSectionSlug}
+        disabled={metrics.length === 0}
         onValueChange={(metricId) => router.push(`/stat/${metricId}`)}
       >
         <SelectTrigger className="border-textBlack300 h-10.5 w-full text-[rgba(55,71,79,1)] shadow-none">
@@ -144,20 +124,6 @@ export default function SearchInput({
           ))}
         </SelectContent>
       </Select>
-      {globalMode && (
-        <InputGroup className="border-textBlack300 h-10.5 w-full shadow-none">
-          <InputGroupAddon align="inline-start" className="pl-3">
-            <Search className="size-5 text-[rgba(15,104,192,1)]" strokeWidth={2} aria-hidden />
-          </InputGroupAddon>
-          <InputGroupInput
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            className="text-[rgba(55,71,79,1)]"
-            placeholder={t("stat.search_placeholder", "Փնտրել")}
-            autoFocus
-          />
-        </InputGroup>
-      )}
     </div>
   );
 }

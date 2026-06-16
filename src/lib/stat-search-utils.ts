@@ -150,6 +150,30 @@ export function buildSearchTreeRows(
   return rows;
 }
 
+/** Builds indicator groups for flat topic/subtopic list mode (no search filter). */
+export function getTopicListIndicatorGroups(
+  items: StatMenuItem[],
+  metricsByTopicId: Record<string, MetricSelectOption[]>,
+  lang: Locale
+): IndicatorSearchGroup[] {
+  const groups: IndicatorSearchGroup[] = [];
+
+  for (const item of items) {
+    const metrics = metricsByTopicId[item.id] ?? [];
+
+    groups.push({
+      header: item.title,
+      headerId: item.id,
+      indicators: metrics.map((metric) => ({
+        id: metric.id,
+        title: pickLocale(metric.title, lang) || metric.label,
+      })),
+    });
+  }
+
+  return groups;
+}
+
 /** Collects global indicator search results grouped by parent category (topic/subtopic). */
 export function getGlobalIndicatorSearchGroups(
   menu: StatMenuItem[],

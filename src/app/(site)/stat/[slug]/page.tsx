@@ -8,9 +8,9 @@ import Image from "next/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ChartTab from "@/components/site/stat/ChartTab";
 import SearchInput from "@/components/site/stat/SearchInput";
-import GlobalSearchResults from "@/components/site/stat/GlobalSearchResults";
+import StatIndicatorList from "@/components/site/stat/StatIndicatorList";
 import TableTab from "@/components/site/stat/TableTab";
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useColumnFilters } from "@/components/metrics/useColumnFilters";
 import { ColumnFilters } from "@/components/metrics/ColumnFilters";
 import { useParams } from "next/navigation";
@@ -18,12 +18,18 @@ import { toast } from "sonner";
 import useSWR from "swr";
 import { useLang } from "@/providers/LangProvider";
 import { useTranslation } from "@/hooks/useTranslation";
-import { buildStatMenu, isSlugInStatMenu, getStatMenuTitle } from "@/lib/stat-menu-utils";
-import { useGlobalIndicatorSearchGroups } from "@/hooks/useGlobalIndicatorSearchGroups";
+import {
+  buildStatMenu,
+  isSlugInStatMenu,
+  getStatMenuTitle,
+  getFlatListItemsForSlug,
+  getFlatListItemsForSection,
+} from "@/lib/stat-menu-utils";
+import { getTopicListIndicatorGroups } from "@/lib/stat-search-utils";
+import { useTopicListMetrics } from "@/hooks/useMetricsByTopicIds";
 import {
   getMetricById,
   getMetricCombinations,
-  fetchMetricsByTopicId,
   downloadMetricCombinationsCSV,
   downloadMetricCombinationsPDF,
 } from "@/services/metricsService";
@@ -43,31 +49,31 @@ export default function StatPage() {
     () => (sections ?? []).find((section) => section._id === slug),
     [sections, slug]
   );
-  const isSectionSlug = Boolean(activeSection);
   const sectionsReady = sections !== undefined;
   const slugInTree = useMemo(() => {
     if (!sectionsReady) return false;
     return isSlugInStatMenu(menu, slug);
   }, [sectionsReady, menu, slug]);
-  const shouldLoadTopicMetrics = Boolean(slug) && sectionsReady && !isSectionSlug && slugInTree;
 
-  const { data: topicMetrics = [], isLoading: isTopicMetricsLoading } = useSWR(
-    shouldLoadTopicMetrics ? swrKeys.metricsByTopic(slug) : null,
-    () => fetchMetricsByTopicId(slug)
+  const listItems = useMemo(() => {
+    if (!slugInTree) return [];
+    if (activeSection) {
+      return getFlatListItemsForSection(activeSection, activeLang);
+    }
+    return getFlatListItemsForSlug(menu, slug);
+  }, [slugInTree, activeSection, activeLang, menu, slug]);
+  const { data: listMetricsByTopicId = {}, isLoading: isListMetricsLoading } =
+    useTopicListMetrics(listItems);
+
+  const listGroups = useMemo(
+    () => getTopicListIndicatorGroups(listItems, listMetricsByTopicId, activeLang),
+    [listItems, listMetricsByTopicId, activeLang]
   );
 
   const selectedMetricId = useMemo(() => {
-    if (!slug || isSectionSlug) return null;
-    // Wait for sections so we can tell whether the slug is a topic id or a bare
-    // metric id. Returning `slug` early fires requests against /api/metrics/<topicId>
-    // which 404 until the topic resolves to its real metric id.
-    if (!sectionsReady) return null;
-    if (slugInTree) {
-      if (topicMetrics.length > 0) return topicMetrics[0].id;
-      return null;
-    }
+    if (!slug || !sectionsReady || slugInTree) return null;
     return slug;
-  }, [slug, isSectionSlug, sectionsReady, slugInTree, topicMetrics]);
+  }, [slug, sectionsReady, slugInTree]);
 
   const { data: metric, isLoading: isMetricLoading } = useSWR(
     selectedMetricId ? swrKeys.metricForm(selectedMetricId) : null,
@@ -78,10 +84,8 @@ export default function StatPage() {
     () => getMetricCombinations(selectedMetricId!, activeLang)
   );
 
-  const isLoading =
-    !sectionsReady ||
-    isTopicMetricsLoading ||
-    (!!selectedMetricId && (isMetricLoading || isCombinationsLoading));
+  const isMetricDataLoading =
+    !sectionsReady || (!!selectedMetricId && (isMetricLoading || isCombinationsLoading));
 
   const columnFilters = useColumnFilters(
     combinations,
@@ -90,16 +94,8 @@ export default function StatPage() {
   );
   const { projectedCombinations } = columnFilters;
 
-  const [query, setQuery] = useState<string>("");
-  const [isGlobalSearch, setIsGlobalSearch] = useState<boolean>(false);
-
-  const normalizedQuery = query.trim().toLowerCase();
-  const globalSearchGroups = useGlobalIndicatorSearchGroups(menu, normalizedQuery, isGlobalSearch);
-
-  const shouldShowGlobalResults =
-    isGlobalSearch && normalizedQuery.length > 0 && globalSearchGroups.length > 0;
-  const shouldShowPlaceholder = isGlobalSearch && !shouldShowGlobalResults;
-  const shouldShowMetricPanel = Boolean(slug) && !isSectionSlug && !isGlobalSearch;
+  const shouldShowListMode = slugInTree && sectionsReady;
+  const shouldShowMetricPanel = !slugInTree && sectionsReady && Boolean(slug);
   const metricUnit = metric?.unit?.[activeLang];
 
   const pageTitle = useMemo(() => {
@@ -107,6 +103,11 @@ export default function StatPage() {
     if (menuTitle !== null) return menuTitle;
     return metric?.title?.[activeLang] ?? "";
   }, [menu, slug, metric, activeLang]);
+
+  const hideHeaderForGroupIds = useMemo(
+    () => (activeSection ? [] : [slug]),
+    [activeSection, slug]
+  );
 
   const sexTotals = useMemo(() => {
     const hasTotals =
@@ -125,36 +126,14 @@ export default function StatPage() {
     </>
   );
 
-  const exitGlobalSearch = () => {
-    setIsGlobalSearch(false);
-    setQuery("");
-  };
-
   return (
     <div className="flex w-full flex-col pt-7.5 pb-10 pl-16.75">
       <TypographyH3 className="min-h-6 text-[rgba(40,40,40,1)]">{pageTitle}</TypographyH3>
-      <div className="mt-5 flex items-start gap-3">
-        <SearchInput query={query} setQuery={setQuery} globalMode={isGlobalSearch} />
-        <Button
-          onClick={() => {
-            if (isGlobalSearch) {
-              exitGlobalSearch();
-            } else {
-              setIsGlobalSearch(true);
-            }
-          }}
-          variant="secondary"
-          size="icon"
-          className="size-10.5 cursor-pointer"
-        >
-          <Image
-            src={isGlobalSearch ? "/icons/close.svg" : "/icons/search-blue.svg"}
-            alt="search"
-            width={24}
-            height={24}
-          />
-        </Button>
-      </div>
+      {shouldShowMetricPanel ? (
+        <div className="mt-5">
+          <SearchInput />
+        </div>
+      ) : null}
       {shouldShowMetricPanel ? (
         <div className="mt-6 flex flex-col">
           <div className="flex items-center justify-between">
@@ -163,19 +142,11 @@ export default function StatPage() {
                 <Image src="/icons/man.svg" alt="man" width={17} height={27} />
                 <div className="flex flex-col gap-1">
                   {isMetricLoading ? (
-                    <>
-                      <Skeleton className="h-4 w-24" />
-                      {/*<Skeleton className="h-3 w-10" />*/}
-                    </>
+                    <Skeleton className="h-4 w-24" />
                   ) : sexTotals.hasTotals ? (
-                    <>
-                      <p className="text-fontSizeXS font-semibold text-[rgba(56,56,56,1)]">
-                        {sexTotals.male}
-                      </p>
-                      {/*<p className="text-[11px] text-[rgba(110,127,136,1)]">*/}
-                      {/*  {sexTotals.male.percent}*/}
-                      {/*</p>*/}
-                    </>
+                    <p className="text-fontSizeXS font-semibold text-[rgba(56,56,56,1)]">
+                      {sexTotals.male}
+                    </p>
                   ) : (
                     sexTotalsPlaceholder
                   )}
@@ -185,19 +156,11 @@ export default function StatPage() {
                 <Image src="/icons/women.svg" alt="women" width={17} height={27} />
                 <div className="flex flex-col gap-1">
                   {isMetricLoading ? (
-                    <>
-                      <Skeleton className="h-4 w-24" />
-                      {/*<Skeleton className="h-3 w-10" />*/}
-                    </>
+                    <Skeleton className="h-4 w-24" />
                   ) : sexTotals.hasTotals ? (
-                    <>
-                      <p className="text-fontSizeXS font-semibold text-[rgba(56,56,56,1)]">
-                        {sexTotals.female}
-                      </p>
-                      {/*<p className="text-[11px] text-[rgba(110,127,136,1)]">*/}
-                      {/*  {sexTotals.female.percent}*/}
-                      {/*</p>*/}
-                    </>
+                    <p className="text-fontSizeXS font-semibold text-[rgba(56,56,56,1)]">
+                      {sexTotals.female}
+                    </p>
                   ) : (
                     sexTotalsPlaceholder
                   )}
@@ -309,7 +272,7 @@ export default function StatPage() {
                 <div className="p-7.5">
                   <ChartTab
                     combinations={projectedCombinations}
-                    isLoading={isLoading}
+                    isLoading={isMetricDataLoading}
                     link={metric?.link?.[activeLang]}
                     metricId={metric?._id}
                     viewCount={metric?.viewCount}
@@ -321,7 +284,7 @@ export default function StatPage() {
                 <div className="w-full px-7.5 py-5">
                   <TableTab
                     combinations={projectedCombinations}
-                    isLoading={isLoading}
+                    isLoading={isMetricDataLoading}
                     link={metric?.link?.[activeLang]}
                     metricUnit={metric?.unit?.[activeLang]}
                     updatedAt={metric?.updatedAt}
@@ -363,18 +326,20 @@ export default function StatPage() {
             </Tabs>
           </div>
         </div>
-      ) : shouldShowGlobalResults ? (
-        <GlobalSearchResults groups={globalSearchGroups} onNavigate={exitGlobalSearch} />
-      ) : (
-        <div className="flex h-[calc(100vh-304px)] w-full flex-col items-center justify-center">
-          <div className="flex flex-col items-center justify-center gap-1">
-            <Image src="/empty.png" alt="empty" width={210} height={112} />
-            <p className="text-textBlack600 text-fontSizeS leading-7.25 font-medium">
-              {t("stat.search_results_placeholder", "Որոնման արդյունքները կտեսնեք այստեղ")}
-            </p>
+      ) : shouldShowListMode ? (
+        isListMetricsLoading ? (
+          <div className="mt-11 flex flex-col gap-4">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
           </div>
-        </div>
-      )}
+        ) : (
+          <StatIndicatorList
+            groups={listGroups}
+            hideHeaderForGroupIds={hideHeaderForGroupIds}
+          />
+        )
+      ) : null}
     </div>
   );
 }

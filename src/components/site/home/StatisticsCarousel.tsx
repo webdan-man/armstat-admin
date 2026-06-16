@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-const StatItem = ({ item }: { item: string }) => {
+const StatItem = ({ item }: { item: { id: string; label: string } }) => {
   const textRef = useRef<HTMLSpanElement>(null);
   const [isTruncated, setIsTruncated] = useState(false);
 
@@ -15,15 +15,15 @@ const StatItem = ({ item }: { item: string }) => {
     if (el) {
       setIsTruncated(el.scrollHeight > el.clientHeight);
     }
-  }, [item]);
+  }, [item.label]);
 
   const link = (
     <Link
-      href="/stat/1"
+      href={`/stat/${item.id}`}
       className="block h-23 w-75 rounded-xl border border-[rgba(57,127,206,1)] p-6 text-left text-[18px] leading-5.25 font-medium text-[rgba(44,44,44,1)] transition-colors hover:bg-blue-50"
     >
       <span ref={textRef} className="line-clamp-2">
-        {item}
+        {item.label}
       </span>
     </Link>
   );
@@ -33,7 +33,7 @@ const StatItem = ({ item }: { item: string }) => {
   return (
     <Tooltip>
       <TooltipTrigger asChild>{link}</TooltipTrigger>
-      <TooltipContent className="max-w-75">{item}</TooltipContent>
+      <TooltipContent className="max-w-75">{item.label}</TooltipContent>
     </Tooltip>
   );
 };
@@ -42,7 +42,7 @@ export const StatisticsCarousel = ({
   items,
   children,
 }: {
-  items: string[];
+  items: Array<{ id: string; label: string }>;
   children: React.ReactNode;
 }) => {
   const [emblaRef, emblaApi] = useEmblaCarousel({
@@ -110,8 +110,8 @@ export const StatisticsCarousel = ({
 
       <div ref={emblaRef}>
         <div className="flex gap-4">
-          {items.map((item, index) => (
-            <div key={index} className="min-w-0 flex-[0_0_auto]">
+          {items.map((item) => (
+            <div key={item.id} className="min-w-0 flex-[0_0_auto]">
               <StatItem item={item} />
             </div>
           ))}

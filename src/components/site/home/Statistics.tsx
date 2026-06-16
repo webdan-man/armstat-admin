@@ -10,7 +10,7 @@ export type FeaturedBlock = {
   title: Localized;
   subtitle: Localized;
   image?: string;
-  sections?: Array<{ name: Localized }>;
+  sections?: Array<{ id: string; name: Localized }>;
 };
 
 export type StatisticsProps = {
@@ -30,7 +30,11 @@ export default function Statistics({ blocks }: StatisticsProps) {
       <div className="flex w-full max-w-305 flex-col gap-15.75 px-5">
         {blocks.map((block, idx) => {
           const borderClass = BORDER_COLORS[idx % BORDER_COLORS.length];
-          const items = block?.sections?.map((s) => pickLocale(s.name, activeLang) ?? "") ?? [];
+          const items =
+            block?.sections?.map((s) => ({
+              id: s.id,
+              label: pickLocale(s.name, activeLang) ?? "",
+            })) ?? [];
 
           return (
             <StatisticsCarousel key={idx} items={items}>
