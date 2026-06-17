@@ -80,6 +80,13 @@ export default function MetricsForm() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const scrollToFirstError = () => {
+    const firstInvalid = document.querySelector<HTMLElement>('[aria-invalid="true"]');
+    if (!firstInvalid) return;
+    firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
+    firstInvalid.focus({ preventScroll: true });
+  };
+
   const onInvalid = (errors: FieldErrors<MetricFormValues>) => {
     const locales = ["hy", "en", "ru"] as const;
     for (const locale of locales) {
@@ -92,9 +99,11 @@ export default function MetricsForm() {
         errors.metadata?.[locale]?.sourceUrl
       ) {
         setLang(locale);
-        return;
+        break;
       }
     }
+    // Defer until after the language tab switch has re-rendered the invalid field.
+    requestAnimationFrame(() => requestAnimationFrame(scrollToFirstError));
   };
 
   useEffect(() => {
