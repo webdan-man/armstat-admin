@@ -23,6 +23,14 @@ export type IndicatorSearchGroup = {
   indicators: IndicatorSearchResult[];
 };
 
+export function sortIndicatorSearchResults<T extends IndicatorSearchResult>(
+  indicators: T[]
+): T[] {
+  return [...indicators].sort((a, b) =>
+    a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" })
+  );
+}
+
 export type SearchResultItem = {
   id: string;
   title: string;

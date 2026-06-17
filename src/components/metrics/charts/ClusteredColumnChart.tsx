@@ -8,19 +8,26 @@ interface ClusteredColumnChartProps<T extends Record<string, string | number>> {
   xAxisKey: string; // e.g. xAxisKey
   seriesKeys?: string[];
   stacked?: boolean;
+  /** Optional title shown above the chart (e.g. selected province in map combinations). */
+  chartTitle?: string;
 }
 
 const containerId = "clustered-column-chartdiv";
+const CHART_TITLE_BAND_HEIGHT = 40;
+const CHART_HEADER_HEADROOM = 24;
 
 function ClusteredColumnChart<T extends Record<string, string>>({
   data,
   xAxisKey,
   seriesKeys = [],
   stacked = false,
+  chartTitle,
 }: ClusteredColumnChartProps<T>) {
   const rootRef = useRef<am5.Root | null>(null);
   const xAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
   const seriesListRef = useRef<am5xy.ColumnSeries[]>([]);
+  const titleLabelRef = useRef<am5.Label | null>(null);
+  const chartTitleRef = useRef(chartTitle);
 
   useLayoutEffect(() => {
     // Create chart once; otherwise amCharts replays intro animations on every data update.
@@ -42,9 +49,42 @@ function ClusteredColumnChart<T extends Record<string, string>>({
         pinchZoomX: true,
         paddingLeft: 0,
         paddingRight: 20,
+        paddingTop: 0,
         height: am5.percent(70),
       })
     );
+
+    if (chartTitle !== undefined) {
+      root.container.setAll({ paddingTop: CHART_HEADER_HEADROOM });
+
+      chart.topAxesContainer.setAll({
+        marginTop: -CHART_HEADER_HEADROOM,
+        paddingTop: 0,
+        paddingBottom: 0,
+      });
+
+      const titleBand = chart.topAxesContainer.children.push(
+        am5.Container.new(root, {
+          width: am5.p100,
+          height: CHART_TITLE_BAND_HEIGHT,
+        })
+      );
+
+      const titleLabel = titleBand.children.push(
+        am5.Label.new(root, {
+          text: chartTitleRef.current ?? "",
+          fontSize: 20,
+          x: am5.p50,
+          centerX: am5.p50,
+          y: am5.p50,
+          centerY: am5.p50,
+          maxWidth: 250,
+          oversizedBehavior: "wrap",
+          textAlign: "center",
+        })
+      );
+      titleLabelRef.current = titleLabel;
+    }
 
     chart.set("scrollbarX", am5.Scrollbar.new(root, { orientation: "horizontal" }));
 
@@ -174,9 +214,16 @@ function ClusteredColumnChart<T extends Record<string, string>>({
       rootRef.current = null;
       xAxisRef.current = null;
       seriesListRef.current = [];
+      titleLabelRef.current = null;
       root.dispose();
     };
   }, []);
+
+  useEffect(() => {
+    chartTitleRef.current = chartTitle;
+    if (chartTitle === undefined) return;
+    titleLabelRef.current?.set("text", chartTitle);
+  }, [chartTitle]);
 
   useEffect(() => {
     const xAxis = xAxisRef.current;

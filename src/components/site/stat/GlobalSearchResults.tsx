@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import type { IndicatorSearchGroup } from "@/lib/stat-search-utils";
+import { sortIndicatorSearchResults, type IndicatorSearchGroup } from "@/lib/stat-search-utils";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
 import Image from "next/image";
@@ -51,7 +51,7 @@ export default function GlobalSearchResults({
             {group.header}
           </div>
           <div className="flex flex-col divide-y divide-[rgba(0,0,0,0.1)]">
-            {group.indicators.map((indicator, index) => (
+            {sortIndicatorSearchResults(group.indicators).map((indicator) => (
               <button
                 key={indicator.id}
                 type="button"

@@ -7,23 +7,32 @@ interface StackedColumnChartProps<T extends Record<string, string>> {
   data: T[];
   xAxisKey: string; // e.g. "year"
   seriesKeys?: string[];
-  /** Optional label to the left of the legend (y-axis stack dimension name from combination row labels). */
+  /** Optional title shown above the chart (e.g. selected province in map combinations). */
+  chartTitle?: string;
+  /** Optional label above the legend (stack dimension name from combination row labels). */
   yAxisLabel?: string;
 }
 
 const containerId = "stacked-column-chartdiv";
+const CHART_TITLE_BAND_HEIGHT = 40;
+const Y_AXIS_LABEL_BAND_HEIGHT = 32;
+const CHART_HEADER_HEADROOM = 24;
 
 function StackedColumnChart<T extends Record<string, string>>({
   data,
   xAxisKey,
   seriesKeys = [],
+  chartTitle,
   yAxisLabel,
 }: StackedColumnChartProps<T>) {
   const rootRef = useRef<am5.Root | null>(null);
   const xAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
   const yAxisRef = useRef<am5xy.ValueAxis<am5xy.AxisRenderer> | null>(null);
   const seriesListRef = useRef<am5xy.ColumnSeries[]>([]);
+  const titleLabelRef = useRef<am5.Label | null>(null);
   const yAxisLegendLabelRef = useRef<am5.Label | null>(null);
+  const chartTitleRef = useRef(chartTitle);
+  const yAxisLabelRef = useRef(yAxisLabel);
 
   const hasNegativeValue = data.some((row) => seriesKeys.some((key) => Number(row[key]) < 0));
 
@@ -36,6 +45,9 @@ function StackedColumnChart<T extends Record<string, string>>({
 
     root.setThemes([am5themes_Animated.new(root)]);
 
+    const showChartTitle = chartTitle !== undefined;
+    const hasChartHeader = showChartTitle || Boolean(yAxisLabelRef.current);
+
     const chart = root.container.children.push(
       am5xy.XYChart.new(root, {
         panX: false,
@@ -45,9 +57,76 @@ function StackedColumnChart<T extends Record<string, string>>({
         paddingLeft: 0,
         paddingRight: 20,
         paddingBottom: 20,
+        paddingTop: 0,
         layout: root.verticalLayout,
       })
     );
+
+    if (hasChartHeader) {
+      root.container.setAll({ paddingTop: CHART_HEADER_HEADROOM });
+
+      chart.topAxesContainer.setAll({
+        marginTop: -CHART_HEADER_HEADROOM,
+        paddingTop: 0,
+        paddingBottom: 0,
+      });
+
+      const chartHeader = chart.topAxesContainer.children.push(
+        am5.Container.new(root, {
+          width: am5.p100,
+          layout: root.verticalLayout,
+        })
+      );
+
+      if (showChartTitle) {
+        const titleBand = chartHeader.children.push(
+          am5.Container.new(root, {
+            width: am5.p100,
+            height: CHART_TITLE_BAND_HEIGHT,
+          })
+        );
+
+        const titleLabel = titleBand.children.push(
+          am5.Label.new(root, {
+            text: chartTitleRef.current ?? "",
+            fontSize: 20,
+            x: am5.p50,
+            centerX: am5.p50,
+            y: am5.p50,
+            centerY: am5.p50,
+            maxWidth: 250,
+            oversizedBehavior: "wrap",
+            textAlign: "center",
+          })
+        );
+        titleLabelRef.current = titleLabel;
+      }
+
+      const yAxisLabelBand = chartHeader.children.push(
+        am5.Container.new(root, {
+          width: am5.p100,
+          height: Y_AXIS_LABEL_BAND_HEIGHT,
+          visible: Boolean(yAxisLabelRef.current),
+        })
+      );
+
+      const yAxisLegendLabel = yAxisLabelBand.children.push(
+        am5.Label.new(root, {
+          text: yAxisLabelRef.current ?? "",
+          fontSize: 16,
+          fontWeight: "600",
+          x: am5.p50,
+          centerX: am5.p50,
+          y: am5.p50,
+          centerY: am5.p50,
+          maxWidth: 250,
+          oversizedBehavior: "wrap",
+          textAlign: "center",
+          visible: Boolean(yAxisLabelRef.current),
+        })
+      );
+      yAxisLegendLabelRef.current = yAxisLegendLabel;
+    }
 
     chart.set(
       "scrollbarX",
@@ -92,19 +171,6 @@ function StackedColumnChart<T extends Record<string, string>>({
       })
     );
     yAxisRef.current = yAxis;
-
-    chart.children.push(
-      am5.Label.new(root, {
-        text: yAxisLabel,
-        fontSize: 16,
-        fontWeight: "600",
-        textAlign: "center",
-        x: am5.p50,
-        centerX: am5.p50,
-        paddingTop: 10,
-        paddingBottom: 5,
-      })
-    );
 
     const legend = chart.children.push(
       am5.Legend.new(root, {
@@ -187,10 +253,17 @@ function StackedColumnChart<T extends Record<string, string>>({
       xAxisRef.current = null;
       yAxisRef.current = null;
       seriesListRef.current = [];
+      titleLabelRef.current = null;
       yAxisLegendLabelRef.current = null;
       root.dispose();
     };
   }, []);
+
+  useEffect(() => {
+    chartTitleRef.current = chartTitle;
+    if (chartTitle === undefined) return;
+    titleLabelRef.current?.set("text", chartTitle);
+  }, [chartTitle]);
 
   useEffect(() => {
     const xAxis = xAxisRef.current;
@@ -204,10 +277,13 @@ function StackedColumnChart<T extends Record<string, string>>({
   }, [data, hasNegativeValue]);
 
   useEffect(() => {
+    yAxisLabelRef.current = yAxisLabel;
     const label = yAxisLegendLabelRef.current;
     if (!label) return;
+    const visible = Boolean(yAxisLabel);
     label.set("text", yAxisLabel ?? "");
-    label.set("visible", Boolean(yAxisLabel));
+    label.set("visible", visible);
+    label.parent?.set("visible", visible);
   }, [yAxisLabel]);
 
   return (

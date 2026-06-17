@@ -74,7 +74,11 @@ const MapAndColumnWithRotatedLabelsChart = ({
         />
       </div>
       <div>
-        <ColumnWithRotatedLabelsChart data={columnData} chartTitle={chartTitle} />
+        <ColumnWithRotatedLabelsChart
+          key="map-and-column-with-rotated-labels"
+          data={columnData}
+          chartTitle={chartTitle}
+        />
       </div>
     </div>
   );

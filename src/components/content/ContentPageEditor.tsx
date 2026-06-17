@@ -8,22 +8,13 @@ import useSWR, { mutate } from "swr";
 import { LangSwitcher } from "@/components/main/LangSwitcher";
 import type { MainLangCode } from "@/components/main/main-mock-data";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { cn } from "@/lib/utils";
 import { withToastError } from "@/lib/withToastError";
-import {
-  fetchContentEntries,
-  updateContentEntries,
-} from "@/services/contentEntriesService";
+import { fetchContentEntries, updateContentEntries } from "@/services/contentEntriesService";
 import type {
   ContentEntriesResponse,
   ContentEntry,
@@ -57,13 +48,7 @@ const EMPTY_ROW: ContentRow = {
   enDesc: "",
 };
 
-function ContentCard({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
+function ContentCard({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div
       className={cn(
@@ -123,9 +108,7 @@ export function ContentPageEditor() {
     name: "rows",
   });
 
-  const [cardLangById, setCardLangById] = useState<Record<string, MainLangCode>>(
-    {}
-  );
+  const [cardLangById, setCardLangById] = useState<Record<string, MainLangCode>>({});
 
   function getCardLang(fieldId: string): MainLangCode {
     return cardLangById[fieldId] ?? "hy";
@@ -192,14 +175,10 @@ export function ContentPageEditor() {
 
     if (!items.length) return;
 
-    const result = await withToastError(
-      () => updateContentEntries({ items }),
-      {
-        title: "Տեքստերը հաջողությամբ փոփոխվել են!",
-        description:
-          "Տեքստերը համակարգում հաջողությամբ թարմացվել են և այժմ հասանելի են։",
-      }
-    );
+    const result = await withToastError(() => updateContentEntries({ items }), {
+      title: "Տեքստերը հաջողությամբ փոփոխվել են!",
+      description: "Տեքստերը համակարգում հաջողությամբ թարմացվել են և այժմ հասանելի են։",
+    });
 
     if (result) {
       await mutate(swrKeys.contentEntries);
@@ -217,14 +196,9 @@ export function ContentPageEditor() {
 
   return (
     <Form {...form}>
-      <form
-        className="flex w-full flex-col gap-5 pb-10"
-        onSubmit={form.handleSubmit(onSubmit)}
-      >
-        <div className="sticky top-0 z-10 flex min-h-11 w-full flex-col gap-4 bg-[#f9fafb] pt-7 pb-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">
-            Բովանդակություն
-          </h1>
+      <form className="flex w-full flex-col gap-5 pb-10" onSubmit={form.handleSubmit(onSubmit)}>
+        <div className="sticky top-0 z-10 -mx-11 flex min-h-11 flex-col gap-4 bg-[#f9fafb] px-11 pt-7 pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">Բովանդակություն</h1>
           <div className="flex flex-wrap items-center gap-3">
             <Button
               type="button"
@@ -247,9 +221,7 @@ export function ContentPageEditor() {
                   : "cursor-not-allowed border-0 bg-[#ededed] text-[#8b8b8b] hover:bg-[#ededed]"
               )}
             >
-              {isSubmitting
-                ? "Պահպանվում է..."
-                : "Պահպանել փոփոխությունները"}
+              {isSubmitting ? "Պահպանվում է..." : "Պահպանել փոփոխությունները"}
             </Button>
           </div>
         </div>

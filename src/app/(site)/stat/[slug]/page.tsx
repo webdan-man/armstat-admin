@@ -117,10 +117,7 @@ export default function StatPage() {
     return metric?.title?.[activeLang] ?? "";
   }, [menu, slug, metric, activeLang]);
 
-  const hideHeaderForGroupIds = useMemo(
-    () => (activeSection ? [] : [slug]),
-    [activeSection, slug]
-  );
+  const hideHeaderForGroupIds = useMemo(() => (activeSection ? [] : [slug]), [activeSection, slug]);
 
   const metricBackHref = useMemo(() => {
     if (returnTo) return returnTo;
@@ -279,7 +276,7 @@ export default function StatPage() {
               filteredCount={projectedCombinations.length}
             />
           </div>
-          <div className="mt-6 overflow-hidden rounded-2xl border border-[rgba(178,178,178,1)]">
+          <div className="mt-6 overflow-x-hidden overflow-y-visible rounded-2xl border border-[rgba(178,178,178,1)]">
             <Tabs defaultValue="diagram" className="w-full">
               <div className="flex h-11.75 w-full items-center justify-between gap-4 border-b border-b-[rgba(178,178,178,1)] px-5">
                 <TabsList className="h-full w-auto flex-1 justify-start rounded-none border-0 bg-none p-0 shadow-none group-data-[orientation=horizontal]/tabs:h-11.75">
@@ -329,9 +326,9 @@ export default function StatPage() {
               <TabsContent value="metadata">
                 <div className="w-full p-6">
                   {(metric?.metadata as any)?.[activeLang]?.body && (
-                    <p className="text-fontSizeS mt-4 leading-4.75 whitespace-pre-line text-[rgba(125,125,125,1)]">
-                      <MarkdownText>{(metric?.metadata as any)[activeLang].body}</MarkdownText>
-                    </p>
+                    <MarkdownText className="text-fontSizeM mt-4 leading-4.75 whitespace-pre-line text-black">
+                      {(metric?.metadata as any)[activeLang].body}
+                    </MarkdownText>
                   )}
                   <div className="mt-7.5 flex gap-5">
                     {metric?.updatedAt && (
@@ -346,7 +343,7 @@ export default function StatPage() {
                     )}
                     {((metric?.metadata as any)?.[activeLang]?.sourceUrl ||
                       metric?.link?.[activeLang]) && (
-                      <p className="flex text-[11px] text-[rgba(110,127,136,1)]">
+                      <p className="flex gap-1 text-[11px] text-[rgba(110,127,136,1)]">
                         {t("stat.source", "Աղբյուրը՝")}{" "}
                         <MarkdownText as={"span"}>
                           {(metric?.metadata as any)?.[activeLang]?.sourceUrl ??
@@ -370,10 +367,7 @@ export default function StatPage() {
         ) : !hasListIndicators && isLeafTopicOrSubtopic ? (
           <StatEmptyPlaceholder />
         ) : (
-          <StatIndicatorList
-            groups={listGroups}
-            hideHeaderForGroupIds={hideHeaderForGroupIds}
-          />
+          <StatIndicatorList groups={listGroups} hideHeaderForGroupIds={hideHeaderForGroupIds} />
         )
       ) : null}
     </div>

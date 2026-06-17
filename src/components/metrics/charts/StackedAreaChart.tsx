@@ -7,18 +7,25 @@ interface StackedAreaChartProps<T extends Record<string, string>> {
   data: T[];
   xAxisKey?: string;
   seriesKeys?: string[]; // e.g. ["Արական", "Իգական"]
+  /** Optional title shown above the chart (e.g. selected province in map combinations). */
+  chartTitle?: string;
 }
 
 const containerId = "stacked-area-chartdiv";
+const CHART_TITLE_BAND_HEIGHT = 40;
+const CHART_HEADER_HEADROOM = 24;
 
 function StackedAreaChart<T extends Record<string, string>>({
   data,
   xAxisKey,
   seriesKeys = [],
+  chartTitle,
 }: StackedAreaChartProps<T>) {
   const rootRef = useRef<am5.Root | null>(null);
   const xAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
   const seriesListRef = useRef<am5xy.LineSeries[]>([]);
+  const titleLabelRef = useRef<am5.Label | null>(null);
+  const chartTitleRef = useRef(chartTitle);
 
   useLayoutEffect(() => {
     // Create chart once; otherwise amCharts replays intro animations on every data update.
@@ -37,9 +44,42 @@ function StackedAreaChart<T extends Record<string, string>>({
         wheelY: "zoomX",
         pinchZoomX: true,
         paddingLeft: 0,
+        paddingTop: 0,
         layout: root.verticalLayout,
       })
     );
+
+    if (chartTitle !== undefined) {
+      root.container.setAll({ paddingTop: CHART_HEADER_HEADROOM });
+
+      chart.topAxesContainer.setAll({
+        marginTop: -CHART_HEADER_HEADROOM,
+        paddingTop: 0,
+        paddingBottom: 0,
+      });
+
+      const titleBand = chart.topAxesContainer.children.push(
+        am5.Container.new(root, {
+          width: am5.p100,
+          height: CHART_TITLE_BAND_HEIGHT,
+        })
+      );
+
+      const titleLabel = titleBand.children.push(
+        am5.Label.new(root, {
+          text: chartTitleRef.current ?? "",
+          fontSize: 20,
+          x: am5.p50,
+          centerX: am5.p50,
+          y: am5.p50,
+          centerY: am5.p50,
+          maxWidth: 250,
+          oversizedBehavior: "wrap",
+          textAlign: "center",
+        })
+      );
+      titleLabelRef.current = titleLabel;
+    }
 
     const cursor = chart.set("cursor", am5xy.XYCursor.new(root, { behavior: "none" }));
     cursor.lineY.set("visible", false);
@@ -139,9 +179,16 @@ function StackedAreaChart<T extends Record<string, string>>({
       rootRef.current = null;
       xAxisRef.current = null;
       seriesListRef.current = [];
+      titleLabelRef.current = null;
       root.dispose();
     };
   }, []);
+
+  useEffect(() => {
+    chartTitleRef.current = chartTitle;
+    if (chartTitle === undefined) return;
+    titleLabelRef.current?.set("text", chartTitle);
+  }, [chartTitle]);
 
   useEffect(() => {
     const xAxis = xAxisRef.current;

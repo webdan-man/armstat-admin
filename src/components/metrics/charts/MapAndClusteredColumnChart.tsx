@@ -5,7 +5,7 @@ import ClusteredColumnChart from "@/components/metrics/charts/ClusteredColumnCha
 import ArmeniaProvincesMap from "@/components/metrics/charts/Map/MapChart";
 import type { MetricCombination } from "@/types/metric";
 import { useProvinceHoverSelection } from "@/hooks/useProvinceHoverSelection";
-import { filterCombinationsByProvinceMapId } from "@/utils/chart/map-combinations-for-armenia-provinces";
+import { filterCombinationsByProvinceMapId, getArmenianProvinceHyTitleByMapId } from "@/utils/chart/map-combinations-for-armenia-provinces";
 import { mapCombinationsForClusteredColumnChart } from "@/utils/chart/map-combinations-for-clustered-column-chart.util";
 
 interface MapDataItem {
@@ -31,6 +31,11 @@ const MapAndClusteredColumnChart = ({
 }: MapAndClusteredColumnChartProps) => {
   const { mapData = [], provinceAttributeId, xAxisAttributeId, yAxisAttributeId } = data;
   const { activeProvinceMapId, onPolygonHover, onPolygonSelect } = useProvinceHoverSelection();
+
+  const chartTitle = useMemo(() => {
+    if (!activeProvinceMapId) return "Հայաստան";
+    return getArmenianProvinceHyTitleByMapId(activeProvinceMapId) ?? activeProvinceMapId;
+  }, [activeProvinceMapId]);
 
   const { columnData, seriesKeys, resolvedXAxisKey } = useMemo(() => {
     const filtered = filterCombinationsByProvinceMapId(
@@ -72,9 +77,11 @@ const MapAndClusteredColumnChart = ({
       </div>
       <div>
         <ClusteredColumnChart
+          key="map-and-clustered-column-chart"
           xAxisKey={resolvedXAxisKey}
           data={columnData as Record<string, string>[]}
           seriesKeys={seriesKeys}
+          chartTitle={chartTitle}
         />
       </div>
     </div>

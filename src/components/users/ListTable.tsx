@@ -62,7 +62,7 @@ export default function ListTable() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <div className="sticky top-0 z-10 flex min-h-11 w-full flex-col gap-4 bg-[#f9fafb] pt-7 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="sticky top-0 z-10 -mx-11 flex min-h-11 flex-col gap-4 bg-[#f9fafb] px-11 pt-7 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">Օգտատերերի կառավարում</h1>
           <Button
             disabled={!hasPermission("user.create")}
@@ -72,7 +72,7 @@ export default function ListTable() {
           </Button>
         </div>
       </div>
-      <div className="h-[calc(100vh-100px)] w-full overflow-y-auto">
+      <div className="w-full">
         <Table>
           <TableHeader>
             <TableRow>

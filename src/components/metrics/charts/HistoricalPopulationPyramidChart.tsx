@@ -30,6 +30,15 @@ interface HistoricalPopulationPyramidChartProps<T extends ChartDatum> {
 }
 
 const containerId = "historical-pyramid-chartdiv";
+const CURSOR_HINT = "(շարժեք մկնիկը՝ արժեքները տեսնելու համար)";
+// Keep the bottom label band the same height in both charts (see other column charts).
+const X_AXIS_LABEL_MAX_HEIGHT = 130;
+// Long frame titles wrap; cap the band so the plot area stays aligned side-by-side.
+const CHART_TITLE_BAND_HEIGHT = 40;
+const GENDER_LABEL_BAND_HEIGHT = 48;
+// Pull headers up into dedicated root headroom so they are not clipped.
+const CHART_HEADER_HEADROOM = 24;
+const TOOLTIP_CONTAINER_BOUNDS = { top: 24, right: 20, bottom: 70, left: 20 };
 
 interface PyramidRow {
   age: string;
@@ -185,13 +194,16 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
   useLayoutEffect(() => {
     const isCategory = timelineMode === "category";
 
-    const root = am5.Root.new(containerId);
+    const root = am5.Root.new(containerId, {
+      tooltipContainerBounds: TOOLTIP_CONTAINER_BOUNDS,
+    });
     rootRef.current = root;
 
     root.setThemes([am5themes_Animated.new(root)]);
 
     // Thousand separator only — no k / M suffix.
     root.numberFormatter.setAll({ numberFormat: "#,###." });
+    root.container.setAll({ paddingTop: CHART_HEADER_HEADROOM });
 
     const container = root.container.children.push(
       am5.Container.new(root, {
@@ -207,22 +219,55 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
     const pyramidChart = container.children.push(
       am5xy.XYChart.new(root, {
         width: am5.p50,
+        height: am5.p100,
         panX: false,
         panY: false,
         wheelX: "none",
         wheelY: "none",
         layout: root.verticalLayout,
+        paddingTop: 0,
+        paddingBottom: 24,
       })
     );
 
-    pyramidChart.children.unshift(am5.Label.new(root, { text: " ", x: am5.p50, centerX: am5.p50 }));
+    pyramidChart.topAxesContainer.setAll({
+      marginTop: -CHART_HEADER_HEADROOM,
+      paddingTop: 0,
+      paddingBottom: 0,
+    });
 
-    const pyramidTitle = pyramidChart.children.unshift(
+    const pyramidHeader = pyramidChart.topAxesContainer.children.push(
+      am5.Container.new(root, {
+        width: am5.p100,
+        layout: root.verticalLayout,
+      })
+    );
+
+    // Invisible twin of the timeline hint so both chart headers reserve the same height.
+    pyramidHeader.children.push(
+      am5.Label.new(root, {
+        text: CURSOR_HINT,
+        x: am5.p50,
+        centerX: am5.p50,
+        fillOpacity: 0,
+      })
+    );
+
+    const pyramidTitleBand = pyramidHeader.children.push(
+      am5.Container.new(root, {
+        width: am5.p100,
+        height: CHART_TITLE_BAND_HEIGHT,
+      })
+    );
+
+    const pyramidTitle = pyramidTitleBand.children.push(
       am5.Label.new(root, {
         text: "",
         fontSize: 20,
         x: am5.p50,
         centerX: am5.p50,
+        y: am5.p50,
+        centerY: am5.p50,
         // A long frame title (e.g. an area/day name) would stretch the header; cap + wrap it.
         maxWidth: 250,
         oversizedBehavior: "wrap",
@@ -230,27 +275,32 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       })
     );
 
-    // Sex labels in the plot corners.
-    const maleCornerLabel = pyramidChart.plotContainer.children.push(
+    const genderRow = pyramidHeader.children.push(
+      am5.Container.new(root, {
+        width: am5.p100,
+        height: GENDER_LABEL_BAND_HEIGHT,
+        layout: root.horizontalLayout,
+      })
+    );
+
+    const femaleCornerLabel = genderRow.children.push(
       am5.Label.new(root, {
-        text: configRef.current.maleLabel,
+        text: configRef.current.femaleLabel,
         fontSize: 20,
-        x: am5.p100,
-        y: 5,
-        centerX: am5.p100,
-        dx: -5,
-        fill: pyramidChart.get("colors")!.getIndex(0),
+        width: am5.p50,
+        textAlign: "left",
+        fill: pyramidChart.get("colors")!.getIndex(1),
         background: am5.RoundedRectangle.new(root, { fill: am5.color(0xffffff), fillOpacity: 0.5 }),
       })
     );
 
-    const femaleCornerLabel = pyramidChart.plotContainer.children.push(
+    const maleCornerLabel = genderRow.children.push(
       am5.Label.new(root, {
-        text: configRef.current.femaleLabel,
+        text: configRef.current.maleLabel,
         fontSize: 20,
-        y: 5,
-        x: 5,
-        fill: pyramidChart.get("colors")!.getIndex(1),
+        width: am5.p50,
+        textAlign: "right",
+        fill: pyramidChart.get("colors")!.getIndex(0),
         background: am5.RoundedRectangle.new(root, { fill: am5.color(0xffffff), fillOpacity: 0.5 }),
       })
     );
@@ -264,6 +314,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         tooltip: am5.Tooltip.new(root, {}),
       })
     );
+    pyramidXAxis.set("maxHeight", X_AXIS_LABEL_MAX_HEIGHT);
 
     // Show absolute values on the X-axis ticks (the left side stores negatives).
     pyramidXAxis.get("renderer").labels.template.adapters.add("text", (text, target) => {
@@ -299,7 +350,10 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         categoryYField: AGE_FIELD,
         valueXField: "male",
         clustered: false,
-        tooltip: am5.Tooltip.new(root, { labelText: "{categoryY}     [bold]{male}[/]" }),
+        tooltip: am5.Tooltip.new(root, {
+          labelText: "{categoryY}     [bold]{male}[/]",
+          pointerOrientation: "vertical",
+        }),
       })
     );
 
@@ -311,7 +365,10 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         categoryYField: AGE_FIELD,
         valueXField: "female",
         clustered: false,
-        tooltip: am5.Tooltip.new(root, { labelText: "{categoryY}     [bold]{femaleAbs}[/]" }),
+        tooltip: am5.Tooltip.new(root, {
+          labelText: "{categoryY}     [bold]{femaleAbs}[/]",
+          pointerOrientation: "vertical",
+        }),
       })
     );
 
@@ -328,28 +385,64 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
     const popChart = container.children.push(
       am5xy.XYChart.new(root, {
         width: am5.p50,
+        height: am5.p100,
         panX: false,
         panY: false,
         wheelX: "none",
         wheelY: "none",
         layout: root.verticalLayout,
+        paddingTop: 0,
+        paddingBottom: 24,
       })
     );
 
-    popChart.children.unshift(
+    popChart.topAxesContainer.setAll({
+      marginTop: -CHART_HEADER_HEADROOM,
+      paddingTop: 0,
+      paddingBottom: 0,
+    });
+
+    const popHeader = popChart.topAxesContainer.children.push(
+      am5.Container.new(root, {
+        width: am5.p100,
+        layout: root.verticalLayout,
+      })
+    );
+
+    popHeader.children.push(
       am5.Label.new(root, {
-        text: "(շարժեք մկնիկը՝ արժեքները տեսնելու համար)",
+        text: CURSOR_HINT,
         x: am5.p50,
         centerX: am5.p50,
       })
     );
 
-    const popTitle = popChart.children.unshift(
+    const popTitleBand = popHeader.children.push(
+      am5.Container.new(root, {
+        width: am5.p100,
+        height: CHART_TITLE_BAND_HEIGHT,
+      })
+    );
+
+    const popTitle = popTitleBand.children.push(
       am5.Label.new(root, {
         text: configRef.current.timelineTitle,
         fontSize: 20,
         x: am5.p50,
         centerX: am5.p50,
+        y: am5.p50,
+        centerY: am5.p50,
+        maxWidth: 250,
+        oversizedBehavior: "wrap",
+        textAlign: "center",
+      })
+    );
+
+    // Spacer matching the pyramid gender-label row so plot areas stay aligned.
+    popHeader.children.push(
+      am5.Container.new(root, {
+        width: am5.p100,
+        height: GENDER_LABEL_BAND_HEIGHT,
       })
     );
 
@@ -412,7 +505,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
           tooltip: am5.Tooltip.new(root, {}),
         })
       );
-      // popXAxis.set("maxHeight", 130);
+      popXAxis.set("maxHeight", X_AXIS_LABEL_MAX_HEIGHT);
 
       const male = popChart.series.push(
         am5xy.ColumnSeries.new(root, {
@@ -431,7 +524,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
           valueYField: "female",
           categoryXField: FRAME_LABEL_FIELD,
           stacked: true,
-          tooltip: am5.Tooltip.new(root, { pointerOrientation: "horizontal" }),
+          tooltip: am5.Tooltip.new(root, { pointerOrientation: "vertical" }),
         })
       );
 
@@ -471,7 +564,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
           tooltip: am5.Tooltip.new(root, {}),
         })
       );
-      // popXAxis.set("maxHeight", 130);
+      popXAxis.set("maxHeight", X_AXIS_LABEL_MAX_HEIGHT);
 
       const male = popChart.series.push(
         am5xy.LineSeries.new(root, {
@@ -498,7 +591,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
           valueYField: "female",
           valueXField: "date",
           stacked: true,
-          tooltip: am5.Tooltip.new(root, { pointerOrientation: "horizontal" }),
+          tooltip: am5.Tooltip.new(root, { pointerOrientation: "vertical" }),
         })
       );
       female.strokes.template.setAll({ strokeWidth: 2, templateField: "lineSettings" });
@@ -595,8 +688,8 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
   }, [data, seriesKeys, timelineAxisAttributeName]);
 
   return (
-    <div>
-      <div id={containerId} style={{ width: "100%", height: "800px" }} />
+    <div className="overflow-visible">
+      <div id={containerId} style={{ width: "100%", height: "512px" }} />
     </div>
   );
 }

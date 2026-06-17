@@ -1,6 +1,7 @@
 import { MetricCombination } from "@/types/metric";
 import { AttributeCategory } from "@/constants/attribute-category.constants";
 import { Attribute } from "@/types/attribute";
+import { compareCategoryLabels } from "@/utils/chart/sort-category-labels";
 
 export const mapCombinationsForStackedBarWithNegativeValuesChartUtil = (payload: {
   combinations: MetricCombination[];
@@ -43,7 +44,7 @@ export const mapCombinationsForStackedBarWithNegativeValuesChartUtil = (payload:
   }
 
   const data = Array.from(resultMap.values()).sort((a, b) =>
-    (b[yAxisKey] as string).localeCompare(a[yAxisKey] as string)
+    compareCategoryLabels(String(a[yAxisKey]), String(b[yAxisKey]))
   );
   const seriesKeys = Array.from(categories);
 

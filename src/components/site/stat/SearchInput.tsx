@@ -103,6 +103,14 @@ export default function SearchInput() {
 
   const labelFor = (item: MetricOption) => pickLocale(item.title, activeLang) || item.label;
 
+  const sortedMetrics = useMemo(
+    () =>
+      [...metrics].sort((a, b) =>
+        labelFor(a).localeCompare(labelFor(b), undefined, { numeric: true, sensitivity: "base" })
+      ),
+    [metrics, activeLang]
+  );
+
   const selectedMetricId = useMemo(() => {
     if (metrics.length === 0 || slugInTree) return undefined;
     return metrics.find((metric) => metric.id === slug)?.id;
@@ -119,7 +127,7 @@ export default function SearchInput() {
           <SelectValue placeholder={t("stat.indicator_placeholder", "Ցուցանիշ")} />
         </SelectTrigger>
         <SelectContent position="popper" className="w-(--radix-select-trigger-width)">
-          {metrics.map((metric) => (
+          {sortedMetrics.map((metric) => (
             <SelectItem key={metric.id} value={metric.id}>
               {labelFor(metric)}
             </SelectItem>

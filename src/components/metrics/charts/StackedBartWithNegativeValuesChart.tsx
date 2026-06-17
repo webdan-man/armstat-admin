@@ -9,9 +9,12 @@ interface StackedBartWithNegativeValuesChartProps<T extends ChartDatum> {
   data: T[];
   yAxisKey: string; // e.g. "year"
   seriesKeys?: string[];
+  /** Province title for map combinations — centered above the chart. */
+  chartTitle?: string;
 }
 
 const containerId = "stacked-bar-negative-chartdiv";
+const CHART_TITLE_BAND_HEIGHT = 40;
 
 const LEFT_COLOR_HEX = "#60a5fa";
 const RIGHT_COLOR_HEX = "#7dd3fc";
@@ -45,11 +48,14 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
   data,
   yAxisKey,
   seriesKeys = [],
+  chartTitle,
 }: StackedBartWithNegativeValuesChartProps<T>) {
   const rootRef = useRef<am5.Root | null>(null);
   const yAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
   const xAxisRef = useRef<am5xy.ValueAxis<am5xy.AxisRenderer> | null>(null);
   const seriesListRef = useRef<am5xy.ColumnSeries[]>([]);
+  const titleLabelRef = useRef<am5.Label | null>(null);
+  const chartTitleRef = useRef(chartTitle);
   // Capture initial seriesKeys for use in data-update effect.
   const seriesKeysRef = useRef(seriesKeys);
 
@@ -76,6 +82,30 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
         paddingRight: 10,
       })
     );
+
+    if (chartTitle !== undefined) {
+      const titleRow = chart.children.unshift(
+        am5.Container.new(root, {
+          width: am5.p100,
+          height: CHART_TITLE_BAND_HEIGHT,
+          paddingBottom: 4,
+        })
+      );
+
+      const titleLabel = titleRow.children.push(
+        am5.Label.new(root, {
+          text: chartTitleRef.current ?? "",
+          width: am5.p100,
+          textAlign: "center",
+          fontSize: 20,
+          y: am5.p50,
+          centerY: am5.p50,
+          maxWidth: 400,
+          oversizedBehavior: "wrap",
+        })
+      );
+      titleLabelRef.current = titleLabel;
+    }
 
     chart.getNumberFormatter().set("numberFormat", "#.#s");
 
@@ -236,9 +266,16 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
       yAxisRef.current = null;
       xAxisRef.current = null;
       seriesListRef.current = [];
+      titleLabelRef.current = null;
       root.dispose();
     };
   }, []);
+
+  useEffect(() => {
+    chartTitleRef.current = chartTitle;
+    if (chartTitle === undefined) return;
+    titleLabelRef.current?.set("text", chartTitle);
+  }, [chartTitle]);
 
   useEffect(() => {
     const yAxis = yAxisRef.current;

@@ -93,7 +93,7 @@ export default function AuditLogs() {
 
   return (
     <div>
-      <div className="sticky top-0 z-10 flex min-h-11 w-full flex-col gap-4 bg-[#f9fafb] pt-7 pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="sticky top-0 z-10 -mx-11 flex min-h-11 flex-col gap-4 bg-[#f9fafb] px-11 pt-7 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">Աուդիտ լոգեր</h1>
         <div className="flex justify-start gap-2 pt-4 pb-4">
           <Button
@@ -106,7 +106,7 @@ export default function AuditLogs() {
         </div>
       </div>
 
-      <div className="h-[calc(100vh-164px)] w-full overflow-y-auto">
+      <div className="w-full">
         <Table>
           <TableHeader>
             <TableRow>

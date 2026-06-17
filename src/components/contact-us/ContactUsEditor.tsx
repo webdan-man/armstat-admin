@@ -288,7 +288,7 @@ export function ContactUsEditor() {
 
   return (
     <div className="flex w-full flex-col gap-5 pb-10">
-      <div className="sticky top-0 z-10 flex min-h-11 w-full flex-col gap-4 bg-[#f9fafb] pt-7 pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="sticky top-0 z-10 -mx-11 flex min-h-11 flex-col gap-4 bg-[#f9fafb] px-11 pt-7 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">Հետադարձ կապ</h1>
         <Button
           type="button"

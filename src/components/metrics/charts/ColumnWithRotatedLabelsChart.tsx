@@ -16,6 +16,9 @@ interface ColumnWithRotatedLabelsChartProps {
 }
 
 const containerId = "columns-with-rotated-labels-chartdiv";
+const LEGEND_BAR_HEIGHT = 160;
+const LEGEND_MAX_HEIGHT = 120;
+const LEGEND_LABEL_MAX_WIDTH = 140;
 
 function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLabelsChartProps) {
   const rootRef = useRef<am5.Root | null>(null);
@@ -159,7 +162,7 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
         width: am5.percent(100),
         paddingTop: 10,
         paddingBottom: 10,
-        height: am5.percent(20),
+        height: LEGEND_BAR_HEIGHT,
       })
     );
 
@@ -168,12 +171,13 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
     legendLabelRef.current = legendBar.children.push(
       am5.Label.new(root, {
         text: data[0]?.label || "Հատկանիշ",
-        // Vertically center within the horizontal bar: centerY anchors the label's
-        // middle, y positions that middle at 50% of the bar height.
         centerY: am5.p50,
         y: am5.p50,
         paddingRight: 15,
         fontSize: 16,
+        maxWidth: LEGEND_LABEL_MAX_WIDTH,
+        oversizedBehavior: "wrap",
+        textAlign: "left",
       })
     );
 
@@ -198,11 +202,8 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
           maxColumns: 100,
         }),
         width: am5.percent(100),
-        // Let the legend size to its content and center it vertically. maxHeight caps
-        // it so that, combined with verticalScrollbar, many items wrap into rows and
-        // scroll vertically instead of overflowing and disappearing.
-        centerY: am5.p50,
-        y: am5.p50,
+        height: LEGEND_MAX_HEIGHT,
+        maxHeight: LEGEND_MAX_HEIGHT,
         // Reserve room on the right for the scrollbar so the grid wraps before it
         // instead of having its last column cut off behind the scrollbar.
         paddingRight: 30,

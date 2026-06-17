@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import type { IndicatorSearchGroup } from "@/lib/stat-search-utils";
+import { sortIndicatorSearchResults, type IndicatorSearchGroup } from "@/lib/stat-search-utils";
 import { cn } from "@/lib/utils";
-import { useTranslation } from "@/hooks/useTranslation";
+import StatEmptyPlaceholder from "@/components/site/stat/StatEmptyPlaceholder";
 
 type StatIndicatorListProps = {
   groups: IndicatorSearchGroup[];
@@ -16,14 +16,9 @@ export default function StatIndicatorList({
   hideHeaderForGroupIds = [],
 }: StatIndicatorListProps) {
   const router = useRouter();
-  const { t } = useTranslation();
 
   if (groups.length === 0) {
-    return (
-      <p className="text-textBlack600 text-fontSizeS py-8 text-center font-medium">
-        {t("stat.no_indicators", "Ցուցանիշներ չեն գտնվել")}
-      </p>
-    );
+    return <StatEmptyPlaceholder />;
   }
 
   return (
@@ -48,7 +43,7 @@ export default function StatIndicatorList({
               ) : null}
               {group.indicators.length > 0 && (
                 <div className={cn("flex flex-col divide-y divide-[rgba(0,0,0,0.1)]")}>
-                  {group.indicators.map((indicator, index) => (
+                  {sortIndicatorSearchResults(group.indicators).map((indicator) => (
                     <button
                       key={indicator.id}
                       type="button"

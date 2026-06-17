@@ -35,7 +35,7 @@ const AttributesTable = ({ attributes }: AttributesTableProps) => {
   };
 
   return (
-    <div className="h-[calc(100vh-164px)] w-full overflow-y-auto">
+    <div className="w-full">
       <Table>
         <TableHeader>
           <TableRow>

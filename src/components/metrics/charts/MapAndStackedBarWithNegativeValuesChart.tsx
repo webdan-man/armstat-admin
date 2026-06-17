@@ -5,7 +5,8 @@ import StackedBartWithNegativeValuesChart from "@/components/metrics/charts/Stac
 import ArmeniaProvincesMap from "@/components/metrics/charts/Map/MapChart";
 import type { MetricCombination } from "@/types/metric";
 import { useProvinceHoverSelection } from "@/hooks/useProvinceHoverSelection";
-import { filterCombinationsByProvinceMapId } from "@/utils/chart/map-combinations-for-armenia-provinces";
+import { filterCombinationsByProvinceMapId, getArmenianProvinceHyTitleByMapId } from "@/utils/chart/map-combinations-for-armenia-provinces";
+import { compareCategoryLabels } from "@/utils/chart/sort-category-labels";
 
 interface MapDataItem {
   id: string;
@@ -28,6 +29,11 @@ const MapAndStackedBarWithNegativeValuesChart = ({
 }: MapAndStackedBarWithNegativeValuesChartProps) => {
   const { mapData = [], provinceAttributeId, genderAttributeId, ageAttributeId } = data;
   const { activeProvinceMapId, onPolygonHover, onPolygonSelect } = useProvinceHoverSelection();
+
+  const chartTitle = useMemo(() => {
+    if (!activeProvinceMapId) return "Հայաստան";
+    return getArmenianProvinceHyTitleByMapId(activeProvinceMapId) ?? activeProvinceMapId;
+  }, [activeProvinceMapId]);
 
   const { barData, seriesKeys } = useMemo(() => {
     const filtered = filterCombinationsByProvinceMapId(
@@ -61,7 +67,7 @@ const MapAndStackedBarWithNegativeValuesChart = ({
     }
 
     const barData = Array.from(resultMap.values()).sort((a, b) =>
-      (b.year as string).localeCompare(a.year as string)
+      compareCategoryLabels(String(a.year), String(b.year))
     );
 
     return { barData, seriesKeys: Array.from(categories) };
@@ -81,9 +87,11 @@ const MapAndStackedBarWithNegativeValuesChart = ({
       </div>
       <div>
         <StackedBartWithNegativeValuesChart
+          key="map-and-stacked-bar-negative"
           data={barData}
           yAxisKey="year"
           seriesKeys={seriesKeys}
+          chartTitle={chartTitle}
         />
       </div>
     </div>

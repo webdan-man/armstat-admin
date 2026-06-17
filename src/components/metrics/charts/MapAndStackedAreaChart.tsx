@@ -5,7 +5,7 @@ import StackedAreaChart from "@/components/metrics/charts/StackedAreaChart";
 import ArmeniaProvincesMap from "@/components/metrics/charts/Map/MapChart";
 import type { MetricCombination } from "@/types/metric";
 import { useProvinceHoverSelection } from "@/hooks/useProvinceHoverSelection";
-import { filterCombinationsByProvinceMapId } from "@/utils/chart/map-combinations-for-armenia-provinces";
+import { filterCombinationsByProvinceMapId, getArmenianProvinceHyTitleByMapId } from "@/utils/chart/map-combinations-for-armenia-provinces";
 import { mapCombinationsForMapAndStackedAreaChart } from "@/utils/chart/map-combinations-for-map-and-stacked-area-chart.util";
 
 interface MapDataItem {
@@ -26,6 +26,11 @@ interface MapAndStackedAreaChartProps {
 const MapAndStackedAreaChart = ({ combinations, data }: MapAndStackedAreaChartProps) => {
   const { mapData = [], provinceAttributeId, timeAttributeId, genderAttributeId } = data;
   const { activeProvinceMapId, onPolygonHover, onPolygonSelect } = useProvinceHoverSelection();
+
+  const chartTitle = useMemo(() => {
+    if (!activeProvinceMapId) return "Հայաստան";
+    return getArmenianProvinceHyTitleByMapId(activeProvinceMapId) ?? activeProvinceMapId;
+  }, [activeProvinceMapId]);
 
   const { stackedAreaData, seriesKeys } = useMemo(() => {
     const filtered = filterCombinationsByProvinceMapId(
@@ -59,9 +64,11 @@ const MapAndStackedAreaChart = ({ combinations, data }: MapAndStackedAreaChartPr
       </div>
       <div>
         <StackedAreaChart
+          key="map-and-stacked-area-chart"
           data={stackedAreaData as Record<string, string>[]}
           xAxisKey="year"
           seriesKeys={seriesKeys}
+          chartTitle={chartTitle}
         />
       </div>
     </div>

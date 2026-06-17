@@ -38,7 +38,7 @@ export default function GroupsPage() {
 
   return (
     <div className="flex w-full flex-col gap-2.5">
-      <div className="sticky top-0 z-10 flex w-full flex-col gap-2.5 bg-[#f9fafb] pt-7 pb-4">
+      <div className="sticky top-0 z-10 -mx-11 flex flex-col gap-2.5 bg-[#f9fafb] px-11 pt-7 pb-4">
         <GroupsHeader onAddClick={() => setCreateDialogOpen(true)} />
         <GroupsSearchField value={search} onChange={setSearch} />
       </div>
