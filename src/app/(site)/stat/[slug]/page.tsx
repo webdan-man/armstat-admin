@@ -11,7 +11,7 @@ import SearchInput from "@/components/site/stat/SearchInput";
 import StatIndicatorList from "@/components/site/stat/StatIndicatorList";
 import StatEmptyPlaceholder from "@/components/site/stat/StatEmptyPlaceholder";
 import TableTab from "@/components/site/stat/TableTab";
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useColumnFilters } from "@/components/metrics/useColumnFilters";
 import { ColumnFilters } from "@/components/metrics/ColumnFilters";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -34,7 +34,6 @@ import { useTopicListMetrics } from "@/hooks/useMetricsByTopicIds";
 import {
   getMetricById,
   getMetricCombinations,
-  fetchMetricsByTopicId,
   downloadMetricCombinationsCSV,
   downloadMetricCombinationsPDF,
 } from "@/services/metricsService";
@@ -67,16 +66,6 @@ export default function StatPage() {
     () => sectionsReady && isLeafTopicOrSubtopicSlug(menu, slug),
     [sectionsReady, menu, slug]
   );
-
-  const { data: leafTopicMetrics, isLoading: isLeafMetricsLoading } = useSWR(
-    isLeafTopicOrSubtopic ? swrKeys.metricsByTopic(slug) : null,
-    () => fetchMetricsByTopicId(slug)
-  );
-
-  useEffect(() => {
-    if (!isLeafTopicOrSubtopic || isLeafMetricsLoading || !leafTopicMetrics?.length) return;
-    router.replace(`/stat/${leafTopicMetrics[0].id}`);
-  }, [isLeafTopicOrSubtopic, isLeafMetricsLoading, leafTopicMetrics, router]);
 
   const listItems = useMemo(() => {
     if (!slugInTree) return [];
@@ -117,12 +106,8 @@ export default function StatPage() {
   );
   const { projectedCombinations } = columnFilters;
 
-  const shouldShowBrowsableList = slugInTree && sectionsReady && !isLeafTopicOrSubtopic;
-  const shouldShowLeafEmpty =
-    isLeafTopicOrSubtopic && !isLeafMetricsLoading && leafTopicMetrics?.length === 0;
-  const shouldShowLeafLoading =
-    isLeafTopicOrSubtopic &&
-    (isLeafMetricsLoading || (leafTopicMetrics !== undefined && leafTopicMetrics.length > 0));
+  const shouldShowBrowsableList = slugInTree && sectionsReady;
+  const hasListIndicators = listGroups.some((group) => group.indicators.length > 0);
   const shouldShowMetricPanel = !slugInTree && sectionsReady && Boolean(slug);
   const metricUnit = metric?.unit?.[activeLang];
 
@@ -382,19 +367,14 @@ export default function StatPage() {
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
           </div>
+        ) : !hasListIndicators && isLeafTopicOrSubtopic ? (
+          <StatEmptyPlaceholder />
         ) : (
           <StatIndicatorList
             groups={listGroups}
             hideHeaderForGroupIds={hideHeaderForGroupIds}
           />
         )
-      ) : shouldShowLeafLoading ? (
-        <div className="mt-11 flex flex-col gap-4">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-      ) : shouldShowLeafEmpty ? (
-        <StatEmptyPlaceholder />
       ) : null}
     </div>
   );
