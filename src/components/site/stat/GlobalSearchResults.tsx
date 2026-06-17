@@ -5,19 +5,25 @@ import type { IndicatorSearchGroup } from "@/lib/stat-search-utils";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
 import Image from "next/image";
+import { buildStatMetricHref } from "@/lib/stat-menu-utils";
 
 type GlobalSearchResultsProps = {
   groups: IndicatorSearchGroup[];
   onNavigate: () => void;
+  returnTo?: string;
 };
 
-export default function GlobalSearchResults({ groups, onNavigate }: GlobalSearchResultsProps) {
+export default function GlobalSearchResults({
+  groups,
+  onNavigate,
+  returnTo,
+}: GlobalSearchResultsProps) {
   const router = useRouter();
   const { t } = useTranslation();
 
   const navigateTo = (id: string) => {
     onNavigate();
-    router.push(`/stat/${id}`);
+    router.push(buildStatMetricHref(id, returnTo));
   };
 
   if (groups.length === 0) {
@@ -34,7 +40,7 @@ export default function GlobalSearchResults({ groups, onNavigate }: GlobalSearch
   }
 
   return (
-    <div className="mt-11 flex w-full flex-col gap-8">
+    <div className="mt-11 flex w-full flex-col gap-[25px]">
       {groups.map((group) => (
         <div key={group.headerId} className="flex flex-col">
           <div
@@ -44,8 +50,8 @@ export default function GlobalSearchResults({ groups, onNavigate }: GlobalSearch
           >
             {group.header}
           </div>
-          <div className="flex flex-col gap-[12px] pt-[11px]">
-            {group.indicators.map((indicator) => (
+          <div className="flex flex-col divide-y divide-[rgba(0,0,0,0.1)]">
+            {group.indicators.map((indicator, index) => (
               <button
                 key={indicator.id}
                 type="button"

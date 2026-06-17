@@ -2,11 +2,11 @@
 
 import { useMemo, useState, useEffect, type FormEvent, type KeyboardEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
 import useSWR from "swr";
 import { TypographyH3 } from "@/components/ui/typography";
 import { Input } from "@/components/ui/input";
 import GlobalSearchResults from "@/components/site/stat/GlobalSearchResults";
+import StatEmptyPlaceholder from "@/components/site/stat/StatEmptyPlaceholder";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useLang } from "@/providers/LangProvider";
 import { buildStatMenu } from "@/lib/stat-menu-utils";
@@ -33,6 +33,10 @@ export default function StatSearchPage() {
   const normalizedQuery = queryFromUrl.trim().toLowerCase();
   const globalSearchGroups = useGlobalIndicatorSearchGroups(menu, normalizedQuery, true);
   const hasQuery = normalizedQuery.length > 0;
+  const searchReturnTo = useMemo(() => {
+    if (!queryFromUrl.trim()) return undefined;
+    return `/stat/search?q=${encodeURIComponent(queryFromUrl.trim())}`;
+  }, [queryFromUrl]);
 
   const submitSearch = () => {
     const trimmed = inputValue.trim();
@@ -64,16 +68,13 @@ export default function StatSearchPage() {
         />
       </form>
       {hasQuery ? (
-        <GlobalSearchResults groups={globalSearchGroups} onNavigate={() => {}} />
+        <GlobalSearchResults
+          groups={globalSearchGroups}
+          onNavigate={() => {}}
+          returnTo={searchReturnTo}
+        />
       ) : (
-        <div className="mt-11 flex h-[calc(100vh-304px)] w-full flex-col items-center justify-center">
-          <div className="flex flex-col items-center justify-center gap-1">
-            <Image src="/empty.png" alt="empty" width={210} height={112} />
-            <p className="text-textBlack600 text-fontSizeS leading-7.25 font-medium">
-              {t("stat.search_results_placeholder", "Որոնման արդյունքները կտեսնեք այստեղ")}
-            </p>
-          </div>
-        </div>
+        <StatEmptyPlaceholder />
       )}
     </div>
   );

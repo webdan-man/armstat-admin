@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { fetchSections } from "@/services/sectionsService";
 import { fetchMetricsByTopicId, getMetricById } from "@/services/metricsService";
 import { swrKeys } from "@/lib/swr/cache-keys";
-import { buildStatMenu, isSlugInStatMenu } from "@/lib/stat-menu-utils";
+import { buildStatMenu, isSlugInStatMenu, buildStatMetricHref, parseStatReturnTo } from "@/lib/stat-menu-utils";
 import { useTranslation } from "@/hooks/useTranslation";
 import { pickLocale } from "@/lib/i18n";
 import type { Section } from "@/types/section";
@@ -58,6 +58,8 @@ function resolveSlug(sections: Section[], slug: string): SlugTarget | null {
 export default function SearchInput() {
   const { t, activeLang } = useTranslation();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = parseStatReturnTo(searchParams.get("returnTo"));
   const params = useParams();
   const slug = (params?.slug as string) ?? "";
   const { data: sections = [] } = useSWR(swrKeys.sections, fetchSections);
@@ -111,7 +113,7 @@ export default function SearchInput() {
       <Select
         value={selectedMetricId}
         disabled={metrics.length === 0}
-        onValueChange={(metricId) => router.push(`/stat/${metricId}`)}
+        onValueChange={(metricId) => router.push(buildStatMetricHref(metricId, returnTo))}
       >
         <SelectTrigger className="border-textBlack300 h-10.5 w-full text-[rgba(55,71,79,1)] shadow-none">
           <SelectValue placeholder={t("stat.indicator_placeholder", "Ցուցանիշ")} />

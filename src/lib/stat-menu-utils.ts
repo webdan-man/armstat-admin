@@ -203,6 +203,40 @@ export function getFlatListItemsForSlug(menu: StatMenuItem[], slug: string): Sta
   return [item];
 }
 
+/** Parent browse slug to return from a metric (section or topic with subtopics). */
+export function getStatBackHrefForTopic(menu: StatMenuItem[], topicId: string): string {
+  for (const section of menu) {
+    for (const topic of section.children ?? []) {
+      if (topic.id === topicId) return `/stat/${section.id}`;
+      for (const sub of topic.children ?? []) {
+        if (sub.id === topicId) return `/stat/${topic.id}`;
+      }
+    }
+  }
+  return "/stat";
+}
+
+export function buildStatMetricHref(metricId: string, returnTo?: string | null): string {
+  if (!returnTo) return `/stat/${metricId}`;
+  return `/stat/${metricId}?returnTo=${encodeURIComponent(returnTo)}`;
+}
+
+/** Only allow in-app stat routes as a metric back target. */
+export function parseStatReturnTo(value: string | null): string | null {
+  if (!value || !value.startsWith("/stat")) return null;
+  return value;
+}
+
+/** True when slug is a topic or subtopic leaf (no nested subtopics in the menu). */
+export function isLeafTopicOrSubtopicSlug(menu: StatMenuItem[], slug: string): boolean {
+  if (menu.some((section) => section.id === slug)) return false;
+
+  const item = findStatMenuItem(menu, slug);
+  if (!item) return false;
+
+  return !hasMenuChildren(item);
+}
+
 /** Collects every topic/subtopic id from the stat menu tree. */
 export function collectTopicIdsFromMenu(menu: StatMenuItem[]): string[] {
   const ids: string[] = [];

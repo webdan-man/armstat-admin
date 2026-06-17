@@ -27,7 +27,7 @@ export default function StatIndicatorList({
   }
 
   return (
-    <div className="mt-11 flex w-full flex-col gap-8">
+    <div className="mt-11 flex w-full flex-col gap-[25px]">
       {groups
         .filter(
           (group) => !hideHeaderForGroupIds.includes(group.headerId) || group.indicators.length > 0
@@ -47,8 +47,8 @@ export default function StatIndicatorList({
                 </div>
               ) : null}
               {group.indicators.length > 0 && (
-                <div className={cn("flex flex-col gap-[12px]", hideHeader ? "" : "pt-[11px]")}>
-                  {group.indicators.map((indicator) => (
+                <div className={cn("flex flex-col divide-y divide-[rgba(0,0,0,0.1)]")}>
+                  {group.indicators.map((indicator, index) => (
                     <button
                       key={indicator.id}
                       type="button"

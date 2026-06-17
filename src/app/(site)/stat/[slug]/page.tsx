@@ -9,11 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ChartTab from "@/components/site/stat/ChartTab";
 import SearchInput from "@/components/site/stat/SearchInput";
 import StatIndicatorList from "@/components/site/stat/StatIndicatorList";
+import StatEmptyPlaceholder from "@/components/site/stat/StatEmptyPlaceholder";
 import TableTab from "@/components/site/stat/TableTab";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useColumnFilters } from "@/components/metrics/useColumnFilters";
 import { ColumnFilters } from "@/components/metrics/ColumnFilters";
-import { useParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import useSWR from "swr";
 import { useLang } from "@/providers/LangProvider";
@@ -24,12 +25,16 @@ import {
   getStatMenuTitle,
   getFlatListItemsForSlug,
   getFlatListItemsForSection,
+  isLeafTopicOrSubtopicSlug,
+  getStatBackHrefForTopic,
+  parseStatReturnTo,
 } from "@/lib/stat-menu-utils";
 import { getTopicListIndicatorGroups } from "@/lib/stat-search-utils";
 import { useTopicListMetrics } from "@/hooks/useMetricsByTopicIds";
 import {
   getMetricById,
   getMetricCombinations,
+  fetchMetricsByTopicId,
   downloadMetricCombinationsCSV,
   downloadMetricCombinationsPDF,
 } from "@/services/metricsService";
@@ -39,6 +44,9 @@ import { pickLocale } from "@/lib/i18n";
 
 export default function StatPage() {
   const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = parseStatReturnTo(searchParams.get("returnTo"));
   const slug = params.slug as string;
   const { activeLang } = useLang();
   const { t } = useTranslation();
@@ -54,6 +62,21 @@ export default function StatPage() {
     if (!sectionsReady) return false;
     return isSlugInStatMenu(menu, slug);
   }, [sectionsReady, menu, slug]);
+
+  const isLeafTopicOrSubtopic = useMemo(
+    () => sectionsReady && isLeafTopicOrSubtopicSlug(menu, slug),
+    [sectionsReady, menu, slug]
+  );
+
+  const { data: leafTopicMetrics, isLoading: isLeafMetricsLoading } = useSWR(
+    isLeafTopicOrSubtopic ? swrKeys.metricsByTopic(slug) : null,
+    () => fetchMetricsByTopicId(slug)
+  );
+
+  useEffect(() => {
+    if (!isLeafTopicOrSubtopic || isLeafMetricsLoading || !leafTopicMetrics?.length) return;
+    router.replace(`/stat/${leafTopicMetrics[0].id}`);
+  }, [isLeafTopicOrSubtopic, isLeafMetricsLoading, leafTopicMetrics, router]);
 
   const listItems = useMemo(() => {
     if (!slugInTree) return [];
@@ -94,7 +117,12 @@ export default function StatPage() {
   );
   const { projectedCombinations } = columnFilters;
 
-  const shouldShowListMode = slugInTree && sectionsReady;
+  const shouldShowBrowsableList = slugInTree && sectionsReady && !isLeafTopicOrSubtopic;
+  const shouldShowLeafEmpty =
+    isLeafTopicOrSubtopic && !isLeafMetricsLoading && leafTopicMetrics?.length === 0;
+  const shouldShowLeafLoading =
+    isLeafTopicOrSubtopic &&
+    (isLeafMetricsLoading || (leafTopicMetrics !== undefined && leafTopicMetrics.length > 0));
   const shouldShowMetricPanel = !slugInTree && sectionsReady && Boolean(slug);
   const metricUnit = metric?.unit?.[activeLang];
 
@@ -108,6 +136,12 @@ export default function StatPage() {
     () => (activeSection ? [] : [slug]),
     [activeSection, slug]
   );
+
+  const metricBackHref = useMemo(() => {
+    if (returnTo) return returnTo;
+    if (!metric?.topicId || !sectionsReady) return null;
+    return getStatBackHrefForTopic(menu, metric.topicId);
+  }, [returnTo, metric?.topicId, sectionsReady, menu]);
 
   const sexTotals = useMemo(() => {
     const hasTotals =
@@ -128,6 +162,21 @@ export default function StatPage() {
 
   return (
     <div className="flex w-full flex-col pt-7.5 pb-10 pl-16.75">
+      {shouldShowMetricPanel ? (
+        <button
+          type="button"
+          onClick={() => {
+            if (metricBackHref) router.push(metricBackHref);
+            else router.back();
+          }}
+          className="mb-5 flex cursor-pointer items-center gap-2 outline-none"
+        >
+          <Image src="/icons/backIcon.svg" alt="" width={7} height={11} aria-hidden />
+          <span className="text-[14px] text-[rgba(125,125,125,1)]">
+            {t("stat.back_to_previous", "Գնալ նախորդ էջ")}
+          </span>
+        </button>
+      ) : null}
       <TypographyH3 className="min-h-6 text-[rgba(40,40,40,1)]">{pageTitle}</TypographyH3>
       {shouldShowMetricPanel ? (
         <div className="mt-5">
@@ -326,7 +375,7 @@ export default function StatPage() {
             </Tabs>
           </div>
         </div>
-      ) : shouldShowListMode ? (
+      ) : shouldShowBrowsableList ? (
         isListMetricsLoading ? (
           <div className="mt-11 flex flex-col gap-4">
             <Skeleton className="h-12 w-full" />
@@ -339,6 +388,13 @@ export default function StatPage() {
             hideHeaderForGroupIds={hideHeaderForGroupIds}
           />
         )
+      ) : shouldShowLeafLoading ? (
+        <div className="mt-11 flex flex-col gap-4">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      ) : shouldShowLeafEmpty ? (
+        <StatEmptyPlaceholder />
       ) : null}
     </div>
   );
