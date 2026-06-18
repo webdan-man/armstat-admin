@@ -19,7 +19,7 @@ import {
   valueAtColumnIndex,
 } from "@/components/metrics/metric-combinations-table-utils";
 
-type SortKey = number | "value";
+type SortKey = number | "value" | "id";
 
 export default function CombinationsTable({
   combinations,
@@ -34,13 +34,23 @@ export default function CombinationsTable({
 
   const cellClassName = "w-full text-[14px] leading-3.5 text-black";
 
-  const [sortKey, setSortKey] = useState<SortKey>("value");
+  const [sortKey, setSortKey] = useState<SortKey>("id");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
 
   const sortedCombinations = useMemo(() => {
     return [...combinations].sort((a, b) => {
-      const aVal = sortKey === "value" ? (a.value ?? "") : valueAtColumnIndex(a, sortKey);
-      const bVal = sortKey === "value" ? (b.value ?? "") : valueAtColumnIndex(b, sortKey);
+      const aVal =
+        sortKey === "value"
+          ? (a.value ?? "")
+          : sortKey === "id"
+            ? String(a.id)
+            : valueAtColumnIndex(a, sortKey);
+      const bVal =
+        sortKey === "value"
+          ? (b.value ?? "")
+          : sortKey === "id"
+            ? String(b.id)
+            : valueAtColumnIndex(b, sortKey);
       const cmp = aVal.localeCompare(bVal, undefined, { numeric: true });
       return order === "asc" ? cmp : -cmp;
     });
@@ -79,7 +89,7 @@ export default function CombinationsTable({
         </TableHeader>
         <TableBody>
           {sortedCombinations.map((combo) => (
-            <TableRow key={combo._id}>
+            <TableRow key={combo.id}>
               <TableCell className={cellClassName}>{combo.value}</TableCell>
             </TableRow>
           ))}
@@ -103,9 +113,9 @@ export default function CombinationsTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedCombinations.map((combo, index) => (
-            <TableRow key={combo._id}>
-              <TableCell className={cellClassName}>{index + 1}</TableCell>
+          {sortedCombinations.map((combo) => (
+            <TableRow key={combo.id}>
+              <TableCell className={cellClassName}>{combo.id}</TableCell>
               {columnIndexes.map((i) => (
                 <TableCell key={i} className={cn(cellClassName)}>
                   {valueAtColumnIndex(combo, i)}

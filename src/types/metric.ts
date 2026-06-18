@@ -99,7 +99,7 @@ export type MetricCombinationRowEntry = {
 };
 
 export type MetricCombination = {
-  _id: string;
+  id: number;
   combinationKey: string;
   metricId: string;
   __v?: number;
