@@ -14,6 +14,7 @@ import type { MetricCombination } from "@/types/metric";
 import { cn } from "@/lib/utils";
 
 import {
+  formatCombinationValue,
   headerForColumnIndex,
   maxRowLength,
   valueAtColumnIndex,
@@ -80,7 +81,7 @@ export default function CombinationsTable({
         <TableBody>
           {sortedCombinations.map((combo) => (
             <TableRow key={combo._id}>
-              <TableCell className={cellClassName}>{combo.value}</TableCell>
+              <TableCell className={cellClassName}>{formatCombinationValue(combo.value)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -111,7 +112,7 @@ export default function CombinationsTable({
                   {valueAtColumnIndex(combo, i)}
                 </TableCell>
               ))}
-              <TableCell className={cellClassName}>{combo.value}</TableCell>
+              <TableCell className={cellClassName}>{formatCombinationValue(combo.value)}</TableCell>
             </TableRow>
           ))}
         </TableBody>

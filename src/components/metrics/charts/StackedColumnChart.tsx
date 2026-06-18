@@ -17,6 +17,7 @@ const containerId = "stacked-column-chartdiv";
 const CHART_TITLE_BAND_HEIGHT = 40;
 const Y_AXIS_LABEL_BAND_HEIGHT = 32;
 const CHART_HEADER_HEADROOM = 24;
+const COLUMN_MAX_WIDTH = 130;
 
 function StackedColumnChart<T extends Record<string, string>>({
   data,
@@ -218,6 +219,8 @@ function StackedColumnChart<T extends Record<string, string>>({
       );
 
       series.columns.template.setAll({
+        width: am5.percent(100),
+        maxWidth: COLUMN_MAX_WIDTH,
         tooltipText: "{name}\n[bold]{valueY}[/]",
       });
 

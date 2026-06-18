@@ -22,6 +22,10 @@ import MapAndClusteredColumnChart from "@/components/metrics/charts/MapAndCluste
 import GroupedStackedColumnChart from "@/components/metrics/charts/GroupedStackedColumnChart";
 import MapAndGroupedStackedColumnChart from "@/components/metrics/charts/MapAndGroupedStackedColumnChart";
 import { useTranslation } from "@/hooks/useTranslation";
+import useSWR from "swr";
+import { swrKeys } from "@/lib/swr/cache-keys";
+import { fetchAttributes } from "@/services/attributeService";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ChartProps {
   combinations?: MetricCombination[];
@@ -29,6 +33,10 @@ interface ChartProps {
 
 const Chart = ({ combinations = [] }: ChartProps) => {
   const { t } = useTranslation();
+  const { isLoading: isAttributesLoading, data: attributes } = useSWR(
+    swrKeys.attributes,
+    fetchAttributes
+  );
   const {
     type: chartType,
     data,
@@ -43,12 +51,29 @@ const Chart = ({ combinations = [] }: ChartProps) => {
   } = useChart({
     combinations,
   });
+  const isResolvingChartType =
+    combinations.length > 0 && (isAttributesLoading || attributes === undefined);
+
+  if (isResolvingChartType) {
+    return (
+      <div className="flex flex-col gap-3">
+        <Skeleton className="h-64 w-full" />
+        <div className="flex gap-4">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-28" />
+        </div>
+      </div>
+    );
+  }
+
   const noChartMessage = (
     <div className="text-textBlack600 flex flex-col gap-1">
       <p>{t("stat.chart_unavailable_line1")}</p>
       <p>{t("stat.chart_unavailable_line2")}</p>
     </div>
   );
+
   console.log(chartType);
 
   switch (chartType) {

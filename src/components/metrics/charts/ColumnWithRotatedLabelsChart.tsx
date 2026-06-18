@@ -19,6 +19,7 @@ const containerId = "columns-with-rotated-labels-chartdiv";
 const LEGEND_BAR_HEIGHT = 160;
 const LEGEND_MAX_HEIGHT = 120;
 const LEGEND_LABEL_MAX_WIDTH = 140;
+const LEGEND_LABEL_GAP = 15;
 
 function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLabelsChartProps) {
   const rootRef = useRef<am5.Root | null>(null);
@@ -155,7 +156,7 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
 
     const greyColor = am5.color(0xaaaaaa);
 
-    // Legend bar container: label on the left, legend area on the right.
+    // Legend bar: label on the left, color squares on the right.
     const legendBar = root.container.children.push(
       am5.Container.new(root, {
         layout: root.horizontalLayout,
@@ -166,14 +167,22 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
       })
     );
 
-    // Label
+    const legendLabelSlot = legendBar.children.push(
+      am5.Container.new(root, {
+        width: LEGEND_LABEL_MAX_WIDTH + LEGEND_LABEL_GAP,
+        height: am5.percent(100),
+      })
+    );
 
-    legendLabelRef.current = legendBar.children.push(
+    legendLabelRef.current = legendLabelSlot.children.push(
       am5.Label.new(root, {
-        text: data[0]?.label || "Հատկանիշ",
-        centerY: am5.p50,
+        position: "absolute",
+        x: 0,
         y: am5.p50,
-        paddingRight: 15,
+        centerY: am5.p50,
+        text: data[0]?.label || "Հատկանիշ",
+        width: LEGEND_LABEL_MAX_WIDTH,
+        paddingRight: LEGEND_LABEL_GAP,
         fontSize: 16,
         maxWidth: LEGEND_LABEL_MAX_WIDTH,
         oversizedBehavior: "wrap",
@@ -181,12 +190,7 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
       })
     );
 
-    // Legend wrapper: takes the remaining horizontal space and gives the legend a
-    // DEFINITE width. A GridLayout legend only wraps when it has a definite width;
-    // placing it directly in the horizontal layout never gives it one, so it would
-    // overflow to the right. Nesting it in this full-width vertical wrapper fixes that.
-    // No layout here so the legend can be vertically centered via centerY/y. The
-    // wrapper still has a definite width, which is what the GridLayout needs to wrap.
+    // Wrapper gives the legend a definite width so GridLayout can wrap items.
     const legendWrapper = legendBar.children.push(
       am5.Container.new(root, {
         width: am5.percent(100),
@@ -194,7 +198,6 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
       })
     );
 
-    // Legend
     const legend = legendWrapper.children.push(
       am5.Legend.new(root, {
         layout: am5.GridLayout.new(root, {
@@ -202,8 +205,11 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
           maxColumns: 100,
         }),
         width: am5.percent(100),
-        height: LEGEND_MAX_HEIGHT,
+        centerY: am5.p50,
+        y: am5.p50,
         maxHeight: LEGEND_MAX_HEIGHT,
+        paddingTop: 0,
+        paddingBottom: 0,
         // Reserve room on the right for the scrollbar so the grid wraps before it
         // instead of having its last column cut off behind the scrollbar.
         paddingRight: 30,
@@ -212,7 +218,6 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
     );
     legendRef.current = legend;
 
-    // Hide text labels
     legend.labels.template.set("forceHidden", true);
     legend.valueLabels.template.set("forceHidden", true);
 

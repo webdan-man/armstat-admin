@@ -32,13 +32,25 @@ interface HistoricalPopulationPyramidChartProps<T extends ChartDatum> {
 const containerId = "historical-pyramid-chartdiv";
 const CURSOR_HINT = "(շարժեք մկնիկը՝ արժեքները տեսնելու համար)";
 // Keep the bottom label band the same height in both charts (see other column charts).
-const X_AXIS_LABEL_MAX_HEIGHT = 130;
+const X_AXIS_LABEL_MAX_HEIGHT = 110;
 // Long frame titles wrap; cap the band so the plot area stays aligned side-by-side.
 const CHART_TITLE_BAND_HEIGHT = 40;
 const GENDER_LABEL_BAND_HEIGHT = 48;
 // Pull headers up into dedicated root headroom so they are not clipped.
 const CHART_HEADER_HEADROOM = 24;
 const TOOLTIP_CONTAINER_BOUNDS = { top: 24, right: 20, bottom: 70, left: 20 };
+const CURSOR_HINT_BAND_HEIGHT = 18;
+
+/** Lock the bottom X-axis band so both charts share the same plot baseline. */
+function syncBottomXAxisBand(chart: am5xy.XYChart, xAxis: am5xy.Axis<am5xy.AxisRenderer>) {
+  xAxis.setAll({
+    minHeight: X_AXIS_LABEL_MAX_HEIGHT,
+    maxHeight: X_AXIS_LABEL_MAX_HEIGHT,
+  });
+  chart.bottomAxesContainer.setAll({
+    minHeight: X_AXIS_LABEL_MAX_HEIGHT,
+  });
+}
 
 interface PyramidRow {
   age: string;
@@ -226,7 +238,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         wheelY: "none",
         layout: root.verticalLayout,
         paddingTop: 0,
-        paddingBottom: 24,
+        paddingBottom: 4,
       })
     );
 
@@ -244,12 +256,22 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
     );
 
     // Invisible twin of the timeline hint so both chart headers reserve the same height.
-    pyramidHeader.children.push(
+    const pyramidHintBand = pyramidHeader.children.push(
+      am5.Container.new(root, {
+        width: am5.p100,
+        height: CURSOR_HINT_BAND_HEIGHT,
+      })
+    );
+
+    pyramidHintBand.children.push(
       am5.Label.new(root, {
         text: CURSOR_HINT,
         x: am5.p50,
         centerX: am5.p50,
+        y: am5.p50,
+        centerY: am5.p50,
         fillOpacity: 0,
+        fontSize: 11,
       })
     );
 
@@ -315,6 +337,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       })
     );
     pyramidXAxis.set("maxHeight", X_AXIS_LABEL_MAX_HEIGHT);
+    syncBottomXAxisBand(pyramidChart, pyramidXAxis);
 
     // Show absolute values on the X-axis ticks (the left side stores negatives).
     pyramidXAxis.get("renderer").labels.template.adapters.add("text", (text, target) => {
@@ -392,7 +415,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         wheelY: "none",
         layout: root.verticalLayout,
         paddingTop: 0,
-        paddingBottom: 24,
+        paddingBottom: 4,
       })
     );
 
@@ -409,11 +432,21 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       })
     );
 
-    popHeader.children.push(
+    const popHintBand = popHeader.children.push(
+      am5.Container.new(root, {
+        width: am5.p100,
+        height: CURSOR_HINT_BAND_HEIGHT,
+      })
+    );
+
+    popHintBand.children.push(
       am5.Label.new(root, {
         text: CURSOR_HINT,
         x: am5.p50,
         centerX: am5.p50,
+        y: am5.p50,
+        centerY: am5.p50,
+        fontSize: 11,
       })
     );
 
@@ -506,6 +539,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         })
       );
       popXAxis.set("maxHeight", X_AXIS_LABEL_MAX_HEIGHT);
+      syncBottomXAxisBand(popChart, popXAxis);
 
       const male = popChart.series.push(
         am5xy.ColumnSeries.new(root, {
@@ -565,6 +599,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         })
       );
       popXAxis.set("maxHeight", X_AXIS_LABEL_MAX_HEIGHT);
+      syncBottomXAxisBand(popChart, popXAxis);
 
       const male = popChart.series.push(
         am5xy.LineSeries.new(root, {

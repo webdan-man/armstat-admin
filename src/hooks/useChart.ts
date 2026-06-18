@@ -57,20 +57,21 @@ type ChartType =
   | "semi-pie-and-grouped-stacked-column-chart"
   | "line-graph-and-grouped-stacked-column-chart";
 
+/** Attribute ids in column order (matches filter columns / table), not stray `attributes` keys. */
 function getUniqueAttributeIds(combinations: MetricCombination[]): string[] {
-  const ids = new Set<string>();
+  const ids: string[] = [];
+  const seen = new Set<string>();
 
   for (const combination of combinations) {
-    for (const attributeId of Object.keys(combination.attributes ?? {})) {
-      if (attributeId) ids.add(attributeId);
-    }
-
     for (const entry of combination.row ?? []) {
-      if (entry.attributeId) ids.add(entry.attributeId);
+      if (entry.attributeId && !seen.has(entry.attributeId)) {
+        seen.add(entry.attributeId);
+        ids.push(entry.attributeId);
+      }
     }
   }
 
-  return Array.from(ids);
+  return ids;
 }
 
 function pickAttributeDisplayTitle(attr: Attribute | undefined): string {
@@ -114,12 +115,13 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
   /** Pyramid timeline (X2) axis kind: real years ("time") or categorical frame ("category"). */
   timelineMode?: "time" | "category";
 } {
-  const { data: attributes = [] } = useSWR(swrKeys.attributes, fetchAttributes);
+  const { data: attributes } = useSWR(swrKeys.attributes, fetchAttributes);
   // const { data: categories = [] } = useSWR(swrKeys.attributesCategories, fetchAttributeCategories);
 
   return useMemo(() => {
     const rows = combinations ?? [];
     if (rows.length === 0) return { type: "bar", data: [] };
+    if (attributes === undefined) return { type: "bar", data: [] };
 
     const attributeIds = getUniqueAttributeIds(rows);
 

@@ -6,5 +6,5 @@ type StatSearchRedirectPageProps = {
 
 export default async function StatSearchRedirectPage({ searchParams }: StatSearchRedirectPageProps) {
   const { q } = await searchParams;
-  redirect(q ? `/stat?q=${encodeURIComponent(q)}` : "/stat/");
+  redirect(q ? `/stat?q=${encodeURIComponent(q)}` : "/stat/?search");
 }

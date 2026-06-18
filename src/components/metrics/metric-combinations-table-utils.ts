@@ -31,3 +31,14 @@ export function valueAtColumnIndex(combo: MetricCombination, columnIndex: number
   const t = entry.value.title?.trim();
   return t && t.length > 0 ? t : entry.value._id;
 }
+
+/** Metric value for table cells: at most 2 decimal places. */
+export function formatCombinationValue(value: string | number | undefined | null): string {
+  if (value == null || value === "") return "";
+  const n = Number(value);
+  if (!Number.isFinite(n)) return String(value);
+  return new Intl.NumberFormat(undefined, {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 0,
+  }).format(n);
+}

@@ -9,7 +9,7 @@ export default function HeaderSearchButton({ className = "" }: { className?: str
 
   return (
     <Link
-      href="/stat/"
+      href="/stat/?search"
       className={`flex cursor-pointer items-center outline-none ${className}`}
       aria-label={t("stat.search_action", "Որոնել")}
     >

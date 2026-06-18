@@ -19,7 +19,6 @@ import HeaderSearchButton from "@/components/site/HeaderSearchButton";
 import type { ContentLangCode } from "@/types/content-entries";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { fetchHomePage } from "@/services/mainPageService";
-import { cn } from "@/lib/utils";
 
 const languages: { labelKey: string; code: ContentLangCode; fallback: string }[] = [
   { labelKey: "language.hy", code: "hy", fallback: "Armenian" },
@@ -91,17 +90,10 @@ export default function Header() {
   }, [homePageData, activeLang, visibleLanguages, setActiveLang]);
 
   const pathname = usePathname();
-  const isStatPage = pathname === "/stat" || pathname.startsWith("/stat/");
-  const headerContentWidth = isStatPage ? "max-w-400" : "max-w-305";
 
   return (
     <header className="bg-blue1000 relative flex w-full flex-col items-center">
-      <div
-        className={cn(
-          "flex w-full items-center justify-between gap-4 px-5 py-4",
-          headerContentWidth
-        )}
-      >
+      <div className="flex w-full max-w-400 items-center justify-between gap-4 px-5 py-4">
         <Link href="/" className="flex min-w-0 flex-1 items-center gap-4 max-md:gap-2">
           <Image
             className="max-md:w-[25%]"
@@ -153,12 +145,7 @@ export default function Header() {
 
       {/* Desktop nav */}
       <div className="bg-blue800/30 flex w-full justify-center py-4 max-md:hidden">
-        <nav
-          className={cn(
-            "flex w-full items-center justify-between px-5",
-            headerContentWidth
-          )}
-        >
+        <nav className="flex w-full max-w-400 items-center justify-between px-5">
           <ul className="flex gap-6">
             {items.map((item) => (
               <li key={item.href}>
