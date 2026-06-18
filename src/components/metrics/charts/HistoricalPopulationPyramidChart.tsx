@@ -40,8 +40,23 @@ const GENDER_LABEL_BAND_HEIGHT = 48;
 const CHART_HEADER_HEADROOM = 24;
 const TOOLTIP_CONTAINER_BOUNDS = { top: 24, right: 20, bottom: 70, left: 20 };
 const CURSOR_HINT_BAND_HEIGHT = 18;
+const TOP_HEADER_HEIGHT =
+  CURSOR_HINT_BAND_HEIGHT + CHART_TITLE_BAND_HEIGHT + GENDER_LABEL_BAND_HEIGHT;
 
-/** Lock the bottom X-axis band so both charts share the same plot baseline. */
+/** Lock header + bottom X-axis bands so both charts share the same plot baseline. */
+function lockChartLayoutBands(charts: am5xy.XYChart[]) {
+  for (const chart of charts) {
+    chart.topAxesContainer.setAll({
+      minHeight: TOP_HEADER_HEIGHT,
+      maxHeight: TOP_HEADER_HEIGHT,
+    });
+    chart.bottomAxesContainer.setAll({
+      minHeight: X_AXIS_LABEL_MAX_HEIGHT,
+      maxHeight: X_AXIS_LABEL_MAX_HEIGHT,
+    });
+  }
+}
+
 function syncBottomXAxisBand(chart: am5xy.XYChart, xAxis: am5xy.Axis<am5xy.AxisRenderer>) {
   xAxis.setAll({
     minHeight: X_AXIS_LABEL_MAX_HEIGHT,
@@ -49,6 +64,21 @@ function syncBottomXAxisBand(chart: am5xy.XYChart, xAxis: am5xy.Axis<am5xy.AxisR
   });
   chart.bottomAxesContainer.setAll({
     minHeight: X_AXIS_LABEL_MAX_HEIGHT,
+    maxHeight: X_AXIS_LABEL_MAX_HEIGHT,
+  });
+}
+
+/** Pin the plot-area height after layout so both X axes sit on the same baseline. */
+function syncPlotBaselines(root: am5.Root, charts: am5xy.XYChart[]) {
+  lockChartLayoutBands(charts);
+  root.events.once("frameended", () => {
+    lockChartLayoutBands(charts);
+    const plotHeights = charts.map((chart) => chart.yAxesAndPlotContainer.height());
+    const maxPlotHeight = Math.max(...plotHeights);
+    if (maxPlotHeight <= 0) return;
+    for (const chart of charts) {
+      chart.yAxesAndPlotContainer.setAll({ height: maxPlotHeight });
+    }
   });
 }
 
@@ -246,6 +276,8 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       marginTop: -CHART_HEADER_HEADROOM,
       paddingTop: 0,
       paddingBottom: 0,
+      minHeight: TOP_HEADER_HEIGHT,
+      maxHeight: TOP_HEADER_HEIGHT,
     });
 
     const pyramidHeader = pyramidChart.topAxesContainer.children.push(
@@ -327,16 +359,20 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       })
     );
 
+    const pyramidXRenderer = am5xy.AxisRendererX.new(root, { minGridDistance: 50, strokeOpacity: 0.1 });
+    pyramidXRenderer.labels.template.setAll({
+      centerY: am5.p0,
+      paddingTop: 4,
+    });
     const pyramidXAxis = pyramidChart.xAxes.push(
       am5xy.ValueAxis.new(root, {
         min: -200000,
         max: 200000,
         strictMinMax: true,
-        renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 50, strokeOpacity: 0.1 }),
+        renderer: pyramidXRenderer,
         tooltip: am5.Tooltip.new(root, {}),
       })
     );
-    pyramidXAxis.set("maxHeight", X_AXIS_LABEL_MAX_HEIGHT);
     syncBottomXAxisBand(pyramidChart, pyramidXAxis);
 
     // Show absolute values on the X-axis ticks (the left side stores negatives).
@@ -423,6 +459,8 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       marginTop: -CHART_HEADER_HEADROOM,
       paddingTop: 0,
       paddingBottom: 0,
+      minHeight: TOP_HEADER_HEIGHT,
+      maxHeight: TOP_HEADER_HEIGHT,
     });
 
     const popHeader = popChart.topAxesContainer.children.push(
@@ -527,6 +565,9 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       // other charts so they don't eat the plot height. The full text stays in the tooltip.
       popXRenderer.labels.template.setAll({
         rotation: -45,
+        centerY: am5.p0,
+        centerX: am5.p100,
+        paddingTop: 8,
         maxWidth: 200,
         oversizedBehavior: "wrap",
         textAlign: "center",
@@ -538,7 +579,6 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
           tooltip: am5.Tooltip.new(root, {}),
         })
       );
-      popXAxis.set("maxHeight", X_AXIS_LABEL_MAX_HEIGHT);
       syncBottomXAxisBand(popChart, popXAxis);
 
       const male = popChart.series.push(
@@ -589,16 +629,20 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       tooltipHeader = "{categoryX}";
     } else {
       // TIME on X2 → real calendar-year date axis, stacked male+female area lines.
+      const popXRenderer = am5xy.AxisRendererX.new(root, { minGridDistance: 40 });
+      popXRenderer.labels.template.setAll({
+        centerY: am5.p0,
+        paddingTop: 4,
+      });
       const popXAxis = popChart.xAxes.push(
         am5xy.DateAxis.new(root, {
           maxDeviation: 0.1,
           groupData: false,
           baseInterval: { timeUnit: "year", count: 1 },
-          renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 40 }),
+          renderer: popXRenderer,
           tooltip: am5.Tooltip.new(root, {}),
         })
       );
-      popXAxis.set("maxHeight", X_AXIS_LABEL_MAX_HEIGHT);
       syncBottomXAxisBand(popChart, popXAxis);
 
       const male = popChart.series.push(
@@ -696,14 +740,17 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       pyramidXAxis.set("max", pad);
 
       pushTimeline(buildTimelineData(rows, cfg, projectionYear, { isCategory, frameLabelByYear }));
+      syncPlotBaselines(root, [pyramidChart, popChart]);
     }
 
     applyDataRef.current = applyData;
     applyData();
+    lockChartLayoutBands([pyramidChart, popChart]);
 
     popSeriesMale.appear(1000, 100);
     popChart.appear(1000, 100);
     pyramidChart.appear(1000, 100);
+    syncPlotBaselines(root, [pyramidChart, popChart]);
 
     return () => {
       rootRef.current = null;
