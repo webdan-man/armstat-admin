@@ -51,13 +51,22 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
   chartTitle,
 }: StackedBartWithNegativeValuesChartProps<T>) {
   const rootRef = useRef<am5.Root | null>(null);
+  const chartRef = useRef<am5xy.XYChart | null>(null);
   const yAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
   const xAxisRef = useRef<am5xy.ValueAxis<am5xy.AxisRenderer> | null>(null);
   const seriesListRef = useRef<am5xy.ColumnSeries[]>([]);
   const titleLabelRef = useRef<am5.Label | null>(null);
+  const leftTitleLabelRef = useRef<am5.Label | null>(null);
+  const rightTitleLabelRef = useRef<am5.Label | null>(null);
   const chartTitleRef = useRef(chartTitle);
-  // Capture initial seriesKeys for use in data-update effect.
+  const dataRef = useRef(data);
+  dataRef.current = data;
+  // Latest seriesKeys, kept in sync by the reconcile effect for the data effect.
   const seriesKeysRef = useRef(seriesKeys);
+
+  // Stable dependency for the series-reconcile effect: the array identity of
+  // `seriesKeys` changes on every parent render, but its contents are what matter.
+  const seriesKeysSignature = seriesKeys.join(" ");
 
   useLayoutEffect(() => {
     // Create chart once; otherwise amCharts replays intro animations on every data update.
@@ -82,6 +91,7 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
         paddingRight: 10,
       })
     );
+    chartRef.current = chart;
 
     if (chartTitle !== undefined) {
       const titleRow = chart.children.unshift(
@@ -109,15 +119,9 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
 
     chart.getNumberFormatter().set("numberFormat", "#.#s");
 
-    const [rightKey, leftKey] = seriesKeys;
-    seriesKeysRef.current = seriesKeys;
-
-    const leftColor = am5.color(LEFT_COLOR_HEX);
-    const rightColor = am5.color(RIGHT_COLOR_HEX);
-
     // Titles live inside the chart's top axes container so they stay aligned
     // with the plot area (which is offset by the Y-axis), regardless of how
-    // long the field names are.
+    // long the field names are. Their text is filled in by the reconcile effect.
     const titlesContainer = chart.topAxesContainer.children.push(
       am5.Container.new(root, {
         width: am5.p100,
@@ -126,9 +130,9 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
       })
     );
 
-    const makeTitle = (label: string | undefined, colorHex: string) =>
+    const makeTitle = (colorHex: string) =>
       am5.Label.new(root, {
-        text: label ?? "",
+        text: "",
         width: am5.p50,
         textAlign: "center",
         fontSize: 13,
@@ -137,11 +141,12 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
         oversizedBehavior: "wrap",
       });
 
-    titlesContainer.children.push(makeTitle(leftKey, LEFT_COLOR_HEX));
-    titlesContainer.children.push(makeTitle(rightKey, RIGHT_COLOR_HEX));
-
-    const chartData = toChartData(data, leftKey, rightKey);
-    const axisMax = computeAxisMax(chartData, leftKey, rightKey);
+    const leftTitleLabel = makeTitle(LEFT_COLOR_HEX);
+    const rightTitleLabel = makeTitle(RIGHT_COLOR_HEX);
+    titlesContainer.children.push(leftTitleLabel);
+    titlesContainer.children.push(rightTitleLabel);
+    leftTitleLabelRef.current = leftTitleLabel;
+    rightTitleLabelRef.current = rightTitleLabel;
 
     const yAxis = chart.yAxes.push(
       am5xy.CategoryAxis.new(root, {
@@ -157,8 +162,6 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
     );
     yAxisRef.current = yAxis;
 
-    yAxis.data.setAll(chartData);
-
     const xRenderer = am5xy.AxisRendererX.new(root, {
       minGridDistance: 60,
       strokeOpacity: 0.1,
@@ -172,14 +175,64 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
 
     const xAxis = chart.xAxes.push(
       am5xy.ValueAxis.new(root, {
-        min: -axisMax,
-        max: axisMax,
         strictMinMax: true,
         renderer: xRenderer,
       })
     );
     xAxisRef.current = xAxis;
 
+    const cursor = chart.set("cursor", am5xy.XYCursor.new(root, { behavior: "zoomY" }));
+    cursor.lineY.set("forceHidden", true);
+    cursor.lineX.set("forceHidden", true);
+
+    chart.appear(1000, 100);
+
+    return () => {
+      rootRef.current = null;
+      chartRef.current = null;
+      yAxisRef.current = null;
+      xAxisRef.current = null;
+      seriesListRef.current = [];
+      titleLabelRef.current = null;
+      leftTitleLabelRef.current = null;
+      rightTitleLabelRef.current = null;
+      root.dispose();
+    };
+  }, []);
+
+  // Rebuild the two series (and refresh the category axis, axis range, and the
+  // per-side titles) whenever the series keys or the y-axis category change. The
+  // init effect runs only once (to avoid replaying the intro animation), so
+  // without this the chart would keep the series bound to the first render and
+  // ignore later changes to seriesKeys / yAxisKey.
+  useEffect(() => {
+    const root = rootRef.current;
+    const chart = chartRef.current;
+    const xAxis = xAxisRef.current;
+    const yAxis = yAxisRef.current;
+    if (!root || !chart || !xAxis || !yAxis) return;
+
+    seriesKeysRef.current = seriesKeys;
+    const [rightKey, leftKey] = seriesKeys;
+
+    yAxis.set("categoryField", yAxisKey);
+    leftTitleLabelRef.current?.set("text", leftKey ?? "");
+    rightTitleLabelRef.current?.set("text", rightKey ?? "");
+
+    const chartData = toChartData(dataRef.current, leftKey, rightKey);
+    const axisMax = computeAxisMax(chartData, leftKey, rightKey);
+    xAxis.set("min", -axisMax);
+    xAxis.set("max", axisMax);
+    yAxis.data.setAll(chartData);
+
+    // Tear down the previous series so a changed key set is reflected.
+    seriesListRef.current.forEach((series) => {
+      chart.series.removeValue(series);
+      series.dispose();
+    });
+
+    const leftColor = am5.color(LEFT_COLOR_HEX);
+    const rightColor = am5.color(RIGHT_COLOR_HEX);
     const seriesList: am5xy.ColumnSeries[] = [];
 
     const createSeries = (
@@ -254,22 +307,10 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
     }
 
     seriesListRef.current = seriesList;
-
-    const cursor = chart.set("cursor", am5xy.XYCursor.new(root, { behavior: "zoomY" }));
-    cursor.lineY.set("forceHidden", true);
-    cursor.lineX.set("forceHidden", true);
-
-    chart.appear(1000, 100);
-
-    return () => {
-      rootRef.current = null;
-      yAxisRef.current = null;
-      xAxisRef.current = null;
-      seriesListRef.current = [];
-      titleLabelRef.current = null;
-      root.dispose();
-    };
-  }, []);
+    // `data` is read via dataRef so a pure data change doesn't rebuild series;
+    // the data effect below handles that.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seriesKeysSignature, yAxisKey]);
 
   useEffect(() => {
     chartTitleRef.current = chartTitle;

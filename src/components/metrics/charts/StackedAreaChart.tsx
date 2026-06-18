@@ -22,10 +22,19 @@ function StackedAreaChart<T extends Record<string, string>>({
   chartTitle,
 }: StackedAreaChartProps<T>) {
   const rootRef = useRef<am5.Root | null>(null);
+  const chartRef = useRef<am5xy.XYChart | null>(null);
   const xAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
+  const yAxisRef = useRef<am5xy.ValueAxis<am5xy.AxisRenderer> | null>(null);
+  const legendRef = useRef<am5.Legend | null>(null);
   const seriesListRef = useRef<am5xy.LineSeries[]>([]);
   const titleLabelRef = useRef<am5.Label | null>(null);
   const chartTitleRef = useRef(chartTitle);
+  const dataRef = useRef(data);
+  dataRef.current = data;
+
+  // Stable dependency for the series-reconcile effect: the array identity of
+  // `seriesKeys` changes on every parent render, but its contents are what matter.
+  const seriesKeysSignature = seriesKeys.join(" ");
 
   useLayoutEffect(() => {
     // Create chart once; otherwise amCharts replays intro animations on every data update.
@@ -48,6 +57,7 @@ function StackedAreaChart<T extends Record<string, string>>({
         layout: root.verticalLayout,
       })
     );
+    chartRef.current = chart;
 
     if (chartTitle !== undefined) {
       root.container.setAll({ paddingTop: CHART_HEADER_HEADROOM });
@@ -118,9 +128,67 @@ function StackedAreaChart<T extends Record<string, string>>({
         min: 0,
       })
     );
+    yAxisRef.current = yAxis;
 
-    const seriesList: am5xy.LineSeries[] = [];
-    seriesKeys.forEach((key) => {
+    chart.set("scrollbarX", am5.Scrollbar.new(root, { orientation: "horizontal" }));
+
+    const legend = chart.children.push(
+      am5.Legend.new(root, {
+        centerX: am5.p50,
+        x: am5.p50,
+        marginTop: 15,
+        marginBottom: 15,
+        useDefaultMarker: true,
+      })
+    );
+    legendRef.current = legend;
+
+    legend.labels.template.setAll({ fontSize: 16 });
+
+    legend.markers.template.setAll({ width: 22, height: 22 });
+
+    legend.markerRectangles.template.setAll({
+      cornerRadiusTL: 4,
+      cornerRadiusTR: 4,
+      cornerRadiusBL: 4,
+      cornerRadiusBR: 4,
+      strokeOpacity: 0,
+    });
+
+    chart.appear(1000, 100);
+
+    return () => {
+      rootRef.current = null;
+      chartRef.current = null;
+      xAxisRef.current = null;
+      yAxisRef.current = null;
+      legendRef.current = null;
+      seriesListRef.current = [];
+      titleLabelRef.current = null;
+      root.dispose();
+    };
+  }, []);
+
+  // Rebuild the series whenever the series keys or x-axis category change. The
+  // init effect runs only once (to avoid replaying the intro animation), so
+  // without this the chart would keep the series bound to the first render and
+  // ignore later changes to seriesKeys / xAxisKey.
+  useEffect(() => {
+    const root = rootRef.current;
+    const chart = chartRef.current;
+    const xAxis = xAxisRef.current;
+    const yAxis = yAxisRef.current;
+    const legend = legendRef.current;
+    if (!root || !chart || !xAxis || !yAxis || !legend) return;
+
+    // Tear down the previous series so a changed key set is reflected.
+    seriesListRef.current.forEach((series) => {
+      legend.data.removeValue(series);
+      chart.series.removeValue(series);
+      series.dispose();
+    });
+
+    seriesListRef.current = seriesKeys.map((key) => {
       const series = chart.series.push(
         am5xy.LineSeries.new(root, {
           name: String(key),
@@ -141,48 +209,16 @@ function StackedAreaChart<T extends Record<string, string>>({
         visible: true,
       });
 
-      series.data.setAll(data);
+      series.data.setAll(dataRef.current);
       series.appear(1000);
-      seriesList.push(series);
-    });
-    seriesListRef.current = seriesList;
-
-    chart.set("scrollbarX", am5.Scrollbar.new(root, { orientation: "horizontal" }));
-
-    const legend = chart.children.push(
-      am5.Legend.new(root, {
-        centerX: am5.p50,
-        x: am5.p50,
-        marginTop: 15,
-        marginBottom: 15,
-        useDefaultMarker: true,
-      })
-    );
-
-    legend.labels.template.setAll({ fontSize: 16 });
-
-    legend.markers.template.setAll({ width: 22, height: 22 });
-
-    legend.markerRectangles.template.setAll({
-      cornerRadiusTL: 4,
-      cornerRadiusTR: 4,
-      cornerRadiusBL: 4,
-      cornerRadiusBR: 4,
-      strokeOpacity: 0,
+      return series;
     });
 
     legend.data.setAll(chart.series.values);
-
-    chart.appear(1000, 100);
-
-    return () => {
-      rootRef.current = null;
-      xAxisRef.current = null;
-      seriesListRef.current = [];
-      titleLabelRef.current = null;
-      root.dispose();
-    };
-  }, []);
+    // `data` is read via dataRef so a pure data change doesn't rebuild series;
+    // the data effect below handles that.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seriesKeysSignature, xAxisKey]);
 
   useEffect(() => {
     chartTitleRef.current = chartTitle;

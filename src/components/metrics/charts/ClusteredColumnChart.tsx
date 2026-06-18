@@ -24,10 +24,19 @@ function ClusteredColumnChart<T extends Record<string, string>>({
   chartTitle,
 }: ClusteredColumnChartProps<T>) {
   const rootRef = useRef<am5.Root | null>(null);
+  const chartRef = useRef<am5xy.XYChart | null>(null);
   const xAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
+  const yAxisRef = useRef<am5xy.ValueAxis<am5xy.AxisRenderer> | null>(null);
+  const legendRef = useRef<am5.Legend | null>(null);
   const seriesListRef = useRef<am5xy.ColumnSeries[]>([]);
   const titleLabelRef = useRef<am5.Label | null>(null);
   const chartTitleRef = useRef(chartTitle);
+  const dataRef = useRef(data);
+  dataRef.current = data;
+
+  // Stable dependency for the series-reconcile effect: the array identity of
+  // `seriesKeys` changes on every parent render, but its contents are what matter.
+  const seriesKeysSignature = seriesKeys.join(" ");
 
   useLayoutEffect(() => {
     // Create chart once; otherwise amCharts replays intro animations on every data update.
@@ -53,6 +62,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
         height: am5.percent(70),
       })
     );
+    chartRef.current = chart;
 
     if (chartTitle !== undefined) {
       root.container.setAll({ paddingTop: CHART_HEADER_HEADROOM });
@@ -134,6 +144,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
         renderer: am5xy.AxisRendererY.new(root, { strokeOpacity: 0.1 }),
       })
     );
+    yAxisRef.current = yAxis;
 
     // ========== LEGEND ==========
     const legend = root.container.children.push(
@@ -147,6 +158,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
         verticalScrollbar: am5.Scrollbar.new(root, { orientation: "vertical" }),
       })
     );
+    legendRef.current = legend;
 
     legend.labels.template.setAll({
       fontSize: 16,
@@ -154,19 +166,52 @@ function ClusteredColumnChart<T extends Record<string, string>>({
       oversizedBehavior: "wrap",
     });
 
-    // ========== SERIES ==========
-    const seriesByItem: Record<string, am5xy.ColumnSeries[]> = {};
-    const seriesList: am5xy.ColumnSeries[] = [];
+    chart.appear(1000, 100);
 
-    const makeSeries = (name: string, fieldName: string) => {
-      seriesByItem[name] = [];
+    return () => {
+      rootRef.current = null;
+      chartRef.current = null;
+      xAxisRef.current = null;
+      yAxisRef.current = null;
+      legendRef.current = null;
+      seriesListRef.current = [];
+      titleLabelRef.current = null;
+      root.dispose();
+    };
+  }, []);
+
+  // Rebuild the series whenever the series keys, x-axis category, or stacking
+  // mode change. The init effect runs only once (to avoid replaying the intro
+  // animation), so without this the chart would keep the series bound to the
+  // first render and ignore later changes to these props.
+  useEffect(() => {
+    const root = rootRef.current;
+    const chart = chartRef.current;
+    const xAxis = xAxisRef.current;
+    const yAxis = yAxisRef.current;
+    const legend = legendRef.current;
+    if (!root || !chart || !xAxis || !yAxis || !legend) return;
+
+    xAxis.set("categoryField", xAxisKey);
+
+    // Tear down the previous series so a changed key set is reflected.
+    seriesListRef.current.forEach((series) => {
+      legend.data.removeValue(series);
+      chart.series.removeValue(series);
+      series.dispose();
+    });
+
+    const seriesByItem: Record<string, am5xy.ColumnSeries[]> = {};
+
+    seriesListRef.current = seriesKeys.map((key) => {
+      seriesByItem[key] = [];
 
       const series = chart.series.push(
         am5xy.ColumnSeries.new(root, {
-          name,
+          name: key,
           xAxis,
           yAxis,
-          valueYField: fieldName,
+          valueYField: key,
           categoryXField: xAxisKey,
           stacked,
           clustered: !stacked,
@@ -181,16 +226,12 @@ function ClusteredColumnChart<T extends Record<string, string>>({
         tooltipText: "{valueY}",
       });
 
-      series.data.setAll(data);
+      series.data.setAll(dataRef.current);
       series.appear();
 
       legend.data.push(series);
-      seriesList.push(series);
       return series;
-    };
-
-    seriesKeys.forEach((def) => makeSeries(def, def));
-    seriesListRef.current = seriesList;
+    });
 
     // Sync legend visibility across stacked series
     chart.series.values.forEach((s) => {
@@ -207,17 +248,10 @@ function ClusteredColumnChart<T extends Record<string, string>>({
         });
       });
     });
-
-    chart.appear(1000, 100);
-
-    return () => {
-      rootRef.current = null;
-      xAxisRef.current = null;
-      seriesListRef.current = [];
-      titleLabelRef.current = null;
-      root.dispose();
-    };
-  }, []);
+    // `data` is read via dataRef so a pure data change doesn't rebuild series;
+    // the data effect below handles that.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seriesKeysSignature, xAxisKey, stacked]);
 
   useEffect(() => {
     chartTitleRef.current = chartTitle;
