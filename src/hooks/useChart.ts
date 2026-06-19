@@ -74,6 +74,57 @@ function getUniqueAttributeIds(combinations: MetricCombination[]): string[] {
   return ids;
 }
 
+/** Suffix marking an attribute id synthesized from a secondary-level row entry. */
+const SECONDARY_ATTRIBUTE_ID_SUFFIX = "::secondary";
+
+/**
+ * An attribute can carry a second-level breakdown (its values' `secondaryTitle`).
+ * The combinations API returns that breakdown as an extra row entry with the SAME
+ * `attributeId` but `level: "secondary"`. Chart detection and every map util key
+ * purely on `attributeId`, so a secondary entry would otherwise collide with its
+ * primary. We rewrite each secondary entry to a synthetic attribute id and add a
+ * matching synthetic OTHER-category attribute, so it is treated as an independent
+ * OTHER dimension throughout the pipeline.
+ */
+function liftSecondaryLevelsToOtherAttributes(
+  combinations: MetricCombination[],
+  attributes: Attribute[]
+): { combinations: MetricCombination[]; attributes: Attribute[] } {
+  const sourceIdBySyntheticId = new Map<string, string>();
+
+  const remappedCombinations = combinations.map((combo) => {
+    const row = combo.row ?? [];
+    let rowChanged = false;
+    const newRow = row.map((entry) => {
+      if (entry.level !== "secondary" || !entry.attributeId) return entry;
+      const syntheticId = `${entry.attributeId}${SECONDARY_ATTRIBUTE_ID_SUFFIX}`;
+      sourceIdBySyntheticId.set(syntheticId, entry.attributeId);
+      rowChanged = true;
+      return { ...entry, attributeId: syntheticId };
+    });
+    return rowChanged ? { ...combo, row: newRow } : combo;
+  });
+
+  if (sourceIdBySyntheticId.size === 0) return { combinations, attributes };
+
+  const attributeById = new Map(attributes.map((a) => [a._id, a]));
+  const syntheticAttributes: Attribute[] = [];
+  for (const [syntheticId, sourceId] of sourceIdBySyntheticId) {
+    const source = attributeById.get(sourceId);
+    syntheticAttributes.push({
+      _id: syntheticId,
+      category: AttributeCategory.OTHER,
+      title: source?.title ?? {},
+      values: source?.values ?? [],
+    });
+  }
+
+  return {
+    combinations: remappedCombinations,
+    attributes: [...attributes, ...syntheticAttributes],
+  };
+}
+
 function pickAttributeDisplayTitle(attr: Attribute | undefined): string {
   if (!attr?.title) return "";
   const t = attr.title;
@@ -98,7 +149,7 @@ function pickAttributeLabelFromRows(
   return pickAttributeDisplayTitle(attribute);
 }
 
-function useDetectChartType(combinations: MetricCombination[] | undefined = []): {
+function useDetectChartType(combinationsProp: MetricCombination[] | undefined = []): {
   type: ChartType;
   data: any;
   xAxisKey?: string;
@@ -115,14 +166,23 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
   /** Pyramid timeline (X2) axis kind: real years ("time") or categorical frame ("category"). */
   timelineMode?: "time" | "category";
 } {
-  const { data: attributes } = useSWR(swrKeys.attributes, fetchAttributes);
+  const { data: attributesData } = useSWR(swrKeys.attributes, fetchAttributes);
   // const { data: categories = [] } = useSWR(swrKeys.attributesCategories, fetchAttributeCategories);
 
   return useMemo(() => {
-    const rows = combinations ?? [];
-    if (rows.length === 0) return { type: "bar", data: [] };
-    if (attributes === undefined) return { type: "bar", data: [] };
+    const rawCombinations = combinationsProp ?? [];
+    if (rawCombinations.length === 0) return { type: "bar", data: [] };
+    if (attributesData === undefined) return { type: "bar", data: [] };
 
+    // A secondary-level row entry (an attribute's 2nd-level breakdown) is treated
+    // as an independent OTHER-category attribute. From here on `combinations` and
+    // `attributes` include those synthetic OTHER dimensions.
+    const { combinations, attributes } = liftSecondaryLevelsToOtherAttributes(
+      rawCombinations,
+      attributesData
+    );
+
+    const rows = combinations;
     const attributeIds = getUniqueAttributeIds(rows);
 
     if (attributeIds.length === 1) {
@@ -1703,7 +1763,7 @@ function useDetectChartType(combinations: MetricCombination[] | undefined = []):
     }
 
     return { type: "bar", data: [] };
-  }, [attributes, combinations]);
+  }, [attributesData, combinationsProp]);
 }
 
 export const useChart = (props: { combinations: MetricCombination[] }) => {

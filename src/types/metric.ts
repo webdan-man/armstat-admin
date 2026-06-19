@@ -95,7 +95,7 @@ export type MetricCombinationRowEntry = {
   attributeId: string;
   label: string;
   value: MetricCombinationRowValue;
-  level: number;
+  level: "primary" | "secondary";
 };
 
 export type MetricCombination = {
