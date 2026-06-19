@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
+import { getStableSeriesColor } from "@/utils/chart/stable-series-color.util";
 
 interface ClusteredColumnChartProps<T extends Record<string, string | number>> {
   data: T[];
@@ -218,12 +219,18 @@ function ClusteredColumnChart<T extends Record<string, string>>({
         })
       );
 
+      const color = getStableSeriesColor(containerId, chart.get("colors"), key);
+      series.set("fill", color);
+      series.set("stroke", color);
+
       series.columns.template.setAll({
         cornerRadiusTL: 5,
         cornerRadiusTR: 5,
         strokeOpacity: 0,
         width: am5.percent(90),
         tooltipText: "{valueY}",
+        fill: color,
+        stroke: color,
       });
 
       series.data.setAll(dataRef.current);

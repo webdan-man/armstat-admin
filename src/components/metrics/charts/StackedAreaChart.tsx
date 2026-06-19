@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
+import { getStableSeriesColor } from "@/utils/chart/stable-series-color.util";
 
 interface StackedAreaChartProps<T extends Record<string, string>> {
   data: T[];
@@ -203,6 +204,10 @@ function StackedAreaChart<T extends Record<string, string>>({
           }),
         })
       );
+
+      const color = getStableSeriesColor(containerId, chart.get("colors"), String(key));
+      series.set("fill", color);
+      series.set("stroke", color);
 
       series.fills.template.setAll({
         fillOpacity: 0.5,
