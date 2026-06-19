@@ -28,16 +28,41 @@ function uniqueTitlesForAttribute(combinations: MetricCombination[], attributeId
 export const mapCombinationsForClusteredAndStackedColumnChart = (payload: {
   combinations: MetricCombination[];
   attributes: [AttrSpec, AttrSpec, AttrSpec];
+  /**
+   * When set, this attribute is forced onto the stack layers (e.g. GENDER) and the
+   * remaining two are assigned by CXG: fewer options → X axis, more → cluster groups.
+   * When omitted, all three roles are assigned purely by unique-value count.
+   */
+  stackAttributeId?: string;
 }) => {
-  const { combinations, attributes } = payload;
+  const { combinations, attributes, stackAttributeId } = payload;
 
-  const withCounts = attributes
-    .map((a) => ({ ...a, options: uniqueTitlesForAttribute(combinations, a.id) }))
-    .sort((a, b) => a.options.length - b.options.length);
+  const withCounts = attributes.map((a) => ({
+    ...a,
+    options: uniqueTitlesForAttribute(combinations, a.id),
+  }));
 
-  const xAttr = withCounts[0];       // fewest → X axis
-  const stackAttr = withCounts[1];   // middle → stack layers
-  const clusterAttr = withCounts[2]; // most   → cluster groups
+  const forcedStack = stackAttributeId
+    ? withCounts.find((a) => a.id === stackAttributeId)
+    : undefined;
+
+  let xAttr: (typeof withCounts)[number];
+  let stackAttr: (typeof withCounts)[number];
+  let clusterAttr: (typeof withCounts)[number];
+
+  if (forcedStack) {
+    const rest = withCounts
+      .filter((a) => a.id !== forcedStack.id)
+      .sort((a, b) => a.options.length - b.options.length);
+    stackAttr = forcedStack; // forced → stack layers
+    xAttr = rest[0]; // fewer → X axis
+    clusterAttr = rest[1]; // more  → cluster groups
+  } else {
+    const sorted = [...withCounts].sort((a, b) => a.options.length - b.options.length);
+    xAttr = sorted[0]; // fewest → X axis
+    stackAttr = sorted[1]; // middle → stack layers
+    clusterAttr = sorted[2]; // most   → cluster groups
+  }
 
   const clusterKeys = clusterAttr.options;
   const stackKeys = stackAttr.options;

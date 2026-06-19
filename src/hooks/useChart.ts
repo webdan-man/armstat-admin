@@ -688,34 +688,39 @@ function useDetectChartType(combinationsProp: MetricCombination[] | undefined = 
       ) {
         const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
         const timeAttributeId = attributeMapByCategory.get(AttributeCategory.TIME)!._id;
-        const stackedCategory = has(AttributeCategory.AREA)
+        const secondCategory = has(AttributeCategory.AREA)
           ? AttributeCategory.AREA
           : AttributeCategory.OTHER;
-        const secondAttributeId = attributeMapByCategory.get(stackedCategory)!._id;
+        const secondAttributeId = attributeMapByCategory.get(secondCategory)!._id;
 
-        const { data, seriesKeys, xAxisKey, groupedBy, aggregatedOver } =
-          mapCombinationsForClusteredColumnChartStacked({
+        // GENDER is the stack dimension; TIME and AREA/OTHER split into X (fewer
+        // values) and cluster groups (more) by CXG — a true clustered+stacked chart.
+        const { data, clusterKeys, stackKeys, xAxisKey } =
+          mapCombinationsForClusteredAndStackedColumnChart({
             combinations,
-            genderAttributeId,
-            firstCtgAttribute: { id: timeAttributeId, key: "time" },
-            secondCtgAttribute: {
-              id: secondAttributeId,
-              key: stackedCategory === AttributeCategory.AREA ? "area" : "other",
-            },
+            attributes: [
+              { id: genderAttributeId, key: "gender" },
+              { id: timeAttributeId, key: "time" },
+              {
+                id: secondAttributeId,
+                key: secondCategory === AttributeCategory.AREA ? "area" : "other",
+              },
+            ],
+            stackAttributeId: genderAttributeId,
           });
 
-        console.log("GENDER+TIME+(AREA|OTHER) CLUSTERED COLUMN (STACKED) CXG", {
+        console.log("GENDER+TIME+(AREA|OTHER) CLUSTERED+STACKED COLUMN (gender = stacks)", {
           combinations,
-          groupedBy,
-          aggregatedOver,
           data,
-          seriesKeys,
+          clusterKeys,
+          stackKeys,
         });
 
         return {
           type: "clustered-column-chart-stacked",
           xAxisKey,
-          seriesKeys,
+          clusterKeys,
+          stackKeys,
           data,
         };
       }
@@ -1046,20 +1051,27 @@ function useDetectChartType(combinationsProp: MetricCombination[] | undefined = 
         const areaAttributeId = attributeMapByCategory.get(AttributeCategory.AREA)!._id;
         const otherAttributeId = attributeMapByCategory.get(AttributeCategory.OTHER)!._id;
 
-        const { data, seriesKeys, xAxisKey } = mapCombinationsForClusteredColumnChartStacked({
-          combinations,
-          genderAttributeId,
-          firstCtgAttribute: { id: areaAttributeId, key: "area" },
-          secondCtgAttribute: { id: otherAttributeId, key: "other" },
-        });
+        // GENDER is the stack dimension; AREA/OTHER split into X (fewer values) and
+        // cluster groups (more values) by CXG — a true clustered+stacked chart.
+        const { data, clusterKeys, stackKeys, xAxisKey } =
+          mapCombinationsForClusteredAndStackedColumnChart({
+            combinations,
+            attributes: [
+              { id: genderAttributeId, key: "gender" },
+              { id: areaAttributeId, key: "area" },
+              { id: otherAttributeId, key: "other" },
+            ],
+            stackAttributeId: genderAttributeId,
+          });
 
-        console.log("GENDER+AREA+OTHER CLUSTERED COLUMN (STACKED) CXG", {
+        console.log("GENDER+AREA+OTHER CLUSTERED+STACKED COLUMN (gender = stacks)", {
           combinations,
           data,
-          seriesKeys,
+          clusterKeys,
+          stackKeys,
         });
 
-        return { type: "clustered-column-chart-stacked", xAxisKey, seriesKeys, data };
+        return { type: "clustered-column-chart-stacked", xAxisKey, clusterKeys, stackKeys, data };
       }
 
       // Clustered Column chart (stacked): Age + Area + Other (row 46)
