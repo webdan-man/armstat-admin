@@ -152,7 +152,7 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
       am5xy.CategoryAxis.new(root, {
         categoryField: yAxisKey,
         renderer: am5xy.AxisRendererY.new(root, {
-          inversed: true,
+          inversed: false,
           cellStartLocation: 0.1,
           cellEndLocation: 0.9,
           minorGridEnabled: true,
