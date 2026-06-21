@@ -219,7 +219,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
         })
       );
 
-      const color = getStableSeriesColor(containerId, chart.get("colors"), key);
+      const color = getStableSeriesColor(containerId, chart.get("colors"), key, seriesKeys);
       series.set("fill", color);
       series.set("stroke", color);
 

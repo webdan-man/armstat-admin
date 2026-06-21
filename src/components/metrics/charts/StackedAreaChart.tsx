@@ -205,7 +205,7 @@ function StackedAreaChart<T extends Record<string, string>>({
         })
       );
 
-      const color = getStableSeriesColor(containerId, chart.get("colors"), String(key));
+      const color = getStableSeriesColor(containerId, chart.get("colors"), String(key), seriesKeys);
       series.set("fill", color);
       series.set("stroke", color);
 
