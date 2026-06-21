@@ -7,19 +7,6 @@ import {
   valueAtColumnIndex,
 } from "@/components/metrics/metric-combinations-table-utils";
 
-function syncAttributesToRow(
-  combo: MetricCombination,
-  row: MetricCombinationRowEntry[]
-): MetricCombination {
-  const attributes: Record<string, string> = {};
-  for (const entry of row) {
-    if (entry.attributeId) {
-      attributes[entry.attributeId] = (combo.attributes ?? {})[entry.attributeId] ?? "";
-    }
-  }
-  return { ...combo, row, attributes };
-}
-
 export interface UseColumnFiltersResult {
   columnVisible: boolean[];
   columnSelectedValues: (Set<string> | null)[];
@@ -89,35 +76,43 @@ export function useColumnFilters(
   }, [columnCount, columnIndexes, columnVisible, columnSelectedValues, combinations]);
 
   const projectedCombinations = useMemo((): MetricCombination[] => {
-    if (visibleColumnIndexes.length === columnCount) {
-      return valueFilteredCombinations.map((combo) =>
-        syncAttributesToRow(combo, combo.row ?? [])
-      );
-    }
+    if (visibleColumnIndexes.length === columnCount) return valueFilteredCombinations;
 
     // Collapse duplicate projections into a single row. isCumulative=true means values are
-    // summable counts → add them; otherwise keep the first occurrence.
+    // summable counts → add them; otherwise values can't be added, so keep the first occurrence.
     const isSummable = isCumulative === true;
     const groupMap = new Map<string, { combo: MetricCombination; numValue: number }>();
+    let hasDuplicates = false;
 
     for (const combo of valueFilteredCombinations) {
       const projectedRow = visibleColumnIndexes
         .map((i) => combo.row?.[i])
         .filter((e): e is MetricCombinationRowEntry => Boolean(e));
 
+      const projectedAttributes: Record<string, string> = {};
+      for (const i of visibleColumnIndexes) {
+        const entry = combo.row?.[i];
+        if (entry?.attributeId) {
+          projectedAttributes[entry.attributeId] =
+            (combo.attributes ?? {})[entry.attributeId] ?? "";
+        }
+      }
+
       const key = visibleColumnIndexes.map((i) => valueAtColumnIndex(combo, i)).join("\0");
 
       if (groupMap.has(key)) {
-        if (isSummable) {
-          groupMap.get(key)!.numValue += Number(combo.value) || 0;
-        }
+        hasDuplicates = true;
+        if (!isSummable) break;
+        groupMap.get(key)!.numValue += Number(combo.value) || 0;
       } else {
         groupMap.set(key, {
-          combo: syncAttributesToRow(combo, projectedRow),
+          combo: { ...combo, row: projectedRow, attributes: projectedAttributes },
           numValue: Number(combo.value) || 0,
         });
       }
     }
+
+    if (hasDuplicates && !isSummable) return [];
 
     return Array.from(groupMap.values()).map(({ combo, numValue }) => ({
       ...combo,
