@@ -1595,6 +1595,19 @@ function useDetectChartType(combinationsProp: MetricCombination[] | undefined = 
           }
         }
 
+        // Unsupported: GENDER + AGE + AREA + OTHER has no valid chart mapping
+        {
+          const has = (cat: AttributeCategory) =>
+            nonGenderAttrs.some((a) => a.category === cat);
+          if (
+            has(AttributeCategory.AGE) &&
+            has(AttributeCategory.AREA) &&
+            has(AttributeCategory.OTHER)
+          ) {
+            return { type: "bar", data: [] };
+          }
+        }
+
         // Fallback: clustered stacked column via CYXG across 3 non-gender attrs
         const {
           data: columnData,
