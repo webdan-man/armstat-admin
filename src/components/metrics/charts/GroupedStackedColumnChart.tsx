@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
+import { getPaletteColor } from "@/utils/chart/chart-palette.util";
 import type {
   GroupedStackedColumnChartRow,
   GroupedStackedDimension,
@@ -221,7 +222,7 @@ function GroupedStackedColumnChart({
 
       series.columns.template.adapters.add("fill", (fill, target) => {
         const ctx = target.dataItem?.dataContext as GroupedStackedColumnChartRow | undefined;
-        if (ctx) return chart.get("colors")!.getIndex(subtypeColorIndex[ctx.realName]);
+        if (ctx) return getPaletteColor(chart.get("colors")!, subtypeColorIndex[ctx.realName]);
         return fill;
       });
 
@@ -334,7 +335,7 @@ function GroupedStackedColumnChart({
     allSubtypes.forEach((s) => {
       legend.data.push({
         name: s.name,
-        fill: chart.get("colors")!.getIndex(s.colorIndex),
+        fill: getPaletteColor(chart.get("colors")!, s.colorIndex),
       });
     });
 

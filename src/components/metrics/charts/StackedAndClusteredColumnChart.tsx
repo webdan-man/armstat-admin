@@ -2,6 +2,7 @@ import { useLayoutEffect } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
+import { getPaletteColor } from "@/utils/chart/chart-palette.util";
 
 interface StackedAndClusteredColumnChartProps<T extends Record<string, string | number>> {
   data: T[];
@@ -131,7 +132,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
       const seriesToCluster = new Map<am5xy.ColumnSeries, string>();
 
       allClusterKeys.forEach((clusterKey, clusterIdx) => {
-        const baseColor = chart.get("colors")!.getIndex(clusterIdx);
+        const baseColor = getPaletteColor(chart.get("colors")!, clusterIdx);
         seriesByCluster[clusterKey] = [];
 
         allStackKeys.forEach((stackKey, stackIdx) => {

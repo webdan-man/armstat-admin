@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
+import { getPaletteColor } from "@/utils/chart/chart-palette.util";
 
 interface DataItem {
   xAxisKey: string;
@@ -144,11 +145,11 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
 
     // Color adapters
     series.columns.template.adapters.add("fill", (fill, target) =>
-      chart.get("colors")?.getIndex(series.columns.indexOf(target))
+      getPaletteColor(chart.get("colors"), series.columns.indexOf(target))
     );
 
     series.columns.template.adapters.add("stroke", (stroke, target) =>
-      chart.get("colors")?.getIndex(series.columns.indexOf(target))
+      getPaletteColor(chart.get("colors"), series.columns.indexOf(target))
     );
 
     xAxis.data.setAll(data);
@@ -243,7 +244,7 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
       const index = series.dataItems.indexOf(seriesDataItem);
 
       if (index >= 0) {
-        return seriesDataItem.isHidden() ? greyColor : chart.get("colors")?.getIndex(index);
+        return seriesDataItem.isHidden() ? greyColor : getPaletteColor(chart.get("colors"), index);
       }
 
       return fill;
@@ -258,7 +259,7 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
       const index = series.dataItems.indexOf(seriesDataItem);
 
       if (index >= 0) {
-        return seriesDataItem.isHidden() ? greyColor : chart.get("colors")?.getIndex(index);
+        return seriesDataItem.isHidden() ? greyColor : getPaletteColor(chart.get("colors"), index);
       }
 
       return stroke;

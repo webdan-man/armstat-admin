@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
+import { applyChartColorStep, getPaletteColor } from "@/utils/chart/chart-palette.util";
 
 type ChartDatum = Record<string, string | number>;
 
@@ -272,6 +273,10 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       })
     );
 
+    // Male/female series are auto-colored via the ColorSet's next(); step it so
+    // they match the corner labels, which look up colors via getPaletteColor.
+    applyChartColorStep(pyramidChart.get("colors"));
+
     pyramidChart.topAxesContainer.setAll({
       marginTop: -CHART_HEADER_HEADROOM,
       paddingTop: 0,
@@ -343,7 +348,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         fontSize: 20,
         width: am5.p50,
         textAlign: "left",
-        fill: pyramidChart.get("colors")!.getIndex(1),
+        fill: getPaletteColor(pyramidChart.get("colors")!, 1),
         background: am5.RoundedRectangle.new(root, { fill: am5.color(0xffffff), fillOpacity: 0.5 }),
       })
     );
@@ -354,7 +359,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         fontSize: 20,
         width: am5.p50,
         textAlign: "right",
-        fill: pyramidChart.get("colors")!.getIndex(0),
+        fill: getPaletteColor(pyramidChart.get("colors")!, 0),
         background: am5.RoundedRectangle.new(root, { fill: am5.color(0xffffff), fillOpacity: 0.5 }),
       })
     );
@@ -454,6 +459,10 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         paddingBottom: 4,
       })
     );
+
+    // Timeline male/female series are also auto-colored; keep them stepped in
+    // sync with the pyramid so the same gender keeps the same color.
+    applyChartColorStep(popChart.get("colors"));
 
     popChart.topAxesContainer.setAll({
       marginTop: -CHART_HEADER_HEADROOM,

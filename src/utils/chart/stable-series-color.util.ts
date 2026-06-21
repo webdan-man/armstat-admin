@@ -1,4 +1,5 @@
 import * as am5 from "@amcharts/amcharts5";
+import { getPaletteColor } from "@/utils/chart/chart-palette.util";
 
 /**
  * Per-chart ordered list of series keys -> their palette slot is the position in
@@ -83,5 +84,5 @@ export function getStableSeriesColor(
 
   const order = getPaletteOrder(namespace, seriesKeys);
   const index = order.indexOf(key);
-  return getStableColorSet(namespace, colors).getIndex(index < 0 ? order.length : index);
+  return getPaletteColor(getStableColorSet(namespace, colors), index < 0 ? order.length : index);
 }

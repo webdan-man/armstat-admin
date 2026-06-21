@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5percent from "@amcharts/amcharts5/percent";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
+import { applyChartColorStep } from "@/utils/chart/chart-palette.util";
 
 interface DataItem {
   category: string;
@@ -50,6 +51,10 @@ function SemiCircleChart({ data, chartTitle }: SemiCircleChartProps) {
       })
     );
     seriesRef.current = series;
+
+    // Pie slice colors come from the series ColorSet (via next()); spread them
+    // the same way as every other chart's palette.
+    applyChartColorStep(series.get("colors"));
 
     series.labels.template.setAll({
       text: "{category} - {valuePercentTotal.formatNumber('0.0')}%",
