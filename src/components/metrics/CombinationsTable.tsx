@@ -62,8 +62,16 @@ export default function CombinationsTable({
     setSortKey(key);
   };
 
-  const SortableHead = ({ sortBy, children }: { sortBy: SortKey; children?: React.ReactNode }) => (
-    <TableHead className={cellClassName}>
+  const SortableHead = ({
+    sortBy,
+    children,
+    className,
+  }: {
+    sortBy: SortKey;
+    children?: React.ReactNode;
+    className?: string;
+  }) => (
+    <TableHead className={cn(cellClassName, className)}>
       <button
         type="button"
         onClick={() => handleSort(sortBy)}
@@ -104,7 +112,9 @@ export default function CombinationsTable({
       <Table className="table-fixed">
         <TableHeader>
           <TableRow>
-            <TableHead className={cn(cellClassName, "w-15")}>ID</TableHead>
+            <SortableHead sortBy="id" className="w-15">
+              ID
+            </SortableHead>
             {columnIndexes.map((i) => (
               <SortableHead key={i} sortBy={i}>
                 {headerForColumnIndex(combinations, i)}
