@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Armstat Admin
 
-## Getting Started
+Admin panel for Armstat, built with [Next.js](https://nextjs.org) 16 (App Router, standalone output). It is a frontend-only app — all data is proxied to the Armstat backend.
 
-First, run the development server:
+## Requirements
+
+- Node.js 20
+- pnpm 9 (`corepack enable && corepack prepare pnpm@9.15.4 --activate`)
+- A running Armstat backend reachable at `NEXT_PUBLIC_BASE_URL`
+
+## Environment variables
+
+Copy `.env.example` and adjust:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Variable               | Required | Description                                                                                 |
+| ---------------------- | -------- | ------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_BASE_URL` | yes      | Base URL of the Armstat backend. `/api/*` requests are rewritten to `${NEXT_PUBLIC_BASE_URL}/*`. |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Example:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+NEXT_PUBLIC_BASE_URL=https://armstat-backend.it.massiv.cc
+```
 
-## Learn More
+> `NEXT_PUBLIC_BASE_URL` is inlined at **build time**. When running `pnpm build`, the value must already be set for the target environment.
 
-To learn more about Next.js, take a look at the following resources:
+## Local development
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm install
+pnpm dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Open [http://localhost:3000](http://localhost:3000).
 
-## Deploy on Vercel
+## Production build
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+pnpm start
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The app listens on port `3000` by default (override with the `PORT` env var). Because `next.config.ts` uses `output: "standalone"`, you can alternatively run the self-contained server directly:
+
+```bash
+node .next/standalone/server.js
+```
+
+When running the standalone server outside of `pnpm start`, copy `.next/static` and `public/` next to `server.js`.
+
+
+## Linting
+
+```bash
+pnpm lint
+```
