@@ -69,6 +69,7 @@ export type MetricResponse = {
   isCumulative?: boolean;
   total?: MetricTotal;
   viewCount?: number;
+  publishedAt?: string;
 };
 
 export type MetricSelectOption = {

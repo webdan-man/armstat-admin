@@ -292,10 +292,14 @@ export default function Sidebar() {
     for (const section of menu) {
       for (const topic of section.children ?? []) {
         if (!topic.children?.length) {
-          preload(swrKeys.metricsByTopic(topic.id), () => fetchMetricsByTopicId(topic.id));
+          preload(swrKeys.metricsByTopic(topic.id), () =>
+            fetchMetricsByTopicId(topic.id, { published: true })
+          );
         }
         for (const sub of topic.children ?? []) {
-          preload(swrKeys.metricsByTopic(sub.id), () => fetchMetricsByTopicId(sub.id));
+          preload(swrKeys.metricsByTopic(sub.id), () =>
+            fetchMetricsByTopicId(sub.id, { published: true })
+          );
         }
       }
     }

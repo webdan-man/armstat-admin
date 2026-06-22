@@ -151,10 +151,15 @@ export async function getMetricById(metricId: string): Promise<MetricResponse> {
   return apiClient<MetricResponse>(`/api/metrics/${encodeURIComponent(metricId)}`);
 }
 
-export async function fetchMetricsByTopicId(topicId: string): Promise<MetricSelectOption[]> {
-  const data = await apiClient<MetricResponse[]>(
-    `/api/metrics?topicId=${encodeURIComponent(topicId)}`
-  );
+export async function fetchMetricsByTopicId(
+  topicId: string,
+  options?: { published?: boolean }
+): Promise<MetricSelectOption[]> {
+  const params = new URLSearchParams({ topicId });
+  if (options?.published !== undefined) {
+    params.set("published", String(options.published));
+  }
+  const data = await apiClient<MetricResponse[]>(`/api/metrics?${params.toString()}`);
 
   return data.map((metric) => ({
     id: metric._id,
@@ -238,10 +243,11 @@ function pickMetricTitle(title: MetricResponse["title"]): string {
   return "—";
 }
 
-/** Wire to POST/PUT publish when the backend exposes it. */
-export async function publishMetric(_metricId: string): Promise<void> {
-  void _metricId;
-  throw new Error("Հրապարակման API-ը դեռ հասանելի չէ։");
+export async function publishMetric(metricId: string, published: boolean): Promise<void> {
+  await apiClient<void>(`/api/metrics/${encodeURIComponent(metricId)}/publish`, {
+    method: "PATCH",
+    body: JSON.stringify({ published }),
+  });
 }
 
 export async function uploadMetricCsv(metricId: string, file: File): Promise<void> {

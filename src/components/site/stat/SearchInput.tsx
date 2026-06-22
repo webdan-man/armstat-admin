@@ -88,7 +88,9 @@ export default function SearchInput() {
   );
 
   const { data: metrics = [] } = useSWR(metricsKey, async () => {
-    const lists = await Promise.all(topicIds.map((id) => fetchMetricsByTopicId(id)));
+    const lists = await Promise.all(
+      topicIds.map((id) => fetchMetricsByTopicId(id, { published: true }))
+    );
     const seen = new Set<string>();
     const merged: MetricOption[] = [];
     for (const list of lists) {

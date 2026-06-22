@@ -47,6 +47,7 @@ import {
 } from "@/services/metricsService";
 import { ApiError } from "@/lib/api/api-error";
 import { useMetricFeatures } from "@/components/metrics/metric-features-context";
+import { useUser } from "@/hooks/useUser";
 import type { MetricFeature } from "@/types/metric-feature";
 import type { MetricAttribute } from "@/types/metric";
 
@@ -61,6 +62,13 @@ export default function MetricsForm() {
   const csvInputRef = useRef<HTMLInputElement>(null);
 
   const { mutate } = useSWRConfig();
+
+  const { permissions } = useUser();
+  const permissionKeys = permissions.map((p) => p.key);
+  const canPublish =
+    permissionKeys.includes("*") ||
+    permissionKeys.includes("metric.*") ||
+    permissionKeys.includes("metric.publish");
 
   const metricId = selectedFilter.metric;
   const { data: loadedMetricData } = useSWR(metricId ? swrKeys.metricForm(metricId) : null, () =>
@@ -176,17 +184,17 @@ export default function MetricsForm() {
     }
   };
 
-  const submitPublish = async (values: MetricFormValues) => {
+  const isPublished = !!loadedMetricData?.metric.publishedAt;
+
+  const submitPublish = async () => {
     if (!selectedFilter.metric) {
       toast.error("Ընտրեք ցուցանիշ։");
       return;
     }
     try {
-      await publishMetric(selectedFilter.metric);
-      toast.success("Հրապարակված է");
-      const metricAttributeKeys = mapFeaturesToMetricAttributeKeys(features);
-      committedFeaturesRef.current = features;
-      reset({ ...values, attributes: metricAttributeKeys });
+      await publishMetric(selectedFilter.metric, !isPublished);
+      await mutate(swrKeys.metricForm(selectedFilter.metric));
+      toast.success(isPublished ? "Հրապարակումից հանված է" : "Հրապարակված է");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Սխալ");
     }
@@ -343,14 +351,16 @@ export default function MetricsForm() {
           >
             Պահպանել
           </Button>
-          <Button
-            type="button"
-            disabled
-            className="h-11 min-w-[132px] rounded-lg border-transparent bg-[#004d99] text-white hover:bg-[#004d99]/90 disabled:opacity-50"
-            onClick={() => void form.handleSubmit(submitPublish, onInvalid)()}
-          >
-            Հաստատել
-          </Button>
+          {canPublish && formMode === "edit" && metricId ? (
+            <Button
+              type="button"
+              disabled={isSubmitting}
+              className="h-11 min-w-[132px] rounded-lg border-transparent bg-[#004d99] text-white hover:bg-[#004d99]/90 disabled:opacity-50"
+              onClick={() => void submitPublish()}
+            >
+              {isPublished ? "Հանել հրապարակումից" : "Հրապարակել"}
+            </Button>
+          ) : null}
 
           {formMode === "edit" && metricId ? (
             <Button

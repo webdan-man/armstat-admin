@@ -14,7 +14,10 @@ export function useMetricsByTopicIds(topicIds: string[]) {
     metricsKey,
     async () => {
       const entries = await Promise.all(
-        topicIds.map(async (topicId) => [topicId, await fetchMetricsByTopicId(topicId)] as const)
+        topicIds.map(
+          async (topicId) =>
+            [topicId, await fetchMetricsByTopicId(topicId, { published: true })] as const
+        )
       );
       return Object.fromEntries(entries);
     }
