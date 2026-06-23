@@ -1,11 +1,6 @@
 import { z } from "zod";
 
-import type {
-  CreateMetricBody,
-  MetricAttribute,
-  MetricTotal,
-  UpdateMetricBody,
-} from "@/types/metric";
+import type { CreateMetricBody, MetricAttribute, UpdateMetricBody } from "@/types/metric";
 import type { MetricFeature } from "@/types/metric-feature";
 
 const perLangStrings = z.object({
@@ -22,29 +17,6 @@ const metadataBlock = z.object({
 const chartBlock = z.object({
   link: z.string(),
 });
-
-const metricTotalFormBlock = z.object({
-  male: z.string().optional(),
-  female: z.string().optional(),
-  malePercentage: z.string(),
-  femalePercentage: z.string(),
-});
-
-/** Залишає лише цифри; порожній рядок → 0 (для API). */
-export function parseMetricTotalForApi(total: z.infer<typeof metricTotalFormBlock>): MetricTotal {
-  const toNumber = (raw: string) => {
-    const digits = raw.replace(/\D/g, "");
-    if (!digits) return 0;
-    const n = Number.parseInt(digits, 10);
-    return Number.isFinite(n) ? n : 0;
-  };
-  return {
-    male: 0,
-    female: 0,
-    malePercentage: total.malePercentage.trim(),
-    femalePercentage: total.femalePercentage.trim(),
-  };
-}
 
 const trimmedNonEmpty = (message: string) =>
   z
@@ -70,6 +42,19 @@ const requiredMetadataBlock = z.object({
 const optionalMetadataBlock = z.object({
   body: trimmedString,
   sourceUrl: trimmedString,
+});
+
+const metricTotalFormBlock = z.object({
+  male: z.object({
+    hy: trimmedString.optional(),
+    en: trimmedString.optional(),
+    ru: trimmedString.optional(),
+  }),
+  female: z.object({
+    hy: trimmedString.optional(),
+    en: trimmedString.optional(),
+    ru: trimmedString.optional(),
+  }),
 });
 
 export const metricFormSchema = z.object({
@@ -136,7 +121,7 @@ export function emptyMetricFormValues(): MetricFormValues {
     },
     charts: [{ link: "" }, { link: "" }],
     order: 0,
-    total: { male: "", female: "", malePercentage: "", femalePercentage: "" },
+    total: { male: emptyPerLangStrings(), female: emptyPerLangStrings() },
     attributes: [],
   };
 }
@@ -228,7 +213,7 @@ export function mapMetricFormToCreateMetric(
     metadata,
     attributes,
     order: values.order,
-    total: parseMetricTotalForApi(values.total),
+    total: values.total,
     isCumulative: values.isCumulative,
   };
 }
@@ -270,7 +255,7 @@ export function mapMetricFormToUpdateMetric(
     metadata,
     attributes,
     order: values.order,
-    total: parseMetricTotalForApi(values.total),
+    total: values.total,
     isCumulative: values.isCumulative,
   };
 }

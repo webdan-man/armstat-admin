@@ -76,6 +76,14 @@ function mapApiMetricToMetricForm(raw: MetricResponse): MetricFormValues {
     }
     return "";
   };
+  const readTotalPerLang = (value: Record<string, string> | undefined) => {
+    const v = value ?? {};
+    return {
+      en: typeof v.en === "string" ? v.en : "",
+      hy: typeof v.hy === "string" ? v.hy : typeof v.am === "string" ? v.am : "",
+      ru: typeof v.ru === "string" ? v.ru : "",
+    };
+  };
 
   return {
     ...empty,
@@ -121,29 +129,11 @@ function mapApiMetricToMetricForm(raw: MetricResponse): MetricFormValues {
     },
     order: typeof raw.order === "number" ? raw.order : 0,
     isCumulative: raw.isCumulative === true,
-    total: readMetricTotalFromApi(raw.total),
+    total: {
+      male: readTotalPerLang(raw.total?.male),
+      female: readTotalPerLang(raw.total?.female),
+    },
     attributes: normalizeMetricAttributesFromApi(raw.attributes),
-  };
-}
-
-function readMetricTotalFromApi(raw: unknown): {
-  male: string;
-  female: string;
-  malePercentage: string;
-  femalePercentage: string;
-} {
-  const empty = { male: "", female: "", malePercentage: "", femalePercentage: "" };
-  if (!raw || typeof raw !== "object") return empty;
-  const o = raw as Record<string, unknown>;
-  const format = (value: unknown) => {
-    const n = Number(value);
-    return Number.isFinite(n) ? String(n) : "";
-  };
-  return {
-    male: format(o.male),
-    female: format(o.female),
-    malePercentage: typeof o.malePercentage === "string" ? o.malePercentage : "",
-    femalePercentage: typeof o.femalePercentage === "string" ? o.femalePercentage : "",
   };
 }
 

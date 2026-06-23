@@ -127,12 +127,12 @@ export default function StatPage() {
 
   const sexTotals = useMemo(() => {
     const hasTotals =
-      !!metric?.total?.femalePercentage?.length || !!metric?.total?.malePercentage?.length;
+      !!metric?.total?.female?.[activeLang]?.length || !!metric?.total?.male?.[activeLang]?.length;
 
     return {
       hasTotals,
-      male: metric?.total?.malePercentage,
-      female: metric?.total?.femalePercentage,
+      male: metric?.total?.male,
+      female: metric?.total?.female,
     };
   }, [metric?.total]);
 
@@ -176,7 +176,7 @@ export default function StatPage() {
                     <Skeleton className="h-4 w-24" />
                   ) : sexTotals.hasTotals ? (
                     <p className="text-fontSizeXS font-semibold text-[rgba(56,56,56,1)]">
-                      {sexTotals.male}
+                      {sexTotals.male?.[activeLang]}
                     </p>
                   ) : (
                     sexTotalsPlaceholder
@@ -190,7 +190,7 @@ export default function StatPage() {
                     <Skeleton className="h-4 w-24" />
                   ) : sexTotals.hasTotals ? (
                     <p className="text-fontSizeXS font-semibold text-[rgba(56,56,56,1)]">
-                      {sexTotals.female}
+                      {sexTotals.female?.[activeLang]}
                     </p>
                   ) : (
                     sexTotalsPlaceholder

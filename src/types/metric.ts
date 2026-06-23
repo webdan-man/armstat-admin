@@ -1,9 +1,7 @@
 /** Chart headline totals by sex (PATCH/POST body field `total`). */
 export type MetricTotal = {
-  male: number;
-  female: number;
-  malePercentage?: string;
-  femalePercentage?: string;
+  male?: Record<string, string>;
+  female?: Record<string, string>;
 };
 
 /** Per-locale label for a metric attribute row (sent as `label` on each attributes[] item). */
@@ -67,7 +65,7 @@ export type MetricResponse = {
   updatedAt?: string;
   unit?: Record<string, string> & { am?: string; hy?: string; ru?: string; en?: string };
   isCumulative?: boolean;
-  total?: MetricTotal;
+  total: MetricTotal;
   viewCount?: number;
   publishedAt?: string;
 };

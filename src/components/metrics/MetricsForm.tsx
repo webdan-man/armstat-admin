@@ -96,6 +96,7 @@ export default function MetricsForm() {
   };
 
   const onInvalid = (errors: FieldErrors<MetricFormValues>) => {
+    console.log(errors);
     const locales = ["hy", "en", "ru"] as const;
     for (const locale of locales) {
       if (
@@ -320,7 +321,12 @@ export default function MetricsForm() {
             </CardAction>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 px-8 pt-6 pb-8">
-            <ChartDataTabs metricId={metricId} metric={loadedMetricData?.metric} />
+            <ChartDataTabs
+              metricId={metricId}
+              metric={loadedMetricData?.metric}
+              lang={lang}
+              onLangChange={setLang}
+            />
           </CardContent>
         </Card>
 
