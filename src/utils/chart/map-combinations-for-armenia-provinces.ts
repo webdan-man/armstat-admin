@@ -1,4 +1,5 @@
 import { MetricCombination } from "@/types/metric";
+import { defaultLocale, type Locale } from "@/lib/i18n";
 
 const provinces = [
   { id: "AM-AG", hy: "Արագածոտն", en: "Aragatsotn", ru: "Арагацотн" },
@@ -26,11 +27,35 @@ for (const p of provinces) {
   provinceIdByAnyTitle.set(p.ru, p.id);
 }
 
-const provinceHyTitleById = new Map(provinces.map((p) => [p.id, p.hy]));
+const provinceById = new Map(provinces.map((p) => [p.id, p]));
 
-/** ISO-style map id (e.g. AM-ER) → Armenian province title. */
-export function getArmenianProvinceHyTitleByMapId(mapId: string): string | undefined {
-  return provinceHyTitleById.get(mapId);
+/**
+ * Localized titles of the national "Armenia" aggregate value. The province
+ * dimension can carry this as a pre-computed country-wide total alongside the
+ * 11 individual provinces.
+ */
+const ARMENIA_TITLE_BY_LOCALE: Record<Locale, string> = {
+  hy: "Հայաստան",
+  en: "Armenia",
+  ru: "Армения",
+};
+
+const ARMENIA_TITLES = new Set(Object.values(ARMENIA_TITLE_BY_LOCALE));
+
+const isArmeniaTitle = (title: string | undefined): boolean =>
+  title ? ARMENIA_TITLES.has(title) : false;
+
+/** National "Armenia" title in the active locale (the default, no-province view). */
+export function getArmeniaTitle(locale: Locale = defaultLocale): string {
+  return ARMENIA_TITLE_BY_LOCALE[locale] ?? ARMENIA_TITLE_BY_LOCALE[defaultLocale];
+}
+
+/** ISO-style map id (e.g. AM-ER) → province title in the active locale. */
+export function getProvinceTitleByMapId(
+  mapId: string,
+  locale: Locale = defaultLocale
+): string | undefined {
+  return provinceById.get(mapId)?.[locale];
 }
 
 export function filterCombinationsByProvinceMapId(
@@ -38,10 +63,19 @@ export function filterCombinationsByProvinceMapId(
   provinceAttributeId: string,
   provinceMapId: string | null
 ): MetricCombination[] {
-  if (!provinceMapId) return combinations;
+  const provinceTitleOf = (item: MetricCombination) =>
+    (item.row ?? []).find((r) => r.attributeId === provinceAttributeId)?.value?.title;
+
+  // No province selected/hovered: show the national total. When the dataset
+  // carries an explicit "Armenia" row, use it directly — summing the 11
+  // provinces on top of it would double-count, since both co-exist.
+  if (!provinceMapId) {
+    const armeniaRows = combinations.filter((item) => isArmeniaTitle(provinceTitleOf(item)));
+    return armeniaRows.length ? armeniaRows : combinations;
+  }
+
   return combinations.filter((item) => {
-    const provinceEntry = (item.row ?? []).find((r) => r.attributeId === provinceAttributeId);
-    const title = provinceEntry?.value?.title;
+    const title = provinceTitleOf(item);
     return title ? provinceIdByAnyTitle.get(title) === provinceMapId : false;
   });
 }

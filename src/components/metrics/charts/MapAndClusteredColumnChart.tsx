@@ -5,7 +5,12 @@ import ClusteredColumnChart from "@/components/metrics/charts/ClusteredColumnCha
 import ArmeniaProvincesMap from "@/components/metrics/charts/Map/MapChart";
 import type { MetricCombination } from "@/types/metric";
 import { useProvinceHoverSelection } from "@/hooks/useProvinceHoverSelection";
-import { filterCombinationsByProvinceMapId, getArmenianProvinceHyTitleByMapId } from "@/utils/chart/map-combinations-for-armenia-provinces";
+import { useLang } from "@/providers/LangProvider";
+import {
+  filterCombinationsByProvinceMapId,
+  getArmeniaTitle,
+  getProvinceTitleByMapId,
+} from "@/utils/chart/map-combinations-for-armenia-provinces";
 import { mapCombinationsForClusteredColumnChart } from "@/utils/chart/map-combinations-for-clustered-column-chart.util";
 
 interface MapDataItem {
@@ -31,11 +36,12 @@ const MapAndClusteredColumnChart = ({
 }: MapAndClusteredColumnChartProps) => {
   const { mapData = [], provinceAttributeId, xAxisAttributeId, yAxisAttributeId } = data;
   const { activeProvinceMapId, onPolygonHover, onPolygonSelect } = useProvinceHoverSelection();
+  const { activeLang } = useLang();
 
   const chartTitle = useMemo(() => {
-    if (!activeProvinceMapId) return "Հայաստան";
-    return getArmenianProvinceHyTitleByMapId(activeProvinceMapId) ?? activeProvinceMapId;
-  }, [activeProvinceMapId]);
+    if (!activeProvinceMapId) return getArmeniaTitle(activeLang);
+    return getProvinceTitleByMapId(activeProvinceMapId, activeLang) ?? activeProvinceMapId;
+  }, [activeProvinceMapId, activeLang]);
 
   const { columnData, seriesKeys, resolvedXAxisKey } = useMemo(() => {
     const filtered = filterCombinationsByProvinceMapId(

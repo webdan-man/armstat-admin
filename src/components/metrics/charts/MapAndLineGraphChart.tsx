@@ -7,9 +7,11 @@ import type { MetricCombination } from "@/types/metric";
 import { aggregateByAttributeTitle } from "@/utils/chart/aggregate-by-attribute-title";
 import {
   filterCombinationsByProvinceMapId,
-  getArmenianProvinceHyTitleByMapId,
+  getArmeniaTitle,
+  getProvinceTitleByMapId,
 } from "@/utils/chart/map-combinations-for-armenia-provinces";
 import { yearTotalsToLineData } from "@/utils/chart/year-totals-to-line-data";
+import { useLang } from "@/providers/LangProvider";
 
 interface MapDataItem {
   id: string;
@@ -27,6 +29,7 @@ interface MapAndLineGraphChartProps {
 
 const MapAndLineGraphChart = ({ combinations, data }: MapAndLineGraphChartProps) => {
   const { mapData = [], provinceAttributeId, timeAttributeId } = data;
+  const { activeLang } = useLang();
   const [selectedProvinceMapId, setSelectedProvinceMapId] = useState<string | null>(null);
   const [hoveredProvinceMapId, setHoveredProvinceMapId] = useState<string | null>(null);
 
@@ -50,9 +53,9 @@ const MapAndLineGraphChart = ({ combinations, data }: MapAndLineGraphChartProps)
   }, [combinations, provinceAttributeId, timeAttributeId, activeProvinceMapId]);
 
   const chartTitle = useMemo(() => {
-    if (!activeProvinceMapId) return "Հայաստան";
-    return getArmenianProvinceHyTitleByMapId(activeProvinceMapId) ?? activeProvinceMapId;
-  }, [activeProvinceMapId]);
+    if (!activeProvinceMapId) return getArmeniaTitle(activeLang);
+    return getProvinceTitleByMapId(activeProvinceMapId, activeLang) ?? activeProvinceMapId;
+  }, [activeProvinceMapId, activeLang]);
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[35fr_65fr]">
