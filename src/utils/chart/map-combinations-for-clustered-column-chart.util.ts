@@ -6,8 +6,15 @@ export const mapCombinationsForClusteredColumnChart = (payload: {
   xAxisAttributeId: Attribute["_id"];
   yAxisAttributeId: Attribute["_id"];
   xAxisKey: string;
+  /**
+   * Skip the auto-transpose below. Use when the caller needs a fixed orientation —
+   * e.g. the `xAxisAttributeId` must stay on the x-axis even when there are more
+   * x categories than series keys.
+   */
+  disableAutoTranspose?: boolean;
 }) => {
-  const { combinations, xAxisAttributeId, yAxisAttributeId, xAxisKey } = payload;
+  const { combinations, xAxisAttributeId, yAxisAttributeId, xAxisKey, disableAutoTranspose } =
+    payload;
 
   // Default orientation produced by this mapper:
   // - X axis: many categories (e.g. `other`)
@@ -48,7 +55,7 @@ export const mapCombinationsForClusteredColumnChart = (payload: {
   // If we have many x categories but only a few series keys (typically 2),
   // transpose so the chart shows 2 grouped columns with many inner columns.
   const uniqueX = new Set(data.map((d) => d?.[xAxisKey]).filter(Boolean));
-  if (uniqueX.size > seriesKeys.length && seriesKeys.length >= 2) {
+  if (!disableAutoTranspose && uniqueX.size > seriesKeys.length && seriesKeys.length >= 2) {
     const categories: string[] = [];
     const seen = new Set<string>();
 

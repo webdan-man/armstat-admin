@@ -511,19 +511,23 @@ function useDetectChartType(combinationsProp: MetricCombination[] | undefined = 
         const areaAttributeId = attributeMapByCategory.get(AttributeCategory.AREA)!._id;
         const otherAttributeId = attributeMapByCategory.get(AttributeCategory.OTHER)!._id;
 
-        const xAxisKey = "other";
+        const xAxisKey = "area";
 
+        // AREA must always be the x-axis clustered groups (CXG), with OTHER as the inner
+        // series. Disable the util's auto-transpose so OTHER (many values) is never flipped
+        // onto the x-axis.
         const mapped = mapCombinationsForClusteredColumnChart({
           combinations,
-          xAxisAttributeId: otherAttributeId,
-          yAxisAttributeId: areaAttributeId,
+          xAxisAttributeId: areaAttributeId,
+          yAxisAttributeId: otherAttributeId,
           xAxisKey,
+          disableAutoTranspose: true,
         });
 
         const { data, seriesKeys } = mapped;
         const resolvedXAxisKey = "xAxisKey" in mapped ? mapped.xAxisKey : xAxisKey;
 
-        console.log(`CLUSTERED COLUMN CHART: X - OTHER, Y - AREA`, {
+        console.log(`CLUSTERED COLUMN CHART: X - AREA (CXG), series - OTHER`, {
           combinations,
           data,
           seriesKeys,
