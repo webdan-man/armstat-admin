@@ -270,6 +270,9 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         wheelX: "none",
         wheelY: "none",
         layout: root.verticalLayout,
+        // Keep each side's tooltip on its own side; the default arranges (stacks)
+        // overlapping tooltips, which overrides their pointerOrientation.
+        arrangeTooltips: false,
         paddingTop: 0,
         paddingBottom: 4,
       })
@@ -401,7 +404,8 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         clustered: false,
         tooltip: am5.Tooltip.new(root, {
           labelText: "{categoryY}     [bold]{male}[/]",
-          pointerOrientation: "vertical",
+          // Male bars sit on the right; pointer on the tooltip's left edge keeps the box to the right.
+          pointerOrientation: "left",
         }),
       })
     );
@@ -416,7 +420,8 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         clustered: false,
         tooltip: am5.Tooltip.new(root, {
           labelText: "{categoryY}     [bold]{femaleAbs}[/]",
-          pointerOrientation: "vertical",
+          // Female bars sit on the left; pointer on the tooltip's right edge keeps the box to the left.
+          pointerOrientation: "right",
         }),
       })
     );
