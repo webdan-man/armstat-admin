@@ -1152,7 +1152,8 @@ function useDetectChartType(combinationsProp: MetricCombination[] | undefined = 
               stackAttributeId: stackId,
             });
 
-            const innerAttributeName = pickAttributeDisplayTitle(
+            const innerAttributeName = pickAttributeLabelFromRows(
+              combinations,
               attributes.find((a) => a._id === innerEntry.id)
             );
 
@@ -1334,7 +1335,7 @@ function useDetectChartType(combinationsProp: MetricCombination[] | undefined = 
                 outerAttributeId: outerAttr._id,
                 innerAttributeId: genderAttr._id,
                 stackAttributeId: stackAttr._id,
-                innerAttributeName: pickAttributeDisplayTitle(genderAttr),
+                innerAttributeName: pickAttributeLabelFromRows(combinations, genderAttr),
               },
             };
           }
@@ -1362,7 +1363,7 @@ function useDetectChartType(combinationsProp: MetricCombination[] | undefined = 
                 outerAttributeId: outerAttr._id,
                 innerAttributeId: innerAttr._id,
                 stackAttributeId: timeAttr4._id,
-                innerAttributeName: pickAttributeDisplayTitle(innerAttr),
+                innerAttributeName: pickAttributeLabelFromRows(combinations, innerAttr),
               },
             };
           }
@@ -1393,7 +1394,7 @@ function useDetectChartType(combinationsProp: MetricCombination[] | undefined = 
                 outerAttributeId: cEntry.a._id,
                 innerAttributeId: xEntry.a._id,
                 stackAttributeId: yEntry.a._id,
-                innerAttributeName: pickAttributeDisplayTitle(xEntry.a),
+                innerAttributeName: pickAttributeLabelFromRows(combinations, xEntry.a),
               },
             };
           }
