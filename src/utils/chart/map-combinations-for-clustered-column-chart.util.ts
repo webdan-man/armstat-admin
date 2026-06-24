@@ -40,7 +40,7 @@ export const mapCombinationsForClusteredColumnChart = (payload: {
       resultMap[xAxisTitle] = { [xAxisKey]: xAxisTitle };
     }
 
-    resultMap[xAxisTitle][seriesKey] = Math.round(value);
+    resultMap[xAxisTitle][seriesKey] = value;
   }
 
   const data = Object.values(resultMap);

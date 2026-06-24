@@ -228,7 +228,10 @@ function ClusteredColumnChart<T extends Record<string, string>>({
         cornerRadiusTR: 5,
         strokeOpacity: 0,
         width: am5.percent(90),
-        tooltipText: "{valueY}",
+        // Per-column tooltip (only the hovered bar) with the same formatted value as the
+        // pyramid chart. A series-level tooltip would be cursor-driven and show every
+        // series' tooltip at once.
+        tooltipText: "{name}     [bold]{valueY}[/]",
         fill: color,
         stroke: color,
       });
