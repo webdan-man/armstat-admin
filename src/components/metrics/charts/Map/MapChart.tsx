@@ -93,8 +93,8 @@ export default function ArmeniaMapChart({
         layout: root.horizontalLayout,
         width: am5.p100,
         height: am5.p100,
-        paddingRight: showRightColumn ? 150 : 20,
-        paddingLeft: 20,
+        paddingRight: showRightColumn ? 180 : 20,
+        paddingLeft: 0,
       })
     );
 
@@ -102,6 +102,8 @@ export default function ArmeniaMapChart({
       am5map.MapChart.new(root, {
         projection: am5map.geoMercator(),
         width: am5.percent(100),
+        paddingLeft: 0,
+        paddingRight: 0,
       })
     );
 

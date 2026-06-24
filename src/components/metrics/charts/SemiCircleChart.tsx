@@ -64,7 +64,7 @@ function SemiCircleChart({ data, chartTitle }: SemiCircleChartProps) {
 
     series.slices.template.setAll({
       cornerRadius: 5,
-      tooltipText: "{category} - {value}",
+      tooltipText: "{category} - [bold]{value}[/]",
     });
 
     if (chartTitle !== undefined) {

@@ -66,9 +66,15 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
         pinchZoomX: true,
         paddingLeft: 0,
         paddingRight: 30,
-        height: am5.percent(80),
+        // Plot area is locked to 350 below; reserve extra for the x-axis label band
+        // (capped at 130 via xAxis.maxHeight) so the clean plot stays exactly 350.
+        height: 480,
       })
     );
+
+    // Lock the *plot* (series area) to 350 — the x-axis labels live in
+    // bottomAxesContainer, so they don't eat into this height.
+    chart.plotContainer.setAll({ height: 350, minHeight: 350, maxHeight: 350 });
 
     chart.set("scrollbarX", am5.Scrollbar.new(root, { orientation: "horizontal" }));
 
@@ -131,7 +137,7 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
         valueYField: "value",
         categoryXField: "xAxisKey",
         tooltip: am5.Tooltip.new(root, {
-          labelText: "{valueY}",
+          labelText: "[bold]{valueY}[/]",
         }),
       })
     );
@@ -322,7 +328,7 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
 
   return (
     <div>
-      <div id={containerId} style={{ width: "100%", height: "800px" }}></div>
+      <div id={containerId} style={{ width: "100%", height: "680px" }}></div>
     </div>
   );
 }

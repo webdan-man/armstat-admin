@@ -297,15 +297,6 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       })
     );
 
-    // Spacer matching the timeline chart's cursor-hint band so both chart titles
-    // (and the plot areas below) stay on the same level.
-    pyramidHeader.children.push(
-      am5.Container.new(root, {
-        width: am5.p100,
-        height: CURSOR_HINT_BAND_HEIGHT,
-      })
-    );
-
     const pyramidTitleBand = pyramidHeader.children.push(
       am5.Container.new(root, {
         width: am5.p100,
@@ -325,6 +316,15 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         maxWidth: 250,
         oversizedBehavior: "wrap",
         textAlign: "center",
+      })
+    );
+
+    // Spacer matching the timeline chart's cursor-hint band (which sits below its title)
+    // so both chart titles stay on the same level and the gender row / plot areas align.
+    pyramidHeader.children.push(
+      am5.Container.new(root, {
+        width: am5.p100,
+        height: CURSOR_HINT_BAND_HEIGHT,
       })
     );
 
@@ -478,24 +478,6 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       })
     );
 
-    const popHintBand = popHeader.children.push(
-      am5.Container.new(root, {
-        width: am5.p100,
-        height: CURSOR_HINT_BAND_HEIGHT,
-      })
-    );
-
-    popHintBand.children.push(
-      am5.Label.new(root, {
-        text: t(CURSOR_HINT),
-        x: am5.p50,
-        centerX: am5.p50,
-        y: am5.p50,
-        centerY: am5.p50,
-        fontSize: 11,
-      })
-    );
-
     const popTitleBand = popHeader.children.push(
       am5.Container.new(root, {
         width: am5.p100,
@@ -514,6 +496,25 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         maxWidth: 250,
         oversizedBehavior: "wrap",
         textAlign: "center",
+      })
+    );
+
+    // Cursor hint sits directly below the title.
+    const popHintBand = popHeader.children.push(
+      am5.Container.new(root, {
+        width: am5.p100,
+        height: CURSOR_HINT_BAND_HEIGHT,
+      })
+    );
+
+    popHintBand.children.push(
+      am5.Label.new(root, {
+        text: t(CURSOR_HINT),
+        x: am5.p50,
+        centerX: am5.p50,
+        y: am5.p50,
+        centerY: am5.p50,
+        fontSize: 11,
       })
     );
 
@@ -598,6 +599,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
           stacked: true,
         })
       );
+      male.columns.template.setAll({ maxWidth: 130 });
 
       const female = popChart.series.push(
         am5xy.ColumnSeries.new(root, {
@@ -609,6 +611,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
           tooltip: am5.Tooltip.new(root, { pointerOrientation: "vertical" }),
         })
       );
+      female.columns.template.setAll({ maxWidth: 130 });
 
       const popCursor = popChart.set(
         "cursor",
