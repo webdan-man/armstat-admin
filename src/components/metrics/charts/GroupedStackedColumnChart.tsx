@@ -274,8 +274,10 @@ function GroupedStackedColumnChart({
       am5.Container.new(root, {
         width: am5.p100,
         height: am5.p100,
-        paddingTop: 0,
-        paddingBottom: 35,
+        // Clear the rotated x-axis bracket labels, which overflow the bottom axes band
+        // (maskContent is disabled) and would otherwise collide with the legend title.
+        paddingTop: 40,
+        paddingBottom: 0,
         layout: root.verticalLayout,
       })
     );
@@ -381,7 +383,7 @@ function GroupedStackedColumnChart({
     axisRangesRef.current = buildAxisRanges(xAxis, data);
   }, [data]);
 
-  return <div id={containerId} style={{ width: "100%", height: "680px" }} />;
+  return <div id={containerId} style={{ width: "100%", height: "705px" }} />;
 }
 
 export default GroupedStackedColumnChart;

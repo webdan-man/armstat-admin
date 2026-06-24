@@ -214,7 +214,7 @@ function StackedAreaChart<T extends Record<string, string>>({
           categoryXField: String(xAxisKey),
           tooltip: am5.Tooltip.new(root, {
             pointerOrientation: "horizontal",
-            labelText: `[bold]{name}[/]\n{${String(xAxisKey)}} - {valueY}`,
+            labelText: `[bold]{${String(xAxisKey)}}[/]\n{name}     [bold]{valueY}[/]`,
           }),
         })
       );
