@@ -140,7 +140,7 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
         text: "",
         width: am5.p50,
         textAlign: "center",
-        fontSize: 13,
+        fontSize: 18,
         fontWeight: "500",
         fill: color,
         oversizedBehavior: "wrap",

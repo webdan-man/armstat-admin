@@ -46,6 +46,8 @@ function StackedAreaChart<T extends Record<string, string>>({
 
     root.setThemes([am5themes_Animated.new(root)]);
 
+    root.container.set("layout", root.verticalLayout);
+
     const chart = root.container.children.push(
       am5xy.XYChart.new(root, {
         panX: true,
@@ -56,9 +58,16 @@ function StackedAreaChart<T extends Record<string, string>>({
         paddingLeft: 0,
         paddingTop: 0,
         layout: root.verticalLayout,
+        // Plot area is locked to 350 below; reserve extra for the x-axis label band
+        // (capped at 130 via xAxis.maxHeight) so the clean plot stays exactly 350.
+        height: 480,
       })
     );
     chartRef.current = chart;
+
+    // Lock the *plot* (series area) to 350 — the x-axis labels live in
+    // bottomAxesContainer, so they don't eat into this height.
+    chart.plotContainer.setAll({ height: 350, minHeight: 350, maxHeight: 350 });
 
     if (chartTitle !== undefined) {
       root.container.setAll({ paddingTop: CHART_HEADER_HEADROOM });
@@ -133,13 +142,18 @@ function StackedAreaChart<T extends Record<string, string>>({
 
     chart.set("scrollbarX", am5.Scrollbar.new(root, { orientation: "horizontal" }));
 
-    const legend = chart.children.push(
+    // Legend lives in root.container (not inside the chart) so the chart's fixed height
+    // stays dedicated to the locked 350 plot + x-axis labels.
+    const legend = root.container.children.push(
       am5.Legend.new(root, {
         centerX: am5.p50,
         x: am5.p50,
         marginTop: 15,
         marginBottom: 15,
+        width: am5.percent(95),
+        height: am5.percent(20),
         useDefaultMarker: true,
+        verticalScrollbar: am5.Scrollbar.new(root, { orientation: "vertical" }),
       })
     );
     legendRef.current = legend;
@@ -240,7 +254,7 @@ function StackedAreaChart<T extends Record<string, string>>({
 
   return (
     <div>
-      <div id={containerId} style={{ width: "100%", height: "700px" }} />
+      <div id={containerId} style={{ width: "100%", height: "610px" }} />
     </div>
   );
 }
