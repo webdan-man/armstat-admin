@@ -54,14 +54,7 @@ export function SectionTopicRow({
   const { mutate } = useSWRConfig();
 
   const topicTitle = topic.title.hy;
-  const titleContent = showHeadingPrefix ? (
-    <>
-      <span className="text-[#747474]">Վերնագիր: </span>
-      <span>{topicTitle}</span>
-    </>
-  ) : (
-    topicTitle
-  );
+  const titleContent = <span>{topicTitle}</span>;
 
   const handleOpenEditDialog = () => setOpen(true);
 

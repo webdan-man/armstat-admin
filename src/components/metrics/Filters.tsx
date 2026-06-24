@@ -156,7 +156,7 @@ export default function Filters() {
               if (option.updatedAt) {
                 const date = new Date(option.updatedAt);
 
-                formatted = `${date.getDate()}.${date.getMonth()}.${date.getFullYear()}`;
+                formatted = `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
               }
 
               return {
