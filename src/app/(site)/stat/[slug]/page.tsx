@@ -114,8 +114,11 @@ export default function StatPage() {
   const pageTitle = useMemo(() => {
     const menuTitle = getStatMenuTitle(menu, slug);
     if (menuTitle !== null) return menuTitle;
-    return metric?.title?.[activeLang] ?? "";
-  }, [menu, slug, metric, activeLang]);
+    if (metric?.topicId) {
+      return getStatMenuTitle(menu, metric.topicId) ?? "";
+    }
+    return "";
+  }, [menu, slug, metric?.topicId]);
 
   const hideHeaderForGroupIds = useMemo(() => (activeSection ? [] : [slug]), [activeSection, slug]);
 

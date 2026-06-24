@@ -15,6 +15,33 @@ interface StackedAreaChartProps<T extends Record<string, string>> {
 const containerId = "stacked-area-chartdiv";
 const CHART_TITLE_BAND_HEIGHT = 40;
 const CHART_HEADER_HEADROOM = 24;
+const PLOT_HEIGHT = 350;
+const X_AXIS_LABEL_BAND_HEIGHT = 150;
+
+function lockStackedAreaChartLayout(
+  chart: am5xy.XYChart,
+  xAxis: am5xy.Axis<am5xy.AxisRenderer>
+) {
+  chart.plotContainer.setAll({
+    height: PLOT_HEIGHT,
+    minHeight: PLOT_HEIGHT,
+    maxHeight: PLOT_HEIGHT,
+  });
+  chart.yAxesAndPlotContainer.setAll({
+    height: PLOT_HEIGHT,
+    minHeight: PLOT_HEIGHT,
+    maxHeight: PLOT_HEIGHT,
+  });
+  chart.bottomAxesContainer.setAll({
+    height: X_AXIS_LABEL_BAND_HEIGHT,
+    minHeight: X_AXIS_LABEL_BAND_HEIGHT,
+    maxHeight: X_AXIS_LABEL_BAND_HEIGHT,
+  });
+  xAxis.setAll({
+    minHeight: X_AXIS_LABEL_BAND_HEIGHT,
+    maxHeight: X_AXIS_LABEL_BAND_HEIGHT,
+  });
+}
 
 function StackedAreaChart<T extends Record<string, string>>({
   data,
@@ -58,16 +85,12 @@ function StackedAreaChart<T extends Record<string, string>>({
         paddingLeft: 0,
         paddingTop: 0,
         layout: root.verticalLayout,
-        // Plot area is locked to 350 below; reserve extra for the x-axis label band
-        // (capped at 130 via xAxis.maxHeight) so the clean plot stays exactly 350.
-        height: 480,
+        // Plot area is locked to 350 below; reserve 150 for the x-axis label band
+        // in bottomAxesContainer so labels never eat into the plot height.
+        height: PLOT_HEIGHT + X_AXIS_LABEL_BAND_HEIGHT,
       })
     );
     chartRef.current = chart;
-
-    // Lock the *plot* (series area) to 350 — the x-axis labels live in
-    // bottomAxesContainer, so they don't eat into this height.
-    chart.plotContainer.setAll({ height: 350, minHeight: 350, maxHeight: 350 });
 
     if (chartTitle !== undefined) {
       root.container.setAll({ paddingTop: CHART_HEADER_HEADROOM });
@@ -126,9 +149,12 @@ function StackedAreaChart<T extends Record<string, string>>({
         tooltip: am5.Tooltip.new(root, {}),
       })
     );
-    // Cap the label area so the plot keeps its height.
-    xAxis.set("maxHeight", 130);
     xAxisRef.current = xAxis;
+
+    lockStackedAreaChartLayout(chart, xAxis);
+    root.events.once("frameended", () => {
+      lockStackedAreaChartLayout(chart, xAxis);
+    });
 
     xAxis.data.setAll(data);
 
