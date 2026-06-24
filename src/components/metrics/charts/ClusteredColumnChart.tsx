@@ -60,7 +60,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
         paddingLeft: 0,
         paddingRight: 20,
         paddingTop: 0,
-        height: am5.percent(70),
+        height: 350,
       })
     );
     chartRef.current = chart;
@@ -131,6 +131,8 @@ function ClusteredColumnChart<T extends Record<string, string>>({
       paddingRight: 10,
       // Long category labels would eat the plot height, so cap their width and wrap them
       // onto multiple lines. The full text is still shown in the tooltip.
+      // Rotated labels only wrap with an explicit width (maxWidth alone won't trigger it).
+      width: 140,
       maxWidth: 140,
       oversizedBehavior: "wrap",
     });
@@ -276,7 +278,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
     seriesListRef.current.forEach((series) => series.data.setAll(data));
   }, [data]);
 
-  return <div id={containerId} style={{ width: "100%", height: "800px" }} />;
+  return <div id={containerId} style={{ width: "100%", height: "480px" }} />;
 }
 
 export default ClusteredColumnChart;
