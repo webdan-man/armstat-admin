@@ -43,15 +43,16 @@ function buildAxisRanges(
       forceHidden: false,
       text: category,
       rotation: -45,
-      centerX: am5.p100,
+      centerX: am5.p50,
       centerY: am5.p0,
       fontWeight: "bold",
       fontSize: 12,
       fill: am5.color(0x000000),
       dy: 10,
-      maxWidth: 200,
+      width: 160,
+      maxWidth: 160,
       oversizedBehavior: "wrap",
-      textAlign: "right",
+      textAlign: "center",
       tooltipText: category,
     });
 
@@ -134,9 +135,7 @@ function GroupedStackedColumnChart({
         pinchZoomX: true,
         paddingLeft: 0,
         paddingBottom: 0,
-        height: 500,
-        minHeight: 500,
-        maxHeight: 680,
+        height: 350,
       })
     );
 
@@ -280,6 +279,7 @@ function GroupedStackedColumnChart({
         x: am5.p50,
         width: am5.percent(95),
         height: am5.p100,
+        maxHeight: 130,
         paddingTop: 0,
         paddingBottom: 0,
         layout: root.gridLayout,
@@ -361,7 +361,7 @@ function GroupedStackedColumnChart({
     axisRangesRef.current = buildAxisRanges(xAxis, data);
   }, [data]);
 
-  return <div id={containerId} style={{ width: "100%", height: "800px" }} />;
+  return <div id={containerId} style={{ width: "100%", height: "580px" }} />;
 }
 
 export default GroupedStackedColumnChart;
