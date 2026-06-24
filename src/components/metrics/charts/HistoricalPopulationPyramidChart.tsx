@@ -3,6 +3,7 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { applyChartColorStep, getPaletteColor } from "@/utils/chart/chart-palette.util";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type ChartDatum = Record<string, string | number>;
 
@@ -31,7 +32,7 @@ interface HistoricalPopulationPyramidChartProps<T extends ChartDatum> {
 }
 
 const containerId = "historical-pyramid-chartdiv";
-const CURSOR_HINT = "(շարժեք մկնիկը՝ արժեքները տեսնելու համար)";
+const CURSOR_HINT = "historical-pyramid-cursor-hint";
 // Keep the bottom label band the same height in both charts (see other column charts).
 const X_AXIS_LABEL_MAX_HEIGHT = 110;
 // Long frame titles wrap; cap the band so the plot area stays aligned side-by-side.
@@ -219,6 +220,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
   timelineAxisAttributeName = "Հատկանիշի անվանում",
   timelineMode = "time",
 }: HistoricalPopulationPyramidChartProps<T>) {
+  const { t } = useTranslation();
   const rootRef = useRef<am5.Root | null>(null);
   // Latest props, read by the (create-once) chart internals on every data update.
   const dataRef = useRef<T[]>(data);
@@ -292,26 +294,6 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       })
     );
 
-    // Invisible twin of the timeline hint so both chart headers reserve the same height.
-    const pyramidHintBand = pyramidHeader.children.push(
-      am5.Container.new(root, {
-        width: am5.p100,
-        height: CURSOR_HINT_BAND_HEIGHT,
-      })
-    );
-
-    pyramidHintBand.children.push(
-      am5.Label.new(root, {
-        text: CURSOR_HINT,
-        x: am5.p50,
-        centerX: am5.p50,
-        y: am5.p50,
-        centerY: am5.p50,
-        fillOpacity: 0,
-        fontSize: 11,
-      })
-    );
-
     const pyramidTitleBand = pyramidHeader.children.push(
       am5.Container.new(root, {
         width: am5.p100,
@@ -364,7 +346,10 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       })
     );
 
-    const pyramidXRenderer = am5xy.AxisRendererX.new(root, { minGridDistance: 50, strokeOpacity: 0.1 });
+    const pyramidXRenderer = am5xy.AxisRendererX.new(root, {
+      minGridDistance: 50,
+      strokeOpacity: 0.1,
+    });
     pyramidXRenderer.labels.template.setAll({
       centerY: am5.p0,
       paddingTop: 4,
@@ -488,7 +473,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
 
     popHintBand.children.push(
       am5.Label.new(root, {
-        text: CURSOR_HINT,
+        text: t(CURSOR_HINT),
         x: am5.p50,
         centerX: am5.p50,
         y: am5.p50,
