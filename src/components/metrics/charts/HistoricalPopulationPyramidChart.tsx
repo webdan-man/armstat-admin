@@ -297,6 +297,15 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       })
     );
 
+    // Spacer matching the timeline chart's cursor-hint band so both chart titles
+    // (and the plot areas below) stay on the same level.
+    pyramidHeader.children.push(
+      am5.Container.new(root, {
+        width: am5.p100,
+        height: CURSOR_HINT_BAND_HEIGHT,
+      })
+    );
+
     const pyramidTitleBand = pyramidHeader.children.push(
       am5.Container.new(root, {
         width: am5.p100,
