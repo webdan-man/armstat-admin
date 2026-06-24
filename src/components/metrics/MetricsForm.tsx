@@ -173,6 +173,11 @@ export default function MetricsForm() {
         );
         committedFeaturesRef.current = features;
         reset({ ...values, attributes: metricAttributeKeys });
+        // Refresh the metric dropdown list (Filters) so its label reflects the updated title.
+        await mutate(swrKeys.metricsByTopic(values.topicId));
+        if (resolvedTopicId && resolvedTopicId !== values.topicId) {
+          await mutate(swrKeys.metricsByTopic(resolvedTopicId));
+        }
       } else {
         const created = await createMetric(
           mapMetricFormToCreateMetric(values.topicId, values, metricAttributeKeys)
