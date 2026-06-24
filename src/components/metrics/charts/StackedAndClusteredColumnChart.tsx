@@ -46,7 +46,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
           pinchZoomX: true,
           paddingLeft: 0,
           paddingRight: 15,
-          height: am5.percent(82),
+          height: 350,
         })
       );
 
@@ -106,6 +106,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
           marginBottom: 10,
           width: am5.percent(95),
           height: am5.percent(15),
+          maxHeight: 130,
           layout: root.gridLayout,
           verticalScrollbar: am5.Scrollbar.new(root, { orientation: "vertical" }),
         })
@@ -132,7 +133,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
       const seriesToCluster = new Map<am5xy.ColumnSeries, string>();
 
       allClusterKeys.forEach((clusterKey, clusterIdx) => {
-        const baseColor = getPaletteColor(chart.get("colors")!, clusterIdx);
+        const baseColor = chart.get("colors")!.getIndex(clusterIdx);
         seriesByCluster[clusterKey] = [];
 
         allStackKeys.forEach((stackKey, stackIdx) => {
@@ -271,7 +272,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
 
   return (
     <div>
-      <div id={containerId} style={{ width: "100%", height: "700px" }} />
+      <div id={containerId} style={{ width: "100%", height: "480px" }} />
     </div>
   );
 }
