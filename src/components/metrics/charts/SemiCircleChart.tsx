@@ -57,7 +57,7 @@ function SemiCircleChart({ data, chartTitle }: SemiCircleChartProps) {
     applyChartColorStep(series.get("colors"));
 
     series.labels.template.setAll({
-      text: "{category} - {valuePercentTotal.formatNumber('0.0')}%",
+      text: "{category}     [bold]{value}[/]",
       inside: false,
       radius: 10,
     });

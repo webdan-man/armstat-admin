@@ -3,6 +3,11 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getStableSeriesColor } from "@/utils/chart/stable-series-color.util";
+import {
+  LEGEND_BLOCK_HEIGHT,
+  lockPlotHeight,
+  setupDynamicChartHeight,
+} from "@/utils/chart/fixed-plot-chart-layout.util";
 
 interface StackedAreaChartProps<T extends Record<string, string>> {
   data: T[];
@@ -15,33 +20,6 @@ interface StackedAreaChartProps<T extends Record<string, string>> {
 const containerId = "stacked-area-chartdiv";
 const CHART_TITLE_BAND_HEIGHT = 40;
 const CHART_HEADER_HEADROOM = 24;
-const PLOT_HEIGHT = 350;
-const X_AXIS_LABEL_BAND_HEIGHT = 150;
-
-function lockStackedAreaChartLayout(
-  chart: am5xy.XYChart,
-  xAxis: am5xy.Axis<am5xy.AxisRenderer>
-) {
-  chart.plotContainer.setAll({
-    height: PLOT_HEIGHT,
-    minHeight: PLOT_HEIGHT,
-    maxHeight: PLOT_HEIGHT,
-  });
-  chart.yAxesAndPlotContainer.setAll({
-    height: PLOT_HEIGHT,
-    minHeight: PLOT_HEIGHT,
-    maxHeight: PLOT_HEIGHT,
-  });
-  chart.bottomAxesContainer.setAll({
-    height: X_AXIS_LABEL_BAND_HEIGHT,
-    minHeight: X_AXIS_LABEL_BAND_HEIGHT,
-    maxHeight: X_AXIS_LABEL_BAND_HEIGHT,
-  });
-  xAxis.setAll({
-    minHeight: X_AXIS_LABEL_BAND_HEIGHT,
-    maxHeight: X_AXIS_LABEL_BAND_HEIGHT,
-  });
-}
 
 function StackedAreaChart<T extends Record<string, string>>({
   data,
@@ -56,6 +34,7 @@ function StackedAreaChart<T extends Record<string, string>>({
   const legendRef = useRef<am5.Legend | null>(null);
   const seriesListRef = useRef<am5xy.LineSeries[]>([]);
   const titleLabelRef = useRef<am5.Label | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const chartTitleRef = useRef(chartTitle);
   const dataRef = useRef(data);
   dataRef.current = data;
@@ -85,12 +64,11 @@ function StackedAreaChart<T extends Record<string, string>>({
         paddingLeft: 0,
         paddingTop: 0,
         layout: root.verticalLayout,
-        // Plot area is locked to 350 below; reserve 150 for the x-axis label band
-        // in bottomAxesContainer so labels never eat into the plot height.
-        height: PLOT_HEIGHT + X_AXIS_LABEL_BAND_HEIGHT,
       })
     );
     chartRef.current = chart;
+
+    lockPlotHeight(chart);
 
     if (chartTitle !== undefined) {
       root.container.setAll({ paddingTop: CHART_HEADER_HEADROOM });
@@ -151,11 +129,6 @@ function StackedAreaChart<T extends Record<string, string>>({
     );
     xAxisRef.current = xAxis;
 
-    lockStackedAreaChartLayout(chart, xAxis);
-    root.events.once("frameended", () => {
-      lockStackedAreaChartLayout(chart, xAxis);
-    });
-
     xAxis.data.setAll(data);
 
     const yAxis = chart.yAxes.push(
@@ -184,6 +157,15 @@ function StackedAreaChart<T extends Record<string, string>>({
     );
     legendRef.current = legend;
 
+    const disposeDynamicHeight = setupDynamicChartHeight({
+      root,
+      chart,
+      xAxis,
+      getContainerEl: () => containerRef.current,
+      getAboveChartHeight: () => (chartTitle !== undefined ? CHART_HEADER_HEADROOM : 0),
+      getBelowChartHeight: () => (legend.height() || LEGEND_BLOCK_HEIGHT) + 30,
+    });
+
     legend.labels.template.setAll({ fontSize: 16 });
 
     legend.markers.template.setAll({ width: 22, height: 22 });
@@ -199,6 +181,7 @@ function StackedAreaChart<T extends Record<string, string>>({
     chart.appear(1000, 100);
 
     return () => {
+      disposeDynamicHeight();
       rootRef.current = null;
       chartRef.current = null;
       xAxisRef.current = null;
@@ -280,7 +263,7 @@ function StackedAreaChart<T extends Record<string, string>>({
 
   return (
     <div>
-      <div id={containerId} style={{ width: "100%", height: "610px" }} />
+      <div ref={containerRef} id={containerId} style={{ width: "100%", height: "610px" }} />
     </div>
   );
 }

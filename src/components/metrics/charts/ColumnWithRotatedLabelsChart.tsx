@@ -3,6 +3,7 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getPaletteColor } from "@/utils/chart/chart-palette.util";
+import { lockPlotHeight, setupDynamicChartHeight } from "@/utils/chart/fixed-plot-chart-layout.util";
 
 interface DataItem {
   xAxisKey: string;
@@ -21,9 +22,11 @@ const LEGEND_BAR_HEIGHT = 160;
 const LEGEND_MAX_HEIGHT = 120;
 const LEGEND_LABEL_MAX_WIDTH = 140;
 const LEGEND_LABEL_GAP = 15;
+const CHART_TITLE_HEIGHT = 32;
 
 function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLabelsChartProps) {
   const rootRef = useRef<am5.Root | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const titleLabelRef = useRef<am5.Label | null>(null);
   const xAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
   const yAxisRef = useRef<am5xy.ValueAxis<am5xy.AxisRenderer> | null>(null);
@@ -66,15 +69,10 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
         pinchZoomX: true,
         paddingLeft: 0,
         paddingRight: 30,
-        // Plot area is locked to 350 below; reserve extra for the x-axis label band
-        // (capped at 130 via xAxis.maxHeight) so the clean plot stays exactly 350.
-        height: 480,
       })
     );
 
-    // Lock the *plot* (series area) to 350 — the x-axis labels live in
-    // bottomAxesContainer, so they don't eat into this height.
-    chart.plotContainer.setAll({ height: 350, minHeight: 350, maxHeight: 350 });
+    lockPlotHeight(chart);
 
     chart.set("scrollbarX", am5.Scrollbar.new(root, { orientation: "horizontal" }));
 
@@ -108,8 +106,6 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
         tooltip: am5.Tooltip.new(root, {}),
       })
     );
-    // Cap the label area so the plot keeps its height.
-    xAxis.set("maxHeight", 130);
     xAxisRef.current = xAxis;
 
     // Y Axis
@@ -274,6 +270,15 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
     // Legend data
     legend.data.setAll(series.dataItems);
 
+    const disposeDynamicHeight = setupDynamicChartHeight({
+      root,
+      chart,
+      xAxis,
+      getContainerEl: () => containerRef.current,
+      getAboveChartHeight: () => (chartTitle !== undefined ? CHART_TITLE_HEIGHT : 0),
+      getBelowChartHeight: () => LEGEND_BAR_HEIGHT,
+    });
+
     // Force repaint on click
     legend.itemContainers.each((itemContainer, index) => {
       itemContainer.events.on("click", () => {
@@ -289,6 +294,7 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
     chart.appear(1000, 100);
 
     return () => {
+      disposeDynamicHeight();
       rootRef.current = null;
       titleLabelRef.current = null;
       xAxisRef.current = null;
@@ -328,7 +334,7 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
 
   return (
     <div>
-      <div id={containerId} style={{ width: "100%", height: "680px" }}></div>
+      <div ref={containerRef} id={containerId} style={{ width: "100%", height: "680px" }}></div>
     </div>
   );
 }

@@ -3,6 +3,12 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { parseYear } from "@/utils/chart/map-combinations-for-line-graph";
+import {
+  lockPlotHeight,
+  setupDynamicChartHeight,
+} from "@/utils/chart/fixed-plot-chart-layout.util";
+
+const CHART_TITLE_HEIGHT = 32;
 
 interface DataItem {
   date: number;
@@ -23,6 +29,8 @@ function LineGraphChart({ data, chartTitle }: LineGraphChartProps) {
   const rootRef = useRef<am5.Root | null>(null);
   const seriesRef = useRef<am5xy.LineSeries | null>(null);
   const categoryAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
+  const dateAxisRef = useRef<am5xy.DateAxis<am5xy.AxisRenderer> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const titleLabelRef = useRef<am5.Label | null>(null);
 
   // When a label isn't a parseable year, the x values are synthetic (see
@@ -38,6 +46,7 @@ function LineGraphChart({ data, chartTitle }: LineGraphChartProps) {
 
     const root = am5.Root.new(containerId);
     rootRef.current = root;
+    let disposeDynamicHeight: (() => void) | undefined;
 
     // Set themes
     // https://www.amcharts.com/docs/v5/concepts/themes/
@@ -56,6 +65,8 @@ function LineGraphChart({ data, chartTitle }: LineGraphChartProps) {
         layout: root.verticalLayout,
       })
     );
+
+    lockPlotHeight(chart);
 
     if (chartTitle !== undefined) {
       const titleLabel = chart.children.unshift(
@@ -116,6 +127,7 @@ function LineGraphChart({ data, chartTitle }: LineGraphChartProps) {
     // Add series
     // https://www.amcharts.com/docs/v5/charts/xy-chart/series/
     let series: am5xy.LineSeries;
+    let xAxisForLayout: am5xy.Axis<am5xy.AxisRenderer>;
 
     if (isCategoryBased) {
       const xAxis = chart.xAxes.push(
@@ -125,9 +137,9 @@ function LineGraphChart({ data, chartTitle }: LineGraphChartProps) {
           tooltip: am5.Tooltip.new(root, {}),
         })
       );
-      // Cap the label area so the plot keeps its height.
-      xAxis.set("maxHeight", 130);
       categoryAxisRef.current = xAxis;
+      dateAxisRef.current = null;
+      xAxisForLayout = xAxis;
       xAxis.data.setAll(data);
 
       series = chart.series.push(
@@ -154,6 +166,9 @@ function LineGraphChart({ data, chartTitle }: LineGraphChartProps) {
           tooltip: am5.Tooltip.new(root, {}),
         })
       );
+      dateAxisRef.current = xAxis;
+      categoryAxisRef.current = null;
+      xAxisForLayout = xAxis;
 
       series = chart.series.push(
         am5xy.LineSeries.new(root, {
@@ -169,6 +184,15 @@ function LineGraphChart({ data, chartTitle }: LineGraphChartProps) {
       );
     }
     seriesRef.current = series;
+
+    disposeDynamicHeight = setupDynamicChartHeight({
+      root,
+      chart,
+      xAxis: xAxisForLayout,
+      getContainerEl: () => containerRef.current,
+      getAboveChartHeight: () => (chartTitle !== undefined ? CHART_TITLE_HEIGHT : 0),
+      getBelowChartHeight: () => 20,
+    });
 
     series.strokes.template.setAll({
       strokeWidth: 2, // Change this to 1 or 1.5 for a very thin line
@@ -188,9 +212,11 @@ function LineGraphChart({ data, chartTitle }: LineGraphChartProps) {
     );
 
     return () => {
+      disposeDynamicHeight?.();
       rootRef.current = null;
       seriesRef.current = null;
       categoryAxisRef.current = null;
+      dateAxisRef.current = null;
       titleLabelRef.current = null;
       root.dispose();
     };
@@ -208,7 +234,7 @@ function LineGraphChart({ data, chartTitle }: LineGraphChartProps) {
 
   return (
     <div>
-      <div id={containerId} style={{ width: "100%", height: "520px" }}></div>
+      <div ref={containerRef} id={containerId} style={{ width: "100%", height: "520px" }}></div>
     </div>
   );
 }

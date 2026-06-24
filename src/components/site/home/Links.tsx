@@ -77,8 +77,13 @@ export default function Links({ links }: LinksProps) {
                     key={i}
                     className="border-textBlack300 w-92 flex-[0_0_auto] rounded-lg border p-6"
                   >
-                    <div className="relative h-39.5 w-full">
-                      <Image src={item.image || "/links/link1.jpg"} alt="Link" fill />
+                    <div className="relative h-39.5 w-full overflow-hidden">
+                      <Image
+                        src={item.image || "/links/link1.jpg"}
+                        alt="Link"
+                        fill
+                        className="object-cover"
+                      />
                     </div>
 
                     <TypographyH3 className="text-textBlack800 mt-4">

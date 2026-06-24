@@ -5,6 +5,11 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getPaletteColor } from "@/utils/chart/chart-palette.util";
+import {
+  LEGEND_BLOCK_HEIGHT,
+  lockPlotHeight,
+  setupDynamicChartHeight,
+} from "@/utils/chart/fixed-plot-chart-layout.util";
 import type {
   GroupedStackedColumnChartRow,
   GroupedStackedDimension,
@@ -17,6 +22,8 @@ interface GroupedStackedColumnChartProps {
 }
 
 const containerId = "grouped-stacked-column-chartdiv";
+const BOTTOM_CONTAINER_PADDING_TOP = 40;
+const BOTTOM_LABEL_HEIGHT = 50;
 
 function buildAxisRanges(
   xAxis: am5xy.CategoryAxis<am5xy.AxisRenderer>,
@@ -106,6 +113,8 @@ function GroupedStackedColumnChart({
   stackDimensions,
   innerAttributeName = "",
 }: GroupedStackedColumnChartProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const bottomContainerRef = useRef<am5.Container | null>(null);
   const xAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
   const seriesListRef = useRef<am5xy.ColumnSeries[]>([]);
   const axisRangesRef = useRef<am5.DataItem<am5xy.ICategoryAxisDataItem>[]>([]);
@@ -115,6 +124,7 @@ function GroupedStackedColumnChart({
   useLayoutEffect(() => {
     const root = am5.Root.new(containerId);
     root.setThemes([am5themes_Animated.new(root)]);
+    let disposeDynamicHeight: (() => void) | undefined;
 
     root.container.setAll({
       layout: root.verticalLayout,
@@ -135,28 +145,11 @@ function GroupedStackedColumnChart({
         pinchZoomX: true,
         paddingLeft: 0,
         paddingBottom: 0,
-        // Plot area is locked to 350 below; the bottom band (140) holds the provider bracket
-        // ticks (length 70) + rotated range labels. Chart height = 350 + 140 so there's no
-        // slack that would show as a gap between the plot and the labels.
-        height: 490,
       })
     );
 
-    // Lock the *plot* (series area) to 350. Pin yAxesAndPlotContainer to the same height so
-    // it can't expand past the plot — otherwise the leftover slack appears as a gap between
-    // the plot and the x-axis labels. The x-axis ticks/labels then sit in bottomAxesContainer.
-    // maskContent is disabled so the provider separator lines (grid + 70px bracket ticks)
-    // aren't clipped at the plot edge where they extend down toward the labels.
-    chart.plotContainer.setAll({
-      height: 350,
-      minHeight: 350,
-      maxHeight: 350,
-      maskContent: false,
-    });
-    chart.yAxesAndPlotContainer.setAll({ height: 350, minHeight: 350, maxHeight: 350 });
-    // Pin the x-axis band so it exactly fills chart(490) - plot(350); otherwise it sizes to
-    // its (smaller) content and the difference shows as a gap above the labels.
-    chart.bottomAxesContainer.setAll({ height: 140, minHeight: 140, maxHeight: 140 });
+    lockPlotHeight(chart);
+    chart.plotContainer.set("maskContent", false);
 
     chart.set("scrollbarX", am5.Scrollbar.new(root, { orientation: "horizontal" }));
 
@@ -273,14 +266,14 @@ function GroupedStackedColumnChart({
     const bottomContainer = root.container.children.push(
       am5.Container.new(root, {
         width: am5.p100,
-        height: am5.p100,
         // Clear the rotated x-axis bracket labels, which overflow the bottom axes band
         // (maskContent is disabled) and would otherwise collide with the legend title.
-        paddingTop: 40,
+        paddingTop: BOTTOM_CONTAINER_PADDING_TOP,
         paddingBottom: 0,
         layout: root.verticalLayout,
       })
     );
+    bottomContainerRef.current = bottomContainer;
 
     bottomContainer.children.push(
       am5.Label.new(root, {
@@ -361,9 +354,21 @@ function GroupedStackedColumnChart({
       });
     });
 
+    disposeDynamicHeight = setupDynamicChartHeight({
+      root,
+      chart,
+      xAxis,
+      getContainerEl: () => containerRef.current,
+      getBelowChartHeight: () =>
+        (bottomContainerRef.current?.height() ||
+          BOTTOM_CONTAINER_PADDING_TOP + BOTTOM_LABEL_HEIGHT + LEGEND_BLOCK_HEIGHT),
+    });
+
     chart.appear(1000, 100);
 
     return () => {
+      disposeDynamicHeight?.();
+      bottomContainerRef.current = null;
       xAxisRef.current = null;
       seriesListRef.current = [];
       axisRangesRef.current = [];
@@ -383,7 +388,7 @@ function GroupedStackedColumnChart({
     axisRangesRef.current = buildAxisRanges(xAxis, data);
   }, [data]);
 
-  return <div id={containerId} style={{ width: "100%", height: "705px" }} />;
+  return <div ref={containerRef} id={containerId} style={{ width: "100%", height: "705px" }} />;
 }
 
 export default GroupedStackedColumnChart;

@@ -4,6 +4,10 @@ import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { applyChartColorStep, getPaletteColor } from "@/utils/chart/chart-palette.util";
 import { useTranslation } from "@/hooks/useTranslation";
+import {
+  CHART_HEADER_HEADROOM as PLOT_CHART_HEADER_HEADROOM,
+  setupDualChartDynamicHeight,
+} from "@/utils/chart/fixed-plot-chart-layout.util";
 
 type ChartDatum = Record<string, string | number>;
 
@@ -33,8 +37,6 @@ interface HistoricalPopulationPyramidChartProps<T extends ChartDatum> {
 
 const containerId = "historical-pyramid-chartdiv";
 const CURSOR_HINT = "historical-pyramid-cursor-hint";
-// Keep the bottom label band the same height in both charts (see other column charts).
-const X_AXIS_LABEL_MAX_HEIGHT = 110;
 // Long frame titles wrap; cap the band so the plot area stays aligned side-by-side.
 const CHART_TITLE_BAND_HEIGHT = 40;
 const GENDER_LABEL_BAND_HEIGHT = 48;
@@ -45,43 +47,14 @@ const CURSOR_HINT_BAND_HEIGHT = 18;
 const TOP_HEADER_HEIGHT =
   CURSOR_HINT_BAND_HEIGHT + CHART_TITLE_BAND_HEIGHT + GENDER_LABEL_BAND_HEIGHT;
 
-/** Lock header + bottom X-axis bands so both charts share the same plot baseline. */
+/** Lock header bands so both charts share the same top layout. */
 function lockChartLayoutBands(charts: am5xy.XYChart[]) {
   for (const chart of charts) {
     chart.topAxesContainer.setAll({
       minHeight: TOP_HEADER_HEIGHT,
       maxHeight: TOP_HEADER_HEIGHT,
     });
-    chart.bottomAxesContainer.setAll({
-      minHeight: X_AXIS_LABEL_MAX_HEIGHT,
-      maxHeight: X_AXIS_LABEL_MAX_HEIGHT,
-    });
   }
-}
-
-function syncBottomXAxisBand(chart: am5xy.XYChart, xAxis: am5xy.Axis<am5xy.AxisRenderer>) {
-  xAxis.setAll({
-    minHeight: X_AXIS_LABEL_MAX_HEIGHT,
-    maxHeight: X_AXIS_LABEL_MAX_HEIGHT,
-  });
-  chart.bottomAxesContainer.setAll({
-    minHeight: X_AXIS_LABEL_MAX_HEIGHT,
-    maxHeight: X_AXIS_LABEL_MAX_HEIGHT,
-  });
-}
-
-/** Pin the plot-area height after layout so both X axes sit on the same baseline. */
-function syncPlotBaselines(root: am5.Root, charts: am5xy.XYChart[]) {
-  lockChartLayoutBands(charts);
-  root.events.once("frameended", () => {
-    lockChartLayoutBands(charts);
-    const plotHeights = charts.map((chart) => chart.yAxesAndPlotContainer.height());
-    const maxPlotHeight = Math.max(...plotHeights);
-    if (maxPlotHeight <= 0) return;
-    for (const chart of charts) {
-      chart.yAxesAndPlotContainer.setAll({ height: maxPlotHeight });
-    }
-  });
 }
 
 interface PyramidRow {
@@ -232,6 +205,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
   const currentYearRef = useRef<number>(0);
   // Re-applies the current data to the existing chart; set up inside the layout effect.
   const applyDataRef = useRef<(() => void) | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Rebuilt whenever the timeline (X2) axis kind changes — a DateAxis of years ("time") or a
   // CategoryAxis of frame labels ("category"). Data updates are applied without a rebuild
@@ -243,6 +217,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       tooltipContainerBounds: TOOLTIP_CONTAINER_BOUNDS,
     });
     rootRef.current = root;
+    let disposeDynamicHeight: (() => void) | undefined;
 
     root.setThemes([am5themes_Animated.new(root)]);
 
@@ -375,7 +350,6 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         tooltip: am5.Tooltip.new(root, {}),
       })
     );
-    syncBottomXAxisBand(pyramidChart, pyramidXAxis);
 
     // Show absolute values on the X-axis ticks (the left side stores negatives).
     pyramidXAxis.get("renderer").labels.template.adapters.add("text", (text, target) => {
@@ -566,6 +540,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
     let popSeriesFemale: am5xy.XYSeries;
     let pushTimeline: (rows: TimelineRow[]) => void;
     let tooltipHeader: string;
+    let popXAxisForLayout: am5xy.Axis<am5xy.AxisRenderer>;
 
     if (isCategory) {
       // AREA / OTHER on X2 → categorical axis labelled by frame, stacked male+female columns.
@@ -588,7 +563,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
           tooltip: am5.Tooltip.new(root, {}),
         })
       );
-      syncBottomXAxisBand(popChart, popXAxis);
+      popXAxisForLayout = popXAxis;
 
       const male = popChart.series.push(
         am5xy.ColumnSeries.new(root, {
@@ -654,7 +629,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
           tooltip: am5.Tooltip.new(root, {}),
         })
       );
-      syncBottomXAxisBand(popChart, popXAxis);
+      popXAxisForLayout = popXAxis;
 
       const male = popChart.series.push(
         am5xy.LineSeries.new(root, {
@@ -716,6 +691,15 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       tooltipHeader = "{valueX.formatDate('yyyy')}";
     }
 
+    disposeDynamicHeight = setupDualChartDynamicHeight({
+      root,
+      charts: [pyramidChart, popChart],
+      xAxes: [pyramidXAxis, popXAxisForLayout],
+      getContainerEl: () => containerRef.current,
+      getAboveChartHeight: () => PLOT_CHART_HEADER_HEADROOM + TOP_HEADER_HEIGHT,
+      getBelowRootHeight: () => 20,
+    });
+
     // (Re-)apply the current data to the already-built chart.
     function applyData() {
       const rows = dataRef.current;
@@ -751,7 +735,6 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       pyramidXAxis.set("max", pad);
 
       pushTimeline(buildTimelineData(rows, cfg, projectionYear, { isCategory, frameLabelByYear }));
-      syncPlotBaselines(root, [pyramidChart, popChart]);
     }
 
     applyDataRef.current = applyData;
@@ -761,9 +744,9 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
     popSeriesMale.appear(1000, 100);
     popChart.appear(1000, 100);
     pyramidChart.appear(1000, 100);
-    syncPlotBaselines(root, [pyramidChart, popChart]);
 
     return () => {
+      disposeDynamicHeight?.();
       rootRef.current = null;
       applyDataRef.current = null;
       root.dispose();
@@ -782,7 +765,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
 
   return (
     <div className="overflow-visible">
-      <div id={containerId} style={{ width: "100%", height: "512px" }} />
+      <div ref={containerRef} id={containerId} style={{ width: "100%", height: "512px" }} />
     </div>
   );
 }

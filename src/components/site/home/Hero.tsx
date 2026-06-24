@@ -44,7 +44,7 @@ export default function Hero({
             {t("home.view_catalog", "Դիտել Կատալոգը")}
           </Link>
           <div className="w-max-271 relative -top-40 z-0 h-51.5 w-full">
-            <Image src={"/images/hero.png"} alt={"Hero"} fill={true} />
+            <Image src={"/images/hero.png"} alt={"Hero"} fill className="object-contain" />
           </div>
         </div>
       </section>

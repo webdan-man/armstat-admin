@@ -107,12 +107,13 @@ export default function NewsPage() {
                     {item.title}
                   </p>
                 </div>
-                <div className="relative h-59.75 w-full">
+                <div className="relative h-59.75 w-full overflow-hidden">
                   <Image
                     src={absolutizeUrl(item.image) ?? "/news/content.jpg"}
                     alt={item.title}
                     fill
                     unoptimized
+                    className="object-cover"
                   />
                 </div>
                 <div className="flex flex-1 flex-col gap-4 px-6 pt-4 pb-6">

@@ -1,8 +1,13 @@
-import { useLayoutEffect } from "react";
+import { useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getPaletteColor } from "@/utils/chart/chart-palette.util";
+import {
+  LEGEND_BLOCK_HEIGHT,
+  lockPlotHeight,
+  setupDynamicChartHeight,
+} from "@/utils/chart/fixed-plot-chart-layout.util";
 
 interface StackedAndClusteredColumnChartProps<T extends Record<string, string | number>> {
   data: T[];
@@ -27,10 +32,13 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
   stackKeys,
   seriesKeys = [],
 }: StackedAndClusteredColumnChartProps<T>) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
   useLayoutEffect(() => {
     const isClusteredStackedMode = Boolean(clusterKeys?.length && stackKeys?.length);
     const root = am5.Root.new(containerId);
     root.setThemes([am5themes_Animated.new(root)]);
+    let disposeDynamicHeight: (() => void) | undefined;
 
     if (isClusteredStackedMode) {
       // ── DOCX-style clustered + stacked mode ──────────────────────────────────
@@ -46,15 +54,10 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
           pinchZoomX: true,
           paddingLeft: 0,
           paddingRight: 15,
-          // Plot area is locked to 350 below; reserve extra for the x-axis label band
-          // (capped at 130 via xAxis.maxHeight) so the clean plot stays exactly 350.
-          height: 480,
         })
       );
 
-      // Lock the *plot* (series area) to 350 — the x-axis labels live in
-      // bottomAxesContainer, so they don't eat into this height.
-      chart.plotContainer.setAll({ height: 350, minHeight: 350, maxHeight: 350 });
+      lockPlotHeight(chart);
 
       chart.set(
         "scrollbarX",
@@ -92,8 +95,6 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
           renderer: xRenderer,
         })
       );
-      // Cap the label area so the plot keeps its height.
-      xAxis.set("maxHeight", 130);
       xAxis.data.setAll(data);
 
       const yAxis = chart.yAxes.push(
@@ -123,6 +124,14 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
         fontSize: 16,
         maxWidth: 300,
         oversizedBehavior: "wrap",
+      });
+
+      disposeDynamicHeight = setupDynamicChartHeight({
+        root,
+        chart,
+        xAxis,
+        getContainerEl: () => containerRef.current,
+        getBelowChartHeight: () => (legend.height() || LEGEND_BLOCK_HEIGHT) + 15,
       });
 
       const allClusterKeys = clusterKeys!;
@@ -216,6 +225,8 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
         })
       );
 
+      lockPlotHeight(chart);
+
       const legend = chart.children.push(
         am5.Legend.new(root, {
           centerX: am5.p50,
@@ -269,17 +280,28 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
       }
 
       seriesKeys.forEach((key) => makeSeries(key, key));
+
+      disposeDynamicHeight = setupDynamicChartHeight({
+        root,
+        chart,
+        xAxis,
+        getContainerEl: () => containerRef.current,
+        getBelowChartHeight: () => 20,
+        getExtraChartHeight: () => legend.height() || LEGEND_BLOCK_HEIGHT,
+      });
+
       chart.appear(1000, 100);
     }
 
     return () => {
+      disposeDynamicHeight?.();
       root.dispose();
     };
   }, [data, xAxisKey, clusterKeys, stackKeys, seriesKeys]);
 
   return (
     <div>
-      <div id={containerId} style={{ width: "100%", height: "610px" }} />
+      <div ref={containerRef} id={containerId} style={{ width: "100%", height: "610px" }} />
     </div>
   );
 }

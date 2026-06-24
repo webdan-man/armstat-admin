@@ -45,8 +45,8 @@ function NewsCard({ item }: { item: NewsItem }) {
         </TypographyP>
         <TypographyH3 className="text-textBlack800 tracking-normal">{item.title}</TypographyH3>
       </div>
-      <div className="relative h-59.75 w-full">
-        <Image src={imageSrc} alt="News" fill unoptimized />
+      <div className="relative h-59.75 w-full overflow-hidden">
+        <Image src={imageSrc} alt="News" fill unoptimized className="object-cover" />
       </div>
       <div className="flex flex-1 flex-col gap-4 px-6 pt-6 pb-4">
         <TypographyP className="text-textBlack700 line-clamp-2 tracking-normal">

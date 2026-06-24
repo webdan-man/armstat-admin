@@ -3,6 +3,12 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getStableSeriesColor } from "@/utils/chart/stable-series-color.util";
+import {
+  CHART_HEADER_HEADROOM as PLOT_CHART_HEADER_HEADROOM,
+  LEGEND_BLOCK_HEIGHT,
+  lockPlotHeight,
+  setupDynamicChartHeight,
+} from "@/utils/chart/fixed-plot-chart-layout.util";
 
 interface ClusteredColumnChartProps<T extends Record<string, string | number>> {
   data: T[];
@@ -31,6 +37,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
   const legendRef = useRef<am5.Legend | null>(null);
   const seriesListRef = useRef<am5xy.ColumnSeries[]>([]);
   const titleLabelRef = useRef<am5.Label | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const chartTitleRef = useRef(chartTitle);
   const dataRef = useRef(data);
   dataRef.current = data;
@@ -60,19 +67,14 @@ function ClusteredColumnChart<T extends Record<string, string>>({
         paddingLeft: 0,
         paddingRight: 20,
         paddingTop: 0,
-        // Plot area is locked to 350 below; reserve extra for the x-axis label band
-        // (capped at 130 via xAxis.maxHeight) so the clean plot stays exactly 350.
-        height: 480,
       })
     );
     chartRef.current = chart;
 
-    // Lock the *plot* (series area) to 350 — the x-axis labels live in
-    // bottomAxesContainer, so they don't eat into this height.
-    chart.plotContainer.setAll({ height: 350, minHeight: 350, maxHeight: 350 });
+    lockPlotHeight(chart);
 
     if (chartTitle !== undefined) {
-      root.container.setAll({ paddingTop: CHART_HEADER_HEADROOM });
+      root.container.setAll({ paddingTop: PLOT_CHART_HEADER_HEADROOM });
 
       chart.topAxesContainer.setAll({
         marginTop: -CHART_HEADER_HEADROOM,
@@ -126,8 +128,6 @@ function ClusteredColumnChart<T extends Record<string, string>>({
         renderer: xRenderer,
       })
     );
-    // Cap the label area so the plot keeps its height.
-    xAxis.set("maxHeight", 130);
     xAxisRef.current = xAxis;
 
     xRenderer.labels.template.setAll({
@@ -170,6 +170,15 @@ function ClusteredColumnChart<T extends Record<string, string>>({
     );
     legendRef.current = legend;
 
+    const disposeDynamicHeight = setupDynamicChartHeight({
+      root,
+      chart,
+      xAxis,
+      getContainerEl: () => containerRef.current,
+      getAboveChartHeight: () => (chartTitle !== undefined ? PLOT_CHART_HEADER_HEADROOM : 0),
+      getBelowChartHeight: () => (legend.height() || LEGEND_BLOCK_HEIGHT) + 30,
+    });
+
     legend.labels.template.setAll({
       fontSize: 16,
       maxWidth: 300,
@@ -179,6 +188,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
     chart.appear(1000, 100);
 
     return () => {
+      disposeDynamicHeight();
       rootRef.current = null;
       chartRef.current = null;
       xAxisRef.current = null;
@@ -285,7 +295,9 @@ function ClusteredColumnChart<T extends Record<string, string>>({
     seriesListRef.current.forEach((series) => series.data.setAll(data));
   }, [data]);
 
-  return <div id={containerId} style={{ width: "100%", height: "480px" }} />;
+  return (
+    <div ref={containerRef} id={containerId} style={{ width: "100%", height: "610px" }} />
+  );
 }
 
 export default ClusteredColumnChart;

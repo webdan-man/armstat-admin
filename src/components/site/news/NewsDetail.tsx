@@ -77,7 +77,7 @@ export default function NewsDetail({ item, related }: NewsDetailProps) {
 
         {imageSrc && (
           <div className="relative mt-6 h-100 w-full overflow-hidden rounded-2xl">
-            <Image src={imageSrc} alt={item.title} fill unoptimized />
+            <Image src={imageSrc} alt={item.title} fill unoptimized className="object-cover" />
           </div>
         )}
 
@@ -106,8 +106,14 @@ export default function NewsDetail({ item, related }: NewsDetailProps) {
                       {rel.title}
                     </p>
                   </div>
-                  <div className="relative h-59.75 w-full">
-                    <Image src={relImage ?? "/news/content.jpg"} alt={rel.title} fill unoptimized />
+                  <div className="relative h-59.75 w-full overflow-hidden">
+                    <Image
+                      src={relImage ?? "/news/content.jpg"}
+                      alt={rel.title}
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
                   </div>
                   <div className="flex flex-col gap-4 px-6 pt-4 pb-6">
                     <p className="text-textBlack700 line-clamp-2 leading-[24px] tracking-normal">
