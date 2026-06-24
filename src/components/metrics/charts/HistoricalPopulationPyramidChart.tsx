@@ -403,7 +403,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         valueXField: "male",
         clustered: false,
         tooltip: am5.Tooltip.new(root, {
-          labelText: "{categoryY}     [bold]{male}[/]",
+          labelText: "{categoryY}     [bold]{male.formatNumber('#.###')}[/]",
           // Male bars sit on the right; pointer on the tooltip's left edge keeps the box to the right.
           pointerOrientation: "left",
         }),
@@ -419,7 +419,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         valueXField: "female",
         clustered: false,
         tooltip: am5.Tooltip.new(root, {
-          labelText: "{categoryY}     [bold]{femaleAbs}[/]",
+          labelText: "{categoryY}     [bold]{femaleAbs.formatNumber('#.###')}[/]",
           // Female bars sit on the left; pointer on the tooltip's right edge keeps the box to the left.
           pointerOrientation: "right",
         }),
