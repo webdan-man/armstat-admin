@@ -135,9 +135,16 @@ function GroupedStackedColumnChart({
         pinchZoomX: true,
         paddingLeft: 0,
         paddingBottom: 0,
-        height: 350,
+        // Plot area is locked to 350 below; reserve extra for the bottom band that holds
+        // the provider bracket ticks (length 70) + rotated range labels, so the clean
+        // plot stays exactly 350.
+        height: 530,
       })
     );
+
+    // Lock the *plot* (series area) to 350 — the provider bracket ticks/labels live in
+    // bottomAxesContainer, so they don't eat into this height.
+    chart.plotContainer.setAll({ height: 350, minHeight: 350, maxHeight: 350 });
 
     chart.set("scrollbarX", am5.Scrollbar.new(root, { orientation: "horizontal" }));
 
@@ -361,7 +368,7 @@ function GroupedStackedColumnChart({
     axisRangesRef.current = buildAxisRanges(xAxis, data);
   }, [data]);
 
-  return <div id={containerId} style={{ width: "100%", height: "580px" }} />;
+  return <div id={containerId} style={{ width: "100%", height: "760px" }} />;
 }
 
 export default GroupedStackedColumnChart;

@@ -60,10 +60,16 @@ function ClusteredColumnChart<T extends Record<string, string>>({
         paddingLeft: 0,
         paddingRight: 20,
         paddingTop: 0,
-        height: 350,
+        // Plot area is locked to 350 below; reserve extra for the x-axis label band
+        // (capped at 130 via xAxis.maxHeight) so the clean plot stays exactly 350.
+        height: 480,
       })
     );
     chartRef.current = chart;
+
+    // Lock the *plot* (series area) to 350 — the x-axis labels live in
+    // bottomAxesContainer, so they don't eat into this height.
+    chart.plotContainer.setAll({ height: 350, minHeight: 350, maxHeight: 350 });
 
     if (chartTitle !== undefined) {
       root.container.setAll({ paddingTop: CHART_HEADER_HEADROOM });
