@@ -135,16 +135,28 @@ function GroupedStackedColumnChart({
         pinchZoomX: true,
         paddingLeft: 0,
         paddingBottom: 0,
-        // Plot area is locked to 350 below; reserve extra for the bottom band that holds
-        // the provider bracket ticks (length 70) + rotated range labels, so the clean
-        // plot stays exactly 350.
-        height: 530,
+        // Plot area is locked to 350 below; the bottom band (140) holds the provider bracket
+        // ticks (length 70) + rotated range labels. Chart height = 350 + 140 so there's no
+        // slack that would show as a gap between the plot and the labels.
+        height: 490,
       })
     );
 
-    // Lock the *plot* (series area) to 350 — the provider bracket ticks/labels live in
-    // bottomAxesContainer, so they don't eat into this height.
-    chart.plotContainer.setAll({ height: 350, minHeight: 350, maxHeight: 350 });
+    // Lock the *plot* (series area) to 350. Pin yAxesAndPlotContainer to the same height so
+    // it can't expand past the plot — otherwise the leftover slack appears as a gap between
+    // the plot and the x-axis labels. The x-axis ticks/labels then sit in bottomAxesContainer.
+    // maskContent is disabled so the provider separator lines (grid + 70px bracket ticks)
+    // aren't clipped at the plot edge where they extend down toward the labels.
+    chart.plotContainer.setAll({
+      height: 350,
+      minHeight: 350,
+      maxHeight: 350,
+      maskContent: false,
+    });
+    chart.yAxesAndPlotContainer.setAll({ height: 350, minHeight: 350, maxHeight: 350 });
+    // Pin the x-axis band so it exactly fills chart(490) - plot(350); otherwise it sizes to
+    // its (smaller) content and the difference shows as a gap above the labels.
+    chart.bottomAxesContainer.setAll({ height: 140, minHeight: 140, maxHeight: 140 });
 
     chart.set("scrollbarX", am5.Scrollbar.new(root, { orientation: "horizontal" }));
 
@@ -223,7 +235,8 @@ function GroupedStackedColumnChart({
         stroke: am5.color(0xffffff),
         strokeOpacity: 1,
         strokeWidth: 0.5,
-        width: am5.percent(90),
+        // Narrower than the cell so adjacent columns have a visible gap instead of touching.
+        width: am5.percent(70),
       });
 
       series.columns.template.adapters.add("fill", (fill, target) => {
@@ -368,7 +381,7 @@ function GroupedStackedColumnChart({
     axisRangesRef.current = buildAxisRanges(xAxis, data);
   }, [data]);
 
-  return <div id={containerId} style={{ width: "100%", height: "760px" }} />;
+  return <div id={containerId} style={{ width: "100%", height: "680px" }} />;
 }
 
 export default GroupedStackedColumnChart;
