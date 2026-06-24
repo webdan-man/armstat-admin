@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
+import { applyChartColorStep, getPaletteColor } from "@/utils/chart/chart-palette.util";
 
 type ChartDatum = Record<string, string | number>;
 
@@ -16,8 +17,9 @@ interface StackedBartWithNegativeValuesChartProps<T extends ChartDatum> {
 const containerId = "stacked-bar-negative-chartdiv";
 const CHART_TITLE_BAND_HEIGHT = 40;
 
-const LEFT_COLOR_HEX = "#60a5fa";
-const RIGHT_COLOR_HEX = "#7dd3fc";
+// Match the population pyramid's palette: right side → index 0, left side → index 1.
+const RIGHT_COLOR_INDEX = 0;
+const LEFT_COLOR_INDEX = 1;
 
 function toChartData(data: ChartDatum[], leftKey: string, rightKey: string) {
   return data.map((row) => {
@@ -93,6 +95,9 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
     );
     chartRef.current = chart;
 
+    // Space palette colors the same way as every other chart (see chart-palette.util).
+    applyChartColorStep(chart.get("colors"));
+
     if (chartTitle !== undefined) {
       const titleRow = chart.children.unshift(
         am5.Container.new(root, {
@@ -130,19 +135,20 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
       })
     );
 
-    const makeTitle = (colorHex: string) =>
+    const makeTitle = (color: am5.Color) =>
       am5.Label.new(root, {
         text: "",
         width: am5.p50,
         textAlign: "center",
         fontSize: 13,
         fontWeight: "500",
-        fill: am5.color(colorHex),
+        fill: color,
         oversizedBehavior: "wrap",
       });
 
-    const leftTitleLabel = makeTitle(LEFT_COLOR_HEX);
-    const rightTitleLabel = makeTitle(RIGHT_COLOR_HEX);
+    const colors = chart.get("colors")!;
+    const leftTitleLabel = makeTitle(getPaletteColor(colors, LEFT_COLOR_INDEX));
+    const rightTitleLabel = makeTitle(getPaletteColor(colors, RIGHT_COLOR_INDEX));
     titlesContainer.children.push(leftTitleLabel);
     titlesContainer.children.push(rightTitleLabel);
     leftTitleLabelRef.current = leftTitleLabel;
@@ -231,8 +237,9 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
       series.dispose();
     });
 
-    const leftColor = am5.color(LEFT_COLOR_HEX);
-    const rightColor = am5.color(RIGHT_COLOR_HEX);
+    const colors = chart.get("colors")!;
+    const leftColor = getPaletteColor(colors, LEFT_COLOR_INDEX);
+    const rightColor = getPaletteColor(colors, RIGHT_COLOR_INDEX);
     const seriesList: am5xy.ColumnSeries[] = [];
 
     const createSeries = (
