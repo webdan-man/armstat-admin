@@ -92,6 +92,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
 
       const yAxis = chart.yAxes.push(
         am5xy.ValueAxis.new(root, {
+          min: 0,
           maxDeviation: 0.3,
           renderer: am5xy.AxisRendererY.new(root, { strokeOpacity: 0.1 }),
         })
