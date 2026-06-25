@@ -5,6 +5,8 @@ export const PLOT_HEIGHT = 350;
 export const CHART_TOP_PADDING = 10;
 export const LEGEND_BLOCK_HEIGHT = 130;
 export const CHART_HEADER_HEADROOM = 24;
+/** Gap between chart and an external legend when x-axis labels overflow downward. */
+export const LEGEND_OVERFLOW_PADDING = 40;
 
 export function lockPlotHeight(chart: am5xy.XYChart, plotHeight = PLOT_HEIGHT) {
   chart.plotContainer.setAll({
@@ -31,6 +33,10 @@ type SetupDynamicChartHeightOptions = {
   getBelowChartHeight: () => number;
   /** Pixels above the chart area (title label, header headroom, etc.). */
   getAboveChartHeight?: () => number;
+  /** Extra sprites whose height changes should trigger a layout pass. */
+  heightWatchers?: am5.Sprite[];
+  /** Safety buffer added to the outer container height. */
+  bottomBuffer?: number;
 };
 
 /** Keep plot at a fixed height; grow chart + container when x-axis labels need more room. */
@@ -43,6 +49,8 @@ export function setupDynamicChartHeight({
   getExtraChartHeight = () => 0,
   getBelowChartHeight,
   getAboveChartHeight = () => 0,
+  heightWatchers = [],
+  bottomBuffer = 0,
 }: SetupDynamicChartHeightOptions) {
   const adjustChartHeight = () => {
     lockPlotHeight(chart, plotHeight);
@@ -50,26 +58,38 @@ export function setupDynamicChartHeight({
     const xAxisHeight = xAxis.height();
     if (xAxisHeight <= 0) return;
 
+    const scrollbar = chart.get("scrollbarX") as am5.Scrollbar | undefined;
+    const scrollbarHeight = scrollbar?.height() || 0;
+
     const chartHeight = Math.ceil(
-      plotHeight + xAxisHeight + CHART_TOP_PADDING + getExtraChartHeight()
+      plotHeight + xAxisHeight + CHART_TOP_PADDING + scrollbarHeight + getExtraChartHeight()
     );
     chart.set("height", chartHeight);
 
     const containerEl = getContainerEl();
     if (!containerEl) return;
 
-    const total = Math.ceil(getAboveChartHeight() + chartHeight + getBelowChartHeight());
+    const total = Math.ceil(
+      getAboveChartHeight() + chartHeight + getBelowChartHeight() + bottomBuffer
+    );
     const current = parseFloat(containerEl.style.height) || 0;
     if (Math.abs(current - total) > 1) {
       containerEl.style.height = `${total}px`;
     }
   };
 
-  const heightDisposer = xAxis.onPrivate("height", adjustChartHeight);
-  root.events.once("frameended", adjustChartHeight);
+  const disposers = [
+    xAxis.onPrivate("height", adjustChartHeight),
+    ...heightWatchers.map((sprite) => sprite.onPrivate("height", adjustChartHeight)),
+  ];
+  const frameEndedDisposer = root.events.on("frameended", adjustChartHeight);
+  adjustChartHeight();
 
   return () => {
-    heightDisposer.dispose();
+    for (const disposer of disposers) {
+      disposer.dispose();
+    }
+    frameEndedDisposer.dispose();
   };
 }
 
@@ -81,6 +101,8 @@ type SetupDualChartDynamicHeightOptions = {
   plotHeight?: number;
   getBelowRootHeight?: () => number;
   getAboveChartHeight?: () => number;
+  heightWatchers?: am5.Sprite[];
+  bottomBuffer?: number;
 };
 
 /** Keep two side-by-side charts aligned with a shared fixed plot height. */
@@ -92,6 +114,8 @@ export function setupDualChartDynamicHeight({
   plotHeight = PLOT_HEIGHT,
   getBelowRootHeight = () => 0,
   getAboveChartHeight = () => 0,
+  heightWatchers = [],
+  bottomBuffer = 0,
 }: SetupDualChartDynamicHeightOptions) {
   const adjustChartHeight = () => {
     for (const chart of charts) {
@@ -101,7 +125,11 @@ export function setupDualChartDynamicHeight({
     const xAxisHeight = Math.max(...xAxes.map((axis) => axis.height()));
     if (xAxisHeight <= 0) return;
 
-    const chartHeight = Math.ceil(plotHeight + xAxisHeight + CHART_TOP_PADDING);
+    const scrollbarHeight = Math.max(
+      ...charts.map((chart) => (chart.get("scrollbarX") as am5.Scrollbar | undefined)?.height() || 0)
+    );
+
+    const chartHeight = Math.ceil(plotHeight + xAxisHeight + CHART_TOP_PADDING + scrollbarHeight);
     for (const chart of charts) {
       chart.set("height", chartHeight);
     }
@@ -109,19 +137,26 @@ export function setupDualChartDynamicHeight({
     const containerEl = getContainerEl();
     if (!containerEl) return;
 
-    const total = Math.ceil(getAboveChartHeight() + chartHeight + getBelowRootHeight());
+    const total = Math.ceil(
+      getAboveChartHeight() + chartHeight + getBelowRootHeight() + bottomBuffer
+    );
     const current = parseFloat(containerEl.style.height) || 0;
     if (Math.abs(current - total) > 1) {
       containerEl.style.height = `${total}px`;
     }
   };
 
-  const disposers = xAxes.map((axis) => axis.onPrivate("height", adjustChartHeight));
-  root.events.once("frameended", adjustChartHeight);
+  const disposers = [
+    ...xAxes.map((axis) => axis.onPrivate("height", adjustChartHeight)),
+    ...heightWatchers.map((sprite) => sprite.onPrivate("height", adjustChartHeight)),
+  ];
+  const frameEndedDisposer = root.events.on("frameended", adjustChartHeight);
+  adjustChartHeight();
 
   return () => {
     for (const disposer of disposers) {
       disposer.dispose();
     }
+    frameEndedDisposer.dispose();
   };
 }

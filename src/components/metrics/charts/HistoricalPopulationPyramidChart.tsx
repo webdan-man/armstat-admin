@@ -698,6 +698,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       getContainerEl: () => containerRef.current,
       getAboveChartHeight: () => PLOT_CHART_HEADER_HEADROOM + TOP_HEADER_HEIGHT,
       getBelowRootHeight: () => 20,
+      bottomBuffer: 15,
     });
 
     // (Re-)apply the current data to the already-built chart.

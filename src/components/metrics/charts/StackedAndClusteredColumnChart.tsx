@@ -5,6 +5,7 @@ import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getPaletteColor } from "@/utils/chart/chart-palette.util";
 import {
   LEGEND_BLOCK_HEIGHT,
+  LEGEND_OVERFLOW_PADDING,
   lockPlotHeight,
   setupDynamicChartHeight,
 } from "@/utils/chart/fixed-plot-chart-layout.util";
@@ -33,6 +34,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
   seriesKeys = [],
 }: StackedAndClusteredColumnChartProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const bottomContainerRef = useRef<am5.Container | null>(null);
 
   useLayoutEffect(() => {
     const isClusteredStackedMode = Boolean(clusterKeys?.length && stackKeys?.length);
@@ -105,15 +107,25 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
         })
       );
 
-      // Scrollable legend placed below the chart (inside root.container).
-      const legend = root.container.children.push(
+      // Legend sits below the chart; rotated x-axis labels overflow the bottom axes
+      // band and need padding so they do not collide with legend titles.
+      const bottomContainer = root.container.children.push(
+        am5.Container.new(root, {
+          width: am5.p100,
+          paddingTop: LEGEND_OVERFLOW_PADDING,
+          paddingBottom: 0,
+          layout: root.verticalLayout,
+        })
+      );
+      bottomContainerRef.current = bottomContainer;
+
+      const legend = bottomContainer.children.push(
         am5.Legend.new(root, {
           centerX: am5.p50,
           x: am5.p50,
-          marginTop: 5,
+          marginTop: 0,
           marginBottom: 10,
           width: am5.percent(95),
-          height: am5.percent(15),
           maxHeight: 130,
           layout: root.gridLayout,
           verticalScrollbar: am5.Scrollbar.new(root, { orientation: "vertical" }),
@@ -124,14 +136,6 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
         fontSize: 16,
         maxWidth: 300,
         oversizedBehavior: "wrap",
-      });
-
-      disposeDynamicHeight = setupDynamicChartHeight({
-        root,
-        chart,
-        xAxis,
-        getContainerEl: () => containerRef.current,
-        getBelowChartHeight: () => (legend.height() || LEGEND_BLOCK_HEIGHT) + 15,
       });
 
       const allClusterKeys = clusterKeys!;
@@ -211,6 +215,22 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
         });
       });
 
+      disposeDynamicHeight = setupDynamicChartHeight({
+        root,
+        chart,
+        xAxis,
+        getContainerEl: () => containerRef.current,
+        heightWatchers: [bottomContainer, legend],
+        bottomBuffer: 15,
+        getBelowChartHeight: () => {
+          const measuredBottom = bottomContainerRef.current?.height();
+          if (measuredBottom && measuredBottom > 0) {
+            return measuredBottom;
+          }
+          return LEGEND_OVERFLOW_PADDING + (legend.height() || LEGEND_BLOCK_HEIGHT) + 10;
+        },
+      });
+
       chart.appear(1000, 100);
     } else {
       // ── Legacy simple-clustered mode ─────────────────────────────────────────
@@ -286,6 +306,8 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
         chart,
         xAxis,
         getContainerEl: () => containerRef.current,
+        heightWatchers: [legend],
+        bottomBuffer: 15,
         getBelowChartHeight: () => 20,
         getExtraChartHeight: () => legend.height() || LEGEND_BLOCK_HEIGHT,
       });
@@ -295,6 +317,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
 
     return () => {
       disposeDynamicHeight?.();
+      bottomContainerRef.current = null;
       root.dispose();
     };
   }, [data, xAxisKey, clusterKeys, stackKeys, seriesKeys]);

@@ -5,6 +5,7 @@ import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getStableSeriesColor } from "@/utils/chart/stable-series-color.util";
 import {
   LEGEND_BLOCK_HEIGHT,
+  LEGEND_OVERFLOW_PADDING,
   lockPlotHeight,
   setupDynamicChartHeight,
 } from "@/utils/chart/fixed-plot-chart-layout.util";
@@ -141,16 +142,22 @@ function StackedAreaChart<T extends Record<string, string>>({
 
     chart.set("scrollbarX", am5.Scrollbar.new(root, { orientation: "horizontal" }));
 
-    // Legend lives in root.container (not inside the chart) so the chart's fixed height
-    // stays dedicated to the locked 350 plot + x-axis labels.
-    const legend = root.container.children.push(
+    const bottomContainer = root.container.children.push(
+      am5.Container.new(root, {
+        width: am5.p100,
+        paddingTop: LEGEND_OVERFLOW_PADDING,
+        layout: root.verticalLayout,
+      })
+    );
+
+    const legend = bottomContainer.children.push(
       am5.Legend.new(root, {
         centerX: am5.p50,
         x: am5.p50,
-        marginTop: 15,
+        marginTop: 0,
         marginBottom: 15,
         width: am5.percent(95),
-        height: am5.percent(20),
+        maxHeight: LEGEND_BLOCK_HEIGHT,
         useDefaultMarker: true,
         verticalScrollbar: am5.Scrollbar.new(root, { orientation: "vertical" }),
       })
@@ -162,8 +169,14 @@ function StackedAreaChart<T extends Record<string, string>>({
       chart,
       xAxis,
       getContainerEl: () => containerRef.current,
+      heightWatchers: [bottomContainer, legend],
+      bottomBuffer: 15,
       getAboveChartHeight: () => (chartTitle !== undefined ? CHART_HEADER_HEADROOM : 0),
-      getBelowChartHeight: () => (legend.height() || LEGEND_BLOCK_HEIGHT) + 30,
+      getBelowChartHeight: () => {
+        const measured = bottomContainer.height();
+        if (measured > 0) return measured;
+        return LEGEND_OVERFLOW_PADDING + (legend.height() || LEGEND_BLOCK_HEIGHT) + 15;
+      },
     });
 
     legend.labels.template.setAll({ fontSize: 16 });

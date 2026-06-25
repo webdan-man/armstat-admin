@@ -190,6 +190,7 @@ function LineGraphChart({ data, chartTitle }: LineGraphChartProps) {
       chart,
       xAxis: xAxisForLayout,
       getContainerEl: () => containerRef.current,
+      bottomBuffer: 15,
       getAboveChartHeight: () => (chartTitle !== undefined ? CHART_TITLE_HEIGHT : 0),
       getBelowChartHeight: () => 20,
     });

@@ -6,6 +6,7 @@ import { getStableSeriesColor } from "@/utils/chart/stable-series-color.util";
 import {
   CHART_HEADER_HEADROOM as PLOT_CHART_HEADER_HEADROOM,
   LEGEND_BLOCK_HEIGHT,
+  LEGEND_OVERFLOW_PADDING,
   lockPlotHeight,
   setupDynamicChartHeight,
 } from "@/utils/chart/fixed-plot-chart-layout.util";
@@ -156,14 +157,23 @@ function ClusteredColumnChart<T extends Record<string, string>>({
     );
     yAxisRef.current = yAxis;
 
-    // ========== LEGEND ==========
-    const legend = root.container.children.push(
+    // Legend sits below the chart; rotated x-axis labels overflow the bottom axes band.
+    const bottomContainer = root.container.children.push(
+      am5.Container.new(root, {
+        width: am5.p100,
+        paddingTop: LEGEND_OVERFLOW_PADDING,
+        layout: root.verticalLayout,
+      })
+    );
+
+    const legend = bottomContainer.children.push(
       am5.Legend.new(root, {
         centerX: am5.p50,
         x: am5.p50,
-        marginTop: 15,
+        marginTop: 0,
+        marginBottom: 10,
         width: am5.percent(95),
-        height: am5.percent(20),
+        maxHeight: LEGEND_BLOCK_HEIGHT,
         layout: root.gridLayout,
         verticalScrollbar: am5.Scrollbar.new(root, { orientation: "vertical" }),
       })
@@ -175,8 +185,14 @@ function ClusteredColumnChart<T extends Record<string, string>>({
       chart,
       xAxis,
       getContainerEl: () => containerRef.current,
+      heightWatchers: [bottomContainer, legend],
+      bottomBuffer: 15,
       getAboveChartHeight: () => (chartTitle !== undefined ? PLOT_CHART_HEADER_HEADROOM : 0),
-      getBelowChartHeight: () => (legend.height() || LEGEND_BLOCK_HEIGHT) + 30,
+      getBelowChartHeight: () => {
+        const measured = bottomContainer.height();
+        if (measured > 0) return measured;
+        return LEGEND_OVERFLOW_PADDING + (legend.height() || LEGEND_BLOCK_HEIGHT) + 10;
+      },
     });
 
     legend.labels.template.setAll({

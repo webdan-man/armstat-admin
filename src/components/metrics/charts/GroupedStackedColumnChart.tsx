@@ -7,6 +7,7 @@ import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getPaletteColor } from "@/utils/chart/chart-palette.util";
 import {
   LEGEND_BLOCK_HEIGHT,
+  LEGEND_OVERFLOW_PADDING,
   lockPlotHeight,
   setupDynamicChartHeight,
 } from "@/utils/chart/fixed-plot-chart-layout.util";
@@ -22,7 +23,6 @@ interface GroupedStackedColumnChartProps {
 }
 
 const containerId = "grouped-stacked-column-chartdiv";
-const BOTTOM_CONTAINER_PADDING_TOP = 40;
 const BOTTOM_LABEL_HEIGHT = 50;
 
 function buildAxisRanges(
@@ -268,7 +268,7 @@ function GroupedStackedColumnChart({
         width: am5.p100,
         // Clear the rotated x-axis bracket labels, which overflow the bottom axes band
         // (maskContent is disabled) and would otherwise collide with the legend title.
-        paddingTop: BOTTOM_CONTAINER_PADDING_TOP,
+        paddingTop: LEGEND_OVERFLOW_PADDING,
         paddingBottom: 0,
         layout: root.verticalLayout,
       })
@@ -293,7 +293,6 @@ function GroupedStackedColumnChart({
         centerX: am5.p50,
         x: am5.p50,
         width: am5.percent(95),
-        height: am5.p100,
         maxHeight: 130,
         paddingTop: 0,
         paddingBottom: 0,
@@ -359,9 +358,11 @@ function GroupedStackedColumnChart({
       chart,
       xAxis,
       getContainerEl: () => containerRef.current,
+      heightWatchers: [bottomContainer, legend],
+      bottomBuffer: 15,
       getBelowChartHeight: () =>
-        (bottomContainerRef.current?.height() ||
-          BOTTOM_CONTAINER_PADDING_TOP + BOTTOM_LABEL_HEIGHT + LEGEND_BLOCK_HEIGHT),
+        bottomContainerRef.current?.height() ||
+        LEGEND_OVERFLOW_PADDING + BOTTOM_LABEL_HEIGHT + LEGEND_BLOCK_HEIGHT,
     });
 
     chart.appear(1000, 100);

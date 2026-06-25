@@ -3,7 +3,7 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getPaletteColor } from "@/utils/chart/chart-palette.util";
-import { lockPlotHeight, setupDynamicChartHeight } from "@/utils/chart/fixed-plot-chart-layout.util";
+import { lockPlotHeight, LEGEND_OVERFLOW_PADDING, setupDynamicChartHeight } from "@/utils/chart/fixed-plot-chart-layout.util";
 
 interface DataItem {
   xAxisKey: string;
@@ -164,9 +164,9 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
       am5.Container.new(root, {
         layout: root.horizontalLayout,
         width: am5.percent(100),
-        paddingTop: 10,
+        paddingTop: LEGEND_OVERFLOW_PADDING + 10,
         paddingBottom: 10,
-        height: LEGEND_BAR_HEIGHT,
+        height: LEGEND_BAR_HEIGHT + LEGEND_OVERFLOW_PADDING,
       })
     );
 
@@ -275,8 +275,10 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
       chart,
       xAxis,
       getContainerEl: () => containerRef.current,
+      heightWatchers: [legendBar],
+      bottomBuffer: 15,
       getAboveChartHeight: () => (chartTitle !== undefined ? CHART_TITLE_HEIGHT : 0),
-      getBelowChartHeight: () => LEGEND_BAR_HEIGHT,
+      getBelowChartHeight: () => legendBar.height() || LEGEND_BAR_HEIGHT + LEGEND_OVERFLOW_PADDING,
     });
 
     // Force repaint on click

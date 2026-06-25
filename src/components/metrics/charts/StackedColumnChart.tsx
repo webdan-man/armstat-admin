@@ -5,6 +5,7 @@ import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getStableSeriesColor } from "@/utils/chart/stable-series-color.util";
 import {
   CHART_HEADER_HEADROOM as PLOT_CHART_HEADER_HEADROOM,
+  LEGEND_OVERFLOW_PADDING,
   lockPlotHeight,
   setupDynamicChartHeight,
 } from "@/utils/chart/fixed-plot-chart-layout.util";
@@ -188,8 +189,8 @@ function StackedColumnChart<T extends Record<string, string>>({
     const legendRow = chart.children.push(
       am5.Container.new(root, {
         width: am5.p100,
-        height: calcLegendRowHeight(seriesKeys.length, Boolean(yAxisLabelRef.current)),
-        paddingTop: 10,
+        height: calcLegendRowHeight(seriesKeys.length, Boolean(yAxisLabelRef.current)) + LEGEND_OVERFLOW_PADDING,
+        paddingTop: LEGEND_OVERFLOW_PADDING,
         layout: root.verticalLayout,
       })
     );
@@ -233,6 +234,8 @@ function StackedColumnChart<T extends Record<string, string>>({
       chart,
       xAxis,
       getContainerEl: () => containerRef.current,
+      heightWatchers: [legendRow, legend],
+      bottomBuffer: 15,
       getAboveChartHeight: () => (hasChartHeader ? PLOT_CHART_HEADER_HEADROOM : 0),
       getBelowChartHeight: () => 20,
       getExtraChartHeight: () => legendRow.height(),
@@ -342,7 +345,7 @@ function StackedColumnChart<T extends Record<string, string>>({
     legendRef.current?.set("height", calcLegendHeight(seriesKeys.length));
     legendRowRef.current?.set(
       "height",
-      calcLegendRowHeight(seriesKeys.length, Boolean(yAxisLabelRef.current))
+      calcLegendRowHeight(seriesKeys.length, Boolean(yAxisLabelRef.current)) + LEGEND_OVERFLOW_PADDING
     );
     // `data` is intentionally read via dataRef so a pure data change does not
     // rebuild every series — the data effect below handles that.
@@ -375,7 +378,10 @@ function StackedColumnChart<T extends Record<string, string>>({
     label.set("visible", visible);
     // Reserve the title row's height only when the title is shown, so the legend keeps
     // its full band height when there's no stack-dimension title.
-    legendRowRef.current?.set("height", calcLegendRowHeight(seriesKeys.length, visible));
+    legendRowRef.current?.set(
+      "height",
+      calcLegendRowHeight(seriesKeys.length, visible) + LEGEND_OVERFLOW_PADDING
+    );
     // seriesKeysSignature stands in for seriesKeys.length here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [yAxisLabel, seriesKeysSignature]);
