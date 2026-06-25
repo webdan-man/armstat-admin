@@ -6,6 +6,7 @@ import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getPaletteColor } from "@/utils/chart/chart-palette.util";
 import {
+  applySingleLineLegendLabels,
   LEGEND_BLOCK_HEIGHT,
   LEGEND_OVERFLOW_PADDING,
   lockPlotHeight,
@@ -303,7 +304,6 @@ function GroupedStackedColumnChart({
 
     legend.itemContainers.template.setAll({
       cursorOverStyle: "pointer",
-      width: 300,
       paddingTop: 4,
       paddingBottom: 4,
     });
@@ -322,12 +322,8 @@ function GroupedStackedColumnChart({
 
     legend.markers.template.setAll({ width: 14, height: 14 });
 
-    legend.labels.template.setAll({
-      text: "{name}",
-      fontSize: 16,
-      maxWidth: 270,
-      oversizedBehavior: "wrap",
-    });
+    legend.labels.template.set("text", "{name}");
+    applySingleLineLegendLabels(legend);
 
     legend.valueLabels.template.set("forceHidden", true);
 

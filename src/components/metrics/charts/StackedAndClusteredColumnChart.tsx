@@ -4,6 +4,7 @@ import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getPaletteColor } from "@/utils/chart/chart-palette.util";
 import {
+  applySingleLineLegendLabels,
   LEGEND_BLOCK_HEIGHT,
   LEGEND_OVERFLOW_PADDING,
   lockPlotHeight,
@@ -132,11 +133,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
         })
       );
 
-      legend.labels.template.setAll({
-        fontSize: 16,
-        maxWidth: 300,
-        oversizedBehavior: "wrap",
-      });
+      applySingleLineLegendLabels(legend);
 
       const allClusterKeys = clusterKeys!;
       const allStackKeys = stackKeys!;

@@ -5,6 +5,7 @@ import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getStableSeriesColor } from "@/utils/chart/stable-series-color.util";
 import {
   allowRotatedXAxisLabelOverflow,
+  applySingleLineLegendLabels,
   LEGEND_BLOCK_HEIGHT,
   LEGEND_OVERFLOW_PADDING,
   lockPlotHeight,
@@ -198,12 +199,7 @@ function StackedAreaChart<T extends Record<string, string>>({
 
     legend.valueLabels.template.set("forceHidden", true);
 
-    legend.labels.template.setAll({
-      fontSize: 16,
-      width: am5.percent(100),
-      oversizedBehavior: "wrap",
-      textAlign: "left",
-    });
+    applySingleLineLegendLabels(legend);
 
     legend.itemContainers.template.setAll({
       paddingRight: 6,

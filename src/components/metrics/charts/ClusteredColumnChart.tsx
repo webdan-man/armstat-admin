@@ -4,6 +4,7 @@ import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getStableSeriesColor } from "@/utils/chart/stable-series-color.util";
 import {
+  applySingleLineLegendLabels,
   CHART_HEADER_HEADROOM as PLOT_CHART_HEADER_HEADROOM,
   LEGEND_BLOCK_HEIGHT,
   LEGEND_OVERFLOW_PADDING,
@@ -195,11 +196,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
       },
     });
 
-    legend.labels.template.setAll({
-      fontSize: 16,
-      maxWidth: 300,
-      oversizedBehavior: "wrap",
-    });
+    applySingleLineLegendLabels(legend);
 
     chart.appear(1000, 100);
 

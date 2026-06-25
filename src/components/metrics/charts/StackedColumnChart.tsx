@@ -4,6 +4,7 @@ import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getStableSeriesColor } from "@/utils/chart/stable-series-color.util";
 import {
+  applySingleLineLegendLabels,
   CHART_HEADER_HEADROOM as PLOT_CHART_HEADER_HEADROOM,
   LEGEND_OVERFLOW_PADDING,
   lockPlotHeight,
@@ -241,15 +242,9 @@ function StackedColumnChart<T extends Record<string, string>>({
       getExtraChartHeight: () => legendRow.height(),
     });
 
-    legend.labels.template.setAll({
-      fontSize: 16,
-      maxWidth: 200,
-      oversizedBehavior: "wrap",
-      textAlign: "left",
-    });
+    applySingleLineLegendLabels(legend);
 
     legend.itemContainers.template.setAll({
-      maxWidth: 250,
       paddingRight: 10,
       paddingLeft: 10,
       paddingTop: 5,

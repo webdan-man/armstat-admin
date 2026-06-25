@@ -35,6 +35,15 @@ export function allowRotatedXAxisLabelOverflow(
   chart.bottomAxesContainer.set("maskContent", false);
 }
 
+/** Legend entry labels stay on a single line (no word wrapping). */
+export function applySingleLineLegendLabels(legend: am5.Legend, fontSize = 16) {
+  legend.labels.template.setAll({
+    fontSize,
+    oversizedBehavior: "fit",
+    textAlign: "left",
+  });
+}
+
 type SetupDynamicChartHeightOptions = {
   root: am5.Root;
   chart: am5xy.XYChart;
