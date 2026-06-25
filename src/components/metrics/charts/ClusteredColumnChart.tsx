@@ -134,10 +134,11 @@ function ClusteredColumnChart<T extends Record<string, string>>({
 
     xRenderer.labels.template.setAll({
       rotation: -45,
-      centerY: am5.p50,
-      // Center the (rotated) label on the cell tick so it sits under the column instead of
-      // being right-anchored, which pushes the text to the left of the column.
-      centerX: am5.p50,
+      // Top-right corner on the tick / x-axis line; text runs down-right from the axis.
+      centerY: am5.p0,
+      centerX: am5.p100,
+      textAlign: "right",
+      paddingTop: 0,
       // Long category labels would eat the plot height, so cap their width and wrap them
       // onto multiple lines. The full text is still shown in the tooltip.
       // Rotated labels only wrap with an explicit width (maxWidth alone won't trigger it).

@@ -1,8 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
-import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
-import { getPaletteColor } from "@/utils/chart/chart-palette.util";
+import { getRainbowPaletteColor, setChartThemes } from "@/utils/chart/chart-palette.util";
 import {
   applySingleLineLegendLabels,
   LEGEND_BLOCK_HEIGHT,
@@ -40,7 +39,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
   useLayoutEffect(() => {
     const isClusteredStackedMode = Boolean(clusterKeys?.length && stackKeys?.length);
     const root = am5.Root.new(containerId);
-    root.setThemes([am5themes_Animated.new(root)]);
+    setChartThemes(root);
     let disposeDynamicHeight: (() => void) | undefined;
 
     if (isClusteredStackedMode) {
@@ -150,7 +149,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
       const seriesToCluster = new Map<am5xy.ColumnSeries, string>();
 
       allClusterKeys.forEach((clusterKey, clusterIdx) => {
-        const baseColor = chart.get("colors")!.getIndex(clusterIdx);
+        const baseColor = getRainbowPaletteColor(chart.get("colors")!, clusterIdx);
         seriesByCluster[clusterKey] = [];
 
         allStackKeys.forEach((stackKey, stackIdx) => {

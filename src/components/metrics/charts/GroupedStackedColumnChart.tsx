@@ -3,8 +3,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
-import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
-import { getPaletteColor } from "@/utils/chart/chart-palette.util";
+import { getRainbowPaletteColor, setChartThemes } from "@/utils/chart/chart-palette.util";
 import {
   applySingleLineLegendLabels,
   LEGEND_BLOCK_HEIGHT,
@@ -124,7 +123,7 @@ function GroupedStackedColumnChart({
   // Does NOT depend on `data` so province-filter updates skip this entirely.
   useLayoutEffect(() => {
     const root = am5.Root.new(containerId);
-    root.setThemes([am5themes_Animated.new(root)]);
+    setChartThemes(root);
     let disposeDynamicHeight: (() => void) | undefined;
 
     root.container.setAll({
@@ -235,7 +234,7 @@ function GroupedStackedColumnChart({
 
       series.columns.template.adapters.add("fill", (fill, target) => {
         const ctx = target.dataItem?.dataContext as GroupedStackedColumnChartRow | undefined;
-        if (ctx) return getPaletteColor(chart.get("colors")!, subtypeColorIndex[ctx.realName]);
+        if (ctx) return getRainbowPaletteColor(chart.get("colors")!, subtypeColorIndex[ctx.realName]);
         return fill;
       });
 
@@ -345,7 +344,7 @@ function GroupedStackedColumnChart({
     allSubtypes.forEach((s) => {
       legend.data.push({
         name: s.name,
-        fill: getPaletteColor(chart.get("colors")!, s.colorIndex),
+        fill: getRainbowPaletteColor(chart.get("colors")!, s.colorIndex),
       });
     });
 
