@@ -88,10 +88,14 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
 
     xRenderer.labels.template.setAll({
       rotation: -45,
-      // centerY: am5.p50,
-      // centerX: am5.p100,
+      // Top-right corner on the tick / x-axis line; text runs down-right from the axis.
+      centerY: am5.p0,
+      centerX: am5.p100,
+      textAlign: "right",
+      paddingTop: 0,
       // Long category labels would eat the plot height, so cap their width and wrap them
       // onto multiple lines. The full text is still shown in the tooltip.
+      width: 140,
       maxWidth: 140,
       oversizedBehavior: "wrap",
     });

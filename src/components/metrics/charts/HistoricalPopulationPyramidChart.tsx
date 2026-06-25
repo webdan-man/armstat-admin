@@ -549,12 +549,14 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       // other charts so they don't eat the plot height. The full text stays in the tooltip.
       popXRenderer.labels.template.setAll({
         rotation: -45,
+        // Top-right corner on the tick / x-axis line; text runs down-right from the axis.
         centerY: am5.p0,
         centerX: am5.p100,
-        paddingTop: 8,
+        textAlign: "right",
+        paddingTop: 0,
+        width: 200,
         maxWidth: 200,
         oversizedBehavior: "wrap",
-        textAlign: "center",
       });
       const popXAxis = popChart.xAxes.push(
         am5xy.CategoryAxis.new(root, {

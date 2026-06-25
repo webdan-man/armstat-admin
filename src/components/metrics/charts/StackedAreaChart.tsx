@@ -117,8 +117,11 @@ function StackedAreaChart<T extends Record<string, string>>({
     // onto multiple lines. The full text is still shown in the tooltip.
     xRenderer.labels.template.setAll({
       rotation: -45,
-      centerY: am5.p50,
-      centerX: am5.p50,
+      // Top-right corner on the tick / x-axis line; text runs down-right from the axis.
+      centerY: am5.p0,
+      centerX: am5.p100,
+      textAlign: "right",
+      paddingTop: 0,
       width: 140,
       maxWidth: 140,
       oversizedBehavior: "wrap",
