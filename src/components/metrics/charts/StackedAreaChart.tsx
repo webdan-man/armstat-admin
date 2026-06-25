@@ -4,6 +4,7 @@ import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getStableSeriesColor } from "@/utils/chart/stable-series-color.util";
 import {
+  allowRotatedXAxisLabelOverflow,
   LEGEND_BLOCK_HEIGHT,
   LEGEND_OVERFLOW_PADDING,
   lockPlotHeight,
@@ -62,7 +63,6 @@ function StackedAreaChart<T extends Record<string, string>>({
         wheelX: "panX",
         wheelY: "zoomX",
         pinchZoomX: true,
-        paddingLeft: 0,
         paddingTop: 0,
         layout: root.verticalLayout,
       })
@@ -70,6 +70,7 @@ function StackedAreaChart<T extends Record<string, string>>({
     chartRef.current = chart;
 
     lockPlotHeight(chart);
+    allowRotatedXAxisLabelOverflow(chart);
 
     if (chartTitle !== undefined) {
       root.container.setAll({ paddingTop: CHART_HEADER_HEADROOM });
@@ -114,9 +115,12 @@ function StackedAreaChart<T extends Record<string, string>>({
     // Long category labels would eat the plot height, so cap their width and wrap them
     // onto multiple lines. The full text is still shown in the tooltip.
     xRenderer.labels.template.setAll({
+      rotation: -45,
+      centerY: am5.p50,
+      centerX: am5.p50,
+      width: 140,
       maxWidth: 140,
       oversizedBehavior: "wrap",
-      rotation: -45,
     });
 
     const xAxis = chart.xAxes.push(
@@ -146,19 +150,32 @@ function StackedAreaChart<T extends Record<string, string>>({
       am5.Container.new(root, {
         width: am5.p100,
         paddingTop: LEGEND_OVERFLOW_PADDING,
+        paddingBottom: 15,
+        paddingRight: 4,
         layout: root.verticalLayout,
       })
     );
 
-    const legend = bottomContainer.children.push(
+    const legendWrapper = bottomContainer.children.push(
+      am5.Container.new(root, {
+        width: am5.p100,
+        height: LEGEND_BLOCK_HEIGHT,
+      })
+    );
+
+    const legend = legendWrapper.children.push(
       am5.Legend.new(root, {
-        centerX: am5.p50,
-        x: am5.p50,
-        marginTop: 0,
-        marginBottom: 15,
-        width: am5.percent(95),
-        maxHeight: LEGEND_BLOCK_HEIGHT,
+        width: am5.p100,
+        height: am5.p100,
+        layout: am5.GridLayout.new(root, {
+          fixedWidthGrid: false,
+          maxColumns: 100,
+        }),
         useDefaultMarker: true,
+        paddingTop: 0,
+        paddingBottom: 0,
+        paddingLeft: 0,
+        paddingRight: 30,
         verticalScrollbar: am5.Scrollbar.new(root, { orientation: "vertical" }),
       })
     );
@@ -169,17 +186,31 @@ function StackedAreaChart<T extends Record<string, string>>({
       chart,
       xAxis,
       getContainerEl: () => containerRef.current,
-      heightWatchers: [bottomContainer, legend],
+      heightWatchers: [bottomContainer, legendWrapper, legend],
       bottomBuffer: 15,
       getAboveChartHeight: () => (chartTitle !== undefined ? CHART_HEADER_HEADROOM : 0),
       getBelowChartHeight: () => {
         const measured = bottomContainer.height();
         if (measured > 0) return measured;
-        return LEGEND_OVERFLOW_PADDING + (legend.height() || LEGEND_BLOCK_HEIGHT) + 15;
+        return LEGEND_OVERFLOW_PADDING + LEGEND_BLOCK_HEIGHT + 15;
       },
     });
 
-    legend.labels.template.setAll({ fontSize: 16 });
+    legend.valueLabels.template.set("forceHidden", true);
+
+    legend.labels.template.setAll({
+      fontSize: 16,
+      width: am5.percent(100),
+      oversizedBehavior: "wrap",
+      textAlign: "left",
+    });
+
+    legend.itemContainers.template.setAll({
+      paddingRight: 6,
+      paddingLeft: 2,
+      paddingTop: 4,
+      paddingBottom: 4,
+    });
 
     legend.markers.template.setAll({ width: 22, height: 22 });
 
@@ -275,7 +306,7 @@ function StackedAreaChart<T extends Record<string, string>>({
   }, [data]);
 
   return (
-    <div>
+    <div className="min-w-0">
       <div ref={containerRef} id={containerId} style={{ width: "100%", height: "610px" }} />
     </div>
   );

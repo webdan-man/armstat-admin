@@ -7,6 +7,8 @@ export const LEGEND_BLOCK_HEIGHT = 130;
 export const CHART_HEADER_HEADROOM = 24;
 /** Gap between chart and an external legend when x-axis labels overflow downward. */
 export const LEGEND_OVERFLOW_PADDING = 40;
+/** Horizontal inset so the first/last rotated x-axis labels stay inside the chart. */
+export const CHART_X_AXIS_LABEL_PADDING = 40;
 
 export function lockPlotHeight(chart: am5xy.XYChart, plotHeight = PLOT_HEIGHT) {
   chart.plotContainer.setAll({
@@ -19,6 +21,18 @@ export function lockPlotHeight(chart: am5xy.XYChart, plotHeight = PLOT_HEIGHT) {
     minHeight: plotHeight,
     maxHeight: plotHeight,
   });
+}
+
+/** Keep rotated x-axis labels and the scrollbar inside the chart bounds. */
+export function allowRotatedXAxisLabelOverflow(
+  chart: am5xy.XYChart,
+  padding = CHART_X_AXIS_LABEL_PADDING
+) {
+  chart.setAll({
+    paddingLeft: padding,
+    paddingRight: padding,
+  });
+  chart.bottomAxesContainer.set("maskContent", false);
 }
 
 type SetupDynamicChartHeightOptions = {

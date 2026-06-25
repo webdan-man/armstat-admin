@@ -133,7 +133,7 @@ const Chart = ({ combinations = [] }: ChartProps) => {
       );
     case "stacked-area-chart":
       return (
-        <div>
+        <div className="min-w-0">
           {/*StackedAreaChart*/}
           <StackedAreaChart data={data} xAxisKey={xAxisKey} seriesKeys={seriesKeys} />
         </div>

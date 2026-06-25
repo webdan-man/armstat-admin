@@ -68,7 +68,7 @@ const MapAndStackedAreaChart = ({ combinations, data }: MapAndStackedAreaChartPr
           showValueInTooltip={false}
         />
       </div>
-      <div>
+      <div className="min-w-0">
         <StackedAreaChart
           key="map-and-stacked-area-chart"
           data={stackedAreaData as Record<string, string>[]}
