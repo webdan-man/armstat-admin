@@ -5,7 +5,12 @@ import GroupedStackedColumnChart from "@/components/metrics/charts/GroupedStacke
 import ArmeniaProvincesMap from "@/components/metrics/charts/Map/MapChart";
 import type { MetricCombination } from "@/types/metric";
 import { useProvinceHoverSelection } from "@/hooks/useProvinceHoverSelection";
-import { filterCombinationsByProvinceMapId } from "@/utils/chart/map-combinations-for-armenia-provinces";
+import { useLang } from "@/providers/LangProvider";
+import {
+  filterCombinationsByProvinceMapId,
+  getArmeniaTitle,
+  getProvinceTitleByMapId,
+} from "@/utils/chart/map-combinations-for-armenia-provinces";
 import { mapCombinationsForGroupedStackedColumnChart } from "@/utils/chart/map-combinations-for-grouped-stacked-column-chart.util";
 
 interface MapDataItem {
@@ -39,6 +44,12 @@ const MapAndGroupedStackedColumnChart = ({
   } = data;
 
   const { activeProvinceMapId, onPolygonHover, onPolygonSelect } = useProvinceHoverSelection();
+  const { activeLang } = useLang();
+
+  const chartTitle = useMemo(() => {
+    if (!activeProvinceMapId) return getArmeniaTitle(activeLang);
+    return getProvinceTitleByMapId(activeProvinceMapId, activeLang) ?? activeProvinceMapId;
+  }, [activeProvinceMapId, activeLang]);
 
   // stackDimensions derives from the full dataset — stable across province selections
   // so the chart structure effect never re-fires on filter changes.
@@ -81,6 +92,11 @@ const MapAndGroupedStackedColumnChart = ({
         />
       </div>
       <div>
+        {/* GroupedStackedColumnChart has no chartTitle prop, so the province title is
+            rendered here above the chart. */}
+        <div className="flex h-10 items-center justify-center text-center text-xl font-medium">
+          {chartTitle}
+        </div>
         <GroupedStackedColumnChart
           data={chartData}
           stackDimensions={stackDimensions}
