@@ -21,6 +21,8 @@ import MapAndStackedBarWithNegativeValuesChart from "@/components/metrics/charts
 import MapAndClusteredColumnChart from "@/components/metrics/charts/MapAndClusteredColumnChart";
 import GroupedStackedColumnChart from "@/components/metrics/charts/GroupedStackedColumnChart";
 import MapAndGroupedStackedColumnChart from "@/components/metrics/charts/MapAndGroupedStackedColumnChart";
+import MapAndHistoricalPopulationPyramidChart from "@/components/metrics/charts/MapAndHistoricalPopulationPyramidChart";
+import MapAndClusteredColumnChartStacked from "@/components/metrics/charts/MapAndClusteredColumnChartStacked";
 import { useTranslation } from "@/hooks/useTranslation";
 import useSWR from "swr";
 import { swrKeys } from "@/lib/swr/cache-keys";
@@ -197,37 +199,9 @@ const Chart = ({ combinations = [] }: ChartProps) => {
         </div>
       );
     case "map-and-historical-population-pyramid":
-      return (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div>
-            <HistoricalPopulationPyramidChart
-              data={data?.pyramidData ?? []}
-              seriesKeys={seriesKeys}
-              timelineAxisAttributeName={timelineAxisAttributeName}
-              timelineMode={timelineMode}
-            />
-          </div>
-          <div>
-            <ArmeniaProvincesMap data={data?.mapData ?? []} />
-          </div>
-        </div>
-      );
+      return <MapAndHistoricalPopulationPyramidChart data={data} />;
     case "map-and-clustered-column-chart-stacked":
-      return (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div>
-            <ClusteredColumnChart
-              xAxisKey={xAxisKey as string}
-              data={data?.columnData ?? []}
-              seriesKeys={seriesKeys}
-              stacked
-            />
-          </div>
-          <div>
-            <ArmeniaProvincesMap data={data?.mapData ?? []} />
-          </div>
-        </div>
-      );
+      return <MapAndClusteredColumnChartStacked data={data} />;
     case "column-with-rotated-labels-and-clustered-column-chart-stacked":
       return (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

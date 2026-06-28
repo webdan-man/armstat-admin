@@ -14,11 +14,9 @@ import { mapCombinationsForStackedColumnChart } from "@/utils/chart/map-combinat
 import { mapCombinationsForClusteredColumnChart } from "../utils/chart/map-combinations-for-clustered-column-chart.util";
 import { mapCombinationsForStackedBarWithNegativeValuesChartUtil } from "@/utils/chart/map-combinations-for-stacked-bar-with-negative-values-chart.util";
 import { createCombinationAttributesMap } from "@/utils/chart/create-combination-attributes-map.util";
-import { mapCombinationsForClusteredColumnChartStacked } from "@/utils/chart/map-combinations-for-clustered-column-chart-stacked.util";
 import { mapCombinationsForClusteredColumnChartStacked3D } from "@/utils/chart/map-combinations-for-clustered-column-chart-stacked-3d.util";
 import { mapCombinationsForClusteredAndStackedColumnChart } from "@/utils/chart/map-combinations-for-clustered-and-stacked-column-chart.util";
 import { mapCombinationsForMapAndClusteredColumnChartCXG } from "@/utils/chart/map-combinations-for-map-and-clustered-column-chart-cxg.util";
-import { mapCombinationsForMapAndHistoricalPopulationPyramid } from "@/utils/chart/map-combinations-for-map-and-historical-population-pyramid.util";
 import {
   mapCombinationsForGroupedStackedColumnChart,
   countUniqueForAttr,
@@ -1301,30 +1299,30 @@ function useDetectChartType(combinationsProp: MetricCombination[] | undefined = 
               ? attributeMapByCategory4.get(frameCategory)!._id
               : undefined;
 
-          const { pyramidData, mapData, seriesKeys, timelineMode } =
-            mapCombinationsForMapAndHistoricalPopulationPyramid({
-              combinations,
-              provinceAttributeId,
-              attributeMapByCategory: attributeMapByCategory4,
-              frameAttributeId,
-            });
+          // Hand the component the (lifted) combinations + attribute ids so it can
+          // re-run the pyramid mapper against province-filtered combinations on map
+          // hover/select. mapData is the national breakdown — the map always shows all
+          // provinces, so it is computed once here.
+          const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
 
           console.log(`MAP+HISTORICAL-PYRAMID (frame: ${frameCategory})`, {
             combinations,
-            pyramidData,
             mapData,
-            seriesKeys,
           });
 
           return {
             type: "map-and-historical-population-pyramid",
-            data: { pyramidData, mapData },
-            seriesKeys,
-            timelineMode,
-            timelineAxisAttributeName: pickAttributeLabelFromRows(
+            data: {
               combinations,
-              attributeMapByCategory4.get(frameCategory)
-            ),
+              mapData,
+              provinceAttributeId,
+              attributeMapByCategory: attributeMapByCategory4,
+              frameAttributeId,
+              timelineAxisAttributeName: pickAttributeLabelFromRows(
+                combinations,
+                attributeMapByCategory4.get(frameCategory)
+              ),
+            },
           };
         }
 
@@ -1434,30 +1432,27 @@ function useDetectChartType(combinationsProp: MetricCombination[] | undefined = 
           const firstCtgAttribute = { id: nonPGAttrs[0]._id, key: nonPGAttrs[0].category };
           const secondCtgAttribute = { id: nonPGAttrs[1]._id, key: nonPGAttrs[1].category };
 
-          const {
-            data: columnData,
-            seriesKeys,
-            xAxisKey,
-          } = mapCombinationsForClusteredColumnChartStacked({
-            combinations,
-            genderAttributeId,
-            firstCtgAttribute,
-            secondCtgAttribute,
-          });
+          // Hand the component the (lifted) combinations + attribute ids so it can
+          // re-run the stacked clustered mapper against province-filtered combinations
+          // on map hover/select.
           const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
 
           console.log("MAP+GENDER+2CXG CLUSTERED COLUMN (STACKED)", {
             combinations,
-            columnData,
             mapData,
-            seriesKeys,
           });
 
           return {
             type: "map-and-clustered-column-chart-stacked",
-            xAxisKey,
-            seriesKeys,
-            data: { columnData, mapData },
+            data: {
+              combinations,
+              mapData,
+              provinceAttributeId,
+              variant: "gender",
+              genderAttributeId,
+              firstCtgAttribute,
+              secondCtgAttribute,
+            },
           };
         }
 
@@ -1466,32 +1461,26 @@ function useDetectChartType(combinationsProp: MetricCombination[] | undefined = 
           const nonProvAttrs = attrObjects.filter((a) => a.category !== AttributeCategory.PROVINCE);
           const [npa0, npa1, npa2] = nonProvAttrs;
 
-          const {
-            data: columnData,
-            seriesKeys,
-            xAxisKey,
-          } = mapCombinationsForClusteredColumnChartStacked3D({
-            combinations,
-            attributes: [
-              { id: npa0._id, key: npa0.category },
-              { id: npa1._id, key: npa1.category },
-              { id: npa2._id, key: npa2.category },
-            ],
-          });
           const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
 
           console.log("MAP+3CYXG CLUSTERED COLUMN (STACKED)", {
             combinations,
-            columnData,
             mapData,
-            seriesKeys,
           });
 
           return {
             type: "map-and-clustered-column-chart-stacked",
-            xAxisKey,
-            seriesKeys,
-            data: { columnData, mapData },
+            data: {
+              combinations,
+              mapData,
+              provinceAttributeId,
+              variant: "3d",
+              attributes: [
+                { id: npa0._id, key: npa0.category },
+                { id: npa1._id, key: npa1.category },
+                { id: npa2._id, key: npa2.category },
+              ],
+            },
           };
         }
       }
