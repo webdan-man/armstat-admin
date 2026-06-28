@@ -1315,7 +1315,9 @@ function useDetectChartType(
         const provinceAttributeId = provinceAttr._id;
 
         // Map + Historical Population Pyramid: Province + Gender + Age + (Time | Area | Other)
-        if (has4(AttributeCategory.GENDER) && has4(AttributeCategory.AGE)) {
+        // Cumulative only — non-cumulative falls through to the map + clustered+stacked
+        // column block below (Age + frame become the two CXG attrs).
+        if (isCumulative && has4(AttributeCategory.GENDER) && has4(AttributeCategory.AGE)) {
           const frameCategory = has4(AttributeCategory.TIME)
             ? AttributeCategory.TIME
             : has4(AttributeCategory.AREA)
