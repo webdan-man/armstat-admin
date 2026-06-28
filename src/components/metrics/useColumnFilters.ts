@@ -114,8 +114,11 @@ export function useColumnFilters(
 
     if (hasDuplicates && !isSummable) return [];
 
-    return Array.from(groupMap.values()).map(({ combo, numValue }) => ({
+    // Collapsed rows no longer map 1:1 to original combos, so the original ids are
+    // meaningless. Reassign ascending ids starting from 1.
+    return Array.from(groupMap.values()).map(({ combo, numValue }, index) => ({
       ...combo,
+      id: index + 1,
       value: String(numValue),
     }));
   }, [valueFilteredCombinations, visibleColumnIndexes, columnCount, isCumulative]);
