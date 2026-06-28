@@ -10,6 +10,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 
 interface ChartTabProps {
   combinations?: MetricCombination[];
+  isCumulative?: boolean;
   isLoading?: boolean;
   link?: string;
   metricId?: string;
@@ -19,6 +20,7 @@ interface ChartTabProps {
 
 export default function ChartTab({
   combinations = [],
+  isCumulative = false,
   isLoading = false,
   link,
   metricId,
@@ -45,7 +47,7 @@ export default function ChartTab({
         </div>
       ) : (
         <>
-          <Chart combinations={combinations} />
+          <Chart combinations={combinations} isCumulative={isCumulative} />
         </>
       )}
       {combinations?.length > 0 && (

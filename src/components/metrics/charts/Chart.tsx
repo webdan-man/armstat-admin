@@ -31,9 +31,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 interface ChartProps {
   combinations?: MetricCombination[];
+  isCumulative?: boolean;
 }
 
-const Chart = ({ combinations = [] }: ChartProps) => {
+const Chart = ({ combinations = [], isCumulative = false }: ChartProps) => {
   const { t } = useTranslation();
   const { isLoading: isAttributesLoading, data: attributes } = useSWR(
     swrKeys.attributes,
@@ -52,6 +53,7 @@ const Chart = ({ combinations = [] }: ChartProps) => {
     timelineMode,
   } = useChart({
     combinations,
+    isCumulative,
   });
   const isResolvingChartType =
     combinations.length > 0 && (isAttributesLoading || attributes === undefined);

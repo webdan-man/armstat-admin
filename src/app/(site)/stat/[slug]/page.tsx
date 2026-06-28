@@ -306,6 +306,7 @@ export default function StatPage() {
                 <div className="p-7.5">
                   <ChartTab
                     combinations={projectedCombinations}
+                    isCumulative={metric?.isCumulative}
                     isLoading={isMetricDataLoading}
                     link={metric?.link?.[activeLang]}
                     metricId={metric?._id}

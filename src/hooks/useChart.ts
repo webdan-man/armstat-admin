@@ -16,6 +16,7 @@ import { mapCombinationsForStackedBarWithNegativeValuesChartUtil } from "@/utils
 import { createCombinationAttributesMap } from "@/utils/chart/create-combination-attributes-map.util";
 import { mapCombinationsForClusteredColumnChartStacked3D } from "@/utils/chart/map-combinations-for-clustered-column-chart-stacked-3d.util";
 import { mapCombinationsForClusteredAndStackedColumnChart } from "@/utils/chart/map-combinations-for-clustered-and-stacked-column-chart.util";
+import { mapCombinationsForPyramid } from "@/utils/chart/map-combinations-for-pyramid";
 import { mapCombinationsForMapAndClusteredColumnChartCXG } from "@/utils/chart/map-combinations-for-map-and-clustered-column-chart-cxg.util";
 import {
   mapCombinationsForGroupedStackedColumnChart,
@@ -140,7 +141,10 @@ function pickAttributeLabelFromRows(
   return pickAttributeDisplayTitle(attribute);
 }
 
-function useDetectChartType(combinationsProp: MetricCombination[] | undefined = []): {
+function useDetectChartType(
+  combinationsProp: MetricCombination[] | undefined = [],
+  isCumulative = false
+): {
   type: ChartType;
   data: any;
   xAxisKey?: string;
@@ -973,13 +977,37 @@ function useDetectChartType(combinationsProp: MetricCombination[] | undefined = 
         };
       }
 
-      // Clustered Column chart (stacked): Gender + Time + Age
-      // Fixed roles: GENDER → stacks (Y), AGE → X, TIME → cluster groups (G).
+      // Gender + Age + Time:
+      // - non-cumulative → clustered+stacked column (GENDER → stacks, AGE → X, TIME → clusters)
+      // - cumulative → historical population pyramid (TIME as the timeline axis)
       if (
         has(AttributeCategory.GENDER) &&
         has(AttributeCategory.AGE) &&
         has(AttributeCategory.TIME)
       ) {
+        if (isCumulative) {
+          const { data, seriesKeys, timelineMode } = mapCombinationsForPyramid({
+            combinations,
+            attributeMapByCategory,
+          });
+          console.log("historical-population-pyramid", {
+            combinations,
+            data,
+            attributeMapByCategory,
+          });
+
+          return {
+            type: "historical-population-pyramid",
+            data,
+            seriesKeys,
+            timelineMode,
+            timelineAxisAttributeName: pickAttributeLabelFromRows(
+              combinations,
+              attributeMapByCategory.get(AttributeCategory.TIME)
+            ),
+          };
+        }
+
         const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
         const ageAttributeId = attributeMapByCategory.get(AttributeCategory.AGE)!._id;
         const timeAttributeId = attributeMapByCategory.get(AttributeCategory.TIME)!._id;
@@ -1559,9 +1587,12 @@ function useDetectChartType(combinationsProp: MetricCombination[] | undefined = 
     }
 
     return { type: "bar", data: [] };
-  }, [attributesData, combinationsProp]);
+  }, [attributesData, combinationsProp, isCumulative]);
 }
 
-export const useChart = (props: { combinations: MetricCombination[] }) => {
-  return useDetectChartType(props.combinations);
+export const useChart = (props: {
+  combinations: MetricCombination[];
+  isCumulative?: boolean;
+}) => {
+  return useDetectChartType(props.combinations, props.isCumulative);
 };

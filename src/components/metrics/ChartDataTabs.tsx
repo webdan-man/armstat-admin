@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import useSWR from "swr";
 
 import { Input } from "@/components/ui/input";
@@ -85,6 +85,8 @@ const ChartDataTabs = ({
   onLangChange: (v: string) => void;
 }) => {
   const { activeLang } = useLang();
+  const { control } = useFormContext<MetricFormValues>();
+  const isCumulative = useWatch({ control, name: "isCumulative" });
 
   const { data, error, isLoading } = useSWR(
     metricId ? swrKeys.metricCombinations(metricId) : null,
@@ -122,7 +124,7 @@ const ChartDataTabs = ({
       ) : null}
 
       <TabsContent className="flex w-full flex-col gap-10" value="graph">
-        <Chart combinations={projectedCombinations} />
+        <Chart combinations={projectedCombinations} isCumulative={isCumulative} />
         <Tabs value={lang} onValueChange={onLangChange} className="mt-3.5 w-full gap-5">
           <TabsList className="h-9 gap-0 rounded-[9px] bg-[#e6e7eb] p-0.5">
             <TabsTrigger value="hy" className={triggerClass}>
