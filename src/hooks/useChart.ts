@@ -14,10 +14,7 @@ import { mapCombinationsForStackedColumnChart } from "@/utils/chart/map-combinat
 import { mapCombinationsForClusteredColumnChart } from "../utils/chart/map-combinations-for-clustered-column-chart.util";
 import { mapCombinationsForStackedBarWithNegativeValuesChartUtil } from "@/utils/chart/map-combinations-for-stacked-bar-with-negative-values-chart.util";
 import { createCombinationAttributesMap } from "@/utils/chart/create-combination-attributes-map.util";
-import { mapCombinationsForPyramid } from "@/utils/chart/map-combinations-for-pyramid";
-import { aggregateByAttributeTitle } from "@/utils/chart/aggregate-by-attribute-title";
 import { mapCombinationsForClusteredColumnChartStacked } from "@/utils/chart/map-combinations-for-clustered-column-chart-stacked.util";
-import { mapCombinationsForPyramidByFrameCategory } from "@/utils/chart/map-combinations-for-pyramid";
 import { mapCombinationsForClusteredColumnChartStacked3D } from "@/utils/chart/map-combinations-for-clustered-column-chart-stacked-3d.util";
 import { mapCombinationsForClusteredAndStackedColumnChart } from "@/utils/chart/map-combinations-for-clustered-and-stacked-column-chart.util";
 import { mapCombinationsForMapAndClusteredColumnChartCXG } from "@/utils/chart/map-combinations-for-map-and-clustered-column-chart-cxg.util";
@@ -978,65 +975,88 @@ function useDetectChartType(combinationsProp: MetricCombination[] | undefined = 
         };
       }
 
+      // Clustered Column chart (stacked): Gender + Time + Age
+      // Fixed roles: GENDER → stacks (Y), AGE → X, TIME → cluster groups (G).
       if (
         has(AttributeCategory.GENDER) &&
         has(AttributeCategory.AGE) &&
         has(AttributeCategory.TIME)
       ) {
-        const { data, seriesKeys, timelineMode } = mapCombinationsForPyramid({
-          combinations,
-          attributeMapByCategory,
-        });
-        console.log("historical-population-pyramid", {
-          combinations,
-          data,
-          attributeMapByCategory,
-        });
+        const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
+        const ageAttributeId = attributeMapByCategory.get(AttributeCategory.AGE)!._id;
+        const timeAttributeId = attributeMapByCategory.get(AttributeCategory.TIME)!._id;
+
+        const { data, clusterKeys, stackKeys, xAxisKey } =
+          mapCombinationsForClusteredAndStackedColumnChart({
+            combinations,
+            attributes: [
+              { id: genderAttributeId, key: "gender" },
+              { id: ageAttributeId, key: "age" },
+              { id: timeAttributeId, key: "time" },
+            ],
+            stackAttributeId: genderAttributeId,
+            xAttributeId: ageAttributeId,
+          });
+
+        console.log(
+          "GENDER+AGE+TIME CLUSTERED+STACKED COLUMN (gender = stacks, age = X, time = clusters)",
+          {
+            combinations,
+            data,
+            clusterKeys,
+            stackKeys,
+          }
+        );
 
         return {
-          type: "historical-population-pyramid",
+          type: "clustered-column-chart-stacked",
+          xAxisKey,
+          clusterKeys,
+          stackKeys,
           data,
-          seriesKeys,
-          timelineMode,
-          timelineAxisAttributeName: pickAttributeLabelFromRows(
-            combinations,
-            attributeMapByCategory.get(AttributeCategory.TIME)
-          ),
         };
       }
 
-      // Historical Population Pyramid:
-      // GENDER: X1, AGE: Y1, AREA or OTHER: X2 (frames)
+      // Clustered Column chart (stacked): Gender + Age + (Area or Other)
+      // Fixed roles: GENDER → stacks (Y), AGE → X, AREA/OTHER → cluster groups (G).
       if (
         has(AttributeCategory.GENDER) &&
         has(AttributeCategory.AGE) &&
         (has(AttributeCategory.AREA) || has(AttributeCategory.OTHER))
       ) {
-        const frameCategory = has(AttributeCategory.AREA)
+        const clusterCategory = has(AttributeCategory.AREA)
           ? AttributeCategory.AREA
           : AttributeCategory.OTHER;
-        const frameAttributeId = attributeMapByCategory.get(frameCategory)!._id;
+        const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
+        const ageAttributeId = attributeMapByCategory.get(AttributeCategory.AGE)!._id;
+        const clusterAttributeId = attributeMapByCategory.get(clusterCategory)!._id;
 
-        const { data, seriesKeys, timelineMode } = mapCombinationsForPyramidByFrameCategory({
-          combinations,
-          attributeMapByCategory,
-          frameAttributeId,
-        });
+        const { data, clusterKeys, stackKeys, xAxisKey } =
+          mapCombinationsForClusteredAndStackedColumnChart({
+            combinations,
+            attributes: [
+              { id: genderAttributeId, key: "gender" },
+              { id: ageAttributeId, key: "age" },
+              {
+                id: clusterAttributeId,
+                key: clusterCategory === AttributeCategory.AREA ? "area" : "other",
+              },
+            ],
+            stackAttributeId: genderAttributeId,
+            xAttributeId: ageAttributeId,
+          });
 
-        console.log(`historical-population-pyramid (frame: ${frameCategory})`, {
-          combinations,
-          data,
-        });
+        console.log(
+          `GENDER+AGE+${clusterCategory} CLUSTERED+STACKED COLUMN (gender = stacks, age = X, ${clusterCategory} = clusters)`,
+          { combinations, data, clusterKeys, stackKeys }
+        );
 
         return {
-          type: "historical-population-pyramid",
+          type: "clustered-column-chart-stacked",
+          xAxisKey,
+          clusterKeys,
+          stackKeys,
           data,
-          seriesKeys,
-          timelineMode,
-          timelineAxisAttributeName: pickAttributeLabelFromRows(
-            combinations,
-            attributeMapByCategory.get(frameCategory)
-          ),
         };
       }
 

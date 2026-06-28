@@ -34,8 +34,14 @@ export const mapCombinationsForClusteredAndStackedColumnChart = (payload: {
    * When omitted, all three roles are assigned purely by unique-value count.
    */
   stackAttributeId?: string;
+  /**
+   * When set alongside `stackAttributeId`, this attribute is forced onto the X axis
+   * and the remaining third attribute becomes the cluster groups — a fully explicit
+   * role assignment that bypasses CXG (e.g. GENDER = stacks, AGE = X, other = clusters).
+   */
+  xAttributeId?: string;
 }) => {
-  const { combinations, attributes, stackAttributeId } = payload;
+  const { combinations, attributes, stackAttributeId, xAttributeId } = payload;
 
   const withCounts = attributes.map((a) => ({
     ...a,
@@ -45,12 +51,17 @@ export const mapCombinationsForClusteredAndStackedColumnChart = (payload: {
   const forcedStack = stackAttributeId
     ? withCounts.find((a) => a.id === stackAttributeId)
     : undefined;
+  const forcedX = xAttributeId ? withCounts.find((a) => a.id === xAttributeId) : undefined;
 
   let xAttr: (typeof withCounts)[number];
   let stackAttr: (typeof withCounts)[number];
   let clusterAttr: (typeof withCounts)[number];
 
-  if (forcedStack) {
+  if (forcedStack && forcedX) {
+    stackAttr = forcedStack; // forced → stack layers
+    xAttr = forcedX; // forced → X axis
+    clusterAttr = withCounts.find((a) => a.id !== forcedStack.id && a.id !== forcedX.id)!; // remaining → cluster groups
+  } else if (forcedStack) {
     const rest = withCounts
       .filter((a) => a.id !== forcedStack.id)
       .sort((a, b) => a.options.length - b.options.length);
