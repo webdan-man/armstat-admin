@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: { authInterrupts: true },
+  experimental: {
+    authInterrupts: true,
+    proxyClientMaxBodySize: "100mb",
+  },
   output: "standalone",
   turbopack: {
     root: __dirname,
