@@ -1,5 +1,9 @@
 /** Main homepage editor types and API mappers. */
 import type { SectionLocalizedText } from "@/types/section";
+import {
+  normalizeHomePageSections,
+  type FeaturedBlockTopicRef,
+} from "@/utils/featured-block-topics.util";
 
 export type MainLangCode = "hy" | "ru" | "en";
 
@@ -10,6 +14,7 @@ export type MainHomeBlock = {
   title: HomePageLocalizedText;
   subtitle: HomePageLocalizedText;
   sectionIds: string[];
+  topicRefs: FeaturedBlockTopicRef[];
   sections: HomePageSection[];
   image: string;
 };
@@ -53,6 +58,7 @@ const EMPTY_BLOCKS: MainHomeBlock[] = [
     title: { hy: "" },
     subtitle: { hy: "" },
     sectionIds: [],
+    topicRefs: [],
     sections: [],
     image: "",
   },
@@ -63,6 +69,7 @@ const EMPTY_BLOCKS: MainHomeBlock[] = [
     title: { hy: "" },
     subtitle: { hy: "" },
     sectionIds: [],
+    topicRefs: [],
     sections: [],
     image: "",
   },
@@ -73,6 +80,7 @@ const EMPTY_BLOCKS: MainHomeBlock[] = [
     title: { hy: "" },
     subtitle: { hy: "" },
     sectionIds: [],
+    topicRefs: [],
     sections: [],
     image: "",
   },
@@ -183,7 +191,8 @@ export function fromApiHomePage(
       title: toRequiredLocalized(apiBlock?.title),
       subtitle: toRequiredLocalized(apiBlock?.subtitle),
       sectionIds: apiBlock?.sectionIds ?? [],
-      sections: apiBlock?.sections ?? [],
+      topicRefs: [],
+      sections: normalizeHomePageSections(apiBlock?.sections),
       image: apiBlock?.image ?? "",
     };
   });

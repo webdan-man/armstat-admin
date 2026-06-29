@@ -301,7 +301,7 @@ export function ContactUsEditor() {
           )}
           onClick={handleSave}
         >
-          {isSaving ? "Պահպանվում է..." : "Պահպանել Փոփոխությունները"}
+          {isSaving ? "Պահպանվում է..." : "Պահպանել"}
         </Button>
       </div>
 

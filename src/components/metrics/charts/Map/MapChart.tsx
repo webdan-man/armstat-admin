@@ -22,6 +22,14 @@ const PROVINCE_NAMES_BY_ID: Record<string, { hy: string; en: string; ru: string 
   "AM-VD": { hy: "Վայոց Ձոր", en: "Vayots Dzor", ru: "Вайоц Дзор" },
 };
 
+function formatMapValue(value: number): string {
+  if (!Number.isFinite(value)) return "0.0";
+  return value.toLocaleString("en-US", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+}
+
 /** Builds amCharts polygon data with province names in the given locale. */
 function buildMapData(
   geoData: any,
@@ -87,6 +95,7 @@ export default function ArmeniaMapChart({
     rootRef.current = root;
 
     root.setThemes([am5themes_Animated.new(root)]);
+    root.numberFormatter.set("numberFormat", "#,###.0");
 
     const mainContainer = root.container.children.push(
       am5.Container.new(root, {
@@ -300,7 +309,7 @@ export default function ArmeniaMapChart({
 
     const showHoverIndicator = (value: number, name: string) => {
       if (!hoverLabel || !hoverGroup) return;
-      hoverLabel.set("text", `${name}    [bold]${value}[/]`);
+      hoverLabel.set("text", `${name}    [bold]${formatMapValue(value)}[/]`);
       hoverGroup.set("y", getMarkerPosition(value));
       hoverGroup.set("visible", true);
     };
@@ -347,7 +356,7 @@ export default function ArmeniaMapChart({
           lockedName = (dataItem.dataContext as any)?.name ?? "Region";
 
           if (pinnedLabel && markerGroup && lockedValue !== null) {
-            pinnedLabel.set("text", `${lockedName}    [bold]${lockedValue}[/]`);
+            pinnedLabel.set("text", `${lockedName}    [bold]${formatMapValue(lockedValue)}[/]`);
             markerGroup.set("y", getMarkerPosition(lockedValue));
             markerGroup.set("visible", true);
           }
@@ -387,8 +396,8 @@ export default function ArmeniaMapChart({
       heatLegend?.setAll({
         startValue: low,
         endValue: high,
-        startText: `${low}`,
-        endText: `${high}`,
+        startText: formatMapValue(low),
+        endText: formatMapValue(high),
       });
     });
 

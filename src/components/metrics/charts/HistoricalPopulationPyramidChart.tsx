@@ -57,6 +57,15 @@ function lockChartLayoutBands(charts: am5xy.XYChart[]) {
   }
 }
 
+function applyPopColumnSeriesColor(series: am5xy.ColumnSeries, color: am5.Color) {
+  series.setAll({ fill: color, stroke: color });
+  series.columns.template.setAll({ fill: color, stroke: color });
+}
+
+function applyPopLineSeriesColor(series: am5xy.LineSeries, color: am5.Color) {
+  series.setAll({ fill: color, stroke: color });
+}
+
 interface PyramidRow {
   age: string;
   male: number;
@@ -567,17 +576,11 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       );
       popXAxisForLayout = popXAxis;
 
-      const male = popChart.series.push(
-        am5xy.ColumnSeries.new(root, {
-          xAxis: popXAxis,
-          yAxis: popYAxis,
-          valueYField: "male",
-          categoryXField: FRAME_LABEL_FIELD,
-          stacked: true,
-        })
-      );
-      male.columns.template.setAll({ maxWidth: 130 });
+      const popColors = popChart.get("colors")!;
+      const maleColor = getPaletteColor(popColors, 0)!;
+      const femaleColor = getPaletteColor(popColors, 1)!;
 
+      // Female first (bottom of stack), then male — matches pyramid gender order.
       const female = popChart.series.push(
         am5xy.ColumnSeries.new(root, {
           xAxis: popXAxis,
@@ -585,10 +588,23 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
           valueYField: "female",
           categoryXField: FRAME_LABEL_FIELD,
           stacked: true,
-          tooltip: am5.Tooltip.new(root, { pointerOrientation: "vertical" }),
         })
       );
       female.columns.template.setAll({ maxWidth: 130 });
+      applyPopColumnSeriesColor(female, femaleColor);
+
+      const male = popChart.series.push(
+        am5xy.ColumnSeries.new(root, {
+          xAxis: popXAxis,
+          yAxis: popYAxis,
+          valueYField: "male",
+          categoryXField: FRAME_LABEL_FIELD,
+          stacked: true,
+          tooltip: am5.Tooltip.new(root, { pointerOrientation: "vertical" }),
+        })
+      );
+      male.columns.template.setAll({ maxWidth: 130 });
+      applyPopColumnSeriesColor(male, maleColor);
 
       const popCursor = popChart.set(
         "cursor",
@@ -633,23 +649,11 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       );
       popXAxisForLayout = popXAxis;
 
-      const male = popChart.series.push(
-        am5xy.LineSeries.new(root, {
-          minBulletDistance: 10,
-          xAxis: popXAxis,
-          yAxis: popYAxis,
-          valueYField: "male",
-          valueXField: "date",
-          stacked: true,
-        })
-      );
-      male.strokes.template.setAll({ strokeWidth: 2, templateField: "lineSettings" });
-      male.fills.template.setAll({
-        visible: true,
-        fillOpacity: 0.5,
-        templateField: "lineSettings",
-      });
+      const popColors = popChart.get("colors")!;
+      const maleColor = getPaletteColor(popColors, 0)!;
+      const femaleColor = getPaletteColor(popColors, 1)!;
 
+      // Female first (bottom of stack), then male — matches pyramid gender order.
       const female = popChart.series.push(
         am5xy.LineSeries.new(root, {
           minBulletDistance: 10,
@@ -658,7 +662,6 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
           valueYField: "female",
           valueXField: "date",
           stacked: true,
-          tooltip: am5.Tooltip.new(root, { pointerOrientation: "vertical" }),
         })
       );
       female.strokes.template.setAll({ strokeWidth: 2, templateField: "lineSettings" });
@@ -667,6 +670,26 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         fillOpacity: 0.5,
         templateField: "lineSettings",
       });
+      applyPopLineSeriesColor(female, femaleColor);
+
+      const male = popChart.series.push(
+        am5xy.LineSeries.new(root, {
+          minBulletDistance: 10,
+          xAxis: popXAxis,
+          yAxis: popYAxis,
+          valueYField: "male",
+          valueXField: "date",
+          stacked: true,
+          tooltip: am5.Tooltip.new(root, { pointerOrientation: "vertical" }),
+        })
+      );
+      male.strokes.template.setAll({ strokeWidth: 2, templateField: "lineSettings" });
+      male.fills.template.setAll({
+        visible: true,
+        fillOpacity: 0.5,
+        templateField: "lineSettings",
+      });
+      applyPopLineSeriesColor(male, maleColor);
 
       const popCursor = popChart.set(
         "cursor",
@@ -719,11 +742,11 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       maleCornerLabel.set("text", cfg.maleLabel);
       femaleCornerLabel.set("text", cfg.femaleLabel);
       popTitle.set("text", cfg.timelineTitle);
-      popSeriesFemale
+      popSeriesMale
         .get("tooltip")
         ?.set(
           "labelText",
-          `[bold]${tooltipHeader}[/]\n[font-size: 20]${cfg.maleLabel}     [bold]{male}[/]\n${cfg.femaleLabel}     [bold]{female}[/]`
+          `[bold]${tooltipHeader}[/]\n[font-size: 20]${cfg.femaleLabel}     [bold]{female}[/]\n${cfg.maleLabel}     [bold]{male}[/]`
         );
 
       const pyramid = buildPyramidData(rows, ageGroups, currentYearRef.current, cfg);

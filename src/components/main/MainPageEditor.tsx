@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ImageIcon, Plus, X } from "lucide-react";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import useSWR from "swr";
 
 import { LangSwitcher } from "@/components/main/LangSwitcher";
 import {
@@ -20,6 +21,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { getSectionLocalizedText } from "@/lib/section-localization";
+import { isRootTopic } from "@/lib/section-topic-utils";
+import {
+  formatTopicRefLabel,
+  getStoredItemId,
+  normalizeHomePageSections,
+  resolveSectionIdsToRefs,
+  topicRefsToSectionIds,
+  type FeaturedBlockTopicRef,
+} from "@/utils/featured-block-topics.util";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -27,8 +40,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { swrKeys } from "@/lib/swr/cache-keys";
 import {
   fetchHomePage,
   updateActiveLocales,
@@ -41,10 +54,47 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { fetchNews } from "@/services/newsService";
 import { fetchSections } from "@/services/sectionsService";
+import { fetchMetricsByTopicId } from "@/services/metricsService";
 import type { Section } from "@/types/section";
 
 const fieldBorder =
   "rounded-[9px] border border-[#e6e7eb] bg-white text-[14px] text-[#2c2c2c] placeholder:text-[#646464] shadow-none";
+
+const topicSelectTriggerClass = cn(
+  "h-9 w-full rounded-[8.5px] border-[#c8c8c8] bg-[#f9fafb] shadow-none"
+);
+
+const METRIC_STATUS_DOT_PUBLISHED = "before:bg-[rgba(37,201,34,1)]";
+const METRIC_STATUS_DOT_UNPUBLISHED = "before:bg-[rgba(250,204,21,1)]";
+
+function formatMetricStatusDate(iso: string): string | null {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const yyyy = date.getFullYear();
+  return `${dd}.${mm}.${yyyy}`;
+}
+
+function TopicFilterChip({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="z-10 -mb-2 ml-3 justify-start bg-white px-0.5 text-[10px] leading-4 font-normal text-zinc-800">
+      {children}
+    </span>
+  );
+}
+
+function withBlockTopicRefs(
+  block: MainHomeBlock,
+  topicRefs: FeaturedBlockTopicRef[]
+): MainHomeBlock {
+  return {
+    ...block,
+    topicRefs,
+    sectionIds: topicRefsToSectionIds(topicRefs),
+  };
+}
 
 const heroFormSchema = z.object({
   heroTitle: z.object({
@@ -305,6 +355,7 @@ function BlockCard({
   lang,
   onLangChange,
   availableSections,
+  pickerResetKey,
   onChange,
   onImageFileChange,
 }: {
@@ -313,9 +364,84 @@ function BlockCard({
   lang: MainLangCode;
   onLangChange: (v: MainLangCode) => void;
   availableSections: Section[];
+  pickerResetKey: number;
   onChange: (next: MainHomeBlock) => void;
   onImageFileChange: (index: number, file: File | null) => void;
 }) {
+  const [pickerSection, setPickerSection] = useState("");
+  const [pickerTopic, setPickerTopic] = useState("");
+  const [pickerSubTopic, setPickerSubTopic] = useState("");
+  const [pickerMetric, setPickerMetric] = useState("");
+  const [pickerNonce, setPickerNonce] = useState(0);
+  const [metricSelectNonce, setMetricSelectNonce] = useState(0);
+
+  const selectedSection = availableSections.find((section) => section._id === pickerSection);
+  const rootTopics = selectedSection?.topics.filter(isRootTopic) ?? [];
+  const childTopics = rootTopics.find((topic) => topic._id === pickerTopic)?.subtopics ?? [];
+  const resolvedPickerTopicId =
+    pickerSection && pickerTopic && (childTopics.length === 0 || pickerSubTopic)
+      ? pickerSubTopic || pickerTopic
+      : null;
+  const canAdd = Boolean(resolvedPickerTopicId && pickerMetric);
+
+  const { data: metrics = [], isLoading: isMetricsLoading } = useSWR(
+    resolvedPickerTopicId ? swrKeys.metricsByTopic(resolvedPickerTopicId) : null,
+    () => fetchMetricsByTopicId(resolvedPickerTopicId!)
+  );
+
+  const selectedMetricIds = useMemo(
+    () => new Set(block.topicRefs.map(getStoredItemId)),
+    [block.topicRefs]
+  );
+
+  const availableMetrics = useMemo(
+    () => metrics.filter((option) => !selectedMetricIds.has(option.id)),
+    [metrics, selectedMetricIds]
+  );
+
+  function resetPicker() {
+    setPickerSection("");
+    setPickerTopic("");
+    setPickerSubTopic("");
+    setPickerMetric("");
+    setPickerNonce((nonce) => nonce + 1);
+    setMetricSelectNonce((nonce) => nonce + 1);
+  }
+
+  function resetMetricPicker() {
+    setPickerMetric("");
+    setMetricSelectNonce((nonce) => nonce + 1);
+  }
+
+  useEffect(() => {
+    resetPicker();
+  }, [pickerResetKey]);
+
+  useEffect(() => {
+    if (pickerSection && !selectedSection) {
+      resetPicker();
+    }
+  }, [pickerSection, selectedSection]);
+
+  function handleAddItem() {
+    if (!canAdd || !resolvedPickerTopicId) return;
+
+    const ref: FeaturedBlockTopicRef = {
+      sectionId: pickerSection,
+      topicId: pickerTopic,
+      ...(pickerSubTopic ? { subTopicId: pickerSubTopic } : {}),
+      metricId: pickerMetric,
+    };
+    const storedId = getStoredItemId(ref);
+    if (block.topicRefs.some((entry) => getStoredItemId(entry) === storedId)) {
+      toast.message("Արդեն ավելացված է");
+      return;
+    }
+
+    onChange(withBlockTopicRefs(block, [...block.topicRefs, ref]));
+    resetMetricPicker();
+  }
+
   return (
     <ContentCard>
       <div className="mb-4 flex items-stretch gap-3">
@@ -359,47 +485,147 @@ function BlockCard({
         </Field>
 
         <Field label="Բաժիններ">
-          <Select
-            value=""
-            onValueChange={(id) => {
-              if (block.sectionIds.includes(id)) return;
-              onChange({
-                ...block,
-                sectionIds: [...block.sectionIds, id],
-              });
-            }}
-          >
-            <SelectTrigger
-              className={cn("h-9 w-full max-w-[306px] sm:w-[306px]", fieldBorder, "text-[#2c2c2c]")}
-            >
-              <SelectValue placeholder="Ընտրել բաժինները" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableSections
-                .filter((s) => !block.sectionIds.includes(s._id))
-                .map((s) => (
-                  <SelectItem key={s._id} value={s._id}>
-                    {s.name.hy}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-4">
+            <div className="grid min-h-11 items-end gap-4 md:grid-cols-3">
+              <div className="flex w-full flex-col items-start">
+                <TopicFilterChip>Բաժին</TopicFilterChip>
+                <SearchableSelect
+                  key={`picker-section-${pickerNonce}`}
+                  disabled={availableSections.length === 0}
+                  value={pickerSection || undefined}
+                  onValueChange={(value) => {
+                    setPickerSection(value);
+                    setPickerTopic("");
+                    setPickerSubTopic("");
+                    setPickerMetric("");
+                  }}
+                  placeholder="Ընտրել բաժին"
+                  triggerClassName={topicSelectTriggerClass}
+                  options={availableSections.map((section) => ({
+                    value: section._id,
+                    label: getSectionLocalizedText(section.name),
+                  }))}
+                />
+              </div>
+
+              <div className="flex w-full flex-col items-start">
+                <TopicFilterChip>Ենթախումբ</TopicFilterChip>
+                <SearchableSelect
+                  key={`picker-topic-${pickerSection || "empty-section"}-${pickerNonce}`}
+                  disabled={!pickerSection || rootTopics.length === 0}
+                  value={pickerTopic || undefined}
+                  onValueChange={(value) => {
+                    setPickerTopic(value);
+                    setPickerSubTopic("");
+                    setPickerMetric("");
+                  }}
+                  placeholder="Ենթախումբ"
+                  triggerClassName={topicSelectTriggerClass}
+                  options={rootTopics.map((topic) => ({
+                    value: topic._id,
+                    label: getSectionLocalizedText(topic.title),
+                  }))}
+                />
+                {childTopics.length > 0 ? (
+                  <div className="mt-2 flex w-full flex-col items-start">
+                    <TopicFilterChip>Ենթա-ենթախումբ</TopicFilterChip>
+                    <SearchableSelect
+                      key={`picker-subtopic-${pickerSubTopic || "empty-subgroup"}-${pickerNonce}`}
+                      disabled={!pickerTopic}
+                      value={pickerSubTopic || undefined}
+                      onValueChange={(value) => {
+                        setPickerSubTopic(value);
+                        setPickerMetric("");
+                      }}
+                      placeholder="Ենթա-ենթախումբ"
+                      triggerClassName={topicSelectTriggerClass}
+                      options={childTopics.map((topic) => ({
+                        value: topic._id,
+                        label: getSectionLocalizedText(topic.title),
+                      }))}
+                    />
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="flex w-full flex-col items-start">
+                <TopicFilterChip>Ցուցանիշ</TopicFilterChip>
+                <SearchableSelect
+                  key={`${resolvedPickerTopicId || "empty-topic"}-metric-${metricSelectNonce}`}
+                  disabled={!resolvedPickerTopicId}
+                  value={
+                    pickerMetric && availableMetrics.some((option) => option.id === pickerMetric)
+                      ? pickerMetric
+                      : undefined
+                  }
+                  onValueChange={setPickerMetric}
+                  placeholder="Ցուցանիշ"
+                  triggerClassName={topicSelectTriggerClass}
+                  emptyText={
+                    isMetricsLoading
+                      ? "Բեռնում…"
+                      : metrics.length === 0
+                        ? "Ցուցանիշներ չկան"
+                        : "Բոլոր ցուցանիշները արդեն ավելացված են"
+                  }
+                  options={availableMetrics.map((option) => {
+                    const formatted = option.updatedAt
+                      ? formatMetricStatusDate(option.updatedAt)
+                      : null;
+                    const isPublished = Boolean(option.publishedAt);
+                    const statusDotClass = isPublished
+                      ? METRIC_STATUS_DOT_PUBLISHED
+                      : METRIC_STATUS_DOT_UNPUBLISHED;
+
+                    return {
+                      value: option.id,
+                      label: option.label,
+                      itemClassName:
+                        "flex w-full items-center justify-between rounded-none border-b border-b-[rgba(234,234,234,1)] py-5 *:[span]:last:w-full",
+                      node: (
+                        <>
+                          {option.label}{" "}
+                          {formatted ? (
+                            <div
+                              className={cn(
+                                "relative ml-auto justify-start pl-5 text-xs leading-4 font-medium text-zinc-800 before:absolute before:top-[2px] before:left-0 before:h-[7px] before:w-[7px] before:translate-1/2 before:rounded-full",
+                                statusDotClass
+                              )}
+                            >
+                              {formatted}
+                            </div>
+                          ) : null}
+                        </>
+                      ),
+                    };
+                  })}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Button type="button" disabled={!canAdd} onClick={handleAddItem}>
+                Ավելացնել
+              </Button>
+            </div>
+          </div>
         </Field>
 
         <div className="flex flex-wrap gap-3">
-          {block.sectionIds.map((sid) => {
-            const fromAvail = availableSections.find((s) => s._id === sid);
-            const fromEmbedded = block.sections.find((s) => s._id === sid);
-            const label = fromAvail?.name.hy ?? fromEmbedded?.name.hy ?? sid;
+          {block.topicRefs.map((ref) => {
+            const storedId = getStoredItemId(ref);
+            const label = formatTopicRefLabel(availableSections, ref, block.sections);
             return (
               <TagChip
-                key={sid}
+                key={storedId}
                 label={label}
                 onRemove={() =>
-                  onChange({
-                    ...block,
-                    sectionIds: block.sectionIds.filter((x) => x !== sid),
-                  })
+                  onChange(
+                    withBlockTopicRefs(
+                      block,
+                      block.topicRefs.filter((entry) => getStoredItemId(entry) !== storedId)
+                    )
+                  )
                 }
               />
             );
@@ -522,6 +748,7 @@ export function MainPageEditor() {
   const [usefulLinksLang, setUsefulLinksLang] = useState<MainLangCode>("hy");
   const [blockLangById, setBlockLangById] = useState<Record<string, MainLangCode>>({});
   const [availableSections, setAvailableSections] = useState<Section[]>([]);
+  const [pickerResetKey, setPickerResetKey] = useState(0);
   const [activeLocales, setActiveLocales] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [heroImageFile, setHeroImageFile] = useState<File | string | null>(null);
@@ -575,6 +802,12 @@ export function MainPageEditor() {
         if (isCancelled) return;
         const mapped = fromApiHomePage(homeResponse, "hy");
         mapped.news.availableItems = Array.isArray(newsResponse) ? newsResponse : [];
+        mapped.blocks = await Promise.all(
+          mapped.blocks.map(async (block) => ({
+            ...block,
+            topicRefs: await resolveSectionIdsToRefs(sectionsResponse, block.sectionIds),
+          }))
+        );
         initialJson.current = JSON.stringify(mapped);
         setHeroImageFile(mapped.heroImage || null);
         setAdvertisingImageFile(mapped.advertising.image || null);
@@ -617,7 +850,7 @@ export function MainPageEditor() {
       featuredBlocks: data.blocks.map((block) => ({
         title: block.title,
         subtitle: block.subtitle,
-        sectionIds: block.sectionIds,
+        sectionIds: topicRefsToSectionIds(block.topicRefs),
       })),
       featuredBlockImages: featuredBlockFiles,
     };
@@ -664,24 +897,63 @@ export function MainPageEditor() {
         heroTextContent: ensureHyLocalized(data.heroTextContent),
         heroImage: heroImageFile,
       });
-      await updateHomePageFeaturedBlocks(toFeaturedBlocksPayload());
+      const featuredResponse = await updateHomePageFeaturedBlocks(toFeaturedBlocksPayload());
       await updateHomePageAdvertising(toAdvertisingPayload());
       await updateHomePageNews(toNewsPayload());
       await updateHomePageUsefulLinks(toUsefulLinksPayload());
       await updateActiveLocales(activeLocales);
       initialActiveLocalesRef.current = activeLocales;
-      initialJson.current = JSON.stringify(data);
-      setHeroImageFile(data.heroImage || null);
-      setAdvertisingImageFile(data.advertising.image || null);
-      setFeaturedBlockFiles(data.blocks.map((b) => b.image || null));
-      setUsefulLinkFiles(data.usefulLinks.links.map((l) => l.image || null));
-      setData((d) => structuredClone(d));
+
+      const savedData = structuredClone(data);
+      savedData.blocks = await Promise.all(
+        savedData.blocks.map(async (block, index) => {
+          const apiBlock = featuredResponse.featuredBlocks?.[index];
+          if (!apiBlock) return block;
+
+          const sectionIds = apiBlock.sectionIds ?? topicRefsToSectionIds(block.topicRefs);
+          return {
+            ...block,
+            sectionIds,
+            sections: normalizeHomePageSections(apiBlock.sections ?? block.sections),
+            topicRefs: await resolveSectionIdsToRefs(availableSections, sectionIds),
+          };
+        })
+      );
+
+      initialJson.current = JSON.stringify(savedData);
+      setHeroImageFile(savedData.heroImage || null);
+      setAdvertisingImageFile(savedData.advertising.image || null);
+      setFeaturedBlockFiles(savedData.blocks.map((b) => b.image || null));
+      setUsefulLinkFiles(savedData.usefulLinks.links.map((l) => l.image || null));
+      setData(savedData);
+      setPickerResetKey((key) => key + 1);
       toast.success("Պահպանված է։");
     } catch {
       toast.error("Չհաջողվեց պահպանել գլխավոր էջի տվյալները։");
     } finally {
       setIsSaving(false);
     }
+  }
+
+  function handleCancel() {
+    if (!dirty) {
+      toast.message("Փոփոխություններ չկան։");
+      return;
+    }
+
+    const restored = JSON.parse(initialJson.current) as MainPageMock;
+    setData(structuredClone(restored));
+    setActiveLocales([...initialActiveLocalesRef.current]);
+    setHeroImageFile(restored.heroImage || null);
+    setAdvertisingImageFile(restored.advertising.image || null);
+    setFeaturedBlockFiles(restored.blocks.map((block) => block.image || null));
+    setUsefulLinkFiles(restored.usefulLinks.links.map((link) => link.image || null));
+    form.reset({
+      heroTitle: restored.heroTitle,
+      heroShortDescription: restored.heroShortDescription,
+      heroImage: restored.heroImage,
+    });
+    setPickerResetKey((key) => key + 1);
   }
 
   return (
@@ -697,20 +969,31 @@ export function MainPageEditor() {
       >
         <div className="sticky top-0 z-10 -mx-11 flex min-h-11 flex-col gap-4 bg-[#f9fafb] px-11 pt-7 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">
-            Գլխավոր էջի Փոփոխություններ
+            Գլխավոր էջի կարգաբերում
           </h1>
-          <Button
-            type="submit"
-            disabled={!dirty || isSaving}
-            className={cn(
-              "h-11 min-w-[256px] rounded-lg px-6 text-[13px] font-medium",
-              dirty
-                ? "border-0 bg-[#004d99] text-white hover:bg-[#004080]"
-                : "cursor-not-allowed border-0 bg-[#ededed] text-[#8b8b8b] hover:bg-[#ededed]"
-            )}
-          >
-            {isSaving ? "Պահպանվում է..." : "Պահպանել Փոփոխությունները"}
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!dirty || isSaving}
+              onClick={handleCancel}
+              className="h-11 min-w-[131px] rounded-lg border-[#c7c7c7] bg-white text-[13px] font-medium text-[#2c2c2c] hover:bg-[#fafafa] disabled:opacity-50"
+            >
+              Չեղարկել
+            </Button>
+            <Button
+              type="submit"
+              disabled={!dirty || isSaving}
+              className={cn(
+                "h-11 min-w-[131px] rounded-lg px-6 text-[13px] font-medium",
+                dirty
+                  ? "border-0 bg-[#004d99] text-white hover:bg-[#004080]"
+                  : "cursor-not-allowed border-0 bg-[#ededed] text-[#8b8b8b] hover:bg-[#ededed]"
+              )}
+            >
+              {isSaving ? "Պահպանվում է..." : "Պահպանել"}
+            </Button>
+          </div>
         </div>
 
         <ContentCard>
@@ -799,6 +1082,7 @@ export function MainPageEditor() {
             lang={getBlockLang(block.id)}
             onLangChange={(nextLang) => setBlockLang(block.id, nextLang)}
             availableSections={availableSections}
+            pickerResetKey={pickerResetKey}
             onChange={(next) =>
               setData((d) => ({
                 ...d,

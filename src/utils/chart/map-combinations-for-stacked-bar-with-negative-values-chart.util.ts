@@ -7,7 +7,7 @@ import { compareCategoryLabels } from "@/utils/chart/sort-category-labels";
 // Same convention as HistoricalPopulationPyramidChart — male right, female left.
 const MALE_TITLE = "Արական";
 
-function orderGenderSeriesKeys(genders: Set<string>): string[] {
+export function orderGenderSeriesKeys(genders: Set<string> | Iterable<string>): string[] {
   return Array.from(genders).sort((a, b) => {
     if (a === MALE_TITLE) return -1;
     if (b === MALE_TITLE) return 1;

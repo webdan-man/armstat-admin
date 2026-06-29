@@ -51,9 +51,7 @@ type InformationCenterPageProps = {
   searchParams: Promise<{ lang?: string }>;
 };
 
-export default async function InformationCenterPage({
-  searchParams,
-}: InformationCenterPageProps) {
+export default async function InformationCenterPage({ searchParams }: InformationCenterPageProps) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "";
   const assetBaseUrl = getOrigin(baseUrl);
   const { lang: langParam } = await searchParams;
@@ -72,7 +70,6 @@ export default async function InformationCenterPage({
           </TypographyH2>
         </div>
       </div>
-
       <div className="flex w-full justify-center bg-[rgba(245,246,233,1)]">
         <div className="flex w-full max-w-305 px-5 max-md:flex max-md:flex-col">
           <div className="flex w-full flex-col pt-23 pb-26.5 max-md:pb-10">
@@ -88,7 +85,7 @@ export default async function InformationCenterPage({
           </div>
         </div>
       </div>
-
+      12312321
       <div className="flex w-full max-w-305 flex-col px-5 pt-27.25 max-md:pt-10">
         <div className="flex w-full max-w-202 flex-col justify-start">
           <h3 className="text-[23px] font-semibold text-[rgba(55,55,55,1)]">

@@ -5,6 +5,7 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getStableSeriesColor } from "@/utils/chart/stable-series-color.util";
+import { getColumnChartYAxisMin } from "@/utils/chart/column-chart-y-axis.util";
 import {
   applySingleLineLegendLabels,
   LEGEND_BLOCK_HEIGHT,
@@ -107,9 +108,13 @@ function GroupedStackedColumnChart({
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomContainerRef = useRef<am5.Container | null>(null);
   const xAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
+  const yAxisRef = useRef<am5xy.ValueAxis<am5xy.AxisRenderer> | null>(null);
   const seriesListRef = useRef<am5xy.ColumnSeries[]>([]);
   const axisRangesRef = useRef<am5.DataItem<am5xy.ICategoryAxisDataItem>[]>([]);
   const subtypeKeysRef = useRef<string[]>([]);
+  const stackFieldKeysRef = useRef<string[]>([]);
+  const dataRef = useRef(data);
+  dataRef.current = data;
 
   // Structure effect: recreate chart when series layout or label changes.
   // Does NOT depend on `data` so province-filter updates skip this entirely.
@@ -150,6 +155,7 @@ function GroupedStackedColumnChart({
 
     const subtypeKeys = collectSubtypeKeys(data);
     subtypeKeysRef.current = subtypeKeys;
+    stackFieldKeysRef.current = stackDimensions.map((dim) => dim.field);
 
     const hiddenSubtypes: Record<string, boolean> = {};
 
@@ -171,10 +177,12 @@ function GroupedStackedColumnChart({
     chart.yAxes.push(
       am5xy.ValueAxis.new(root, {
         maxDeviation: 0.3,
+        min: getColumnChartYAxisMin(dataRef.current, stackFieldKeysRef.current),
         renderer: am5xy.AxisRendererY.new(root, {}),
       })
     );
     const yAxis = chart.yAxes.getIndex(0) as am5xy.ValueAxis<am5xy.AxisRenderer>;
+    yAxisRef.current = yAxis;
 
     const tooltipLines = ["{realName}", ""];
     [...stackDimensions].reverse().forEach((dim) => {
@@ -353,6 +361,7 @@ function GroupedStackedColumnChart({
       disposeDynamicHeight?.();
       bottomContainerRef.current = null;
       xAxisRef.current = null;
+      yAxisRef.current = null;
       seriesListRef.current = [];
       axisRangesRef.current = [];
       root.dispose();
@@ -370,6 +379,10 @@ function GroupedStackedColumnChart({
     seriesList.forEach((series) => series.data.setAll(data));
     axisRangesRef.current = buildAxisRanges(xAxis, data);
     subtypeKeysRef.current = collectSubtypeKeys(data);
+    yAxisRef.current?.set(
+      "min",
+      getColumnChartYAxisMin(data, stackFieldKeysRef.current)
+    );
   }, [data]);
 
   return <div ref={containerRef} id={containerId} style={{ width: "100%", height: "705px" }} />;

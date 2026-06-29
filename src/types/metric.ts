@@ -78,6 +78,7 @@ export type MetricSelectOption = {
   /** Localized title, so the client can pick the active locale. */
   title: Record<string, string>;
   updatedAt: string | null;
+  publishedAt: string | null;
 };
 
 /** GET /api/combinations/:metricId/combinations */

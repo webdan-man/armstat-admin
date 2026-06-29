@@ -12,6 +12,7 @@ import {
   getProvinceTitleByMapId,
 } from "@/utils/chart/map-combinations-for-armenia-provinces";
 import { compareCategoryLabels } from "@/utils/chart/sort-category-labels";
+import { orderGenderSeriesKeys } from "@/utils/chart/map-combinations-for-stacked-bar-with-negative-values-chart.util";
 
 interface MapDataItem {
   id: string;
@@ -76,7 +77,7 @@ const MapAndStackedBarWithNegativeValuesChart = ({
       compareCategoryLabels(String(a.year), String(b.year))
     );
 
-    return { barData, seriesKeys: Array.from(categories) };
+    return { barData, seriesKeys: orderGenderSeriesKeys(categories) };
   }, [combinations, provinceAttributeId, genderAttributeId, ageAttributeId, activeProvinceMapId]);
 
   return (

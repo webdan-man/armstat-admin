@@ -98,8 +98,10 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
     // Space palette colors the same way as every other chart (see chart-palette.util).
     applyChartColorStep(chart.get("colors"));
 
+    chart.getNumberFormatter().set("numberFormat", "#.#s");
+
     if (chartTitle !== undefined) {
-      const titleRow = chart.children.unshift(
+      const titleBand = chart.topAxesContainer.children.push(
         am5.Container.new(root, {
           width: am5.p100,
           height: CHART_TITLE_BAND_HEIGHT,
@@ -107,26 +109,23 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
         })
       );
 
-      const titleLabel = titleRow.children.push(
+      const titleLabel = titleBand.children.push(
         am5.Label.new(root, {
           text: chartTitleRef.current ?? "",
-          width: am5.p100,
-          textAlign: "center",
           fontSize: 20,
+          x: am5.p50,
+          centerX: am5.p50,
           y: am5.p50,
           centerY: am5.p50,
-          maxWidth: 400,
+          textAlign: "center",
           oversizedBehavior: "wrap",
+          maxWidth: am5.percent(90),
         })
       );
       titleLabelRef.current = titleLabel;
     }
 
-    chart.getNumberFormatter().set("numberFormat", "#.#s");
-
-    // Titles live inside the chart's top axes container so they stay aligned
-    // with the plot area (which is offset by the Y-axis), regardless of how
-    // long the field names are. Their text is filled in by the reconcile effect.
+    // Gender titles stay aligned with the plot area (offset from the Y-axis).
     const titlesContainer = chart.topAxesContainer.children.push(
       am5.Container.new(root, {
         width: am5.p100,

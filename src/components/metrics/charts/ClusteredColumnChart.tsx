@@ -4,6 +4,7 @@ import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getStableSeriesColor } from "@/utils/chart/stable-series-color.util";
 import { attachColumnSeriesTooltip } from "@/utils/chart/column-chart-tooltip.util";
+import { getColumnChartYAxisMin } from "@/utils/chart/column-chart-y-axis.util";
 import {
   applySingleLineLegendLabels,
   CHART_HEADER_HEADROOM as PLOT_CHART_HEADER_HEADROOM,
@@ -30,13 +31,6 @@ const CHART_HEADER_HEADROOM = 24;
 const COLUMN_MAX_WIDTH = 130;
 const LEGEND_TITLE_HEIGHT = 40;
 
-function chartHasNegativeValue(
-  rows: Record<string, string | number>[],
-  keys: string[]
-): boolean {
-  return rows.some((row) => keys.some((key) => Number(row[key]) < 0));
-}
-
 function ClusteredColumnChart<T extends Record<string, string>>({
   data,
   xAxisKey,
@@ -59,8 +53,8 @@ function ClusteredColumnChart<T extends Record<string, string>>({
   const legendTitleRef = useRef(legendTitle);
   const dataRef = useRef(data);
   dataRef.current = data;
-
-  const hasNegativeValue = chartHasNegativeValue(data, seriesKeys);
+  const seriesKeysRef = useRef(seriesKeys);
+  seriesKeysRef.current = seriesKeys;
 
   // Stable dependency for the series-reconcile effect: the array identity of
   // `seriesKeys` changes on every parent render, but its contents are what matter.
@@ -173,7 +167,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
       am5xy.ValueAxis.new(root, {
         maxDeviation: 0.3,
         renderer: am5xy.AxisRendererY.new(root, { strokeOpacity: 0.1 }),
-        ...(chartHasNegativeValue(dataRef.current, seriesKeys) ? {} : { min: 0 }),
+        min: getColumnChartYAxisMin(dataRef.current, seriesKeysRef.current),
       })
     );
     yAxisRef.current = yAxis;
@@ -332,6 +326,9 @@ function ClusteredColumnChart<T extends Record<string, string>>({
         });
       });
     });
+
+    yAxis.set("min", getColumnChartYAxisMin(dataRef.current, seriesKeys));
+
     // `data` is read via dataRef so a pure data change doesn't rebuild series;
     // the data effect below handles that.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -358,10 +355,11 @@ function ClusteredColumnChart<T extends Record<string, string>>({
     xAxis.data.setAll(data);
     seriesListRef.current.forEach((series) => series.data.setAll(data));
 
-    // Only clamp the y-axis to 0 when there are no negative values; otherwise
-    // let amCharts auto-fit so negative bars are visible.
-    yAxisRef.current?.set("min", hasNegativeValue ? undefined : 0);
-  }, [data, hasNegativeValue]);
+    yAxisRef.current?.set(
+      "min",
+      getColumnChartYAxisMin(data, seriesKeysRef.current)
+    );
+  }, [data, seriesKeysSignature]);
 
   return (
     <div ref={containerRef} id={containerId} style={{ width: "100%", height: "610px" }} />

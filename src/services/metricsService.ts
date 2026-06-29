@@ -156,6 +156,7 @@ export async function fetchMetricsByTopicId(
     label: pickMetricTitle(metric.title),
     title: metric.title ?? {},
     updatedAt: metric.updatedAt ?? metric.createdAt ?? null,
+    publishedAt: metric.publishedAt ?? null,
   }));
 }
 

@@ -26,6 +26,40 @@ const CHART_TITLE_HEIGHT = 32;
 /** Small gap below the x-axis band; label overflow is already included in chart height. */
 const LEGEND_TOP_GAP = 10;
 
+type LegendEntry = {
+  name: string;
+  fill: am5.Color;
+};
+
+function applyHiddenColumns(series: am5xy.ColumnSeries, hidden: Set<string>) {
+  series.columns.each((column) => {
+    const key = (column.dataItem?.dataContext as DataItem | undefined)?.xAxisKey;
+    if (!key) return;
+    column.set("forceHidden", hidden.has(key));
+  });
+}
+
+function refreshLegendData(
+  legend: am5.Legend,
+  chart: am5xy.XYChart,
+  rows: DataItem[],
+  hidden: Set<string>
+) {
+  const greyColor = am5.color(0xaaaaaa);
+  legend.data.setAll(
+    rows.map((row, index) => ({
+      name: row.xAxisKey,
+      fill: hidden.has(row.xAxisKey)
+        ? greyColor
+        : getPaletteColor(chart.get("colors"), index)!,
+    }))
+  );
+
+  rows.forEach((row, index) => {
+    legend.itemContainers.getIndex(index)?.set("opacity", hidden.has(row.xAxisKey) ? 0.35 : 1);
+  });
+}
+
 function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLabelsChartProps) {
   const rootRef = useRef<am5.Root | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -33,8 +67,12 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
   const xAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
   const yAxisRef = useRef<am5xy.ValueAxis<am5xy.AxisRenderer> | null>(null);
   const seriesRef = useRef<am5xy.ColumnSeries | null>(null);
+  const chartRef = useRef<am5xy.XYChart | null>(null);
   const legendRef = useRef<am5.Legend | null>(null);
   const legendLabelRef = useRef<am5.Label | null>(null);
+  const hiddenCategoryKeysRef = useRef<Set<string>>(new Set());
+  const dataRef = useRef(data);
+  dataRef.current = data;
 
   useLayoutEffect(() => {
     // Create chart once; otherwise amCharts replays intro animations on every data update.
@@ -73,6 +111,7 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
         paddingRight: 30,
       })
     );
+    chartRef.current = chart;
 
     lockPlotHeight(chart);
 
@@ -160,8 +199,15 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
       getPaletteColor(chart.get("colors"), series.columns.indexOf(target))
     );
 
+    series.columns.template.adapters.add("forceHidden", (hidden, target) => {
+      const key = (target.dataItem?.dataContext as DataItem | undefined)?.xAxisKey;
+      if (key && hiddenCategoryKeysRef.current.has(key)) return true;
+      return hidden;
+    });
+
     xAxis.data.setAll(data);
     series.data.setAll(data);
+    applyHiddenColumns(series, hiddenCategoryKeysRef.current);
 
     const greyColor = am5.color(0xaaaaaa);
 
@@ -245,36 +291,33 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
 
     // Fill adapter
     legend.markerRectangles.template.adapters.add("fill", (fill, target) => {
-      const legendDataItem = target.dataItem;
-      if (!legendDataItem) return fill;
-
-      const seriesDataItem = legendDataItem.dataContext as any;
-      const index = series.dataItems.indexOf(seriesDataItem);
-
-      if (index >= 0) {
-        return seriesDataItem.isHidden() ? greyColor : getPaletteColor(chart.get("colors"), index);
-      }
-
-      return fill;
+      const entry = target.dataItem?.dataContext as LegendEntry | undefined;
+      if (!entry) return fill;
+      if (hiddenCategoryKeysRef.current.has(entry.name)) return greyColor;
+      return entry.fill ?? fill;
     });
 
     // Stroke adapter
     legend.markerRectangles.template.adapters.add("stroke", (stroke, target) => {
-      const legendDataItem = target.dataItem;
-      if (!legendDataItem) return stroke;
-
-      const seriesDataItem = legendDataItem.dataContext as any;
-      const index = series.dataItems.indexOf(seriesDataItem);
-
-      if (index >= 0) {
-        return seriesDataItem.isHidden() ? greyColor : getPaletteColor(chart.get("colors"), index);
-      }
-
-      return stroke;
+      const entry = target.dataItem?.dataContext as LegendEntry | undefined;
+      if (!entry) return stroke;
+      if (hiddenCategoryKeysRef.current.has(entry.name)) return greyColor;
+      return entry.fill ?? stroke;
     });
 
-    // Legend data
-    legend.data.setAll(series.dataItems);
+    legend.itemContainers.template.events.on("click", (e) => {
+      const entry = e.target.dataItem?.dataContext as LegendEntry | undefined;
+      if (!entry?.name) return;
+
+      const nowHidden = !hiddenCategoryKeysRef.current.has(entry.name);
+      if (nowHidden) hiddenCategoryKeysRef.current.add(entry.name);
+      else hiddenCategoryKeysRef.current.delete(entry.name);
+
+      applyHiddenColumns(series, hiddenCategoryKeysRef.current);
+      refreshLegendData(legend, chart, dataRef.current, hiddenCategoryKeysRef.current);
+    });
+
+    refreshLegendData(legend, chart, data, hiddenCategoryKeysRef.current);
 
     const disposeDynamicHeight = setupDynamicChartHeight({
       root,
@@ -285,16 +328,6 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
       bottomBuffer: 15,
       getAboveChartHeight: () => (chartTitle !== undefined ? CHART_TITLE_HEIGHT : 0),
       getBelowChartHeight: () => legendBar.height() || LEGEND_BAR_HEIGHT + LEGEND_TOP_GAP,
-    });
-
-    // Force repaint on click
-    legend.itemContainers.each((itemContainer, index) => {
-      itemContainer.events.on("click", () => {
-        setTimeout(() => {
-          const rect = legend.markerRectangles.getIndex(index);
-          if (rect) rect.markDirty();
-        }, 0);
-      });
     });
 
     // Animations
@@ -308,6 +341,7 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
       xAxisRef.current = null;
       yAxisRef.current = null;
       seriesRef.current = null;
+      chartRef.current = null;
       legendRef.current = null;
       legendLabelRef.current = null;
       root.dispose();
@@ -318,18 +352,22 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
     const xAxis = xAxisRef.current;
     const yAxis = yAxisRef.current;
     const series = seriesRef.current;
-    if (!xAxis || !series) return;
+    const chart = chartRef.current;
+    const legend = legendRef.current;
+    if (!xAxis || !series || !chart) return;
 
     xAxis.data.setAll(data);
     series.data.setAll(data);
+    applyHiddenColumns(series, hiddenCategoryKeysRef.current);
 
     // Only clamp the y-axis to 0 when there are no negative values; otherwise
     // let amCharts auto-fit so negative bars are visible.
     const hasNegativeValue = data.some((d) => d.value < 0);
     yAxis?.set("min", hasNegativeValue ? undefined : 0);
 
-    // Legend binds to series dataItems; refresh after data update.
-    legendRef.current?.data.setAll(series.dataItems);
+    if (legend) {
+      refreshLegendData(legend, chart, data, hiddenCategoryKeysRef.current);
+    }
 
     // Update legend descriptor label (e.g. "Հատկանիշ") based on data.
     legendLabelRef.current?.set("text", data[0]?.label || "Հատկանիշ");

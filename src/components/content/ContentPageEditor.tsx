@@ -221,7 +221,7 @@ export function ContentPageEditor() {
                   : "cursor-not-allowed border-0 bg-[#ededed] text-[#8b8b8b] hover:bg-[#ededed]"
               )}
             >
-              {isSubmitting ? "Պահպանվում է..." : "Պահպանել փոփոխությունները"}
+              {isSubmitting ? "Պահպանվում է..." : "Պահպանել"}
             </Button>
           </div>
         </div>

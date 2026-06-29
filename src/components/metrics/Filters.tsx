@@ -16,6 +16,19 @@ const selectTriggerClass = cn(
   "h-9 w-full rounded-[8.5px] border-[#c8c8c8] bg-[#f9fafb] shadow-none"
 );
 
+const METRIC_STATUS_DOT_PUBLISHED = "before:bg-[rgba(37,201,34,1)]";
+const METRIC_STATUS_DOT_UNPUBLISHED = "before:bg-[rgba(250,204,21,1)]";
+
+function formatMetricStatusDate(iso: string): string | null {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const yyyy = date.getFullYear();
+  return `${dd}.${mm}.${yyyy}`;
+}
+
 function FilterChip({ children }: { children: React.ReactNode }) {
   return (
     <span className="z-10 -mb-2 ml-3 justify-start bg-[#f9fafb] text-[10px] leading-4 font-normal text-zinc-800">
@@ -151,13 +164,13 @@ export default function Filters() {
             triggerClassName={selectTriggerClass}
             emptyText={isMetricsLoading ? "Բեռնում…" : "Ցուցանիշներ չկան"}
             options={metrics.map((option) => {
-              let formatted = null;
-
-              if (option.updatedAt) {
-                const date = new Date(option.updatedAt);
-
-                formatted = `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
-              }
+              const formatted = option.updatedAt
+                ? formatMetricStatusDate(option.updatedAt)
+                : null;
+              const isPublished = Boolean(option.publishedAt);
+              const statusDotClass = isPublished
+                ? METRIC_STATUS_DOT_PUBLISHED
+                : METRIC_STATUS_DOT_UNPUBLISHED;
 
               return {
                 value: option.id,
@@ -168,7 +181,12 @@ export default function Filters() {
                   <>
                     {option.label}{" "}
                     {formatted && (
-                      <div className="relative ml-auto justify-start pl-5 text-xs leading-4 font-medium text-zinc-800 before:absolute before:top-[2px] before:left-0 before:h-[7px] before:w-[7px] before:translate-1/2 before:rounded-full before:bg-[rgba(37,201,34,1)]">
+                      <div
+                        className={cn(
+                          "relative ml-auto justify-start pl-5 text-xs leading-4 font-medium text-zinc-800 before:absolute before:top-[2px] before:left-0 before:h-[7px] before:w-[7px] before:translate-1/2 before:rounded-full",
+                          statusDotClass
+                        )}
+                      >
                         {formatted}
                       </div>
                     )}
