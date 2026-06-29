@@ -541,7 +541,7 @@ function BlockCard({
   );
 }
 
-const USEFUL_LINK_DESCRIPTION_MAX_LENGTH = 40;
+const USEFUL_LINK_DESCRIPTION_MAX_LENGTH = 80;
 
 function UsefulLinkRow({
   link,
