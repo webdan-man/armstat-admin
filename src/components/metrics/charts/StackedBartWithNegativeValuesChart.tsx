@@ -119,7 +119,7 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
           centerY: am5.p50,
           textAlign: "center",
           oversizedBehavior: "wrap",
-          maxWidth: am5.percent(90),
+          maxWidth: 250,
         })
       );
       titleLabelRef.current = titleLabel;
