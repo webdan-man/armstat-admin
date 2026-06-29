@@ -284,37 +284,42 @@ function useDetectChartType(
         categories.has(cat)
       );
 
-      // Stacked column chart: Gender + (Area or Other)
-      // X is GENDER; (AREA or OTHER) is the stack series
+      // Clustered column chart: Gender + (Area or Other)
+      // GENDER is the clustered group (G) on the x-axis; (AREA or OTHER) is the inner series
       if (categories.has(AttributeCategory.GENDER) && stackedCategory) {
         const attributeMapByCategory = createCombinationAttributesMap({
           combinations,
           attributes,
         });
         const genderAttributeId = attributeMapByCategory.get(AttributeCategory.GENDER)!._id;
-        const stackAttributeId = attributeMapByCategory.get(stackedCategory)!._id;
+        const seriesAttributeId = attributeMapByCategory.get(stackedCategory)!._id;
 
         const xAxisKey = "gender";
 
-        const { data, seriesKeys, yAxisAttributeTitle } = mapCombinationsForStackedColumnChart({
+        // GENDER must always be the x-axis clustered groups (CXG), with (AREA or OTHER) as the
+        // inner series. Disable the util's auto-transpose so GENDER is never flipped off the x-axis.
+        const mapped = mapCombinationsForClusteredColumnChart({
           combinations,
           xAxisAttributeId: genderAttributeId,
-          yAxisAttributeId: stackAttributeId,
+          yAxisAttributeId: seriesAttributeId,
           xAxisKey,
+          disableAutoTranspose: true,
         });
 
-        console.log(`STACKED COLUMN CHART: X - GENDER, Y - ${stackedCategory}`, {
+        const { data, seriesKeys } = mapped;
+        const resolvedXAxisKey = "xAxisKey" in mapped ? mapped.xAxisKey : xAxisKey;
+
+        console.log(`CLUSTERED COLUMN CHART: X - GENDER (CXG), series - ${stackedCategory}`, {
           combinations,
           data,
           seriesKeys,
         });
 
         return {
-          type: "stacked-column-chart",
-          xAxisKey,
+          type: "clustered-column-chart",
+          xAxisKey: resolvedXAxisKey,
           seriesKeys,
           data,
-          yAxisLabel: yAxisAttributeTitle,
         };
       }
 
