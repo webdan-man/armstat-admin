@@ -1,5 +1,6 @@
 import { MetricCombination } from "@/types/metric";
 import { Attribute } from "@/types/attribute";
+import { orderSeriesKeysIfGender } from "@/utils/chart/gender-chart-order.util";
 
 export const mapCombinationsForStackedColumnChart = (payload: {
   combinations: MetricCombination[];
@@ -37,13 +38,10 @@ export const mapCombinationsForStackedColumnChart = (payload: {
     resultMap[xAxisAttribute][yAxisAttribute] = value;
   }
 
-  const seriesKeys = Array.from(
-    new Set(
-      combinations.map(
-        (item) => item.row.find((r) => r.attributeId === yAxisAttributeId)?.value.title
-      )
-    )
-  ).filter(Boolean) as string[];
+  const rawKeys = combinations
+    .map((item) => item.row.find((r) => r.attributeId === yAxisAttributeId)?.value.title)
+    .filter((title): title is string => Boolean(title));
+  const seriesKeys = orderSeriesKeysIfGender(rawKeys);
 
   return {
     data: Object.values(resultMap),

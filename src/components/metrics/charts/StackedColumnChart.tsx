@@ -3,6 +3,12 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getStableSeriesColor } from "@/utils/chart/stable-series-color.util";
+import { getPaletteColor } from "@/utils/chart/chart-palette.util";
+import {
+  buildGenderStackTooltipLabel,
+  getGenderSeriesPaletteIndex,
+  resolveGenderStackKeysBottomToTop,
+} from "@/utils/chart/gender-chart-order.util";
 import { attachColumnSeriesTooltip } from "@/utils/chart/column-chart-tooltip.util";
 import {
   applySingleLineLegendLabels,
@@ -20,6 +26,10 @@ interface StackedColumnChartProps<T extends Record<string, string>> {
   chartTitle?: string;
   /** Optional label above the legend (stack dimension name from combination row labels). */
   yAxisLabel?: string;
+  /** Push order for stacked layers: index 0 = bottom, last = top. */
+  stackSeriesKeysBottomToTop?: string[];
+  /** Isolates stable palette cache from other charts using the same container id. */
+  colorNamespace?: string;
 }
 
 const containerId = "stacked-column-chartdiv";
@@ -46,12 +56,27 @@ function calcLegendRowHeight(legendCount: number, hasTitle: boolean): number {
   return calcLegendHeight(legendCount) + (hasTitle ? LEGEND_TITLE_HEIGHT : 0);
 }
 
+function getSeriesColor(
+  colorNamespace: string,
+  colors: am5.ColorSet | undefined,
+  key: string,
+  seriesKeys: string[]
+): am5.Color {
+  const genderIndex = getGenderSeriesPaletteIndex(key);
+  if (genderIndex != null) {
+    return getPaletteColor(colors, genderIndex)!;
+  }
+  return getStableSeriesColor(colorNamespace, colors, key, seriesKeys);
+}
+
 function StackedColumnChart<T extends Record<string, string>>({
   data,
   xAxisKey,
   seriesKeys = [],
   chartTitle,
   yAxisLabel,
+  stackSeriesKeysBottomToTop,
+  colorNamespace = containerId,
 }: StackedColumnChartProps<T>) {
   const rootRef = useRef<am5.Root | null>(null);
   const chartRef = useRef<am5xy.XYChart | null>(null);
@@ -73,6 +98,7 @@ function StackedColumnChart<T extends Record<string, string>>({
   // Stable dependency for the series-reconcile effect: the array identity of
   // `seriesKeys` changes on every parent render, but its contents are what matter.
   const seriesKeysSignature = seriesKeys.join(" ");
+  const stackKeysSignature = (stackSeriesKeysBottomToTop ?? seriesKeys).join(" ");
 
   useLayoutEffect(() => {
     // Create chart once; otherwise amCharts replays intro animations on every data update.
@@ -191,7 +217,9 @@ function StackedColumnChart<T extends Record<string, string>>({
     const legendRow = chart.children.push(
       am5.Container.new(root, {
         width: am5.p100,
-        height: calcLegendRowHeight(seriesKeys.length, Boolean(yAxisLabelRef.current)) + LEGEND_OVERFLOW_PADDING,
+        height:
+          calcLegendRowHeight(seriesKeys.length, Boolean(yAxisLabelRef.current)) +
+          LEGEND_OVERFLOW_PADDING,
         paddingTop: LEGEND_OVERFLOW_PADDING,
         layout: root.verticalLayout,
       })
@@ -290,19 +318,34 @@ function StackedColumnChart<T extends Record<string, string>>({
       series.dispose();
     });
 
-    seriesListRef.current = seriesKeys.map((key) => {
+    const keysToPush = stackSeriesKeysBottomToTop ?? seriesKeys;
+    const genderStack = resolveGenderStackKeysBottomToTop(keysToPush);
+    const [maleKey, femaleKey] = genderStack ?? [];
+
+    seriesListRef.current = keysToPush.map((key, index) => {
+      const isTop = index === keysToPush.length - 1;
+      const isGenderStack = genderStack != null;
+
       const series = chart.series.push(
         am5xy.ColumnSeries.new(root, {
           name: key,
-          stacked: true,
+          stacked: index > 0,
           xAxis,
           yAxis,
           valueYField: key,
           categoryXField: xAxisKey,
+          ...(isGenderStack && isTop
+            ? {
+                tooltip: am5.Tooltip.new(root, {
+                  pointerOrientation: "vertical",
+                  labelText: buildGenderStackTooltipLabel(maleKey, femaleKey, "categoryX"),
+                }),
+              }
+            : {}),
         })
       );
 
-      const color = getStableSeriesColor(containerId, chart.get("colors"), key, seriesKeys);
+      const color = getSeriesColor(colorNamespace, chart.get("colors"), key, seriesKeys);
       series.set("fill", color);
       series.set("stroke", color);
 
@@ -314,7 +357,9 @@ function StackedColumnChart<T extends Record<string, string>>({
         stroke: color,
       });
 
-      attachColumnSeriesTooltip(series, "{name}    [bold]{valueY}[/]");
+      if (!isGenderStack) {
+        attachColumnSeriesTooltip(series, "{name}    [bold]{valueY}[/]");
+      }
 
       series.data.setAll(dataRef.current);
 
@@ -328,12 +373,13 @@ function StackedColumnChart<T extends Record<string, string>>({
     legendRef.current?.set("height", calcLegendHeight(seriesKeys.length));
     legendRowRef.current?.set(
       "height",
-      calcLegendRowHeight(seriesKeys.length, Boolean(yAxisLabelRef.current)) + LEGEND_OVERFLOW_PADDING
+      calcLegendRowHeight(seriesKeys.length, Boolean(yAxisLabelRef.current)) +
+        LEGEND_OVERFLOW_PADDING
     );
     // `data` is intentionally read via dataRef so a pure data change does not
     // rebuild every series — the data effect below handles that.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seriesKeysSignature, xAxisKey]);
+  }, [seriesKeysSignature, stackKeysSignature, xAxisKey, colorNamespace]);
 
   useEffect(() => {
     chartTitleRef.current = chartTitle;

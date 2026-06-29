@@ -72,31 +72,50 @@ export default function Links({ links }: LinksProps) {
           <div className="flex w-full flex-col">
             <div ref={emblaRef}>
               <div className="flex gap-6.25">
-                {(links ?? []).map((item, i) => (
-                  <div
-                    key={i}
-                    className="border-textBlack300 w-92 flex-[0_0_auto] rounded-lg border p-6"
-                  >
-                    <div className="relative h-39.5 w-full overflow-hidden">
-                      <Image
-                        src={item.image || "/links/link1.jpg"}
-                        alt="Link"
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
+                {(links ?? []).map((item, i) => {
+                  const name = pickLocale(item.name, activeLang);
+                  const description = pickLocale(item.description, activeLang);
+                  const className =
+                    "border-textBlack300 w-92 flex-[0_0_auto] rounded-lg border p-6 transition-colors hover:border-blue600";
+                  const content = (
+                    <>
+                      <div className="relative h-39.5 w-full overflow-hidden">
+                        <Image
+                          src={item.image || "/links/link1.jpg"}
+                          alt={name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
 
-                    <TypographyH3 className="text-textBlack800 mt-4">
-                      {pickLocale(item.name, activeLang)}
-                    </TypographyH3>
+                      <TypographyH3 className="text-textBlack800 mt-4">{name}</TypographyH3>
 
-                    <TypographyP className="text-textBlack700 mt-4 line-clamp-2">
-                      <MarkdownText as="span">
-                        {pickLocale(item.description, activeLang)}
-                      </MarkdownText>
-                    </TypographyP>
-                  </div>
-                ))}
+                      <TypographyP className="text-textBlack700 mt-4 break-words">
+                        <MarkdownText as="span">{description}</MarkdownText>
+                      </TypographyP>
+                    </>
+                  );
+
+                  if (!item.url) {
+                    return (
+                      <div key={i} className={className}>
+                        {content}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <a
+                      key={i}
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`${className} cursor-pointer`}
+                    >
+                      {content}
+                    </a>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -104,7 +123,7 @@ export default function Links({ links }: LinksProps) {
 
         {/* RIGHT BUTTON */}
         {canScrollNext && (
-          <div className="absolute top-0 right-0 flex h-full w-83 items-center justify-center bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,#FFFFFF_85.09%)]">
+          <div className="absolute top-0 right-0 flex h-full w-83 max-w-[20vw] items-center justify-center bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,#FFFFFF_85.09%)]">
             <button
               onClick={scrollNext}
               className="bg-textBlack100 flex h-12 w-12 cursor-pointer items-center justify-center rounded-[12px] border border-[rgba(198,198,198,1)]"
@@ -116,7 +135,7 @@ export default function Links({ links }: LinksProps) {
 
         {/* LEFT BUTTON */}
         {canScrollPrev && (
-          <div className="absolute top-0 left-0 flex h-full w-83 items-center justify-center bg-[linear-gradient(270deg,rgba(255,255,255,0)_0%,#FFFFFF_85.09%)]">
+          <div className="absolute top-0 left-0 flex h-full w-83 max-w-[20vw] items-center justify-center bg-[linear-gradient(270deg,rgba(255,255,255,0)_0%,#FFFFFF_85.09%)]">
             <button
               onClick={scrollPrev}
               className="bg-textBlack100 flex h-12 w-12 cursor-pointer items-center justify-center rounded-[12px] border border-[rgba(198,198,198,1)]"

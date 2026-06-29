@@ -38,7 +38,7 @@ const MapAndStackedAreaChart = ({ combinations, data }: MapAndStackedAreaChartPr
     return getProvinceTitleByMapId(activeProvinceMapId, activeLang) ?? activeProvinceMapId;
   }, [activeProvinceMapId, activeLang]);
 
-  const { stackedAreaData, seriesKeys } = useMemo(() => {
+  const { stackedAreaData, seriesKeys, stackSeriesKeysBottomToTop } = useMemo(() => {
     const filtered = filterCombinationsByProvinceMapId(
       combinations,
       provinceAttributeId,
@@ -47,13 +47,14 @@ const MapAndStackedAreaChart = ({ combinations, data }: MapAndStackedAreaChartPr
     const {
       data: { stackedAreaData },
       seriesKeys,
+      stackSeriesKeysBottomToTop,
     } = mapCombinationsForMapAndStackedAreaChart({
       combinations: filtered,
       timeAttributeId,
       genderAttributeId,
       provinceAttributeId,
     });
-    return { stackedAreaData, seriesKeys };
+    return { stackedAreaData, seriesKeys, stackSeriesKeysBottomToTop };
   }, [combinations, provinceAttributeId, timeAttributeId, genderAttributeId, activeProvinceMapId]);
 
   return (
@@ -74,6 +75,8 @@ const MapAndStackedAreaChart = ({ combinations, data }: MapAndStackedAreaChartPr
           data={stackedAreaData as Record<string, string>[]}
           xAxisKey="year"
           seriesKeys={seriesKeys}
+          stackSeriesKeysBottomToTop={stackSeriesKeysBottomToTop}
+          colorNamespace="map-stacked-area-chartdiv"
           chartTitle={chartTitle}
         />
       </div>

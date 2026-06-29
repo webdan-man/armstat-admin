@@ -1,4 +1,5 @@
 import type { MetricCombination } from "@/types/metric";
+import { orderSeriesKeysIfGender } from "@/utils/chart/gender-chart-order.util";
 
 type AttrSpec = { id: string; key: string };
 
@@ -76,7 +77,7 @@ export const mapCombinationsForClusteredAndStackedColumnChart = (payload: {
   }
 
   const clusterKeys = clusterAttr.options;
-  const stackKeys = stackAttr.options;
+  const stackKeys = orderSeriesKeysIfGender(stackAttr.options);
 
   const resultMap = new Map<string, Record<string, string | number>>();
 

@@ -3,6 +3,11 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { applyChartColorStep, getPaletteColor } from "@/utils/chart/chart-palette.util";
+import {
+  FEMALE_GENDER_TITLE,
+  MALE_GENDER_TITLE,
+  resolveGenderLabelsFromSeriesKeys,
+} from "@/utils/chart/gender-chart-order.util";
 import { useTranslation } from "@/hooks/useTranslation";
 import {
   CHART_HEADER_HEADROOM as PLOT_CHART_HEADER_HEADROOM,
@@ -18,12 +23,12 @@ const YEAR_FIELD = "year";
 const VALUE_FIELD = "value";
 const FRAME_LABEL_FIELD = "frameLabel";
 
-const DEFAULT_MALE_LABEL = "Արական";
-const DEFAULT_FEMALE_LABEL = "Իգական";
+const DEFAULT_MALE_LABEL = MALE_GENDER_TITLE;
+const DEFAULT_FEMALE_LABEL = FEMALE_GENDER_TITLE;
 
 interface HistoricalPopulationPyramidChartProps<T extends ChartDatum> {
   data: T[];
-  /** [maleLabel, femaleLabel] — matched against each row's `sex` value. */
+  /** [femaleLabel, maleLabel] — matched against each row's `sex` value. */
   seriesKeys?: string[];
   /** Title shown above the population timeline chart. */
   timelineAxisAttributeName?: string;
@@ -207,8 +212,10 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
   // Latest props, read by the (create-once) chart internals on every data update.
   const dataRef = useRef<T[]>(data);
   const configRef = useRef<ChartConfig>({
-    maleLabel: seriesKeys[0] ?? DEFAULT_MALE_LABEL,
-    femaleLabel: seriesKeys[1] ?? DEFAULT_FEMALE_LABEL,
+    ...resolveGenderLabelsFromSeriesKeys(seriesKeys, {
+      male: DEFAULT_MALE_LABEL,
+      female: DEFAULT_FEMALE_LABEL,
+    }),
     timelineTitle: timelineAxisAttributeName,
   });
   const currentYearRef = useRef<number>(0);
@@ -580,19 +587,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       const maleColor = getPaletteColor(popColors, 0)!;
       const femaleColor = getPaletteColor(popColors, 1)!;
 
-      // Female first (bottom of stack), then male — matches pyramid gender order.
-      const female = popChart.series.push(
-        am5xy.ColumnSeries.new(root, {
-          xAxis: popXAxis,
-          yAxis: popYAxis,
-          valueYField: "female",
-          categoryXField: FRAME_LABEL_FIELD,
-          stacked: true,
-        })
-      );
-      female.columns.template.setAll({ maxWidth: 130 });
-      applyPopColumnSeriesColor(female, femaleColor);
-
+      // Male first (bottom of stack), then female on top — matches pyramid gender order.
       const male = popChart.series.push(
         am5xy.ColumnSeries.new(root, {
           xAxis: popXAxis,
@@ -600,11 +595,23 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
           valueYField: "male",
           categoryXField: FRAME_LABEL_FIELD,
           stacked: true,
-          tooltip: am5.Tooltip.new(root, { pointerOrientation: "vertical" }),
         })
       );
       male.columns.template.setAll({ maxWidth: 130 });
       applyPopColumnSeriesColor(male, maleColor);
+
+      const female = popChart.series.push(
+        am5xy.ColumnSeries.new(root, {
+          xAxis: popXAxis,
+          yAxis: popYAxis,
+          valueYField: "female",
+          categoryXField: FRAME_LABEL_FIELD,
+          stacked: true,
+          tooltip: am5.Tooltip.new(root, { pointerOrientation: "vertical" }),
+        })
+      );
+      female.columns.template.setAll({ maxWidth: 130 });
+      applyPopColumnSeriesColor(female, femaleColor);
 
       const popCursor = popChart.set(
         "cursor",
@@ -653,25 +660,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       const maleColor = getPaletteColor(popColors, 0)!;
       const femaleColor = getPaletteColor(popColors, 1)!;
 
-      // Female first (bottom of stack), then male — matches pyramid gender order.
-      const female = popChart.series.push(
-        am5xy.LineSeries.new(root, {
-          minBulletDistance: 10,
-          xAxis: popXAxis,
-          yAxis: popYAxis,
-          valueYField: "female",
-          valueXField: "date",
-          stacked: true,
-        })
-      );
-      female.strokes.template.setAll({ strokeWidth: 2, templateField: "lineSettings" });
-      female.fills.template.setAll({
-        visible: true,
-        fillOpacity: 0.5,
-        templateField: "lineSettings",
-      });
-      applyPopLineSeriesColor(female, femaleColor);
-
+      // Male first (bottom of stack), then female on top — matches pyramid gender order.
       const male = popChart.series.push(
         am5xy.LineSeries.new(root, {
           minBulletDistance: 10,
@@ -680,7 +669,6 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
           valueYField: "male",
           valueXField: "date",
           stacked: true,
-          tooltip: am5.Tooltip.new(root, { pointerOrientation: "vertical" }),
         })
       );
       male.strokes.template.setAll({ strokeWidth: 2, templateField: "lineSettings" });
@@ -690,6 +678,25 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         templateField: "lineSettings",
       });
       applyPopLineSeriesColor(male, maleColor);
+
+      const female = popChart.series.push(
+        am5xy.LineSeries.new(root, {
+          minBulletDistance: 10,
+          xAxis: popXAxis,
+          yAxis: popYAxis,
+          valueYField: "female",
+          valueXField: "date",
+          stacked: true,
+          tooltip: am5.Tooltip.new(root, { pointerOrientation: "vertical" }),
+        })
+      );
+      female.strokes.template.setAll({ strokeWidth: 2, templateField: "lineSettings" });
+      female.fills.template.setAll({
+        visible: true,
+        fillOpacity: 0.5,
+        templateField: "lineSettings",
+      });
+      applyPopLineSeriesColor(female, femaleColor);
 
       const popCursor = popChart.set(
         "cursor",
@@ -742,7 +749,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
       maleCornerLabel.set("text", cfg.maleLabel);
       femaleCornerLabel.set("text", cfg.femaleLabel);
       popTitle.set("text", cfg.timelineTitle);
-      popSeriesMale
+      popSeriesFemale
         .get("tooltip")
         ?.set(
           "labelText",
@@ -782,8 +789,10 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
   useEffect(() => {
     dataRef.current = data;
     configRef.current = {
-      maleLabel: seriesKeys[0] ?? DEFAULT_MALE_LABEL,
-      femaleLabel: seriesKeys[1] ?? DEFAULT_FEMALE_LABEL,
+      ...resolveGenderLabelsFromSeriesKeys(seriesKeys, {
+        male: DEFAULT_MALE_LABEL,
+        female: DEFAULT_FEMALE_LABEL,
+      }),
       timelineTitle: timelineAxisAttributeName,
     };
     applyDataRef.current?.();

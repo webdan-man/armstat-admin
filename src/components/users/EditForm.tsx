@@ -79,10 +79,12 @@ function EditUserForm({ id }: { id: string }) {
   };
 
   return (
-    <div className="flex flex-col gap-3">
-      <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">
-        Խմբագրել տվյալները և իրավասությունները
-      </h1>
+    <div className="flex w-full flex-col gap-4 pb-10">
+      <div className="sticky top-0 z-10 -mx-11 flex min-h-11 flex-col gap-4 bg-[#f9fafb] px-11 pt-7 pb-4">
+        <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">
+          Խմբագրել տվյալները և իրավասությունները
+        </h1>
+      </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

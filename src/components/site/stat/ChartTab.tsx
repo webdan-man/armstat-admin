@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MarkdownText } from "@/components/site/MarkdownText";
 import { recordMetricView } from "@/services/metricsService";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useFormattedDisplayDate } from "@/hooks/useFormatDisplayDate";
 
 interface ChartTabProps {
   combinations?: MetricCombination[];
@@ -28,6 +29,7 @@ export default function ChartTab({
   updatedAt,
 }: ChartTabProps) {
   const { t } = useTranslation();
+  const formattedUpdatedAt = useFormattedDisplayDate(updatedAt);
   useEffect(() => {
     if (metricId) {
       recordMetricView(metricId).catch(() => {});
@@ -53,14 +55,9 @@ export default function ChartTab({
       {combinations?.length > 0 && (
         <div className="flex justify-between gap-5">
           <div className="flex gap-5">
-            {updatedAt ? (
+            {formattedUpdatedAt ? (
               <p className="text-[11px] text-[rgba(110,127,136,1)]">
-                {t("stat.updated_at", "Թարմացված է՝")}{" "}
-                {new Date(updatedAt).toLocaleString("hy-AM", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                })}
+                {t("stat.updated_at", "Թարմացված է՝")} {formattedUpdatedAt}
               </p>
             ) : null}
             {link && (

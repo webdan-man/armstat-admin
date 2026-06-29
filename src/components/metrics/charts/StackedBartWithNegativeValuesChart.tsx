@@ -3,6 +3,10 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { applyChartColorStep, getPaletteColor } from "@/utils/chart/chart-palette.util";
+import {
+  getGenderSeriesPaletteIndex,
+  resolveGenderHorizontalBarKeys,
+} from "@/utils/chart/gender-chart-order.util";
 
 type ChartDatum = Record<string, string | number>;
 
@@ -218,7 +222,9 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
     if (!root || !chart || !xAxis || !yAxis) return;
 
     seriesKeysRef.current = seriesKeys;
-    const [rightKey, leftKey] = seriesKeys;
+    const genderKeys = resolveGenderHorizontalBarKeys(seriesKeys);
+    const leftKey = genderKeys?.leftKey ?? seriesKeys[0];
+    const rightKey = genderKeys?.rightKey ?? seriesKeys[1];
 
     yAxis.set("categoryField", yAxisKey);
     leftTitleLabelRef.current?.set("text", leftKey ?? "");
@@ -237,8 +243,14 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
     });
 
     const colors = chart.get("colors")!;
-    const leftColor = getPaletteColor(colors, LEFT_COLOR_INDEX);
-    const rightColor = getPaletteColor(colors, RIGHT_COLOR_INDEX);
+    const leftColor =
+      getGenderSeriesPaletteIndex(leftKey) != null
+        ? getPaletteColor(colors, getGenderSeriesPaletteIndex(leftKey)!)
+        : getPaletteColor(colors, LEFT_COLOR_INDEX);
+    const rightColor =
+      getGenderSeriesPaletteIndex(rightKey) != null
+        ? getPaletteColor(colors, getGenderSeriesPaletteIndex(rightKey)!)
+        : getPaletteColor(colors, RIGHT_COLOR_INDEX);
     const seriesList: am5xy.ColumnSeries[] = [];
 
     const createSeries = (
@@ -329,7 +341,9 @@ function StackedBartWithNegativeValuesChart<T extends ChartDatum>({
     const xAxis = xAxisRef.current;
     if (!yAxis || !xAxis) return;
 
-    const [rightKey, leftKey] = seriesKeysRef.current;
+    const genderKeys = resolveGenderHorizontalBarKeys(seriesKeysRef.current);
+    const leftKey = genderKeys?.leftKey ?? seriesKeysRef.current[0];
+    const rightKey = genderKeys?.rightKey ?? seriesKeysRef.current[1];
     const chartData = toChartData(data, leftKey, rightKey);
     const axisMax = computeAxisMax(chartData, leftKey, rightKey);
 

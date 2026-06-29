@@ -2,17 +2,28 @@ import { MetricCombination } from "@/types/metric";
 import { AttributeCategory } from "@/constants/attribute-category.constants";
 import { Attribute } from "@/types/attribute";
 import { compareCategoryLabels } from "@/utils/chart/sort-category-labels";
+import {
+  FEMALE_GENDER_TITLE,
+  MALE_GENDER_TITLE,
+  orderGenderSeriesKeysForHorizontalBar,
+  resolveGenderStackKeysBottomToTop,
+  isGenderSeriesKeys,
+} from "@/utils/chart/gender-chart-order.util";
 
-// Stacked bar chart: seriesKeys[0] → right (positive), seriesKeys[1] → left (negative).
-// Same convention as HistoricalPopulationPyramidChart — male right, female left.
-const MALE_TITLE = "Արական";
+export {
+  FEMALE_GENDER_TITLE,
+  MALE_GENDER_TITLE,
+  isGenderSeriesKeys,
+  resolveGenderStackKeysBottomToTop,
+};
+
+/** @deprecated Use resolveGenderStackKeysBottomToTop */
+export function orderGenderSeriesKeysForVerticalStack(keys: Iterable<string>): string[] {
+  return resolveGenderStackKeysBottomToTop(keys) ?? Array.from(keys);
+}
 
 export function orderGenderSeriesKeys(genders: Set<string> | Iterable<string>): string[] {
-  return Array.from(genders).sort((a, b) => {
-    if (a === MALE_TITLE) return -1;
-    if (b === MALE_TITLE) return 1;
-    return a.localeCompare(b);
-  });
+  return orderGenderSeriesKeysForHorizontalBar(genders);
 }
 
 export const mapCombinationsForStackedBarWithNegativeValuesChartUtil = (payload: {
@@ -26,7 +37,7 @@ export const mapCombinationsForStackedBarWithNegativeValuesChartUtil = (payload:
   const ageAttributeId = attributeMapByCategory.get(AttributeCategory.AGE)!._id;
 
   const resultMap = new Map<string, Record<string, number | string>>();
-  const categories = new Set<string>(); // dynamic series (e.g. genders)
+  const categories = new Set<string>();
 
   for (const item of combinations) {
     let gender: string | undefined;

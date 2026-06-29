@@ -3,6 +3,12 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getStableSeriesColor } from "@/utils/chart/stable-series-color.util";
+import { getPaletteColor } from "@/utils/chart/chart-palette.util";
+import {
+  buildGenderStackTooltipLabel,
+  getGenderSeriesPaletteIndex,
+  resolveGenderStackKeysBottomToTop,
+} from "@/utils/chart/gender-chart-order.util";
 import {
   allowRotatedXAxisLabelOverflow,
   applySingleLineLegendLabels,
@@ -15,9 +21,12 @@ import {
 interface StackedAreaChartProps<T extends Record<string, string>> {
   data: T[];
   xAxisKey?: string;
-  seriesKeys?: string[]; // e.g. ["Արական", "Իգական"]
+  seriesKeys?: string[];
   /** Optional title shown above the chart (e.g. selected province in map combinations). */
   chartTitle?: string;
+  /** Push order for stacked layers: index 0 = bottom, last = top. */
+  stackSeriesKeysBottomToTop?: string[];
+  colorNamespace?: string;
 }
 
 const containerId = "stacked-area-chartdiv";
@@ -29,6 +38,8 @@ function StackedAreaChart<T extends Record<string, string>>({
   xAxisKey,
   seriesKeys = [],
   chartTitle,
+  stackSeriesKeysBottomToTop,
+  colorNamespace = containerId,
 }: StackedAreaChartProps<T>) {
   const rootRef = useRef<am5.Root | null>(null);
   const chartRef = useRef<am5xy.XYChart | null>(null);
@@ -45,6 +56,7 @@ function StackedAreaChart<T extends Record<string, string>>({
   // Stable dependency for the series-reconcile effect: the array identity of
   // `seriesKeys` changes on every parent render, but its contents are what matter.
   const seriesKeysSignature = seriesKeys.join(" ");
+  const stackKeysSignature = (stackSeriesKeysBottomToTop ?? seriesKeys).join(" ");
 
   useLayoutEffect(() => {
     // Create chart once; otherwise amCharts replays intro animations on every data update.
@@ -255,23 +267,44 @@ function StackedAreaChart<T extends Record<string, string>>({
       series.dispose();
     });
 
-    seriesListRef.current = seriesKeys.map((key) => {
+    const keysToPush = stackSeriesKeysBottomToTop ?? seriesKeys;
+    const genderStack = resolveGenderStackKeysBottomToTop(keysToPush);
+    const [maleKey, femaleKey] = genderStack ?? [];
+
+    seriesListRef.current = keysToPush.map((key, index) => {
+      const isTop = index === keysToPush.length - 1;
+      const isGenderStack = genderStack != null;
+      const xKey = String(xAxisKey);
+
       const series = chart.series.push(
         am5xy.LineSeries.new(root, {
           name: String(key),
           xAxis,
           yAxis,
-          stacked: true,
+          stacked: index > 0,
           valueYField: String(key),
-          categoryXField: String(xAxisKey),
-          tooltip: am5.Tooltip.new(root, {
-            pointerOrientation: "horizontal",
-            labelText: `[bold]{${String(xAxisKey)}}[/]\n{name}     [bold]{valueY}[/]`,
-          }),
+          categoryXField: xKey,
+          ...(isGenderStack && isTop
+            ? {
+                tooltip: am5.Tooltip.new(root, {
+                  pointerOrientation: "horizontal",
+                  labelText: buildGenderStackTooltipLabel(maleKey, femaleKey, xKey),
+                }),
+              }
+            : {
+                tooltip: am5.Tooltip.new(root, {
+                  pointerOrientation: "horizontal",
+                  labelText: `[bold]{${xKey}}[/]\n{name}     [bold]{valueY}[/]`,
+                }),
+              }),
         })
       );
 
-      const color = getStableSeriesColor(containerId, chart.get("colors"), String(key), seriesKeys);
+      const genderIndex = getGenderSeriesPaletteIndex(String(key));
+      const color =
+        genderIndex != null
+          ? getPaletteColor(chart.get("colors"), genderIndex)!
+          : getStableSeriesColor(colorNamespace, chart.get("colors"), String(key), seriesKeys);
       series.set("fill", color);
       series.set("stroke", color);
 
@@ -289,7 +322,7 @@ function StackedAreaChart<T extends Record<string, string>>({
     // `data` is read via dataRef so a pure data change doesn't rebuild series;
     // the data effect below handles that.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seriesKeysSignature, xAxisKey]);
+  }, [seriesKeysSignature, stackKeysSignature, xAxisKey, colorNamespace]);
 
   useEffect(() => {
     chartTitleRef.current = chartTitle;

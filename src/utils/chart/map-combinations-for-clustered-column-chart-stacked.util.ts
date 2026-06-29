@@ -1,4 +1,5 @@
 import type { MetricCombination } from "@/types/metric";
+import { orderSeriesKeysIfGender } from "@/utils/chart/gender-chart-order.util";
 
 function uniqueTitlesForAttribute(combinations: MetricCombination[], attributeId: string): string[] {
   const titles = new Set<string>();
@@ -59,7 +60,7 @@ export const mapCombinationsForClusteredColumnChartStacked = (payload: {
   return {
     xAxisKey: xAttr.key,
     data: Array.from(resultMap.values()),
-    seriesKeys: Array.from(series),
+    seriesKeys: orderSeriesKeysIfGender(series),
     groupedBy: xAttr.key,
     aggregatedOver: otherAttr.key,
   };

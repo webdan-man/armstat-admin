@@ -1,13 +1,11 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ImageIcon, Plus, X } from "lucide-react";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import useSWR from "swr";
-
 import { LangSwitcher } from "@/components/main/LangSwitcher";
 import {
   EMPTY_MAIN_PAGE,
@@ -41,8 +39,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { formatDisplayDate } from "@/lib/format-display-date";
-import { swrKeys } from "@/lib/swr/cache-keys";
 import {
   fetchHomePage,
   updateActiveLocales,
@@ -53,7 +49,6 @@ import {
 } from "@/services/mainPageService";
 import { Checkbox } from "@/components/ui/checkbox";
 import { fetchSections } from "@/services/sectionsService";
-import { fetchMetricsByTopicId } from "@/services/metricsService";
 import type { Section } from "@/types/section";
 
 const fieldBorder =
@@ -62,9 +57,6 @@ const fieldBorder =
 const topicSelectTriggerClass = cn(
   "h-9 w-full rounded-[8.5px] border-[#c8c8c8] bg-[#f9fafb] shadow-none"
 );
-
-const METRIC_STATUS_DOT_PUBLISHED = "before:bg-[rgba(37,201,34,1)]";
-const METRIC_STATUS_DOT_UNPUBLISHED = "before:bg-[rgba(250,204,21,1)]";
 
 function TopicFilterChip({ children }: { children: React.ReactNode }) {
   return (
@@ -360,9 +352,7 @@ function BlockCard({
   const [pickerSection, setPickerSection] = useState("");
   const [pickerTopic, setPickerTopic] = useState("");
   const [pickerSubTopic, setPickerSubTopic] = useState("");
-  const [pickerMetric, setPickerMetric] = useState("");
   const [pickerNonce, setPickerNonce] = useState(0);
-  const [metricSelectNonce, setMetricSelectNonce] = useState(0);
 
   const selectedSection = availableSections.find((section) => section._id === pickerSection);
   const rootTopics = selectedSection?.topics.filter(isRootTopic) ?? [];
@@ -371,35 +361,19 @@ function BlockCard({
     pickerSection && pickerTopic && (childTopics.length === 0 || pickerSubTopic)
       ? pickerSubTopic || pickerTopic
       : null;
-  const canAdd = Boolean(resolvedPickerTopicId && pickerMetric);
-
-  const { data: metrics = [], isLoading: isMetricsLoading } = useSWR(
-    resolvedPickerTopicId ? swrKeys.metricsByTopic(resolvedPickerTopicId) : null,
-    () => fetchMetricsByTopicId(resolvedPickerTopicId!)
-  );
-
-  const selectedMetricIds = useMemo(
-    () => new Set(block.topicRefs.map(getStoredItemId)),
-    [block.topicRefs]
-  );
-
-  const availableMetrics = useMemo(
-    () => metrics.filter((option) => !selectedMetricIds.has(option.id)),
-    [metrics, selectedMetricIds]
-  );
+  const canAdd = Boolean(resolvedPickerTopicId);
 
   function resetPicker() {
     setPickerSection("");
     setPickerTopic("");
     setPickerSubTopic("");
-    setPickerMetric("");
     setPickerNonce((nonce) => nonce + 1);
-    setMetricSelectNonce((nonce) => nonce + 1);
   }
 
-  function resetMetricPicker() {
-    setPickerMetric("");
-    setMetricSelectNonce((nonce) => nonce + 1);
+  function resetTopicPickerSelection() {
+    setPickerTopic("");
+    setPickerSubTopic("");
+    setPickerNonce((nonce) => nonce + 1);
   }
 
   useEffect(() => {
@@ -419,7 +393,6 @@ function BlockCard({
       sectionId: pickerSection,
       topicId: pickerTopic,
       ...(pickerSubTopic ? { subTopicId: pickerSubTopic } : {}),
-      metricId: pickerMetric,
     };
     const storedId = getStoredItemId(ref);
     if (block.topicRefs.some((entry) => getStoredItemId(entry) === storedId)) {
@@ -428,7 +401,7 @@ function BlockCard({
     }
 
     onChange(withBlockTopicRefs(block, [...block.topicRefs, ref]));
-    resetMetricPicker();
+    resetTopicPickerSelection();
   }
 
   return (
@@ -475,7 +448,7 @@ function BlockCard({
 
         <Field label="Բաժիններ">
           <div className="flex flex-col gap-4">
-            <div className="grid min-h-11 items-end gap-4 md:grid-cols-3">
+            <div className="grid min-h-11 items-end gap-4 md:grid-cols-2">
               <div className="flex w-full flex-col items-start">
                 <TopicFilterChip>Բաժին</TopicFilterChip>
                 <SearchableSelect
@@ -486,7 +459,6 @@ function BlockCard({
                     setPickerSection(value);
                     setPickerTopic("");
                     setPickerSubTopic("");
-                    setPickerMetric("");
                   }}
                   placeholder="Ընտրել բաժին"
                   triggerClassName={topicSelectTriggerClass}
@@ -506,7 +478,6 @@ function BlockCard({
                   onValueChange={(value) => {
                     setPickerTopic(value);
                     setPickerSubTopic("");
-                    setPickerMetric("");
                   }}
                   placeholder="Ենթախումբ"
                   triggerClassName={topicSelectTriggerClass}
@@ -522,10 +493,7 @@ function BlockCard({
                       key={`picker-subtopic-${pickerSubTopic || "empty-subgroup"}-${pickerNonce}`}
                       disabled={!pickerTopic}
                       value={pickerSubTopic || undefined}
-                      onValueChange={(value) => {
-                        setPickerSubTopic(value);
-                        setPickerMetric("");
-                      }}
+                      onValueChange={setPickerSubTopic}
                       placeholder="Ենթա-ենթախումբ"
                       triggerClassName={topicSelectTriggerClass}
                       options={childTopics.map((topic) => ({
@@ -535,60 +503,6 @@ function BlockCard({
                     />
                   </div>
                 ) : null}
-              </div>
-
-              <div className="flex w-full flex-col items-start">
-                <TopicFilterChip>Ցուցանիշ</TopicFilterChip>
-                <SearchableSelect
-                  key={`${resolvedPickerTopicId || "empty-topic"}-metric-${metricSelectNonce}`}
-                  disabled={!resolvedPickerTopicId}
-                  value={
-                    pickerMetric && availableMetrics.some((option) => option.id === pickerMetric)
-                      ? pickerMetric
-                      : undefined
-                  }
-                  onValueChange={setPickerMetric}
-                  placeholder="Ցուցանիշ"
-                  triggerClassName={topicSelectTriggerClass}
-                  emptyText={
-                    isMetricsLoading
-                      ? "Բեռնում…"
-                      : metrics.length === 0
-                        ? "Ցուցանիշներ չկան"
-                        : "Բոլոր ցուցանիշները արդեն ավելացված են"
-                  }
-                  options={availableMetrics.map((option) => {
-                    const formatted = option.updatedAt
-                      ? formatDisplayDate(option.updatedAt) || null
-                      : null;
-                    const isPublished = Boolean(option.publishedAt);
-                    const statusDotClass = isPublished
-                      ? METRIC_STATUS_DOT_PUBLISHED
-                      : METRIC_STATUS_DOT_UNPUBLISHED;
-
-                    return {
-                      value: option.id,
-                      label: option.label,
-                      itemClassName:
-                        "flex w-full items-center justify-between rounded-none border-b border-b-[rgba(234,234,234,1)] py-5 *:[span]:last:w-full",
-                      node: (
-                        <>
-                          {option.label}{" "}
-                          {formatted ? (
-                            <div
-                              className={cn(
-                                "relative ml-auto justify-start pl-5 text-xs leading-4 font-medium text-zinc-800 before:absolute before:top-[2px] before:left-0 before:h-[7px] before:w-[7px] before:translate-1/2 before:rounded-full",
-                                statusDotClass
-                              )}
-                            >
-                              {formatted}
-                            </div>
-                          ) : null}
-                        </>
-                      ),
-                    };
-                  })}
-                />
               </div>
             </div>
 
@@ -633,6 +547,8 @@ function BlockCard({
   );
 }
 
+const USEFUL_LINK_DESCRIPTION_MAX_LENGTH = 40;
+
 function UsefulLinkRow({
   link,
   lang,
@@ -668,11 +584,16 @@ function UsefulLinkRow({
           onChange={(e) =>
             onChange({
               ...link,
-              description: writeLocalizedByLang(link.description, e.target.value, lang),
+              description: writeLocalizedByLang(
+                link.description,
+                e.target.value.slice(0, USEFUL_LINK_DESCRIPTION_MAX_LENGTH),
+                lang
+              ),
             })
           }
+          maxLength={USEFUL_LINK_DESCRIPTION_MAX_LENGTH}
           className={cn("min-h-[70px] resize-y", fieldBorder)}
-          placeholder="Մուտքագրեք նկարագրությունը"
+          placeholder={`Մուտքագրեք նկարագրությունը (առավելագույնը ${USEFUL_LINK_DESCRIPTION_MAX_LENGTH} նիշ)`}
         />
       </Field>
 

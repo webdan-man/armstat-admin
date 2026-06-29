@@ -30,7 +30,7 @@ export default function Footer() {
             </MarkdownText>
           </Link>
           <Link href="/">
-            <Image src={"/giz-logo.svg"} alt={"Logo"} width={191} height={52} />
+            <Image src={"/giz-logo.jpeg"} alt={"Logo"} width={750} height={312} />
           </Link>
         </div>
         <nav className="mt-18 flex w-full items-center justify-between max-md:hidden">

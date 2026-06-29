@@ -58,7 +58,14 @@ function getStableColorSet(namespace: string, source: am5.ColorSet): am5.ColorSe
 function getPaletteOrder(namespace: string, seriesKeys: string[]): string[] {
   const order = orderByNamespace.get(namespace);
   const hasUnplacedKey = !order || seriesKeys.some((key) => !order.includes(key));
-  if (hasUnplacedKey) {
+  const sameKeys =
+    !!order &&
+    order.length === seriesKeys.length &&
+    seriesKeys.every((key) => order.includes(key));
+  const orderChanged =
+    sameKeys && seriesKeys.some((key, index) => order![index] !== key);
+
+  if (hasUnplacedKey || orderChanged) {
     const next = [...seriesKeys];
     orderByNamespace.set(namespace, next);
     return next;

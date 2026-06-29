@@ -1,6 +1,7 @@
 import { MetricCombination } from "@/types/metric";
 import type { Attribute } from "@/types/attribute";
 import { AttributeCategory } from "@/constants/attribute-category.constants";
+import { resolveGenderSeriesKeysForPyramid } from "@/utils/chart/gender-chart-order.util";
 
 /** One flat row per gender × age × frame combination, as the pyramid chart expects. */
 export type PyramidRow = {
@@ -15,7 +16,7 @@ export type PyramidRow = {
 
 export type PyramidResult = {
   data: PyramidRow[];
-  /** [maleLabel, femaleLabel] — the gender titles found, male first. */
+  /** [femaleLabel, maleLabel] — the gender titles found, female first. */
   seriesKeys: string[];
   /**
    * Whether the timeline (X2) axis represents real calendar years ("time") or a
@@ -24,16 +25,9 @@ export type PyramidResult = {
   timelineMode: "time" | "category";
 };
 
-// The pyramid chart treats this gender as the right-hand (positive) side.
-const MALE_TITLE = "Արական";
-
-// Gender titles ordered so the male side is first (matches the chart's series order).
+// Gender titles ordered [female, male] — matches the pyramid chart's seriesKeys convention.
 function orderGenders(genders: Set<string>): string[] {
-  return Array.from(genders).sort((a, b) => {
-    if (a === MALE_TITLE) return -1;
-    if (b === MALE_TITLE) return 1;
-    return a.localeCompare(b);
-  });
+  return resolveGenderSeriesKeysForPyramid(genders) ?? Array.from(genders).sort((a, b) => a.localeCompare(b));
 }
 
 // Parse a calendar year out of a time value title (e.g. "2026" or "2026 թ.").

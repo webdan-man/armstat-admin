@@ -5,6 +5,7 @@ import type { MetricCombination } from "@/types/metric";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MarkdownText } from "@/components/site/MarkdownText";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useFormattedDisplayDate } from "@/hooks/useFormatDisplayDate";
 import CombinationsTable from "@/components/metrics/CombinationsTable";
 
 interface TableTabProps {
@@ -25,6 +26,7 @@ const TableTab = ({
   metricUnit,
 }: TableTabProps) => {
   const { t } = useTranslation();
+  const formattedUpdatedAt = useFormattedDisplayDate(updatedAt);
 
   if (isLoading) {
     return (
@@ -52,14 +54,9 @@ const TableTab = ({
 
       <div className="flex justify-between gap-5">
         <div className="flex gap-5">
-          {updatedAt ? (
+          {formattedUpdatedAt ? (
             <p className="text-[11px] text-[rgba(110,127,136,1)]">
-              {t("stat.updated_at", "Թարմացված է՝")}{" "}
-              {new Date(updatedAt).toLocaleString("hy-AM", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-              })}
+              {t("stat.updated_at", "Թարմացված է՝")} {formattedUpdatedAt}
             </p>
           ) : null}
           {link && (

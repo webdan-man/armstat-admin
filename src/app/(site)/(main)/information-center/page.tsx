@@ -68,7 +68,7 @@ export default async function InformationCenterPage({ searchParams }: Informatio
       <div className="bg-blue1000 flex w-full justify-center">
         <div className="flex w-full max-w-305 flex-col px-5 py-12">
           <TypographyH2>
-            {title || <Tr k="information_center.title" fallback="Տեղեկատվական կենտրոն" />}
+            <Tr k="navigation.information_center" fallback="Տեղեկատվական կենտրոն" />
           </TypographyH2>
         </div>
       </div>

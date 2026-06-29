@@ -1,5 +1,9 @@
 import type { MetricCombination } from "@/types/metric";
 import { mapCombinationsForArmeniaProvinces } from "@/utils/chart/map-combinations-for-armenia-provinces";
+import {
+  orderSeriesKeysIfGender,
+  resolveGenderStackKeysBottomToTop,
+} from "@/utils/chart/gender-chart-order.util";
 
 export const mapCombinationsForMapAndStackedAreaChart = (payload: {
   combinations: MetricCombination[];
@@ -41,12 +45,14 @@ export const mapCombinationsForMapAndStackedAreaChart = (payload: {
   }
 
   const stackedAreaData = Array.from(resultMap.values());
-  const seriesKeys = Array.from(series);
+  const seriesKeys = orderSeriesKeysIfGender(series);
+  const stackSeriesKeysBottomToTop = resolveGenderStackKeysBottomToTop(series) ?? undefined;
   const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
 
   return {
     data: { stackedAreaData, mapData },
     seriesKeys,
+    stackSeriesKeysBottomToTop,
   };
 };
 

@@ -1,6 +1,7 @@
 import { MetricCombination } from "@/types/metric";
 import { AttributeCategory } from "@/constants/attribute-category.constants";
 import { Attribute } from "@/types/attribute";
+import { orderSeriesKeysIfGender } from "@/utils/chart/gender-chart-order.util";
 
 export const mapCombinationsForStackAreaChart = (payload: {
   combinations: MetricCombination[];
@@ -45,7 +46,7 @@ export const mapCombinationsForStackAreaChart = (payload: {
   const data = Array.from(resultMap.values()).sort(
     (a, b) => Number(a.year) - Number(b.year),
   );
-  const seriesKeys = Array.from(categories);
+  const seriesKeys = orderSeriesKeysIfGender(categories);
 
   return {
     data,

@@ -56,7 +56,7 @@ const MapAndStackedColumnChart = ({
     [combinations, seriesAttributeId]
   );
 
-  const { columnData, seriesKeys } = useMemo(() => {
+  const { columnData, seriesKeys, stackSeriesKeysBottomToTop } = useMemo(() => {
     const filtered = filterCombinationsByProvinceMapId(
       combinations,
       provinceAttributeId,
@@ -65,6 +65,7 @@ const MapAndStackedColumnChart = ({
     const {
       data: { columnData },
       seriesKeys,
+      stackSeriesKeysBottomToTop,
     } = mapCombinationsForMapAndStackedColumnChart({
       combinations: filtered,
       stackedAttributeId,
@@ -72,7 +73,7 @@ const MapAndStackedColumnChart = ({
       provinceAttributeId,
       xAxisKey,
     });
-    return { columnData, seriesKeys };
+    return { columnData, seriesKeys, stackSeriesKeysBottomToTop };
   }, [
     combinations,
     provinceAttributeId,
@@ -100,6 +101,8 @@ const MapAndStackedColumnChart = ({
           data={columnData as Record<string, string>[]}
           xAxisKey={xAxisKey}
           seriesKeys={seriesKeys}
+          stackSeriesKeysBottomToTop={stackSeriesKeysBottomToTop}
+          colorNamespace="map-stacked-column-chartdiv"
           chartTitle={chartTitle}
           yAxisLabel={seriesAttributeTitle}
         />

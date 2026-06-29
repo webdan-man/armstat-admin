@@ -1,5 +1,14 @@
 import type { MetricCombination } from "@/types/metric";
 import { mapCombinationsForArmeniaProvinces } from "@/utils/chart/map-combinations-for-armenia-provinces";
+import { resolveGenderStackKeysBottomToTop } from "@/utils/chart/gender-chart-order.util";
+import { compareCategoryLabels } from "@/utils/chart/sort-category-labels";
+
+function orderSeriesKeys(keys: Set<string>): string[] {
+  const list = Array.from(keys);
+  const genderStack = resolveGenderStackKeysBottomToTop(list);
+  if (genderStack) return genderStack;
+  return list.sort((a, b) => compareCategoryLabels(a, b));
+}
 
 export const mapCombinationsForMapAndStackedColumnChart = (payload: {
   combinations: MetricCombination[];
@@ -41,13 +50,16 @@ export const mapCombinationsForMapAndStackedColumnChart = (payload: {
     entry[seriesValue] = prev + (Number(item.value) || 0);
   }
 
-  const columnData = Array.from(resultMap.values());
-  const seriesKeys = Array.from(series);
+  const columnData = Array.from(resultMap.values()).sort((a, b) =>
+    compareCategoryLabels(String(a[xAxisKey]), String(b[xAxisKey]))
+  );
+  const seriesKeys = orderSeriesKeys(series);
+  const stackSeriesKeysBottomToTop = resolveGenderStackKeysBottomToTop(series);
   const mapData = mapCombinationsForArmeniaProvinces(combinations, provinceAttributeId);
 
   return {
     data: { columnData, mapData },
     seriesKeys,
+    stackSeriesKeysBottomToTop: stackSeriesKeysBottomToTop ?? undefined,
   };
 };
-

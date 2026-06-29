@@ -1,3 +1,4 @@
+import { FeedbackMap } from "@/components/site/feedback/FeedbackMap";
 import { MarkdownText } from "@/components/site/MarkdownText";
 import { TypographyH2 } from "@/components/ui/typography";
 import Image from "next/image";
@@ -38,15 +39,16 @@ type ContactUsResponse = {
   updatedAt?: string;
 };
 
-function buildMapEmbedSrc(coords?: string) {
+function parseMapCoords(coords?: string): string {
   const value = coords?.trim();
-  if (!value) return undefined;
-  // Expected: "40.1772, 44.5035"
-  const [latRaw, lngRaw] = value.split(",").map((s) => s.trim());
+  if (!value) return "40.1811,44.5136";
+
+  const [latRaw, lngRaw] = value.split(",").map((part) => part.trim());
   const lat = Number(latRaw);
   const lng = Number(lngRaw);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return undefined;
-  return `https://maps.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}&z=13&output=embed`;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return "40.1811,44.5136";
+
+  return `${lat},${lng}`;
 }
 
 async function getContactUsData(): Promise<ContactUsResponse | null> {
@@ -69,9 +71,7 @@ export default async function FeedbackPage({ searchParams }: FeedbackPageProps) 
   const description = pickLocale(data?.description, lang);
   const notificationsEmailRow = pickLocale(data?.notificationsEmailRow, lang);
   const mapTitle = data?.mapSection?.title ?? "";
-  const mapSrc =
-    buildMapEmbedSrc(data?.mapSection?.value) ??
-    "https://maps.google.com/maps?q=40.1811,44.5136&z=13&output=embed";
+  const mapCoords = parseMapCoords(data?.mapSection?.value);
   const sections = data?.sections ?? [];
   const socialLinks = (data?.socialLinks ?? []).filter((s) => Boolean(s?.link));
 
@@ -216,17 +216,7 @@ export default async function FeedbackPage({ searchParams }: FeedbackPageProps) 
             ) : null}
           </div>
           <div className="relative -right-15.75 -mt-23.5 h-130.5 w-full max-w-101 shrink-0 overflow-hidden rounded-[30px] max-md:right-0 max-md:mt-10">
-            {mapTitle ? (
-              <p className="absolute top-4 left-4 z-10 rounded-md bg-white/90 px-3 py-2 font-medium text-[rgba(37,37,37,1)]">
-                {mapTitle}
-              </p>
-            ) : null}
-            <iframe
-              src={mapSrc}
-              className="pointer-events-none h-full w-full border-0"
-              title={mapTitle || "Map"}
-            />
-            <div className="absolute inset-0" aria-hidden="true" />
+            <FeedbackMap coords={mapCoords} title={mapTitle || undefined} />
           </div>
         </div>
       </div>

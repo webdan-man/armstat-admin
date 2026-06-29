@@ -1,4 +1,5 @@
 import type { MetricCombination } from "@/types/metric";
+import { orderSeriesKeysIfGender } from "@/utils/chart/gender-chart-order.util";
 
 export type GroupedStackedColumnChartRow = {
   category: string;
@@ -87,7 +88,8 @@ export const mapCombinationsForGroupedStackedColumnChart = (payload: {
     }
   }
 
-  const stackDimensions: GroupedStackedDimension[] = Array.from(stackValues).map((v) => ({
+  const orderedStackValues = orderSeriesKeysIfGender(stackValues);
+  const stackDimensions: GroupedStackedDimension[] = orderedStackValues.map((v) => ({
     field: v,
     label: v,
   }));

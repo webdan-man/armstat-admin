@@ -25,6 +25,7 @@ function formatDotDate(date: Date): string {
 }
 
 const DOT_DATE_PATTERN = /^(\d{2})\.(\d{2})\.(\d{4})$/;
+const NATIVE_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 export function parseDotDisplayDate(value: string): Date | null {
   const trimmed = value.trim();
@@ -47,6 +48,38 @@ export function parseDotDisplayDate(value: string): Date | null {
   return date;
 }
 
+/** `dd.mm.yyyy` → `yyyy-mm-dd` for `<input type="date" />`. */
+export function toNativeDateInputValue(dotValue: string): string {
+  const date = parseDotDisplayDate(dotValue);
+  if (!date) return "";
+
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+}
+
+/** `yyyy-mm-dd` from `<input type="date" />` → `dd.mm.yyyy`. */
+export function fromNativeDateInputValue(nativeValue: string): string {
+  const trimmed = nativeValue.trim();
+  if (!trimmed) return "";
+
+  const match = trimmed.match(NATIVE_DATE_PATTERN);
+  if (!match) return "";
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return "";
+  }
+
+  return formatDotDate(date);
+}
+
 function formatDotDateTime(date: Date): string {
   return `${formatDotDate(date)} ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
 }
@@ -62,15 +95,20 @@ export function formatDisplayDate(
   const date = parseDisplayDate(input);
   if (!date) return typeof input === "string" ? input : "";
 
-  if (locale === "hy" || locale === "ru") {
-    return formatDotDate(date);
-  }
-
-  return formatWithIntl(date, locale, {
+  const parts = new Intl.DateTimeFormat(intlLocaleBySiteLang[locale], {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-  });
+  }).formatToParts(date);
+
+  const day = parts.find((part) => part.type === "day")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const year = parts.find((part) => part.type === "year")?.value;
+
+  if (!day || !month || !year) return formatDotDate(date);
+
+  // Always dd.mm.yyyy (never US mm/dd/yyyy), but parts follow active locale.
+  return `${day}.${month}.${year}`;
 }
 
 export function formatDisplayDateTime(
@@ -84,12 +122,9 @@ export function formatDisplayDateTime(
     return formatDotDateTime(date);
   }
 
-  return formatWithIntl(date, locale, {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
+  return `${formatDotDate(date)} ${formatWithIntl(date, locale, {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  });
+  })}`;
 }
