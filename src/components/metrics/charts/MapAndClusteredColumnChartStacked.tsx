@@ -1,18 +1,17 @@
 "use client";
 
 import { useMemo } from "react";
-import ClusteredColumnChart from "@/components/metrics/charts/ClusteredColumnChart";
 import ArmeniaProvincesMap from "@/components/metrics/charts/Map/MapChart";
 import type { MetricCombination } from "@/types/metric";
 import { useProvinceHoverSelection } from "@/hooks/useProvinceHoverSelection";
-import { useLang } from "@/providers/LangProvider";
 import {
   filterCombinationsByProvinceMapId,
   getArmeniaTitle,
   getProvinceTitleByMapId,
 } from "@/utils/chart/map-combinations-for-armenia-provinces";
-import { mapCombinationsForClusteredColumnChartStacked } from "@/utils/chart/map-combinations-for-clustered-column-chart-stacked.util";
-import { mapCombinationsForClusteredColumnChartStacked3D } from "@/utils/chart/map-combinations-for-clustered-column-chart-stacked-3d.util";
+import { mapCombinationsForClusteredAndStackedColumnChart } from "@/utils/chart/map-combinations-for-clustered-and-stacked-column-chart.util";
+import StackedAndClusteredColumnChart from "@/components/metrics/charts/StackedAndClusteredColumnChart";
+import { useLang } from "@/providers/LangProvider";
 
 interface MapDataItem {
   id: string;
@@ -51,30 +50,35 @@ const MapAndClusteredColumnChartStacked = ({ data }: MapAndClusteredColumnChartS
     return getProvinceTitleByMapId(activeProvinceMapId, activeLang) ?? activeProvinceMapId;
   }, [activeProvinceMapId, activeLang]);
 
-  const { columnData, seriesKeys, xAxisKey } = useMemo(() => {
+  const { columnData, clusterKeys, stackKeys, xAxisKey } = useMemo(() => {
     const filtered = filterCombinationsByProvinceMapId(
       combinations,
       provinceAttributeId,
       activeProvinceMapId
     );
+    // True clustered+stacked (3 dimensions). Gender variant forces GENDER onto the
+    // stack layers; the remaining two attributes are split into X / cluster groups by
+    // CXG. The 3d variant assigns all three roles purely by unique-value count.
     const {
       data: columnData,
-      seriesKeys,
+      clusterKeys,
+      stackKeys,
       xAxisKey,
-    } =
-      data.variant === "gender"
-        ? mapCombinationsForClusteredColumnChartStacked({
-            combinations: filtered,
-            genderAttributeId: data.genderAttributeId,
-            firstCtgAttribute: data.firstCtgAttribute,
-            secondCtgAttribute: data.secondCtgAttribute,
-          })
-        : mapCombinationsForClusteredColumnChartStacked3D({
-            combinations: filtered,
-            attributes: data.attributes,
-          });
-    return { columnData, seriesKeys, xAxisKey };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    } = data.variant === "gender"
+      ? mapCombinationsForClusteredAndStackedColumnChart({
+          combinations: filtered,
+          attributes: [
+            { id: data.genderAttributeId, key: "gender" },
+            data.firstCtgAttribute,
+            data.secondCtgAttribute,
+          ],
+          stackAttributeId: data.genderAttributeId,
+        })
+      : mapCombinationsForClusteredAndStackedColumnChart({
+          combinations: filtered,
+          attributes: data.attributes,
+        });
+    return { columnData, clusterKeys, stackKeys, xAxisKey };
   }, [data, combinations, provinceAttributeId, activeProvinceMapId]);
 
   return (
@@ -90,12 +94,12 @@ const MapAndClusteredColumnChartStacked = ({ data }: MapAndClusteredColumnChartS
         />
       </div>
       <div>
-        <ClusteredColumnChart
+        <StackedAndClusteredColumnChart
           key="map-and-clustered-column-chart-stacked"
           xAxisKey={xAxisKey}
-          data={columnData as Record<string, string>[]}
-          seriesKeys={seriesKeys}
-          stacked
+          data={columnData as Record<string, string | number>[]}
+          clusterKeys={clusterKeys}
+          stackKeys={stackKeys}
           chartTitle={chartTitle}
         />
       </div>

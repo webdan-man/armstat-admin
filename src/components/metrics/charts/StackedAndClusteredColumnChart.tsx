@@ -4,6 +4,7 @@ import * as am5xy from "@amcharts/amcharts5/xy";
 import { getRainbowPaletteColor, setChartThemes } from "@/utils/chart/chart-palette.util";
 import {
   applySingleLineLegendLabels,
+  CHART_HEADER_HEADROOM,
   LEGEND_BLOCK_HEIGHT,
   LEGEND_OVERFLOW_PADDING,
   lockPlotHeight,
@@ -22,9 +23,12 @@ interface StackedAndClusteredColumnChartProps<T extends Record<string, string | 
   stackKeys?: string[];
   /** Legacy simple-clustered mode (2 dimensions: X × series). */
   seriesKeys?: string[];
+  /** Optional title shown above the chart (e.g. selected province in map combinations). */
+  chartTitle?: string;
 }
 
 const containerId = "stacked-and-clustered-column-chartdiv";
+const CHART_TITLE_BAND_HEIGHT = 40;
 
 function StackedAndClusteredColumnChart<T extends Record<string, string | number>>({
   data,
@@ -32,6 +36,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
   clusterKeys,
   stackKeys,
   seriesKeys = [],
+  chartTitle,
 }: StackedAndClusteredColumnChartProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomContainerRef = useRef<am5.Container | null>(null);
@@ -60,6 +65,37 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
       );
 
       lockPlotHeight(chart);
+
+      if (chartTitle !== undefined) {
+        root.container.setAll({ paddingTop: CHART_HEADER_HEADROOM });
+
+        chart.topAxesContainer.setAll({
+          marginTop: -CHART_HEADER_HEADROOM,
+          paddingTop: 0,
+          paddingBottom: 0,
+        });
+
+        const titleBand = chart.topAxesContainer.children.push(
+          am5.Container.new(root, {
+            width: am5.p100,
+            height: CHART_TITLE_BAND_HEIGHT,
+          })
+        );
+
+        titleBand.children.push(
+          am5.Label.new(root, {
+            text: chartTitle,
+            fontSize: 20,
+            x: am5.p50,
+            centerX: am5.p50,
+            y: am5.p50,
+            centerY: am5.p50,
+            maxWidth: 250,
+            oversizedBehavior: "wrap",
+            textAlign: "center",
+          })
+        );
+      }
 
       chart.set(
         "scrollbarX",
@@ -218,6 +254,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
         getContainerEl: () => containerRef.current,
         heightWatchers: [bottomContainer, legend],
         bottomBuffer: 15,
+        getAboveChartHeight: () => (chartTitle !== undefined ? CHART_HEADER_HEADROOM : 0),
         getBelowChartHeight: () => {
           const measuredBottom = bottomContainerRef.current?.height();
           if (measuredBottom && measuredBottom > 0) {
@@ -316,7 +353,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
       bottomContainerRef.current = null;
       root.dispose();
     };
-  }, [data, xAxisKey, clusterKeys, stackKeys, seriesKeys]);
+  }, [data, xAxisKey, clusterKeys, stackKeys, seriesKeys, chartTitle]);
 
   return (
     <div>
