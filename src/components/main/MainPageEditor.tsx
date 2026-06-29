@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ImageIcon, Plus, X } from "lucide-react";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import useSWR from "swr";
 
 import { LangSwitcher } from "@/components/main/LangSwitcher";
 import {
@@ -25,12 +24,12 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { getSectionLocalizedText } from "@/lib/section-localization";
 import { isRootTopic } from "@/lib/section-topic-utils";
 import {
-  formatTopicRefLabel,
-  getStoredItemId,
-  normalizeHomePageSections,
-  resolveSectionIdsToRefs,
-  topicRefsToSectionIds,
-  type FeaturedBlockTopicRef,
+  getFeaturedItemLabel,
+  normalizeFeaturedBlockItems,
+  sectionToFeaturedItem,
+  toFeaturedBlockItemPayload,
+  topicToFeaturedItem,
+  type FeaturedBlockItem,
 } from "@/utils/featured-block-topics.util";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -41,8 +40,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { formatDisplayDate } from "@/lib/format-display-date";
-import { swrKeys } from "@/lib/swr/cache-keys";
 import {
   fetchHomePage,
   updateActiveLocales,
@@ -53,7 +50,6 @@ import {
 } from "@/services/mainPageService";
 import { Checkbox } from "@/components/ui/checkbox";
 import { fetchSections } from "@/services/sectionsService";
-import { fetchMetricsByTopicId } from "@/services/metricsService";
 import type { Section } from "@/types/section";
 
 const fieldBorder =
@@ -63,9 +59,6 @@ const topicSelectTriggerClass = cn(
   "h-9 w-full rounded-[8.5px] border-[#c8c8c8] bg-[#f9fafb] shadow-none"
 );
 
-const METRIC_STATUS_DOT_PUBLISHED = "before:bg-[rgba(37,201,34,1)]";
-const METRIC_STATUS_DOT_UNPUBLISHED = "before:bg-[rgba(250,204,21,1)]";
-
 function TopicFilterChip({ children }: { children: React.ReactNode }) {
   return (
     <span className="z-10 -mb-2 ml-3 justify-start bg-white px-0.5 text-[10px] leading-4 font-normal text-zinc-800">
@@ -74,15 +67,8 @@ function TopicFilterChip({ children }: { children: React.ReactNode }) {
   );
 }
 
-function withBlockTopicRefs(
-  block: MainHomeBlock,
-  topicRefs: FeaturedBlockTopicRef[]
-): MainHomeBlock {
-  return {
-    ...block,
-    topicRefs,
-    sectionIds: topicRefsToSectionIds(topicRefs),
-  };
+function withBlockItems(block: MainHomeBlock, items: FeaturedBlockItem[]): MainHomeBlock {
+  return { ...block, items };
 }
 
 const heroFormSchema = z.object({
@@ -360,46 +346,25 @@ function BlockCard({
   const [pickerSection, setPickerSection] = useState("");
   const [pickerTopic, setPickerTopic] = useState("");
   const [pickerSubTopic, setPickerSubTopic] = useState("");
-  const [pickerMetric, setPickerMetric] = useState("");
   const [pickerNonce, setPickerNonce] = useState(0);
-  const [metricSelectNonce, setMetricSelectNonce] = useState(0);
 
   const selectedSection = availableSections.find((section) => section._id === pickerSection);
   const rootTopics = selectedSection?.topics.filter(isRootTopic) ?? [];
   const childTopics = rootTopics.find((topic) => topic._id === pickerTopic)?.subtopics ?? [];
-  const resolvedPickerTopicId =
-    pickerSection && pickerTopic && (childTopics.length === 0 || pickerSubTopic)
-      ? pickerSubTopic || pickerTopic
+  // The deepest level the editor has drilled into decides what gets added:
+  // a chosen subtopic or topic produces a "topic" item, otherwise the whole section.
+  const resolvedTopic = pickerSubTopic
+    ? (childTopics.find((topic) => topic._id === pickerSubTopic) ?? null)
+    : pickerTopic
+      ? (rootTopics.find((topic) => topic._id === pickerTopic) ?? null)
       : null;
-  const canAdd = Boolean(resolvedPickerTopicId && pickerMetric);
-
-  const { data: metrics = [], isLoading: isMetricsLoading } = useSWR(
-    resolvedPickerTopicId ? swrKeys.metricsByTopic(resolvedPickerTopicId) : null,
-    () => fetchMetricsByTopicId(resolvedPickerTopicId!)
-  );
-
-  const selectedMetricIds = useMemo(
-    () => new Set(block.topicRefs.map(getStoredItemId)),
-    [block.topicRefs]
-  );
-
-  const availableMetrics = useMemo(
-    () => metrics.filter((option) => !selectedMetricIds.has(option.id)),
-    [metrics, selectedMetricIds]
-  );
+  const canAdd = Boolean(selectedSection);
 
   function resetPicker() {
     setPickerSection("");
     setPickerTopic("");
     setPickerSubTopic("");
-    setPickerMetric("");
     setPickerNonce((nonce) => nonce + 1);
-    setMetricSelectNonce((nonce) => nonce + 1);
-  }
-
-  function resetMetricPicker() {
-    setPickerMetric("");
-    setMetricSelectNonce((nonce) => nonce + 1);
   }
 
   useEffect(() => {
@@ -413,22 +378,19 @@ function BlockCard({
   }, [pickerSection, selectedSection]);
 
   function handleAddItem() {
-    if (!canAdd || !resolvedPickerTopicId) return;
+    if (!selectedSection) return;
 
-    const ref: FeaturedBlockTopicRef = {
-      sectionId: pickerSection,
-      topicId: pickerTopic,
-      ...(pickerSubTopic ? { subTopicId: pickerSubTopic } : {}),
-      metricId: pickerMetric,
-    };
-    const storedId = getStoredItemId(ref);
-    if (block.topicRefs.some((entry) => getStoredItemId(entry) === storedId)) {
+    const item = resolvedTopic
+      ? topicToFeaturedItem(selectedSection, resolvedTopic)
+      : sectionToFeaturedItem(selectedSection);
+
+    if (block.items.some((entry) => entry.id === item.id)) {
       toast.message("Արդեն ավելացված է");
       return;
     }
 
-    onChange(withBlockTopicRefs(block, [...block.topicRefs, ref]));
-    resetMetricPicker();
+    onChange(withBlockItems(block, [...block.items, item]));
+    resetPicker();
   }
 
   return (
@@ -486,7 +448,6 @@ function BlockCard({
                     setPickerSection(value);
                     setPickerTopic("");
                     setPickerSubTopic("");
-                    setPickerMetric("");
                   }}
                   placeholder="Ընտրել բաժին"
                   triggerClassName={topicSelectTriggerClass}
@@ -506,7 +467,6 @@ function BlockCard({
                   onValueChange={(value) => {
                     setPickerTopic(value);
                     setPickerSubTopic("");
-                    setPickerMetric("");
                   }}
                   placeholder="Ենթախումբ"
                   triggerClassName={topicSelectTriggerClass}
@@ -515,7 +475,9 @@ function BlockCard({
                     label: getSectionLocalizedText(topic.title),
                   }))}
                 />
-                {childTopics.length > 0 ? (
+              </div>
+              {childTopics.length > 0 ? (
+                <div className="flex w-full flex-col items-start">
                   <div className="mt-2 flex w-full flex-col items-start">
                     <TopicFilterChip>Ենթա-ենթախումբ</TopicFilterChip>
                     <SearchableSelect
@@ -524,7 +486,6 @@ function BlockCard({
                       value={pickerSubTopic || undefined}
                       onValueChange={(value) => {
                         setPickerSubTopic(value);
-                        setPickerMetric("");
                       }}
                       placeholder="Ենթա-ենթախումբ"
                       triggerClassName={topicSelectTriggerClass}
@@ -534,62 +495,8 @@ function BlockCard({
                       }))}
                     />
                   </div>
-                ) : null}
-              </div>
-
-              <div className="flex w-full flex-col items-start">
-                <TopicFilterChip>Ցուցանիշ</TopicFilterChip>
-                <SearchableSelect
-                  key={`${resolvedPickerTopicId || "empty-topic"}-metric-${metricSelectNonce}`}
-                  disabled={!resolvedPickerTopicId}
-                  value={
-                    pickerMetric && availableMetrics.some((option) => option.id === pickerMetric)
-                      ? pickerMetric
-                      : undefined
-                  }
-                  onValueChange={setPickerMetric}
-                  placeholder="Ցուցանիշ"
-                  triggerClassName={topicSelectTriggerClass}
-                  emptyText={
-                    isMetricsLoading
-                      ? "Բեռնում…"
-                      : metrics.length === 0
-                        ? "Ցուցանիշներ չկան"
-                        : "Բոլոր ցուցանիշները արդեն ավելացված են"
-                  }
-                  options={availableMetrics.map((option) => {
-                    const formatted = option.updatedAt
-                      ? formatDisplayDate(option.updatedAt) || null
-                      : null;
-                    const isPublished = Boolean(option.publishedAt);
-                    const statusDotClass = isPublished
-                      ? METRIC_STATUS_DOT_PUBLISHED
-                      : METRIC_STATUS_DOT_UNPUBLISHED;
-
-                    return {
-                      value: option.id,
-                      label: option.label,
-                      itemClassName:
-                        "flex w-full items-center justify-between rounded-none border-b border-b-[rgba(234,234,234,1)] py-5 *:[span]:last:w-full",
-                      node: (
-                        <>
-                          {option.label}{" "}
-                          {formatted ? (
-                            <div
-                              className={cn(
-                                "relative ml-auto justify-start pl-5 text-xs leading-4 font-medium text-zinc-800 before:absolute before:top-[2px] before:left-0 before:h-[7px] before:w-[7px] before:translate-1/2 before:rounded-full",
-                                statusDotClass
-                              )}
-                            >
-                              {formatted}
-                            </div>
-                          ) : null}
-                        </>
-                      ),
-                    };
-                  })}
-                />
-              </div>
+                </div>
+              ) : null}
             </div>
 
             <div className="flex justify-end">
@@ -601,18 +508,19 @@ function BlockCard({
         </Field>
 
         <div className="flex flex-wrap gap-3">
-          {block.topicRefs.map((ref) => {
-            const storedId = getStoredItemId(ref);
-            const label = formatTopicRefLabel(availableSections, ref, block.sections);
+          {block.items.map((item) => {
+            const label = getFeaturedItemLabel(availableSections, item);
             return (
               <TagChip
-                key={storedId}
+                key={`${item.type}-${item.id}`}
                 label={label}
                 onRemove={() =>
                   onChange(
-                    withBlockTopicRefs(
+                    withBlockItems(
                       block,
-                      block.topicRefs.filter((entry) => getStoredItemId(entry) !== storedId)
+                      block.items.filter(
+                        (entry) => !(entry.type === item.type && entry.id === item.id)
+                      )
                     )
                   )
                 }
@@ -786,12 +694,6 @@ export function MainPageEditor() {
         ]);
         if (isCancelled) return;
         const mapped = fromApiHomePage(homeResponse, "hy");
-        mapped.blocks = await Promise.all(
-          mapped.blocks.map(async (block) => ({
-            ...block,
-            topicRefs: await resolveSectionIdsToRefs(sectionsResponse, block.sectionIds),
-          }))
-        );
         initialJson.current = JSON.stringify(mapped);
         setHeroImageFile(mapped.heroImage || null);
         setAdvertisingImageFile(mapped.advertising.image || null);
@@ -834,7 +736,7 @@ export function MainPageEditor() {
       featuredBlocks: data.blocks.map((block) => ({
         title: block.title,
         subtitle: block.subtitle,
-        sectionIds: topicRefsToSectionIds(block.topicRefs),
+        items: toFeaturedBlockItemPayload(block.items),
       })),
       featuredBlockImages: featuredBlockFiles,
     };
@@ -882,20 +784,15 @@ export function MainPageEditor() {
       initialActiveLocalesRef.current = activeLocales;
 
       const savedData = structuredClone(data);
-      savedData.blocks = await Promise.all(
-        savedData.blocks.map(async (block, index) => {
-          const apiBlock = featuredResponse.featuredBlocks?.[index];
-          if (!apiBlock) return block;
+      savedData.blocks = savedData.blocks.map((block, index) => {
+        const apiBlock = featuredResponse.featuredBlocks?.[index];
+        if (!apiBlock) return block;
 
-          const sectionIds = apiBlock.sectionIds ?? topicRefsToSectionIds(block.topicRefs);
-          return {
-            ...block,
-            sectionIds,
-            sections: normalizeHomePageSections(apiBlock.sections ?? block.sections),
-            topicRefs: await resolveSectionIdsToRefs(availableSections, sectionIds),
-          };
-        })
-      );
+        return {
+          ...block,
+          items: normalizeFeaturedBlockItems(apiBlock.items),
+        };
+      });
 
       initialJson.current = JSON.stringify(savedData);
       setHeroImageFile(savedData.heroImage || null);
@@ -945,9 +842,7 @@ export function MainPageEditor() {
         )}
       >
         <div className="sticky top-0 z-10 -mx-11 flex min-h-11 flex-col gap-4 bg-[#f9fafb] px-11 pt-7 pb-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">
-            Գլխավոր էջի կարգաբերում
-          </h1>
+          <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">Գլխավոր էջի կարգաբերում</h1>
           <div className="flex items-center gap-3">
             <Button
               type="button"
