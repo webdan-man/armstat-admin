@@ -3,6 +3,7 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getStableSeriesColor } from "@/utils/chart/stable-series-color.util";
+import { attachColumnSeriesTooltip } from "@/utils/chart/column-chart-tooltip.util";
 import {
   applySingleLineLegendLabels,
   CHART_HEADER_HEADROOM as PLOT_CHART_HEADER_HEADROOM,
@@ -26,7 +27,7 @@ const CHART_TITLE_BAND_HEIGHT = 40;
 const CHART_HEADER_HEADROOM = 24;
 const COLUMN_MAX_WIDTH = 80;
 // Height reserved for the stack-dimension title that sits centered above the legend.
-const LEGEND_TITLE_HEIGHT = 34;
+const LEGEND_TITLE_HEIGHT = 40;
 
 // Legend band height is derived from the number of legend entries: one row per
 // ~3 entries, clamped so it never collapses or crowds out the plot (overflow scrolls).
@@ -204,7 +205,7 @@ function StackedColumnChart<T extends Record<string, string>>({
         x: am5.p50,
         paddingBottom: 15,
         fontWeight: "bold",
-        fontSize: 12,
+        fontSize: 16,
         height: LEGEND_TITLE_HEIGHT,
         oversizedBehavior: "wrap",
         textAlign: "center",
@@ -309,24 +310,11 @@ function StackedColumnChart<T extends Record<string, string>>({
         // Narrower than the cell so adjacent columns have a visible gap instead of touching.
         width: am5.percent(90),
         maxWidth: COLUMN_MAX_WIDTH,
-        tooltipText: "{name}    [bold]{valueY}[/]",
         fill: color,
         stroke: color,
       });
 
-      // Make the tooltip label wrap instead of stretching off-screen
-      const tooltip = am5.Tooltip.new(root, {
-        labelText: "{name}    [bold]{valueY}[/]",
-        autoTextColor: true,
-      });
-
-      tooltip.label.setAll({
-        maxWidth: 250,
-        oversizedBehavior: "wrap",
-        textAlign: "left",
-      });
-
-      series.set("tooltip", tooltip);
+      attachColumnSeriesTooltip(series, "{name}    [bold]{valueY}[/]");
 
       series.data.setAll(dataRef.current);
 

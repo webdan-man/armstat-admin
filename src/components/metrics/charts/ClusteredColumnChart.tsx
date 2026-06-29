@@ -3,6 +3,7 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getStableSeriesColor } from "@/utils/chart/stable-series-color.util";
+import { attachColumnSeriesTooltip } from "@/utils/chart/column-chart-tooltip.util";
 import {
   applySingleLineLegendLabels,
   CHART_HEADER_HEADROOM as PLOT_CHART_HEADER_HEADROOM,
@@ -19,11 +20,22 @@ interface ClusteredColumnChartProps<T extends Record<string, string | number>> {
   stacked?: boolean;
   /** Optional title shown above the chart (e.g. selected province in map combinations). */
   chartTitle?: string;
+  /** Attribute name shown below the x-axis, above the legend. */
+  legendTitle?: string;
 }
 
 const containerId = "clustered-column-chartdiv";
 const CHART_TITLE_BAND_HEIGHT = 40;
 const CHART_HEADER_HEADROOM = 24;
+const COLUMN_MAX_WIDTH = 130;
+const LEGEND_TITLE_HEIGHT = 40;
+
+function chartHasNegativeValue(
+  rows: Record<string, string | number>[],
+  keys: string[]
+): boolean {
+  return rows.some((row) => keys.some((key) => Number(row[key]) < 0));
+}
 
 function ClusteredColumnChart<T extends Record<string, string>>({
   data,
@@ -31,18 +43,24 @@ function ClusteredColumnChart<T extends Record<string, string>>({
   seriesKeys = [],
   stacked = false,
   chartTitle,
+  legendTitle,
 }: ClusteredColumnChartProps<T>) {
   const rootRef = useRef<am5.Root | null>(null);
   const chartRef = useRef<am5xy.XYChart | null>(null);
   const xAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
   const yAxisRef = useRef<am5xy.ValueAxis<am5xy.AxisRenderer> | null>(null);
   const legendRef = useRef<am5.Legend | null>(null);
+  const legendTitleLabelRef = useRef<am5.Label | null>(null);
+  const bottomContainerRef = useRef<am5.Container | null>(null);
   const seriesListRef = useRef<am5xy.ColumnSeries[]>([]);
   const titleLabelRef = useRef<am5.Label | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const chartTitleRef = useRef(chartTitle);
+  const legendTitleRef = useRef(legendTitle);
   const dataRef = useRef(data);
   dataRef.current = data;
+
+  const hasNegativeValue = chartHasNegativeValue(data, seriesKeys);
 
   // Stable dependency for the series-reconcile effect: the array identity of
   // `seriesKeys` changes on every parent render, but its contents are what matter.
@@ -155,6 +173,7 @@ function ClusteredColumnChart<T extends Record<string, string>>({
       am5xy.ValueAxis.new(root, {
         maxDeviation: 0.3,
         renderer: am5xy.AxisRendererY.new(root, { strokeOpacity: 0.1 }),
+        ...(chartHasNegativeValue(dataRef.current, seriesKeys) ? {} : { min: 0 }),
       })
     );
     yAxisRef.current = yAxis;
@@ -167,6 +186,24 @@ function ClusteredColumnChart<T extends Record<string, string>>({
         layout: root.verticalLayout,
       })
     );
+    bottomContainerRef.current = bottomContainer;
+
+    const legendTitleLabel = bottomContainer.children.push(
+      am5.Label.new(root, {
+        text: legendTitleRef.current ?? "",
+        centerX: am5.p50,
+        x: am5.p50,
+        paddingBottom: 5,
+        fontWeight: "bold",
+        fontSize: 16,
+        height: LEGEND_TITLE_HEIGHT,
+        minHeight: 30,
+        oversizedBehavior: "wrap",
+        textAlign: "center",
+        visible: Boolean(legendTitleRef.current?.trim()),
+      })
+    );
+    legendTitleLabelRef.current = legendTitleLabel;
 
     const legend = bottomContainer.children.push(
       am5.Legend.new(root, {
@@ -193,7 +230,10 @@ function ClusteredColumnChart<T extends Record<string, string>>({
       getBelowChartHeight: () => {
         const measured = bottomContainer.height();
         if (measured > 0) return measured;
-        return LEGEND_OVERFLOW_PADDING + (legend.height() || LEGEND_BLOCK_HEIGHT) + 10;
+        const titleHeight = legendTitleRef.current?.trim() ? LEGEND_TITLE_HEIGHT + 5 : 0;
+        return (
+          LEGEND_OVERFLOW_PADDING + titleHeight + (legend.height() || LEGEND_BLOCK_HEIGHT) + 10
+        );
       },
     });
 
@@ -208,6 +248,8 @@ function ClusteredColumnChart<T extends Record<string, string>>({
       xAxisRef.current = null;
       yAxisRef.current = null;
       legendRef.current = null;
+      legendTitleLabelRef.current = null;
+      bottomContainerRef.current = null;
       seriesListRef.current = [];
       titleLabelRef.current = null;
       root.dispose();
@@ -261,13 +303,12 @@ function ClusteredColumnChart<T extends Record<string, string>>({
         cornerRadiusTR: 5,
         strokeOpacity: 0,
         width: am5.percent(90),
-        // Per-column tooltip (only the hovered bar) with the same formatted value as the
-        // pyramid chart. A series-level tooltip would be cursor-driven and show every
-        // series' tooltip at once.
-        tooltipText: "{name}     [bold]{valueY}[/]",
+        maxWidth: COLUMN_MAX_WIDTH,
         fill: color,
         stroke: color,
       });
+
+      attachColumnSeriesTooltip(series);
 
       series.data.setAll(dataRef.current);
       series.appear();
@@ -303,11 +344,24 @@ function ClusteredColumnChart<T extends Record<string, string>>({
   }, [chartTitle]);
 
   useEffect(() => {
+    legendTitleRef.current = legendTitle;
+    const label = legendTitleLabelRef.current;
+    if (!label) return;
+    const visible = Boolean(legendTitle?.trim());
+    label.set("text", legendTitle ?? "");
+    label.set("visible", visible);
+  }, [legendTitle]);
+
+  useEffect(() => {
     const xAxis = xAxisRef.current;
     if (!xAxis) return;
     xAxis.data.setAll(data);
     seriesListRef.current.forEach((series) => series.data.setAll(data));
-  }, [data]);
+
+    // Only clamp the y-axis to 0 when there are no negative values; otherwise
+    // let amCharts auto-fit so negative bars are visible.
+    yAxisRef.current?.set("min", hasNegativeValue ? undefined : 0);
+  }, [data, hasNegativeValue]);
 
   return (
     <div ref={containerRef} id={containerId} style={{ width: "100%", height: "610px" }} />

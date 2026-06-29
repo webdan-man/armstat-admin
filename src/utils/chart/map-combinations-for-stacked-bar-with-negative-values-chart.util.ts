@@ -3,6 +3,18 @@ import { AttributeCategory } from "@/constants/attribute-category.constants";
 import { Attribute } from "@/types/attribute";
 import { compareCategoryLabels } from "@/utils/chart/sort-category-labels";
 
+// Stacked bar chart: seriesKeys[0] → right (positive), seriesKeys[1] → left (negative).
+// Same convention as HistoricalPopulationPyramidChart — male right, female left.
+const MALE_TITLE = "Արական";
+
+function orderGenderSeriesKeys(genders: Set<string>): string[] {
+  return Array.from(genders).sort((a, b) => {
+    if (a === MALE_TITLE) return -1;
+    if (b === MALE_TITLE) return 1;
+    return a.localeCompare(b);
+  });
+}
+
 export const mapCombinationsForStackedBarWithNegativeValuesChartUtil = (payload: {
   combinations: MetricCombination[];
   attributeMapByCategory: Map<string, Attribute>;
@@ -46,7 +58,7 @@ export const mapCombinationsForStackedBarWithNegativeValuesChartUtil = (payload:
   const data = Array.from(resultMap.values()).sort((a, b) =>
     compareCategoryLabels(String(a[yAxisKey]), String(b[yAxisKey]))
   );
-  const seriesKeys = Array.from(categories);
+  const seriesKeys = orderGenderSeriesKeys(categories);
 
   return {
     data,

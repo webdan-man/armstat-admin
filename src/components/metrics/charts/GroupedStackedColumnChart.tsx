@@ -3,7 +3,8 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
-import { getRainbowPaletteColor, setChartThemes } from "@/utils/chart/chart-palette.util";
+import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
+import { getStableSeriesColor } from "@/utils/chart/stable-series-color.util";
 import {
   applySingleLineLegendLabels,
   LEGEND_BLOCK_HEIGHT,
@@ -24,6 +25,19 @@ interface GroupedStackedColumnChartProps {
 
 const containerId = "grouped-stacked-column-chartdiv";
 const BOTTOM_LABEL_HEIGHT = 50;
+const COLUMN_MAX_WIDTH = 130;
+
+function collectSubtypeKeys(rows: GroupedStackedColumnChartRow[]): string[] {
+  const keys: string[] = [];
+  const seen = new Set<string>();
+  for (const row of rows) {
+    if (!seen.has(row.realName)) {
+      seen.add(row.realName);
+      keys.push(row.realName);
+    }
+  }
+  return keys;
+}
 
 function buildAxisRanges(
   xAxis: am5xy.CategoryAxis<am5xy.AxisRenderer>,
@@ -50,7 +64,7 @@ function buildAxisRanges(
       forceHidden: false,
       text: category,
       rotation: -45,
-      centerX: am5.p50,
+      centerX: am5.p100,
       centerY: am5.p0,
       fontWeight: "bold",
       fontSize: 12,
@@ -59,24 +73,13 @@ function buildAxisRanges(
       width: 160,
       maxWidth: 160,
       oversizedBehavior: "wrap",
-      textAlign: "center",
+      textAlign: "right",
       tooltipText: category,
     });
 
-    range.get("tick")?.setAll({
-      visible: true,
-      strokeOpacity: 1,
-      stroke: am5.color(0x000000),
-      strokeWidth: 1,
-      length: 70,
-      location: 0,
-    });
+    range.get("tick")?.setAll({ visible: false });
 
-    range.get("grid")?.setAll({
-      strokeOpacity: 1,
-      stroke: am5.color(0x000000),
-      strokeWidth: 1,
-    });
+    range.get("grid")?.setAll({ visible: false });
 
     ranges.push(range);
   });
@@ -86,21 +89,9 @@ function buildAxisRanges(
     xAxis.createAxisRange(lastRange);
     lastRange.set("category", data[data.length - 1].category);
 
-    lastRange.get("tick")?.setAll({
-      visible: true,
-      strokeOpacity: 1,
-      stroke: am5.color(0x000000),
-      strokeWidth: 1,
-      length: 70,
-      location: 1,
-    });
+    lastRange.get("tick")?.setAll({ visible: false });
 
-    lastRange.get("grid")?.setAll({
-      strokeOpacity: 1,
-      stroke: am5.color(0x000000),
-      strokeWidth: 1,
-      location: 1,
-    });
+    lastRange.get("grid")?.setAll({ visible: false });
 
     ranges.push(lastRange);
   }
@@ -118,12 +109,13 @@ function GroupedStackedColumnChart({
   const xAxisRef = useRef<am5xy.CategoryAxis<am5xy.AxisRenderer> | null>(null);
   const seriesListRef = useRef<am5xy.ColumnSeries[]>([]);
   const axisRangesRef = useRef<am5.DataItem<am5xy.ICategoryAxisDataItem>[]>([]);
+  const subtypeKeysRef = useRef<string[]>([]);
 
   // Structure effect: recreate chart when series layout or label changes.
   // Does NOT depend on `data` so province-filter updates skip this entirely.
   useLayoutEffect(() => {
     const root = am5.Root.new(containerId);
-    setChartThemes(root);
+    root.setThemes([am5themes_Animated.new(root)]);
     let disposeDynamicHeight: (() => void) | undefined;
 
     root.container.setAll({
@@ -156,21 +148,8 @@ function GroupedStackedColumnChart({
     const cursor = chart.set("cursor", am5xy.XYCursor.new(root, {}));
     cursor.lineY.set("visible", false);
 
-    // Build subtype → color index map from initial data
-    const subtypeColorIndex: Record<string, number> = {};
-    const allSubtypes: { name: string; colorIndex: number }[] = [];
-    let ci = 0;
-    const providerSubtypeOrder: { subtype: string }[] = [];
-    for (const row of data) {
-      providerSubtypeOrder.push({ subtype: row.realName });
-    }
-    for (const { subtype } of providerSubtypeOrder) {
-      if (!(subtype in subtypeColorIndex)) {
-        subtypeColorIndex[subtype] = ci;
-        allSubtypes.push({ name: subtype, colorIndex: ci });
-        ci++;
-      }
-    }
+    const subtypeKeys = collectSubtypeKeys(data);
+    subtypeKeysRef.current = subtypeKeys;
 
     const hiddenSubtypes: Record<string, boolean> = {};
 
@@ -230,11 +209,19 @@ function GroupedStackedColumnChart({
         strokeWidth: 0.5,
         // Narrower than the cell so adjacent columns have a visible gap instead of touching.
         width: am5.percent(70),
+        maxWidth: COLUMN_MAX_WIDTH,
       });
 
       series.columns.template.adapters.add("fill", (fill, target) => {
         const ctx = target.dataItem?.dataContext as GroupedStackedColumnChartRow | undefined;
-        if (ctx) return getRainbowPaletteColor(chart.get("colors")!, subtypeColorIndex[ctx.realName]);
+        if (ctx) {
+          return getStableSeriesColor(
+            containerId,
+            chart.get("colors"),
+            ctx.realName,
+            subtypeKeysRef.current
+          );
+        }
         return fill;
       });
 
@@ -282,9 +269,9 @@ function GroupedStackedColumnChart({
         x: am5.p50,
         paddingBottom: 5,
         fontWeight: "bold",
-        fontSize: 12,
+        fontSize: 16,
         height: 50,
-        minHeight: 30,
+        minHeight: 40,
       })
     );
 
@@ -341,10 +328,10 @@ function GroupedStackedColumnChart({
       });
     });
 
-    allSubtypes.forEach((s) => {
+    subtypeKeys.forEach((name) => {
       legend.data.push({
-        name: s.name,
-        fill: getRainbowPaletteColor(chart.get("colors")!, s.colorIndex),
+        name,
+        fill: getStableSeriesColor(containerId, chart.get("colors"), name, subtypeKeys),
       });
     });
 
@@ -382,6 +369,7 @@ function GroupedStackedColumnChart({
     xAxis.data.setAll(data);
     seriesList.forEach((series) => series.data.setAll(data));
     axisRangesRef.current = buildAxisRanges(xAxis, data);
+    subtypeKeysRef.current = collectSubtypeKeys(data);
   }, [data]);
 
   return <div ref={containerRef} id={containerId} style={{ width: "100%", height: "705px" }} />;

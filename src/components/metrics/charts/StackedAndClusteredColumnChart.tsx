@@ -1,7 +1,9 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
-import { getRainbowPaletteColor, setChartThemes } from "@/utils/chart/chart-palette.util";
+import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
+import { getStableSeriesColor } from "@/utils/chart/stable-series-color.util";
+import { attachColumnSeriesTooltip } from "@/utils/chart/column-chart-tooltip.util";
 import {
   applySingleLineLegendLabels,
   CHART_HEADER_HEADROOM,
@@ -72,7 +74,7 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
 
     const root = am5.Root.new(containerId);
     rootRef.current = root;
-    setChartThemes(root);
+    root.setThemes([am5themes_Animated.new(root)]);
 
     if (modeRef.current) {
       // ── DOCX-style clustered + stacked mode ──────────────────────────────────
@@ -142,11 +144,14 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
 
       xRenderer.labels.template.setAll({
         rotation: -45,
-        centerY: am5.p50,
+        // Top-right corner on the tick / x-axis line; text runs down-right from the axis.
+        centerY: am5.p0,
         centerX: am5.p100,
+        textAlign: "right",
         paddingTop: 0,
         // Long category labels would eat the plot height, so cap their width and wrap
         // them onto multiple lines. The full text is still shown in the tooltip.
+        width: 140,
         maxWidth: 140,
         oversizedBehavior: "wrap",
       });
@@ -346,8 +351,13 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
       const seriesByCluster: Record<string, am5xy.ColumnSeries[]> = {};
       const seriesToCluster = new Map<am5xy.ColumnSeries, string>();
 
-      allClusterKeys.forEach((clusterKey, clusterIdx) => {
-        const baseColor = getRainbowPaletteColor(chart.get("colors")!, clusterIdx);
+      allClusterKeys.forEach((clusterKey) => {
+        const baseColor = getStableSeriesColor(
+          containerId,
+          chart.get("colors"),
+          clusterKey,
+          allClusterKeys
+        );
         seriesByCluster[clusterKey] = [];
 
         allStackKeys.forEach((stackKey, stackIdx) => {
@@ -373,11 +383,12 @@ function StackedAndClusteredColumnChart<T extends Record<string, string | number
           series.columns.template.setAll({
             strokeOpacity: 0,
             width: am5.percent(90),
-            tooltipText: `${stackKey}     [bold]{valueY}[/]`,
             // Rounded corners only on the topmost stack layer.
             cornerRadiusTL: stackIdx === totalStacks - 1 ? 5 : 0,
             cornerRadiusTR: stackIdx === totalStacks - 1 ? 5 : 0,
           });
+
+          attachColumnSeriesTooltip(series, `${stackKey}     [bold]{valueY}[/]`);
 
           series.data.setAll(dataRef.current);
           series.appear();

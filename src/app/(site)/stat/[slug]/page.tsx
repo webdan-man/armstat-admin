@@ -129,21 +129,19 @@ export default function StatPage() {
   }, [returnTo, metric?.topicId, sectionsReady, menu]);
 
   const sexTotals = useMemo(() => {
-    const hasTotals =
-      !!metric?.total?.female?.[activeLang]?.length || !!metric?.total?.male?.[activeLang]?.length;
+    const maleValue = metric?.total?.male?.[activeLang];
+    const femaleValue = metric?.total?.female?.[activeLang];
 
     return {
-      hasTotals,
+      hasMale: Boolean(maleValue?.length),
+      hasFemale: Boolean(femaleValue?.length),
       male: metric?.total?.male,
       female: metric?.total?.female,
     };
-  }, [metric?.total]);
+  }, [metric?.total, activeLang]);
 
-  const sexTotalsPlaceholder = (
-    <>
-      <p className="text-fontSizeXS font-semibold text-[rgba(56,56,56,1)]">-</p>
-    </>
-  );
+  const showMaleTotal = isMetricLoading || sexTotals.hasMale;
+  const showFemaleTotal = isMetricLoading || sexTotals.hasFemale;
 
   return (
     <div className="flex w-full flex-col pt-7.5 pb-10 pl-16.75">
@@ -172,34 +170,34 @@ export default function StatPage() {
         <div className="mt-6 flex flex-col">
           <div className="flex items-center justify-between">
             <div className="flex gap-6">
-              <div className="flex items-center gap-3">
-                <Image src="/icons/man.svg" alt="man" width={17} height={27} />
-                <div className="flex flex-col gap-1">
-                  {isMetricLoading ? (
-                    <Skeleton className="h-4 w-24" />
-                  ) : sexTotals.hasTotals ? (
-                    <p className="text-fontSizeXS font-semibold text-[rgba(56,56,56,1)]">
-                      {sexTotals.male?.[activeLang]}
-                    </p>
-                  ) : (
-                    sexTotalsPlaceholder
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Image src="/icons/women.svg" alt="women" width={17} height={27} />
-                <div className="flex flex-col gap-1">
-                  {isMetricLoading ? (
-                    <Skeleton className="h-4 w-24" />
-                  ) : sexTotals.hasTotals ? (
-                    <p className="text-fontSizeXS font-semibold text-[rgba(56,56,56,1)]">
-                      {sexTotals.female?.[activeLang]}
-                    </p>
-                  ) : (
-                    sexTotalsPlaceholder
-                  )}
-                </div>
-              </div>
+              {showMaleTotal && showFemaleTotal ? (
+                <>
+                  <div className="flex items-center gap-3">
+                    <Image src="/icons/man.svg" alt="man" width={17} height={27} />
+                    <div className="flex flex-col gap-1">
+                      {isMetricLoading ? (
+                        <Skeleton className="h-4 w-24" />
+                      ) : (
+                        <p className="text-fontSizeXS font-semibold text-[rgba(56,56,56,1)]">
+                          {sexTotals.male?.[activeLang]}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Image src="/icons/women.svg" alt="women" width={17} height={27} />
+                    <div className="flex flex-col gap-1">
+                      {isMetricLoading ? (
+                        <Skeleton className="h-4 w-24" />
+                      ) : (
+                        <p className="text-fontSizeXS font-semibold text-[rgba(56,56,56,1)]">
+                          {sexTotals.female?.[activeLang]}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </>
+              ) : null}
             </div>
             <div className="flex">
               <Button

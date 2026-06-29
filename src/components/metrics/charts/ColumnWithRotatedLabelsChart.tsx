@@ -3,7 +3,7 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import { getPaletteColor } from "@/utils/chart/chart-palette.util";
-import { lockPlotHeight, LEGEND_OVERFLOW_PADDING, setupDynamicChartHeight } from "@/utils/chart/fixed-plot-chart-layout.util";
+import { lockPlotHeight, setupDynamicChartHeight } from "@/utils/chart/fixed-plot-chart-layout.util";
 
 interface DataItem {
   xAxisKey: string;
@@ -23,6 +23,8 @@ const LEGEND_MAX_HEIGHT = 120;
 const LEGEND_LABEL_MAX_WIDTH = 140;
 const LEGEND_LABEL_GAP = 15;
 const CHART_TITLE_HEIGHT = 32;
+/** Small gap below the x-axis band; label overflow is already included in chart height. */
+const LEGEND_TOP_GAP = 10;
 
 function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLabelsChartProps) {
   const rootRef = useRef<am5.Root | null>(null);
@@ -168,9 +170,9 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
       am5.Container.new(root, {
         layout: root.horizontalLayout,
         width: am5.percent(100),
-        paddingTop: LEGEND_OVERFLOW_PADDING + 10,
+        paddingTop: LEGEND_TOP_GAP,
         paddingBottom: 10,
-        height: LEGEND_BAR_HEIGHT + LEGEND_OVERFLOW_PADDING,
+        height: LEGEND_BAR_HEIGHT + LEGEND_TOP_GAP,
       })
     );
 
@@ -282,7 +284,7 @@ function ColumnWithRotatedLabelsChart({ data, chartTitle }: ColumnWithRotatedLab
       heightWatchers: [legendBar],
       bottomBuffer: 15,
       getAboveChartHeight: () => (chartTitle !== undefined ? CHART_TITLE_HEIGHT : 0),
-      getBelowChartHeight: () => legendBar.height() || LEGEND_BAR_HEIGHT + LEGEND_OVERFLOW_PADDING,
+      getBelowChartHeight: () => legendBar.height() || LEGEND_BAR_HEIGHT + LEGEND_TOP_GAP,
     });
 
     // Force repaint on click

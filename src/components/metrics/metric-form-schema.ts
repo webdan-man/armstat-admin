@@ -210,6 +210,11 @@ export function mapMetricFormToCreateMetric(
       ru: values.unit.ru,
       en: values.unit.en,
     },
+    link: {
+      hy: values.link.hy,
+      ru: values.link.ru,
+      en: values.link.en,
+    },
     metadata,
     attributes,
     order: values.order,

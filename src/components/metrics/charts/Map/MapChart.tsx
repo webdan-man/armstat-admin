@@ -126,7 +126,7 @@ export default function ArmeniaMapChart({
     const hexSelected = 0x4f2897;
 
     polygonSeries.mapPolygons.template.setAll({
-      tooltipText: showValueInTooltip ? "{name} - {value}" : "{name}",
+      tooltipText: showValueInTooltip ? "{name}    [bold]{value}[/]" : "{name}",
       interactive: true,
       toggleKey: "active",
       fill: am5.color(hexFlat),
@@ -300,7 +300,7 @@ export default function ArmeniaMapChart({
 
     const showHoverIndicator = (value: number, name: string) => {
       if (!hoverLabel || !hoverGroup) return;
-      hoverLabel.set("text", `${name} - ${value}`);
+      hoverLabel.set("text", `${name}    [bold]${value}[/]`);
       hoverGroup.set("y", getMarkerPosition(value));
       hoverGroup.set("visible", true);
     };
@@ -347,7 +347,7 @@ export default function ArmeniaMapChart({
           lockedName = (dataItem.dataContext as any)?.name ?? "Region";
 
           if (pinnedLabel && markerGroup && lockedValue !== null) {
-            pinnedLabel.set("text", `${lockedValue} - ${lockedName}`);
+            pinnedLabel.set("text", `${lockedName}    [bold]${lockedValue}[/]`);
             markerGroup.set("y", getMarkerPosition(lockedValue));
             markerGroup.set("visible", true);
           }

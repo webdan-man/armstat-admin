@@ -488,7 +488,7 @@ function HistoricalPopulationPyramidChart<T extends ChartDatum>({
         centerX: am5.p50,
         y: am5.p50,
         centerY: am5.p50,
-        fontSize: 11,
+        fontSize: 12,
       })
     );
 

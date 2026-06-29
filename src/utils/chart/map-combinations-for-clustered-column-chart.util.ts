@@ -28,6 +28,10 @@ export const mapCombinationsForClusteredColumnChart = (payload: {
   const resultMap: Record<string, Record<string, string | number>> = {};
   const seriesKeys: string[] = [];
 
+  const attributeRowLabel = (attributeId: string): string =>
+    combinations.flatMap((c) => c.row ?? []).find((r) => r.attributeId === attributeId)?.label ??
+    "";
+
   for (const item of combinations) {
     const xAxisTitle = item.row.find((r) => r.attributeId === xAxisAttributeId)?.value.title as
       | string
@@ -87,11 +91,13 @@ export const mapCombinationsForClusteredColumnChart = (payload: {
       data: transposed,
       seriesKeys: categories,
       xAxisKey: newXAxisKey,
+      legendTitle: attributeRowLabel(xAxisAttributeId),
     };
   }
 
   return {
     data,
     seriesKeys,
+    legendTitle: attributeRowLabel(yAxisAttributeId),
   };
 };

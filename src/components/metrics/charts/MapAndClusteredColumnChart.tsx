@@ -43,7 +43,7 @@ const MapAndClusteredColumnChart = ({
     return getProvinceTitleByMapId(activeProvinceMapId, activeLang) ?? activeProvinceMapId;
   }, [activeProvinceMapId, activeLang]);
 
-  const { columnData, seriesKeys, resolvedXAxisKey } = useMemo(() => {
+  const { columnData, seriesKeys, resolvedXAxisKey, legendTitle } = useMemo(() => {
     const filtered = filterCombinationsByProvinceMapId(
       combinations,
       provinceAttributeId,
@@ -53,13 +53,19 @@ const MapAndClusteredColumnChart = ({
       data: columnData,
       seriesKeys,
       xAxisKey: transposedKey,
+      legendTitle,
     } = mapCombinationsForClusteredColumnChart({
       combinations: filtered,
       xAxisAttributeId,
       yAxisAttributeId,
       xAxisKey,
     });
-    return { columnData, seriesKeys, resolvedXAxisKey: transposedKey ?? xAxisKey };
+    return {
+      columnData,
+      seriesKeys,
+      resolvedXAxisKey: transposedKey ?? xAxisKey,
+      legendTitle,
+    };
   }, [
     combinations,
     provinceAttributeId,
@@ -88,6 +94,7 @@ const MapAndClusteredColumnChart = ({
           data={columnData as Record<string, string>[]}
           seriesKeys={seriesKeys}
           chartTitle={chartTitle}
+          legendTitle={legendTitle}
         />
       </div>
     </div>

@@ -47,6 +47,7 @@ const Chart = ({ combinations = [], isCumulative = false }: ChartProps) => {
     yAxisKey,
     seriesKeys,
     yAxisLabel,
+    legendTitle,
     clusterKeys,
     stackKeys,
     timelineAxisAttributeName,
@@ -185,6 +186,7 @@ const Chart = ({ combinations = [], isCumulative = false }: ChartProps) => {
             data={data}
             seriesKeys={seriesKeys}
             stacked={false}
+            legendTitle={legendTitle}
           />
         </div>
       );

@@ -155,6 +155,8 @@ function useDetectChartType(
   seriesKeys?: string[];
   /** Y-axis stack dimension label for stacked column charts (from combination row labels). */
   yAxisLabel?: string;
+  /** Legend dimension label for clustered column charts (from combination row labels). */
+  legendTitle?: string;
   /** Cluster group names for true clustered+stacked charts (3D). */
   clusterKeys?: string[];
   /** Stack layer names for true clustered+stacked charts (3D). */
@@ -306,7 +308,7 @@ function useDetectChartType(
           disableAutoTranspose: true,
         });
 
-        const { data, seriesKeys } = mapped;
+        const { data, seriesKeys, legendTitle } = mapped;
         const resolvedXAxisKey = "xAxisKey" in mapped ? mapped.xAxisKey : xAxisKey;
 
         console.log(`CLUSTERED COLUMN CHART: X - GENDER (CXG), series - ${stackedCategory}`, {
@@ -320,6 +322,7 @@ function useDetectChartType(
           xAxisKey: resolvedXAxisKey,
           seriesKeys,
           data,
+          legendTitle,
         };
       }
 
@@ -531,7 +534,7 @@ function useDetectChartType(
           disableAutoTranspose: true,
         });
 
-        const { data, seriesKeys } = mapped;
+        const { data, seriesKeys, legendTitle } = mapped;
         const resolvedXAxisKey = "xAxisKey" in mapped ? mapped.xAxisKey : xAxisKey;
 
         console.log(`CLUSTERED COLUMN CHART: X - AREA (CXG), series - OTHER`, {
@@ -545,6 +548,7 @@ function useDetectChartType(
           xAxisKey: resolvedXAxisKey,
           seriesKeys,
           data,
+          legendTitle,
         };
       }
 
