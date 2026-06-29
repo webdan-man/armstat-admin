@@ -16,9 +16,13 @@ type HomePageResponse = {
   featuredBlocks?: Array<{
     title?: Localized;
     subtitle?: Localized;
-    sectionIds: string[];
     image?: string;
-    sections: unknown[];
+    items?: Array<{
+      type: "section" | "topic";
+      id: string;
+      section?: { _id?: string; name?: Localized };
+      topic?: { _id?: string; title?: Localized };
+    }>;
   }>;
   advertising?: {
     title?: Localized;
@@ -98,19 +102,20 @@ export default async function Home({ searchParams }: HomePageProps) {
         shortDescription={pickLocale(data?.heroShortDescription, lang)}
         imageSrc={absolutizeUrl(data?.heroImage, baseUrl)}
       />
+
       <Statistics
         blocks={(data?.featuredBlocks ?? []).map((b) => ({
           title: b.title ?? {},
           subtitle: b.subtitle ?? {},
           image: absolutizeUrl(b.image, baseUrl),
-          sections: ((b.sections as Array<{ _id?: string; name?: Localized }> | undefined) ?? [])
-            .map((s, index) => ({
-              id: s._id ?? b.sectionIds[index] ?? "",
-              name: s.name ?? {},
-            }))
-            .filter((s) => s.id && Object.values(s.name).some(Boolean)),
+          sections: (b.items ?? []).map((item) =>
+            item.type === "section"
+              ? { id: item.section?._id ?? item.id, name: item.section?.name ?? {} }
+              : { id: item.topic?._id ?? item.id, name: item.topic?.title ?? {} }
+          ),
         }))}
       />
+
       <News
         items={(latestNews ?? []).map((item) => ({
           ...item,

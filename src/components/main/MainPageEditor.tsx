@@ -6,6 +6,7 @@ import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+
 import { LangSwitcher } from "@/components/main/LangSwitcher";
 import {
   EMPTY_MAIN_PAGE,
@@ -23,12 +24,12 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { getSectionLocalizedText } from "@/lib/section-localization";
 import { isRootTopic } from "@/lib/section-topic-utils";
 import {
-  formatTopicRefLabel,
-  getStoredItemId,
-  normalizeHomePageSections,
-  resolveSectionIdsToRefs,
-  topicRefsToSectionIds,
-  type FeaturedBlockTopicRef,
+  getFeaturedItemLabel,
+  normalizeFeaturedBlockItems,
+  sectionToFeaturedItem,
+  toFeaturedBlockItemPayload,
+  topicToFeaturedItem,
+  type FeaturedBlockItem,
 } from "@/utils/featured-block-topics.util";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -66,15 +67,8 @@ function TopicFilterChip({ children }: { children: React.ReactNode }) {
   );
 }
 
-function withBlockTopicRefs(
-  block: MainHomeBlock,
-  topicRefs: FeaturedBlockTopicRef[]
-): MainHomeBlock {
-  return {
-    ...block,
-    topicRefs,
-    sectionIds: topicRefsToSectionIds(topicRefs),
-  };
+function withBlockItems(block: MainHomeBlock, items: FeaturedBlockItem[]): MainHomeBlock {
+  return { ...block, items };
 }
 
 const heroFormSchema = z.object({
@@ -357,20 +351,17 @@ function BlockCard({
   const selectedSection = availableSections.find((section) => section._id === pickerSection);
   const rootTopics = selectedSection?.topics.filter(isRootTopic) ?? [];
   const childTopics = rootTopics.find((topic) => topic._id === pickerTopic)?.subtopics ?? [];
-  const resolvedPickerTopicId =
-    pickerSection && pickerTopic && (childTopics.length === 0 || pickerSubTopic)
-      ? pickerSubTopic || pickerTopic
+  // The deepest level the editor has drilled into decides what gets added:
+  // a chosen subtopic or topic produces a "topic" item, otherwise the whole section.
+  const resolvedTopic = pickerSubTopic
+    ? (childTopics.find((topic) => topic._id === pickerSubTopic) ?? null)
+    : pickerTopic
+      ? (rootTopics.find((topic) => topic._id === pickerTopic) ?? null)
       : null;
-  const canAdd = Boolean(resolvedPickerTopicId);
+  const canAdd = Boolean(selectedSection);
 
   function resetPicker() {
     setPickerSection("");
-    setPickerTopic("");
-    setPickerSubTopic("");
-    setPickerNonce((nonce) => nonce + 1);
-  }
-
-  function resetTopicPickerSelection() {
     setPickerTopic("");
     setPickerSubTopic("");
     setPickerNonce((nonce) => nonce + 1);
@@ -387,21 +378,19 @@ function BlockCard({
   }, [pickerSection, selectedSection]);
 
   function handleAddItem() {
-    if (!canAdd || !resolvedPickerTopicId) return;
+    if (!selectedSection) return;
 
-    const ref: FeaturedBlockTopicRef = {
-      sectionId: pickerSection,
-      topicId: pickerTopic,
-      ...(pickerSubTopic ? { subTopicId: pickerSubTopic } : {}),
-    };
-    const storedId = getStoredItemId(ref);
-    if (block.topicRefs.some((entry) => getStoredItemId(entry) === storedId)) {
+    const item = resolvedTopic
+      ? topicToFeaturedItem(selectedSection, resolvedTopic)
+      : sectionToFeaturedItem(selectedSection);
+
+    if (block.items.some((entry) => entry.id === item.id)) {
       toast.message("Արդեն ավելացված է");
       return;
     }
 
-    onChange(withBlockTopicRefs(block, [...block.topicRefs, ref]));
-    resetTopicPickerSelection();
+    onChange(withBlockItems(block, [...block.items, item]));
+    resetPicker();
   }
 
   return (
@@ -448,7 +437,7 @@ function BlockCard({
 
         <Field label="Բաժիններ">
           <div className="flex flex-col gap-4">
-            <div className="grid min-h-11 items-end gap-4 md:grid-cols-2">
+            <div className="grid min-h-11 items-end gap-4 md:grid-cols-3">
               <div className="flex w-full flex-col items-start">
                 <TopicFilterChip>Բաժին</TopicFilterChip>
                 <SearchableSelect
@@ -486,14 +475,18 @@ function BlockCard({
                     label: getSectionLocalizedText(topic.title),
                   }))}
                 />
-                {childTopics.length > 0 ? (
+              </div>
+              {childTopics.length > 0 ? (
+                <div className="flex w-full flex-col items-start">
                   <div className="mt-2 flex w-full flex-col items-start">
                     <TopicFilterChip>Ենթա-ենթախումբ</TopicFilterChip>
                     <SearchableSelect
                       key={`picker-subtopic-${pickerSubTopic || "empty-subgroup"}-${pickerNonce}`}
                       disabled={!pickerTopic}
                       value={pickerSubTopic || undefined}
-                      onValueChange={setPickerSubTopic}
+                      onValueChange={(value) => {
+                        setPickerSubTopic(value);
+                      }}
                       placeholder="Ենթա-ենթախումբ"
                       triggerClassName={topicSelectTriggerClass}
                       options={childTopics.map((topic) => ({
@@ -502,8 +495,8 @@ function BlockCard({
                       }))}
                     />
                   </div>
-                ) : null}
-              </div>
+                </div>
+              ) : null}
             </div>
 
             <div className="flex justify-end">
@@ -515,18 +508,19 @@ function BlockCard({
         </Field>
 
         <div className="flex flex-wrap gap-3">
-          {block.topicRefs.map((ref) => {
-            const storedId = getStoredItemId(ref);
-            const label = formatTopicRefLabel(availableSections, ref, block.sections);
+          {block.items.map((item) => {
+            const label = getFeaturedItemLabel(availableSections, item);
             return (
               <TagChip
-                key={storedId}
+                key={`${item.type}-${item.id}`}
                 label={label}
                 onRemove={() =>
                   onChange(
-                    withBlockTopicRefs(
+                    withBlockItems(
                       block,
-                      block.topicRefs.filter((entry) => getStoredItemId(entry) !== storedId)
+                      block.items.filter(
+                        (entry) => !(entry.type === item.type && entry.id === item.id)
+                      )
                     )
                   )
                 }
@@ -707,12 +701,6 @@ export function MainPageEditor() {
         ]);
         if (isCancelled) return;
         const mapped = fromApiHomePage(homeResponse, "hy");
-        mapped.blocks = await Promise.all(
-          mapped.blocks.map(async (block) => ({
-            ...block,
-            topicRefs: await resolveSectionIdsToRefs(sectionsResponse, block.sectionIds),
-          }))
-        );
         initialJson.current = JSON.stringify(mapped);
         setHeroImageFile(mapped.heroImage || null);
         setAdvertisingImageFile(mapped.advertising.image || null);
@@ -755,7 +743,7 @@ export function MainPageEditor() {
       featuredBlocks: data.blocks.map((block) => ({
         title: block.title,
         subtitle: block.subtitle,
-        sectionIds: topicRefsToSectionIds(block.topicRefs),
+        items: toFeaturedBlockItemPayload(block.items),
       })),
       featuredBlockImages: featuredBlockFiles,
     };
@@ -803,20 +791,15 @@ export function MainPageEditor() {
       initialActiveLocalesRef.current = activeLocales;
 
       const savedData = structuredClone(data);
-      savedData.blocks = await Promise.all(
-        savedData.blocks.map(async (block, index) => {
-          const apiBlock = featuredResponse.featuredBlocks?.[index];
-          if (!apiBlock) return block;
+      savedData.blocks = savedData.blocks.map((block, index) => {
+        const apiBlock = featuredResponse.featuredBlocks?.[index];
+        if (!apiBlock) return block;
 
-          const sectionIds = apiBlock.sectionIds ?? topicRefsToSectionIds(block.topicRefs);
-          return {
-            ...block,
-            sectionIds,
-            sections: normalizeHomePageSections(apiBlock.sections ?? block.sections),
-            topicRefs: await resolveSectionIdsToRefs(availableSections, sectionIds),
-          };
-        })
-      );
+        return {
+          ...block,
+          items: normalizeFeaturedBlockItems(apiBlock.items),
+        };
+      });
 
       initialJson.current = JSON.stringify(savedData);
       setHeroImageFile(savedData.heroImage || null);
@@ -866,9 +849,7 @@ export function MainPageEditor() {
         )}
       >
         <div className="sticky top-0 z-10 -mx-11 flex min-h-11 flex-col gap-4 bg-[#f9fafb] px-11 pt-7 pb-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">
-            Գլխավոր էջի կարգաբերում
-          </h1>
+          <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">Գլխավոր էջի կարգաբերում</h1>
           <div className="flex items-center gap-3">
             <Button
               type="button"

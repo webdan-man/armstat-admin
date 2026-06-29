@@ -1,8 +1,7 @@
 /** Main homepage editor types and API mappers. */
-import type { SectionLocalizedText } from "@/types/section";
 import {
-  normalizeHomePageSections,
-  type FeaturedBlockTopicRef,
+  normalizeFeaturedBlockItems,
+  type FeaturedBlockItem,
 } from "@/utils/featured-block-topics.util";
 
 export type MainLangCode = "hy" | "ru" | "en";
@@ -13,9 +12,7 @@ export type MainHomeBlock = {
   accent: "#c00" | "#275199" | "#febb30";
   title: HomePageLocalizedText;
   subtitle: HomePageLocalizedText;
-  sectionIds: string[];
-  topicRefs: FeaturedBlockTopicRef[];
-  sections: HomePageSection[];
+  items: FeaturedBlockItem[];
   image: string;
 };
 
@@ -57,9 +54,7 @@ const EMPTY_BLOCKS: MainHomeBlock[] = [
     accent: "#c00",
     title: { hy: "" },
     subtitle: { hy: "" },
-    sectionIds: [],
-    topicRefs: [],
-    sections: [],
+    items: [],
     image: "",
   },
   {
@@ -68,9 +63,7 @@ const EMPTY_BLOCKS: MainHomeBlock[] = [
     accent: "#275199",
     title: { hy: "" },
     subtitle: { hy: "" },
-    sectionIds: [],
-    topicRefs: [],
-    sections: [],
+    items: [],
     image: "",
   },
   {
@@ -79,9 +72,7 @@ const EMPTY_BLOCKS: MainHomeBlock[] = [
     accent: "#febb30",
     title: { hy: "" },
     subtitle: { hy: "" },
-    sectionIds: [],
-    topicRefs: [],
-    sections: [],
+    items: [],
     image: "",
   },
 ];
@@ -113,19 +104,10 @@ export type HomePageLocalizedText = {
   ru?: string;
 };
 
-export type HomePageSection = {
-  _id: string;
-  name: SectionLocalizedText;
-  description: SectionLocalizedText;
-  createdAt: string;
-  updatedAt: string;
-};
-
 export type HomePageFeaturedBlock = {
   title: HomePageLocalizedText;
   subtitle: HomePageLocalizedText;
-  sectionIds: string[];
-  sections: HomePageSection[];
+  items: FeaturedBlockItem[];
   image: string;
 };
 
@@ -190,9 +172,7 @@ export function fromApiHomePage(
       ...fallbackBlock,
       title: toRequiredLocalized(apiBlock?.title),
       subtitle: toRequiredLocalized(apiBlock?.subtitle),
-      sectionIds: apiBlock?.sectionIds ?? [],
-      topicRefs: [],
-      sections: normalizeHomePageSections(apiBlock?.sections),
+      items: normalizeFeaturedBlockItems(apiBlock?.items),
       image: apiBlock?.image ?? "",
     };
   });

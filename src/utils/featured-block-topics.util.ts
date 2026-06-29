@@ -1,121 +1,143 @@
 import { getSectionLocalizedText } from "@/lib/section-localization";
-import { isRootTopic } from "@/lib/section-topic-utils";
-import { getMetricById } from "@/services/metricsService";
-import type { HomePageSection } from "@/components/main/main-mock-data";
-import type { Section } from "@/types/section";
+import type { Section, SectionLocalizedText, Topic } from "@/types/section";
 
-export type FeaturedBlockTopicRef = {
-  sectionId: string;
-  topicId: string;
-  subTopicId?: string;
-  metricId?: string;
+export type FeaturedBlockItemType = "section" | "topic";
+
+export type FeaturedBlockSection = {
+  _id: string;
+  name: SectionLocalizedText;
+  description: SectionLocalizedText;
+  order?: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
-export function getResolvedTopicId(ref: FeaturedBlockTopicRef): string {
-  return ref.subTopicId ?? ref.topicId;
+export type FeaturedBlockTopic = {
+  _id: string;
+  sectionId: string;
+  parentTopicId?: string | null;
+  title: SectionLocalizedText;
+  body?: SectionLocalizedText;
+  order?: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type FeaturedBlockItem = {
+  type: FeaturedBlockItemType;
+  id: string;
+  section?: FeaturedBlockSection;
+  topic?: FeaturedBlockTopic;
+};
+
+/** Keep only well-formed section/topic items coming back from the API. */
+export function normalizeFeaturedBlockItems(
+  items: Array<Partial<FeaturedBlockItem> | null | undefined> | undefined
+): FeaturedBlockItem[] {
+  return (items ?? [])
+    .filter(
+      (item): item is FeaturedBlockItem =>
+        item != null &&
+        (item.type === "section" || item.type === "topic") &&
+        typeof item.id === "string" &&
+        item.id.length > 0
+    )
+    .map((item) => ({
+      type: item.type,
+      id: item.id,
+      ...(item.section ? { section: item.section } : {}),
+      ...(item.topic ? { topic: item.topic } : {}),
+    }));
 }
 
-export function getStoredItemId(ref: FeaturedBlockTopicRef): string {
-  return ref.metricId ?? getResolvedTopicId(ref);
+/** Shape sent back to the backend: only the discriminator and id are needed. */
+export function toFeaturedBlockItemPayload(
+  items: FeaturedBlockItem[]
+): Array<{ type: FeaturedBlockItemType; id: string }> {
+  return items.map((item) => ({ type: item.type, id: item.id }));
 }
 
-export function topicRefsToSectionIds(refs: FeaturedBlockTopicRef[]): string[] {
-  return refs.map(getStoredItemId);
+export function sectionToFeaturedItem(section: Section): FeaturedBlockItem {
+  return {
+    type: "section",
+    id: section._id,
+    section: {
+      _id: section._id,
+      name: section.name,
+      description: section.description,
+      createdAt: section.createdAt,
+      updatedAt: section.updatedAt,
+    },
+  };
 }
 
-export function resolveTopicRefFromTopicId(
+export function topicToFeaturedItem(section: Section, topic: Topic): FeaturedBlockItem {
+  return {
+    type: "topic",
+    id: topic._id,
+    topic: {
+      _id: topic._id,
+      sectionId: section._id,
+      parentTopicId: topic.parentTopicId ?? null,
+      title: topic.title,
+      ...(topic.body ? { body: topic.body } : {}),
+      ...(typeof topic.order === "number" ? { order: topic.order } : {}),
+      createdAt: topic.createdAt,
+      updatedAt: topic.updatedAt,
+    },
+    section: {
+      _id: section._id,
+      name: section.name,
+      description: section.description,
+      createdAt: section.createdAt,
+      updatedAt: section.updatedAt,
+    },
+  };
+}
+
+function findTopicInSections(
   sections: Section[],
   topicId: string
-): Omit<FeaturedBlockTopicRef, "metricId"> | null {
+): { section: Section; topic: Topic; parent?: Topic } | null {
   for (const section of sections) {
     for (const topic of section.topics) {
-      if (!isRootTopic(topic)) continue;
-      if (topic._id === topicId) {
-        return { sectionId: section._id, topicId: topic._id };
-      }
+      if (topic._id === topicId) return { section, topic };
       for (const sub of topic.subtopics ?? []) {
-        if (sub._id === topicId) {
-          return { sectionId: section._id, topicId: topic._id, subTopicId: sub._id };
-        }
+        if (sub._id === topicId) return { section, topic: sub, parent: topic };
       }
     }
   }
   return null;
 }
 
-export function sectionIdsToTopicRefs(
-  sections: Section[],
-  sectionIds: string[]
-): FeaturedBlockTopicRef[] {
-  const refs: FeaturedBlockTopicRef[] = [];
-  for (const id of sectionIds) {
-    const ref = resolveTopicRefFromTopicId(sections, id);
-    if (ref) refs.push(ref);
-  }
-  return refs;
-}
-
-export async function resolveSectionIdsToRefs(
-  sections: Section[],
-  sectionIds: string[]
-): Promise<FeaturedBlockTopicRef[]> {
-  const refs: FeaturedBlockTopicRef[] = [];
-
-  for (const id of sectionIds) {
-    const topicRef = resolveTopicRefFromTopicId(sections, id);
-    if (topicRef) {
-      refs.push(topicRef);
-      continue;
-    }
-
-    try {
-      const metric = await getMetricById(id);
-      const hierarchy = resolveTopicRefFromTopicId(sections, metric.topicId);
-      if (hierarchy) {
-        refs.push({ ...hierarchy, metricId: id });
-      }
-    } catch {
-      // Keep unresolved ids out of the editor list.
-    }
+/**
+ * Build a chip label for a featured-block item, preferring the freshly loaded
+ * sections tree and falling back to the data embedded in the item.
+ */
+export function getFeaturedItemLabel(sections: Section[], item: FeaturedBlockItem): string {
+  if (item.type === "section") {
+    const name = sections.find((s) => s._id === item.id)?.name ?? item.section?.name;
+    return name ? getSectionLocalizedText(name) : item.id;
   }
 
-  return refs;
-}
-
-export function formatTopicRefLabel(
-  sections: Section[],
-  ref: FeaturedBlockTopicRef,
-  embeddedSections: Array<HomePageSection | null | undefined> = []
-): string {
-  const section = sections.find((s) => s._id === ref.sectionId);
-  const topic = section?.topics.find((t) => t._id === ref.topicId);
-  const sub = topic?.subtopics?.find((t) => t._id === ref.subTopicId);
-
-  const parts = [
-    section ? getSectionLocalizedText(section.name) : "",
-    topic ? getSectionLocalizedText(topic.title) : "",
-    sub ? getSectionLocalizedText(sub.title) : "",
-  ].filter(Boolean);
-
-  const storedId = getStoredItemId(ref);
-  const embeddedMetric = embeddedSections.find((s) => s?._id === storedId);
-  if (embeddedMetric) {
-    parts.push(getSectionLocalizedText(embeddedMetric.name));
+  const found = findTopicInSections(sections, item.id);
+  if (found) {
+    const parts = [getSectionLocalizedText(found.section.name)];
+    if (found.parent) parts.push(getSectionLocalizedText(found.parent.title));
+    parts.push(getSectionLocalizedText(found.topic.title));
+    return parts.join(" / ");
   }
 
-  if (parts.length > 0) return parts.join(" / ");
+  const embedded = item.topic;
+  if (embedded) {
+    const sectionName =
+      sections.find((s) => s._id === embedded.sectionId)?.name ?? item.section?.name;
+    const parts = [
+      sectionName ? getSectionLocalizedText(sectionName) : "",
+      getSectionLocalizedText(embedded.title),
+    ].filter(Boolean);
+    return parts.join(" / ") || item.id;
+  }
 
-  const embedded = embeddedSections.find((s) => s?._id === getResolvedTopicId(ref));
-  if (embedded) return getSectionLocalizedText(embedded.name);
-
-  return storedId;
-}
-
-export function normalizeHomePageSections(
-  sections: Array<HomePageSection | null | undefined> | undefined
-): HomePageSection[] {
-  return (sections ?? []).filter(
-    (section): section is HomePageSection =>
-      section != null && typeof section._id === "string" && section._id.length > 0
-  );
+  return item.id;
 }

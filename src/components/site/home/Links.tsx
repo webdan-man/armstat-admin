@@ -82,7 +82,7 @@ export default function Links({ links }: LinksProps) {
                       <div className="relative h-39.5 w-full overflow-hidden">
                         <Image
                           src={item.image || "/links/link1.jpg"}
-                          alt={name}
+                          alt={name ?? ""}
                           fill
                           className="object-cover"
                         />

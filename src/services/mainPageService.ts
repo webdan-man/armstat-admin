@@ -41,7 +41,7 @@ export type UpdateHomePageFeaturedBlocksPayload = {
   featuredBlocks: Array<{
     title: HomePageLocalizedText;
     subtitle: HomePageLocalizedText;
-    sectionIds: string[];
+    items: Array<{ type: "section" | "topic"; id: string }>;
   }>;
   featuredBlockImages: Array<File | string | null | undefined>;
 };
@@ -57,7 +57,7 @@ export async function updateHomePageFeaturedBlocks(payload: UpdateHomePageFeatur
       blocks.map((b) => ({
         title: b.title,
         subtitle: b.subtitle,
-        sectionIds: b.sectionIds,
+        items: b.items,
       }))
     )
   );
