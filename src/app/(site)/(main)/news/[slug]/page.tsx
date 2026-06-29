@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import NewsDetail from "@/components/site/news/NewsDetail";
+import { sortNewsByLatestDate } from "@/utils/news.util";
 
 type NewsItem = {
   _id: string;
@@ -36,7 +37,9 @@ async function getRelatedNews(excludeId: string): Promise<NewsItem[]> {
     });
     if (!res.ok) return [];
     const data = (await res.json()) as { data: NewsItem[]; total: number };
-    return (data.data ?? []).filter((item) => item._id !== excludeId).slice(0, 3);
+    return sortNewsByLatestDate(data.data ?? [])
+      .filter((item) => item._id !== excludeId)
+      .slice(0, 3);
   } catch {
     return [];
   }

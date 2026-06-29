@@ -24,6 +24,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { parseDotDisplayDate } from "@/lib/format-display-date";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -42,12 +43,14 @@ const createNewsSchema = z
       ru: z.string().trim(),
       en: z.string().trim(),
     }),
-    link: z
+    publishedAt: z
       .string()
       .trim()
-      .min(1, "Լրացրեք հղումը")
-      .url("Մուտքագրեք ճիշտ հղում (URL)"),
-    publishedAt: z.string().trim().min(1, "Լրացրեք հրապարակման ամսաթիվը"),
+      .min(1, "Լրացրեք հրապարակման ամսաթիվը")
+      .refine(
+        (value) => parseDotDisplayDate(value) !== null,
+        "Մուտքագրեք ամսաթիվը dd.mm.yyyy ձևաչափով"
+      ),
   })
   .superRefine((values, ctx) => {
     const hasAnyTitle = Boolean(values.title.hy || values.title.ru || values.title.en);
@@ -102,7 +105,6 @@ const defaultLocalized: LocalizedText = { hy: "", ru: "", en: "" };
 const defaultFormValues: CreateNewsFormValues = {
   title: defaultLocalized,
   content: defaultLocalized,
-  link: "",
   publishedAt: "",
 };
 
@@ -220,7 +222,7 @@ export function CreateNewsDialog({
       >
         <DialogHeader className="px-6 py-5">
           <DialogTitle className="text-[18px] leading-3.5 font-semibold text-[#2c2c2c]">
-            {mode === "edit" ? "Խմբագրել նորություն" : "Ստեղծել նորություն"}
+            {mode === "edit" ? "Խմբագրել նորությունը" : "Ավելացնել նորություն"}
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
@@ -297,26 +299,6 @@ export function CreateNewsDialog({
             <div className="mt-5 flex flex-col gap-4">
               <FormField
                 control={form.control}
-                name="link"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-[12px] font-semibold text-[#575757]">
-                      Հղում
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="https://example.com/news"
-                        className="h-9 rounded-[9px] border-[#e6e7eb] bg-white px-3 text-[13px]"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
                 name="publishedAt"
                 render={({ field }) => (
                   <FormItem>
@@ -326,7 +308,8 @@ export function CreateNewsDialog({
                     <FormControl>
                       <Input
                         {...field}
-                        type="date"
+                        placeholder="dd.mm.yyyy"
+                        inputMode="numeric"
                         className="h-9 rounded-[9px] border-[#e6e7eb] bg-white px-3 text-[13px]"
                       />
                     </FormControl>

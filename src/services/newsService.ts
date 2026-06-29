@@ -1,5 +1,6 @@
 import apiClient from "@/lib/api/api-client";
 import type { HomePageNewsItem } from "@/components/main/main-mock-data";
+import { sortNewsByLatestDate } from "@/utils/news.util";
 
 export type NewsListResponse = {
   data: HomePageNewsItem[];
@@ -9,12 +10,12 @@ export type NewsListResponse = {
 export async function fetchNews(): Promise<HomePageNewsItem[]> {
   const res = await apiClient<unknown>("/api/news");
 
-  if (Array.isArray(res)) return res as HomePageNewsItem[];
+  if (Array.isArray(res)) return sortNewsByLatestDate(res as HomePageNewsItem[]);
   if (res && typeof res === "object") {
     const obj = res as Record<string, unknown>;
     const candidates = [obj.items, obj.data, obj.news, obj.results, obj.rows];
     for (const c of candidates) {
-      if (Array.isArray(c)) return c as HomePageNewsItem[];
+      if (Array.isArray(c)) return sortNewsByLatestDate(c as HomePageNewsItem[]);
     }
   }
 
@@ -37,15 +38,17 @@ export async function fetchNewsList({
   if (res && typeof res === "object" && !Array.isArray(res)) {
     const obj = res as Record<string, unknown>;
     if (Array.isArray(obj.data)) {
+      const data = sortNewsByLatestDate(obj.data as HomePageNewsItem[]);
       return {
-        data: obj.data as HomePageNewsItem[],
-        total: typeof obj.total === "number" ? obj.total : (obj.data as unknown[]).length,
+        data,
+        total: typeof obj.total === "number" ? obj.total : data.length,
       };
     }
   }
 
   if (Array.isArray(res)) {
-    return { data: res as HomePageNewsItem[], total: res.length };
+    const data = sortNewsByLatestDate(res as HomePageNewsItem[]);
+    return { data, total: data.length };
   }
 
   return { data: [], total: 0 };

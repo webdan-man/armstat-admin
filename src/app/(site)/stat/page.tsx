@@ -16,12 +16,15 @@ import { Input } from "@/components/ui/input";
 import StatIndicatorList from "@/components/site/stat/StatIndicatorList";
 import GlobalSearchResults from "@/components/site/stat/GlobalSearchResults";
 import StatEmptyPlaceholder from "@/components/site/stat/StatEmptyPlaceholder";
+import StatBackButton from "@/components/site/stat/StatBackButton";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useLang } from "@/providers/LangProvider";
 import {
   buildStatMenu,
   getFlatListItemsForSection,
   getStatMenuTitle,
+  appendStatReturnTo,
+  parseStatReturnTo,
 } from "@/lib/stat-menu-utils";
 import { getTopicListIndicatorGroups } from "@/lib/stat-search-utils";
 import { useGlobalIndicatorSearchGroups } from "@/hooks/useGlobalIndicatorSearchGroups";
@@ -79,6 +82,7 @@ function StatSearchView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryFromUrl = searchParams.get("q") ?? "";
+  const returnTo = parseStatReturnTo(searchParams.get("returnTo"));
   const { activeLang } = useLang();
   const { t } = useTranslation();
 
@@ -95,21 +99,25 @@ function StatSearchView() {
   const globalSearchGroups = useGlobalIndicatorSearchGroups(menu, normalizedQuery, true);
   const hasQuery = normalizedQuery.length > 0;
   const searchReturnTo = useMemo(() => {
-    if (!queryFromUrl.trim()) return "/stat/?search";
-    return `/stat?q=${encodeURIComponent(queryFromUrl.trim())}`;
-  }, [queryFromUrl]);
+    const base = !queryFromUrl.trim()
+      ? "/stat/?search"
+      : `/stat?q=${encodeURIComponent(queryFromUrl.trim())}`;
+    return appendStatReturnTo(base, returnTo);
+  }, [queryFromUrl, returnTo]);
 
   const applySearch = useCallback(
     (value: string) => {
       const trimmed = value.trim();
       if (!trimmed) {
-        router.replace("/stat/?search");
+        router.replace(appendStatReturnTo("/stat/?search", returnTo));
         return;
       }
       if (trimmed === queryFromUrl.trim()) return;
-      router.replace(`/stat?q=${encodeURIComponent(trimmed)}`);
+      router.replace(
+        appendStatReturnTo(`/stat?q=${encodeURIComponent(trimmed)}`, returnTo)
+      );
     },
-    [queryFromUrl, router]
+    [queryFromUrl, returnTo, router]
   );
 
   useEffect(() => {
@@ -136,6 +144,7 @@ function StatSearchView() {
 
   return (
     <>
+      <StatBackButton href={returnTo} className="mb-5" />
       <TypographyH3 className="min-h-6 text-[rgba(40,40,40,1)]">
         {t("stat.search_page_title", "Որոնեք Ձեզ հետաքրքրող ցուցանիշը")}
       </TypographyH3>

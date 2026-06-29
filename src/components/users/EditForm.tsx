@@ -19,6 +19,7 @@ import { withToastError } from "@/lib/withToastError";
 import { getUserById, updateUser } from "@/services/userService";
 import { User } from "@/types/users";
 import { PermissionRow } from "@/components/users/PermissionRow";
+import { useRouter } from "next/navigation";
 
 export const userSchema = z.object({
   firstName: z.string().min(1, "Անունը պարտադիր է"),
@@ -38,6 +39,7 @@ export const userSchema = z.object({
 type UserForm = z.infer<typeof userSchema>;
 
 function EditUserForm({ id }: { id: string }) {
+  const router = useRouter();
   const [data, setData] = useState<User | null>(null);
 
   useEffect(() => {
@@ -78,7 +80,9 @@ function EditUserForm({ id }: { id: string }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <h1 className="text-2xl font-bold">Խմբագրել օգտագործողը</h1>
+      <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">
+        Խմբագրել տվյալները և իրավասությունները
+      </h1>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -145,7 +149,22 @@ function EditUserForm({ id }: { id: string }) {
 
           <PermissionRow />
 
-          <Button type="submit">Թարմացնել օգտագործողը</Button>
+          <div className="flex items-center gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push("/admin/users")}
+              className="h-11 rounded-[8px] border-[#e0e0e0] bg-white px-5 text-[13px] font-semibold text-[#2c2c2c] hover:bg-[#f8f8f8]"
+            >
+              Չեղարկել
+            </Button>
+            <Button
+              type="submit"
+              className="h-11 rounded-[8px] border-0 bg-[#275199] px-5 text-[13px] font-semibold text-white hover:bg-[#234a8b]"
+            >
+              Պահպանել
+            </Button>
+          </div>
         </form>
       </Form>
     </div>

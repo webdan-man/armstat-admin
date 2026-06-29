@@ -8,6 +8,7 @@ import Image from "next/image";
 import { Loader2 } from "lucide-react";
 import { useMetricFilters } from "@/components/metrics/metric-filters-context";
 import { getSectionLocalizedText } from "@/lib/section-localization";
+import { formatDisplayDate } from "@/lib/format-display-date";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { fetchMetricsByTopicId } from "@/services/metricsService";
 import { Button } from "@/components/ui/button";
@@ -18,16 +19,6 @@ const selectTriggerClass = cn(
 
 const METRIC_STATUS_DOT_PUBLISHED = "before:bg-[rgba(37,201,34,1)]";
 const METRIC_STATUS_DOT_UNPUBLISHED = "before:bg-[rgba(250,204,21,1)]";
-
-function formatMetricStatusDate(iso: string): string | null {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return null;
-
-  const dd = String(date.getDate()).padStart(2, "0");
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const yyyy = date.getFullYear();
-  return `${dd}.${mm}.${yyyy}`;
-}
 
 function FilterChip({ children }: { children: React.ReactNode }) {
   return (
@@ -165,7 +156,7 @@ export default function Filters() {
             emptyText={isMetricsLoading ? "Բեռնում…" : "Ցուցանիշներ չկան"}
             options={metrics.map((option) => {
               const formatted = option.updatedAt
-                ? formatMetricStatusDate(option.updatedAt)
+                ? formatDisplayDate(option.updatedAt) || null
                 : null;
               const isPublished = Boolean(option.publishedAt);
               const statusDotClass = isPublished

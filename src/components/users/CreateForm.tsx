@@ -50,7 +50,7 @@ function CreateUserForm() {
 
   return (
     <div className="flex flex-col gap-3">
-      <h1 className="text-2xl font-bold">Ստեղծել օգտագործող</h1>
+      <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">Ստեղծել օգտատեր</h1>
 
       <Form {...form}>
         <form
@@ -120,7 +120,7 @@ function CreateUserForm() {
 
           <PermissionRow />
 
-          <Button type="submit">Ստեղծել օգտագործող</Button>
+          <Button type="submit">Ստեղծել</Button>
         </form>
       </Form>
     </div>

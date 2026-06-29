@@ -227,6 +227,31 @@ export function parseStatReturnTo(value: string | null): string | null {
   return value;
 }
 
+export function appendStatReturnTo(path: string, returnTo?: string | null): string {
+  const safeReturnTo = parseStatReturnTo(returnTo ?? null);
+  if (!safeReturnTo) return path;
+
+  const separator = path.includes("?") ? "&" : "?";
+  return `${path}${separator}returnTo=${encodeURIComponent(safeReturnTo)}`;
+}
+
+/** Link from the current stat route into global indicator search. */
+export function buildStatSearchEntryHref(pathname: string, search: string): string {
+  const params = new URLSearchParams(search);
+  const isStatRoute = pathname === "/stat" || pathname.startsWith("/stat/");
+  if (!isStatRoute) return "/stat/?search";
+
+  const isSearchMode =
+    pathname === "/stat" && (params.has("search") || params.has("q"));
+
+  if (isSearchMode) {
+    return appendStatReturnTo("/stat/?search", params.get("returnTo"));
+  }
+
+  const currentPath = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+  return appendStatReturnTo("/stat/?search", currentPath);
+}
+
 /** True when slug is a topic or subtopic leaf (no nested subtopics in the menu). */
 export function isLeafTopicOrSubtopicSlug(menu: StatMenuItem[], slug: string): boolean {
   if (menu.some((section) => section.id === slug)) return false;

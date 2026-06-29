@@ -5,6 +5,7 @@ import Interesting from "@/components/site/home/Interesting";
 import Statistics from "@/components/site/home/Statistics";
 import Footer from "@/components/site/Footer";
 import { getActiveLocale } from "@/lib/get-active-locale";
+import { pickLatestNews } from "@/utils/news.util";
 import { pickLocale, type Localized } from "@/lib/i18n";
 
 type HomePageResponse = {
@@ -31,6 +32,7 @@ type HomePageResponse = {
     content: string;
     image?: string;
     url?: string;
+    publishedAt?: string;
     createdAt?: string;
     updatedAt?: string;
   }>;
@@ -61,6 +63,21 @@ async function getHomePageData(): Promise<HomePageResponse | null> {
   return (await res.json()) as HomePageResponse;
 }
 
+async function getLatestNews(limit = 3): Promise<HomePageResponse["newsItems"]> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  if (!baseUrl) return [];
+
+  try {
+    const res = await fetch(`${baseUrl}/news?limit=50&page=1`, { cache: "no-store" });
+    if (!res.ok) return [];
+
+    const json = (await res.json()) as { data?: HomePageResponse["newsItems"] };
+    return pickLatestNews(json.data ?? [], limit);
+  } catch {
+    return [];
+  }
+}
+
 type HomePageProps = {
   searchParams: Promise<{ lang?: string }>;
 };
@@ -68,7 +85,11 @@ type HomePageProps = {
 export default async function Home({ searchParams }: HomePageProps) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "";
   const { lang: langParam } = await searchParams;
-  const [data, lang] = await Promise.all([getHomePageData(), getActiveLocale(langParam)]);
+  const [data, lang, latestNews] = await Promise.all([
+    getHomePageData(),
+    getActiveLocale(langParam),
+    getLatestNews(3),
+  ]);
 
   return (
     <>
@@ -91,12 +112,10 @@ export default async function Home({ searchParams }: HomePageProps) {
         }))}
       />
       <News
-        items={
-          (data?.newsItems ?? []).map((item) => ({
-            ...item,
-            image: absolutizeUrl(item.image, baseUrl),
-          })) ?? []
-        }
+        items={(latestNews ?? []).map((item) => ({
+          ...item,
+          image: absolutizeUrl(item.image, baseUrl),
+        }))}
       />
       <Interesting
         title={data?.advertising?.title ?? {}}

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { TypographyH2, TypographyH3, TypographyP } from "@/components/ui/typography";
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useFormatDisplayDate } from "@/hooks/useFormatDisplayDate";
+import { getNewsDisplayDate, sortNewsByLatestDate, truncateNewsPreview } from "@/utils/news.util";
 
 type NewsItem = {
   _id: string;
@@ -12,6 +14,7 @@ type NewsItem = {
   content: string;
   image?: string;
   url?: string;
+  publishedAt?: string;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -25,23 +28,16 @@ function absolutizeUrl(path?: string): string | undefined {
   return `${BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
-function formatDate(input?: string): string {
-  if (!input) return "";
-  const d = new Date(input);
-  if (Number.isNaN(d.getTime())) return input;
-  return d.toLocaleDateString("hy-AM");
-}
-
 function NewsCard({ item }: { item: NewsItem }) {
   const { t } = useTranslation();
+  const { formatDisplayDate } = useFormatDisplayDate();
   const imageSrc = absolutizeUrl(item.image) ?? "/news/content.jpg";
-  const href = item.url && item.url.length > 0 ? item.url : `/news/${item._id}`;
 
   return (
     <div className="border-textBlack300 flex w-full flex-col rounded-lg border shadow-[0px_2px_4px_0px_rgba(0,0,0,0.05)]">
       <div className="flex w-full flex-col gap-2 px-6 pt-6 pb-4">
         <TypographyP className="text-textBlack600">
-          {formatDate(item.updatedAt ?? item.createdAt)}
+          {formatDisplayDate(getNewsDisplayDate(item))}
         </TypographyP>
         <TypographyH3 className="text-textBlack800 tracking-normal">{item.title}</TypographyH3>
       </div>
@@ -49,11 +45,11 @@ function NewsCard({ item }: { item: NewsItem }) {
         <Image src={imageSrc} alt="News" fill unoptimized className="object-cover" />
       </div>
       <div className="flex flex-1 flex-col gap-4 px-6 pt-6 pb-4">
-        <TypographyP className="text-textBlack700 line-clamp-2 tracking-normal">
-          {item.content}
+        <TypographyP className="text-textBlack700 tracking-normal">
+          {truncateNewsPreview(item.content)}
         </TypographyP>
         <Link
-          href={href}
+          href={`/news/${item._id}`}
           className="bg-link border-blue600 mt-auto w-full rounded-sm border-2 p-2 text-center"
         >
           {t("news.read_more", "Կարդալ ավելին")}
@@ -94,8 +90,14 @@ export default function News({ items }: { items: NewsItem[] }) {
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
 
-  const totalPages = Math.ceil(items.length / PAGE_SIZE);
-  const pageItems = items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const sortedItems = useMemo(() => sortNewsByLatestDate(items), [items]);
+
+  if (sortedItems.length === 0) {
+    return null;
+  }
+
+  const totalPages = Math.ceil(sortedItems.length / PAGE_SIZE);
+  const pageItems = sortedItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const goTo = (p: number) => {
     if (p < 1 || p > totalPages) return;
@@ -115,6 +117,15 @@ export default function News({ items }: { items: NewsItem[] }) {
             <NewsCard key={item._id} item={item} />
           ))}
         </div>
+
+        {sortedItems.length > 0 && (
+          <Link
+            href="/news"
+            className="bg-link border-blue600 mt-10 self-start rounded-sm border-2 px-10 py-2 font-medium"
+          >
+            {t("news.see_more", "Տեսնել բոլորը")}
+          </Link>
+        )}
 
         {totalPages > 1 && (
           <div className="mt-10 flex items-center gap-2 self-center">

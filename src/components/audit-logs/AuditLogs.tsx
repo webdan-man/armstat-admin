@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import AuditLogInfo from "@/components/audit-logs/AuditLogInfo";
-import { format } from "date-fns";
+import { formatDisplayDateTime } from "@/lib/format-display-date";
 import useSWR from "swr";
 import { getAuditLogs } from "@/services/auditLogsService";
 import { Loader2 } from "lucide-react";
@@ -123,7 +123,7 @@ export default function AuditLogs() {
               <TableRow key={item.id}>
                 <TableCell>{item.id}</TableCell>
                 <TableCell>{item.actorUser?.email}</TableCell>
-                <TableCell>{format(new Date(item.createdAt), "d MMMM yyyy HH:mm")}</TableCell>
+                <TableCell>{formatDisplayDateTime(item.createdAt)}</TableCell>
 
                 <TableCell>{item.action}</TableCell>
 

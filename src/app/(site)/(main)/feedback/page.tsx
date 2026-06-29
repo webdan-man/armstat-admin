@@ -221,7 +221,12 @@ export default async function FeedbackPage({ searchParams }: FeedbackPageProps) 
                 {mapTitle}
               </p>
             ) : null}
-            <iframe src={mapSrc} className="h-full w-full border-0"></iframe>
+            <iframe
+              src={mapSrc}
+              className="pointer-events-none h-full w-full border-0"
+              title={mapTitle || "Map"}
+            />
+            <div className="absolute inset-0" aria-hidden="true" />
           </div>
         </div>
       </div>

@@ -41,6 +41,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { formatDisplayDate } from "@/lib/format-display-date";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import {
   fetchHomePage,
@@ -48,11 +49,9 @@ import {
   updateHomePageAdvertising,
   updateHomePageFeaturedBlocks,
   updateHomePageHero,
-  updateHomePageNews,
   updateHomePageUsefulLinks,
 } from "@/services/mainPageService";
 import { Checkbox } from "@/components/ui/checkbox";
-import { fetchNews } from "@/services/newsService";
 import { fetchSections } from "@/services/sectionsService";
 import { fetchMetricsByTopicId } from "@/services/metricsService";
 import type { Section } from "@/types/section";
@@ -66,16 +65,6 @@ const topicSelectTriggerClass = cn(
 
 const METRIC_STATUS_DOT_PUBLISHED = "before:bg-[rgba(37,201,34,1)]";
 const METRIC_STATUS_DOT_UNPUBLISHED = "before:bg-[rgba(250,204,21,1)]";
-
-function formatMetricStatusDate(iso: string): string | null {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return null;
-
-  const dd = String(date.getDate()).padStart(2, "0");
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const yyyy = date.getFullYear();
-  return `${dd}.${mm}.${yyyy}`;
-}
 
 function TopicFilterChip({ children }: { children: React.ReactNode }) {
   return (
@@ -570,7 +559,7 @@ function BlockCard({
                   }
                   options={availableMetrics.map((option) => {
                     const formatted = option.updatedAt
-                      ? formatMetricStatusDate(option.updatedAt)
+                      ? formatDisplayDate(option.updatedAt) || null
                       : null;
                     const isPublished = Boolean(option.publishedAt);
                     const statusDotClass = isPublished
@@ -788,20 +777,15 @@ export function MainPageEditor() {
 
     async function loadHomePage() {
       try {
-        const [homeResponse, sectionsResponse, newsResponse] = await Promise.all([
+        const [homeResponse, sectionsResponse] = await Promise.all([
           fetchHomePage(),
           fetchSections().catch((error) => {
             console.warn("Failed to load sections", error);
             return [] as Section[];
           }),
-          fetchNews().catch((error) => {
-            console.warn("Failed to load news", error);
-            return [];
-          }),
         ]);
         if (isCancelled) return;
         const mapped = fromApiHomePage(homeResponse, "hy");
-        mapped.news.availableItems = Array.isArray(newsResponse) ? newsResponse : [];
         mapped.blocks = await Promise.all(
           mapped.blocks.map(async (block) => ({
             ...block,
@@ -878,12 +862,6 @@ export function MainPageEditor() {
     };
   }
 
-  function toNewsPayload() {
-    return {
-      newsIds: data.news.selectedIds,
-    };
-  }
-
   async function handleSave() {
     if (!dirty) {
       toast.message("Փոփոխություններ չկան։");
@@ -899,7 +877,6 @@ export function MainPageEditor() {
       });
       const featuredResponse = await updateHomePageFeaturedBlocks(toFeaturedBlocksPayload());
       await updateHomePageAdvertising(toAdvertisingPayload());
-      await updateHomePageNews(toNewsPayload());
       await updateHomePageUsefulLinks(toUsefulLinksPayload());
       await updateActiveLocales(activeLocales);
       initialActiveLocalesRef.current = activeLocales;
@@ -1153,63 +1130,6 @@ export function MainPageEditor() {
                 }));
               }}
             />
-          </div>
-        </ContentCard>
-
-        <ContentCard>
-          <h2 className="mb-4 text-[14px] font-medium text-[#2c2c2c]">Նորություններ</h2>
-          <div className="flex flex-col gap-4">
-            <Field label="Նորություններ">
-              <Select
-                value=""
-                onValueChange={(id) =>
-                  setData((d) =>
-                    d.news.selectedIds.includes(id)
-                      ? d
-                      : {
-                          ...d,
-                          news: {
-                            ...d.news,
-                            selectedIds: [...d.news.selectedIds, id],
-                          },
-                        }
-                  )
-                }
-              >
-                <SelectTrigger className={cn("h-9 w-full", fieldBorder)}>
-                  <SelectValue placeholder="Ընտրել նորությունները" />
-                </SelectTrigger>
-                <SelectContent>
-                  {data.news.availableItems
-                    .filter((item) => !data.news.selectedIds.includes(item._id))
-                    .map((item) => (
-                      <SelectItem key={item._id} value={item._id}>
-                        {item.title}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </Field>
-            <div className="flex flex-wrap gap-3">
-              {data.news.selectedIds.map((id) => {
-                const item = data.news.availableItems.find((n) => n._id === id);
-                return (
-                  <TagChip
-                    key={id}
-                    label={item?.title ?? id}
-                    onRemove={() =>
-                      setData((d) => ({
-                        ...d,
-                        news: {
-                          ...d.news,
-                          selectedIds: d.news.selectedIds.filter((x) => x !== id),
-                        },
-                      }))
-                    }
-                  />
-                );
-              })}
-            </div>
           </div>
         </ContentCard>
 

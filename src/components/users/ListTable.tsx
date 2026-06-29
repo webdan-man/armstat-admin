@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { formatDisplayDate } from "@/lib/format-display-date";
 import { useRouter } from "next/navigation";
 import { withToastError } from "@/lib/withToastError";
 import { UsersResponse } from "@/types/users";
@@ -60,17 +61,17 @@ export default function ListTable() {
   const thClass = "bg-background sticky top-0 z-20";
 
   return (
-    <div>
-      <div className="mb-4 flex items-center justify-between">
-        <div className="sticky top-0 z-10 -mx-11 flex min-h-11 flex-col gap-4 bg-[#f9fafb] px-11 pt-7 pb-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">Օգտատերերի կառավարում</h1>
-          <Button
-            disabled={!hasPermission("user.create")}
-            onClick={() => router.push(`/admin/users/create`)}
-          >
-            Ավելացնել օգտատեր
-          </Button>
-        </div>
+    <div className="flex w-full flex-col pb-10">
+      <div className="sticky top-0 z-10 -mx-11 flex min-h-11 flex-col gap-4 bg-[#f9fafb] px-11 pt-7 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">Օգտատերերի կառավարում</h1>
+        <Button
+          type="button"
+          disabled={!hasPermission("user.create")}
+          className="h-11 shrink-0 rounded-lg border-0 bg-[#004d99] px-5 text-[13px] font-medium text-white hover:bg-[#004080] disabled:opacity-50"
+          onClick={() => router.push(`/admin/users/create`)}
+        >
+          Ավելացնել օգտատեր
+        </Button>
       </div>
       <div className="w-full">
         <Table>
@@ -90,11 +91,7 @@ export default function ListTable() {
                 <TableRow key={item._id}>
                   <TableCell>{item.email}</TableCell>
                   <TableCell>
-                    {new Intl.DateTimeFormat("hy-AM", {
-                      year: "numeric",
-                      month: "2-digit",
-                      day: "2-digit",
-                    }).format(new Date(item.createdAt))}
+                    {formatDisplayDate(item.createdAt)}
                   </TableCell>
 
                   <TableCell>

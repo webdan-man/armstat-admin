@@ -5,6 +5,8 @@ import { TypographyH2 } from "@/components/ui/typography";
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useFormatDisplayDate } from "@/hooks/useFormatDisplayDate";
+import { getNewsDisplayDate, sortNewsByLatestDate, truncateNewsPreview } from "@/utils/news.util";
 
 type NewsItem = {
   _id: string;
@@ -12,11 +14,13 @@ type NewsItem = {
   content: string;
   image?: string;
   url?: string;
+  publishedAt?: string;
   createdAt?: string;
   updatedAt?: string;
 };
 
-const LIMIT = 3;
+const PAGE_SIZE = 3;
+const FETCH_LIMIT = 50;
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "";
 
 function absolutizeUrl(path?: string): string | undefined {
@@ -25,19 +29,26 @@ function absolutizeUrl(path?: string): string | undefined {
   return `${BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
-function formatDate(input?: string): string {
-  if (!input) return "";
-  const d = new Date(input);
-  if (Number.isNaN(d.getTime())) return input;
-  return d.toLocaleDateString("hy-AM");
-}
-
-async function fetchNewsPage(page: number): Promise<{ data: NewsItem[]; total: number } | null> {
+async function fetchAllNews(): Promise<NewsItem[] | null> {
   try {
-    const res = await fetch(`/api/news?limit=${LIMIT}&page=${page}`);
+    const all: NewsItem[] = [];
+    let page = 1;
+    let total = 0;
 
-    if (!res.ok) return null;
-    return (await res.json()) as { data: NewsItem[]; total: number };
+    while (true) {
+      const res = await fetch(`/api/news?limit=${FETCH_LIMIT}&page=${page}`);
+      if (!res.ok) return all.length > 0 ? sortNewsByLatestDate(all) : null;
+
+      const json = (await res.json()) as { data: NewsItem[]; total: number };
+      total = json.total;
+      if (!json.data.length) break;
+
+      all.push(...json.data);
+      if (all.length >= total) break;
+      page += 1;
+    }
+
+    return sortNewsByLatestDate(all);
   } catch {
     return null;
   }
@@ -45,18 +56,17 @@ async function fetchNewsPage(page: number): Promise<{ data: NewsItem[]; total: n
 
 export default function NewsPage() {
   const { t } = useTranslation();
+  const { formatDisplayDate } = useFormatDisplayDate();
   const [items, setItems] = useState<NewsItem[]>([]);
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetchNewsPage(1).then((data) => {
+    fetchAllNews().then((data) => {
       if (data) {
-        setItems(data.data);
-        setTotal(data.total);
+        setItems(data);
       } else {
         setError(true);
       }
@@ -64,20 +74,15 @@ export default function NewsPage() {
     });
   }, []);
 
-  const handleMore = async () => {
-    if (loadingMore) return;
+  const visibleItems = items.slice(0, visibleCount);
+  const hasMore = visibleCount < items.length;
+
+  const handleMore = () => {
+    if (loadingMore || !hasMore) return;
     setLoadingMore(true);
-    const nextPage = page + 1;
-    const data = await fetchNewsPage(nextPage);
-    if (data) {
-      setItems((prev) => [...prev, ...data.data]);
-      setTotal(data.total);
-      setPage(nextPage);
-    }
+    setVisibleCount((count) => Math.min(count + PAGE_SIZE, items.length));
     setLoadingMore(false);
   };
-
-  const hasMore = items.length < total;
 
   return (
     <div className="flex w-full max-w-305 flex-col px-5 pt-12 pb-40">
@@ -94,14 +99,14 @@ export default function NewsPage() {
       ) : (
         <>
           <div className="mt-11.25 grid grid-cols-3 gap-10 max-md:flex max-md:flex-col">
-            {items.map((item) => (
+            {visibleItems.map((item) => (
               <div
                 key={item._id}
                 className="border-textBlack300 flex flex-col rounded-sm border shadow-[0px_2px_4px_0px_rgba(0,0,0,0.05)]"
               >
                 <div className="flex flex-col items-start gap-2 px-6 pt-6 pb-4">
                   <p className="text-textBlack600 leading-[24px] tracking-normal">
-                    {formatDate(item.updatedAt ?? item.createdAt)}
+                    {formatDisplayDate(getNewsDisplayDate(item))}
                   </p>
                   <p className="text-fontSizeL text-textBlack800 leading-[24px] font-semibold tracking-normal">
                     {item.title}
@@ -117,8 +122,8 @@ export default function NewsPage() {
                   />
                 </div>
                 <div className="flex flex-1 flex-col gap-4 px-6 pt-4 pb-6">
-                  <p className="text-textBlack700 line-clamp-2 leading-[24px] tracking-normal">
-                    {item.content}
+                  <p className="text-textBlack700 leading-[24px] tracking-normal">
+                    {truncateNewsPreview(item.content)}
                   </p>
                   <Link
                     href={`/news/${item._id}`}
@@ -143,7 +148,7 @@ export default function NewsPage() {
                   {t("news.loading", "Բեռնում...")}
                 </span>
               ) : (
-                t("news.see_more", "Տեսնել ավելին")
+                t("news.load_more", "Տեսնել ավելին")
               )}
             </button>
           )}

@@ -39,6 +39,7 @@ import {
 } from "@/services/metricsService";
 import { fetchSections } from "@/services/sectionsService";
 import { swrKeys } from "@/lib/swr/cache-keys";
+import { formatDisplayDate } from "@/lib/format-display-date";
 import { pickLocale } from "@/lib/i18n";
 
 export default function StatPage() {
@@ -336,11 +337,7 @@ export default function StatPage() {
                     {metric?.updatedAt && (
                       <p className="text-[11px] text-[rgba(110,127,136,1)]">
                         {t("stat.updated_at", "Թարմացված է՝")}{" "}
-                        {new Date(metric.updatedAt).toLocaleDateString("hy-AM", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                        })}
+                        {formatDisplayDate(metric.updatedAt, activeLang)}
                       </p>
                     )}
                     {((metric?.metadata as any)?.[activeLang]?.sourceUrl ||

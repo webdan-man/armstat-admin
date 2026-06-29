@@ -16,6 +16,8 @@ import { Input } from "@/components/ui/input";
 import { ApiError } from "@/lib/api/api-error";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { cn } from "@/lib/utils";
+import { formatDisplayDate, parseDotDisplayDate } from "@/lib/format-display-date";
+import { getNewsDisplayDate, sortNewsByLatestDate } from "@/utils/news.util";
 import {
   createNews,
   deleteNews,
@@ -33,14 +35,11 @@ const fieldBorder =
 
 type NewsListKey = readonly [...typeof swrKeys.newsList, number, number];
 
-function formatPublishedLabel(publishedAt: string | undefined | null): string {
-  if (!publishedAt) return "—";
-  const date = new Date(publishedAt);
-  if (Number.isNaN(date.getTime())) return publishedAt;
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  const yyyy = date.getFullYear();
-  return `${mm}/${dd}/${yyyy}`;
+function formatPublishedLabel(item: HomePageNewsItem): string {
+  const raw = getNewsDisplayDate(item);
+  if (!raw) return "—";
+  const formatted = formatDisplayDate(raw);
+  return formatted || "—";
 }
 
 function filterByTitle(items: HomePageNewsItem[], query: string): HomePageNewsItem[] {
@@ -97,7 +96,7 @@ export function NewsPageEditor() {
     isValidating && pages !== undefined && size > pages.length;
 
   const allItems = useMemo<HomePageNewsItem[]>(() => {
-    return apiItems.filter((item) => !hiddenIds.has(item._id));
+    return sortNewsByLatestDate(apiItems.filter((item) => !hiddenIds.has(item._id)));
   }, [apiItems, hiddenIds]);
 
   const filtered = useMemo(
@@ -141,11 +140,20 @@ export function NewsPageEditor() {
     );
   };
 
-  const buildPayload = (values: CreateNewsFormValues): CreateNewsPayload => ({
+  const toPublishedAtIso = (value: string): string =>
+    parseDotDisplayDate(value)!.toISOString();
+
+  const buildCreatePayload = (values: CreateNewsFormValues): CreateNewsPayload => ({
     title: resolveTitleForList(values),
     content: resolveContentForList(values),
-    url: values.link.trim(),
-    publishedAt: new Date(values.publishedAt).toISOString(),
+    url: "",
+    publishedAt: toPublishedAtIso(values.publishedAt),
+  });
+
+  const buildUpdatePayload = (values: CreateNewsFormValues): Partial<CreateNewsPayload> => ({
+    title: resolveTitleForList(values),
+    content: resolveContentForList(values),
+    publishedAt: toPublishedAtIso(values.publishedAt),
   });
 
   const describeError = (e: unknown, fallback: string) =>
@@ -155,16 +163,15 @@ export function NewsPageEditor() {
     values: CreateNewsFormValues,
     image: NewsImageSubmitInfo
   ) => {
-    const payload = buildPayload(values);
     const isEdit = editingId !== null;
     const imageInput = { file: image.file, remove: image.removed };
 
     try {
       if (isEdit) {
-        await updateNews(editingId!, payload, imageInput);
+        await updateNews(editingId!, buildUpdatePayload(values), imageInput);
         toast.success("Նորությունը թարմացվել է։");
       } else {
-        await createNews(payload, imageInput);
+        await createNews(buildCreatePayload(values), imageInput);
         toast.success("Նորությունը ստեղծվել է։");
       }
       await mutateNewsList();
@@ -195,8 +202,7 @@ export function NewsPageEditor() {
       setEditingValues({
         title: { hy: news.title ?? "", ru: "", en: "" },
         content: { hy: news.content ?? "", ru: "", en: "" },
-        link: news.url ?? "",
-        publishedAt: news.publishedAt ? news.publishedAt.slice(0, 10) : "",
+        publishedAt: news.publishedAt ? formatDisplayDate(news.publishedAt) : "",
       });
       setEditingImageUrl(news.image ?? "");
       setDialogOpen(true);
@@ -274,7 +280,7 @@ export function NewsPageEditor() {
           className="h-11 shrink-0 rounded-lg border-0 bg-[#004d99] px-5 text-[13px] font-medium text-white hover:bg-[#004080]"
           onClick={handleCreateClick}
         >
-          Ավելացնել Լուր
+          Ավելացնել
         </Button>
       </div>
 
@@ -342,7 +348,7 @@ export function NewsPageEditor() {
                       <span className="line-clamp-2">{row.title}</span>
                     </td>
                     <td className="px-4 py-3 align-middle whitespace-nowrap text-[#2c2c2c]">
-                      {formatPublishedLabel(row.publishedAt)}
+                      {formatPublishedLabel(row)}
                     </td>
                     <td className="px-4 py-3 align-middle">
                       <div className="flex flex-wrap items-center gap-2">

@@ -2,7 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { toast } from "sonner";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useFormatDisplayDate } from "@/hooks/useFormatDisplayDate";
+import { MarkdownText } from "@/components/site/MarkdownText";
+import { getNewsDisplayDate, truncateNewsPreview } from "@/utils/news.util";
 
 type NewsItem = {
   _id: string;
@@ -23,13 +27,6 @@ function absolutizeUrl(path?: string): string | undefined {
   return `${BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
-function formatDate(input?: string): string {
-  if (!input) return "";
-  const d = new Date(input);
-  if (Number.isNaN(d.getTime())) return input;
-  return d.toLocaleDateString("hy-AM");
-}
-
 interface NewsDetailProps {
   item: NewsItem;
   related: NewsItem[];
@@ -37,8 +34,19 @@ interface NewsDetailProps {
 
 export default function NewsDetail({ item, related }: NewsDetailProps) {
   const { t } = useTranslation();
+  const { formatDisplayDate } = useFormatDisplayDate();
   const imageSrc = absolutizeUrl(item.image);
-  const displayDate = formatDate(item.publishedAt ?? item.updatedAt ?? item.createdAt);
+  const displayDate = formatDisplayDate(getNewsDisplayDate(item));
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success(t("news.link_copied", "Հղումը պատճենված է"));
+    } catch {
+      toast.error(t("news.link_copy_failed", "Չհաջողվեց պատճենել հղումը"));
+    }
+  };
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -55,25 +63,27 @@ export default function NewsDetail({ item, related }: NewsDetailProps) {
           {item.title}
         </h2>
 
-        {(displayDate || item.url) && (
-          <div className={"flex items-center justify-between gap-2"}>
-            {displayDate && (
-              <div className="flex justify-between">
-                <p className="text-fontSizeM leading-fontLine-heightMD text-textBlack600 mt-3.75 tracking-normal">
-                  {displayDate}
-                </p>
-              </div>
-            )}
-            {item.url && (
-              <Link target="_blank" href={item.url} className="flex items-center gap-[9px]">
-                <Image src={"/link.svg"} alt={"Link"} width={24} height={24} />
-                <p className="leading-fontLine-heightMD text-link text-fontSizeS font-medium">
-                  {t("news.share", "Taradztel")}
-                </p>
-              </Link>
-            )}
-          </div>
-        )}
+        <div
+          className={
+            displayDate
+              ? "flex items-center justify-between gap-2"
+              : "flex items-center justify-end gap-2"
+          }
+        >
+          {displayDate && (
+            <div className="flex justify-between">
+              <p className="text-fontSizeM leading-fontLine-heightMD text-textBlack600 mt-3.75 tracking-normal">
+                {displayDate}
+              </p>
+            </div>
+          )}
+          <button type="button" onClick={handleShare} className="flex items-center gap-[9px]">
+            <Image src={"/link.svg"} alt={"Link"} width={24} height={24} />
+            <p className="leading-fontLine-heightMD text-link text-fontSizeS font-medium">
+              {t("news.share", "Taradztel")}
+            </p>
+          </button>
+        </div>
 
         {imageSrc && (
           <div className="relative mt-6 h-100 w-full overflow-hidden rounded-2xl">
@@ -81,9 +91,9 @@ export default function NewsDetail({ item, related }: NewsDetailProps) {
           </div>
         )}
 
-        <p className="text-textBlack800 mt-11 leading-[24px] tracking-normal whitespace-pre-line">
+        <MarkdownText className="text-textBlack800 mt-11 leading-[24px] tracking-normal whitespace-pre-line">
           {item.content}
-        </p>
+        </MarkdownText>
       </div>
 
       {related.length > 0 && (
@@ -94,13 +104,13 @@ export default function NewsDetail({ item, related }: NewsDetailProps) {
           <div className="mt-11.25 grid grid-cols-3 gap-10 shadow-[0px_2px_4px_0px_rgba(0,0,0,0.05)] max-md:flex max-md:flex-col">
             {related.map((rel) => {
               const relImage = absolutizeUrl(rel.image);
-              const relHref = rel.url && rel.url.startsWith("http") ? rel.url : `/news/${rel._id}`;
+              const relHref = `/news/${rel._id}`;
 
               return (
                 <div key={rel._id} className="border-textBlack300 flex flex-col rounded-sm border">
                   <div className="flex flex-col items-start gap-2 px-6 pt-6 pb-4">
                     <p className="text-textBlack600 leading-[24px] tracking-normal">
-                      {formatDate(rel.publishedAt ?? rel.updatedAt ?? rel.createdAt)}
+                      {formatDisplayDate(getNewsDisplayDate(rel))}
                     </p>
                     <p className="text-fontSizeL text-textBlack800 line-clamp-2 leading-[24px] font-semibold tracking-normal">
                       {rel.title}
@@ -116,8 +126,8 @@ export default function NewsDetail({ item, related }: NewsDetailProps) {
                     />
                   </div>
                   <div className="flex flex-col gap-4 px-6 pt-4 pb-6">
-                    <p className="text-textBlack700 line-clamp-2 leading-[24px] tracking-normal">
-                      {rel.content}
+                    <p className="text-textBlack700 leading-[24px] tracking-normal">
+                      {truncateNewsPreview(rel.content)}
                     </p>
                     <Link
                       href={relHref}

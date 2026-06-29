@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
 import useSWR, { mutate } from "swr";
 
@@ -202,14 +201,10 @@ export function ContentPageEditor() {
           <div className="flex flex-wrap items-center gap-3">
             <Button
               type="button"
-              variant="ghost"
               onClick={handleAdd}
-              className="flex h-11 items-center gap-2 rounded-lg border border-[#e6e7eb] bg-white px-5 text-[13px] font-medium text-[#275199] shadow-none hover:bg-[#f5f7fb] hover:text-[#275199]"
+              className="h-11 shrink-0 rounded-lg border-0 bg-[#004d99] px-5 text-[13px] font-medium text-white hover:bg-[#004080]"
             >
-              <span className="flex size-5 items-center justify-center rounded-full bg-[#275199] text-white">
-                <Plus className="size-3.5" strokeWidth={2.5} />
-              </span>
-              Ավելացնել նոր դաշտ
+              Ավելացնել դաշտ
             </Button>
             <Button
               type="submit"

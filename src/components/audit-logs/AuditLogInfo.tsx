@@ -1,6 +1,6 @@
 import React from "react";
 import { AuditLog } from "@/types/audit-logs";
-import { format } from "date-fns";
+import { formatDisplayDateTime } from "@/lib/format-display-date";
 
 const AuditLogInfo = ({ auditLog }: { auditLog: AuditLog }) => {
   const { actorUser } = auditLog;
@@ -26,7 +26,7 @@ const AuditLogInfo = ({ auditLog }: { auditLog: AuditLog }) => {
           Գործողություն: <b>{auditLog.action}</b>
         </div>
         <div>
-          Ամսաթիվ: <b>{format(new Date(auditLog.createdAt), "d MMMM yyyy HH:mm")}</b>
+          Ամսաթիվ: <b>{formatDisplayDateTime(auditLog.createdAt)}</b>
         </div>
         <div>
           Կարգավիճակ: <b>{auditLog.status}</b>

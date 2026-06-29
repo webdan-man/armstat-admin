@@ -5,6 +5,8 @@ import { TypographyH2 } from "@/components/ui/typography";
 import { getActiveLocale } from "@/lib/get-active-locale";
 import { pickLocale, type Localized } from "@/lib/i18n";
 import { Tr } from "@/components/site/Tr";
+import { cn } from "@/lib/utils";
+import styles from "./information-center.module.css";
 
 type InformationCenterSection = {
   title?: Localized;
@@ -85,7 +87,6 @@ export default async function InformationCenterPage({ searchParams }: Informatio
           </div>
         </div>
       </div>
-      12312321
       <div className="flex w-full max-w-305 flex-col px-5 pt-27.25 max-md:pt-10">
         <div className="flex w-full max-w-202 flex-col justify-start">
           <h3 className="text-[23px] font-semibold text-[rgba(55,55,55,1)]">
@@ -122,12 +123,16 @@ export default async function InformationCenterPage({ searchParams }: Informatio
                     </a>
                   ) : null}
 
-                  <p className="text-[12px] text-[rgba(110,127,136,1)]">
-                    <Tr k="information_center.link_label" fallback="Հղում՝" />{" "}
-                    <Link href={link} className="text-link font-semibold">
+                  {link ? (
+                    <Link
+                      href={link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(styles.externalLink, "text-link text-[12px] font-semibold")}
+                    >
                       <Tr k="information_center.link_source" fallback="Հղման աղբյուրը" />
                     </Link>
-                  </p>
+                  ) : null}
                 </div>
               </div>
             );
