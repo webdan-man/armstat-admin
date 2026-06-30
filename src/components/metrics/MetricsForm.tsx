@@ -200,6 +200,13 @@ export default function MetricsForm() {
     try {
       await publishMetric(selectedFilter.metric, !isPublished);
       await mutate(swrKeys.metricForm(selectedFilter.metric));
+      const topicId = loadedMetricData?.metric.topicId ?? resolvedTopicId;
+      if (topicId) {
+        await mutate(swrKeys.metricsByTopic(topicId));
+      }
+      if (resolvedTopicId && resolvedTopicId !== topicId) {
+        await mutate(swrKeys.metricsByTopic(resolvedTopicId));
+      }
       toast.success(isPublished ? "Հրապարակումից հանված է" : "Հրապարակված է");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Սխալ");

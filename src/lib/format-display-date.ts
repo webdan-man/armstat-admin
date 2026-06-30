@@ -26,6 +26,73 @@ function formatDotDate(date: Date): string {
 
 const DOT_DATE_PATTERN = /^(\d{2})\.(\d{2})\.(\d{4})$/;
 const NATIVE_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+const MAX_DATE_INPUT_DIGITS = 8;
+
+export function extractDateInputDigits(value: string): string {
+  return value.replace(/\D/g, "").slice(0, MAX_DATE_INPUT_DIGITS);
+}
+
+export function formatDateInputMask(digits: string): string {
+  const day = digits.slice(0, 2);
+  const month = digits.slice(2, 4);
+  const year = digits.slice(4, 8);
+
+  if (digits.length === 0) return "";
+  if (digits.length <= 2) return day;
+  if (digits.length <= 4) return `${day}.${month}`;
+  return `${day}.${month}.${year}`;
+}
+
+export function applyDateInputMask(value: string): string {
+  return formatDateInputMask(extractDateInputDigits(value));
+}
+
+export function getDateInputCaretPosition(
+  previousMasked: string,
+  nextMasked: string,
+  previousCaret: number,
+  isDelete = false
+): number {
+  const prevDigits = extractDateInputDigits(previousMasked);
+  const nextDigits = extractDateInputDigits(nextMasked);
+  const digitsBeforeCaret = extractDateInputDigits(
+    previousMasked.slice(0, previousCaret)
+  ).length;
+
+  let targetDigitCount: number;
+  if (isDelete) {
+    targetDigitCount = Math.min(digitsBeforeCaret, nextDigits.length);
+  } else if (nextDigits.length > prevDigits.length) {
+    targetDigitCount = Math.min(
+      digitsBeforeCaret + (nextDigits.length - prevDigits.length),
+      nextDigits.length
+    );
+  } else {
+    targetDigitCount = digitsBeforeCaret;
+  }
+
+  if (targetDigitCount <= 0) return 0;
+
+  let digitCount = 0;
+  for (let i = 0; i < nextMasked.length; i++) {
+    if (/\d/.test(nextMasked[i])) {
+      digitCount++;
+      if (digitCount === targetDigitCount) {
+        let pos = i + 1;
+        if (
+          !isDelete &&
+          nextDigits.length > prevDigits.length &&
+          nextMasked[pos] === "."
+        ) {
+          pos++;
+        }
+        return pos;
+      }
+    }
+  }
+
+  return nextMasked.length;
+}
 
 export function parseDotDisplayDate(value: string): Date | null {
   const trimmed = value.trim();

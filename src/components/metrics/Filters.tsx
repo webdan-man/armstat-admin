@@ -17,9 +17,6 @@ const selectTriggerClass = cn(
   "h-9 w-full rounded-[8.5px] border-[#c8c8c8] bg-[#f9fafb] shadow-none"
 );
 
-const METRIC_STATUS_DOT_PUBLISHED = "before:bg-[rgba(37,201,34,1)]";
-const METRIC_STATUS_DOT_UNPUBLISHED = "before:bg-[rgba(250,204,21,1)]";
-
 function FilterChip({ children }: { children: React.ReactNode }) {
   return (
     <span className="z-10 -mb-2 ml-3 justify-start bg-[#f9fafb] text-[10px] leading-4 font-normal text-zinc-800">
@@ -158,10 +155,7 @@ export default function Filters() {
               const formatted = option.updatedAt
                 ? formatDisplayDate(option.updatedAt) || null
                 : null;
-              const isPublished = Boolean(option.publishedAt);
-              const statusDotClass = isPublished
-                ? METRIC_STATUS_DOT_PUBLISHED
-                : METRIC_STATUS_DOT_UNPUBLISHED;
+              const isPublished = option.publishedAt != null && option.publishedAt !== "";
 
               return {
                 value: option.id,
@@ -172,12 +166,16 @@ export default function Filters() {
                   <>
                     {option.label}{" "}
                     {formatted && (
-                      <div
-                        className={cn(
-                          "relative ml-auto justify-start pl-5 text-xs leading-4 font-medium text-zinc-800 before:absolute before:top-[2px] before:left-0 before:h-[7px] before:w-[7px] before:translate-1/2 before:rounded-full",
-                          statusDotClass
-                        )}
-                      >
+                      <div className="relative ml-auto justify-start pl-5 text-xs leading-4 font-medium text-zinc-800">
+                        <span
+                          aria-hidden
+                          className={cn(
+                            "absolute top-[2px] left-0 h-[7px] w-[7px] rounded-full",
+                            isPublished
+                              ? "bg-[rgba(37,201,34,1)]"
+                              : "bg-[rgba(250,204,21,1)]"
+                          )}
+                        />
                         {formatted}
                       </div>
                     )}

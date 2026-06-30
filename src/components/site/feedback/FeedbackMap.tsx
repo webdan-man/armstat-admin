@@ -1,13 +1,8 @@
 "use client";
 
-import { Minus, Plus } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-
 import { cn } from "@/lib/utils";
 
 const DEFAULT_ZOOM = 13;
-const MIN_ZOOM = 10;
-const MAX_ZOOM = 18;
 const FALLBACK_COORDS = { lat: 40.1811, lng: 44.5136 };
 
 function parseCoords(coords: string): { lat: number; lng: number } | null {
@@ -18,8 +13,28 @@ function parseCoords(coords: string): { lat: number; lng: number } | null {
   return { lat, lng };
 }
 
-function buildMapEmbedSrc(lat: number, lng: number, zoom: number): string {
-  return `https://maps.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}&z=${zoom}&output=embed`;
+function buildMapEmbedSrc(
+  coords: { lat: number; lng: number } | null,
+  title?: string,
+  zoom = DEFAULT_ZOOM,
+): string {
+  const place = title?.trim();
+
+  // When a place name is provided, search only by q.
+  // Adding ll= alongside q= pins the marker to raw coordinates and
+  // triggers "Place info couldn't load" on click.
+  if (place) {
+    const params = new URLSearchParams({
+      q: place,
+      z: String(zoom),
+      output: "embed",
+    });
+
+    return `https://maps.google.com/maps?${params.toString()}`;
+  }
+
+  const { lat, lng } = coords ?? FALLBACK_COORDS;
+  return `https://maps.google.com/maps?q=${lat},${lng}&z=${zoom}&output=embed`;
 }
 
 type FeedbackMapProps = {
@@ -29,68 +44,19 @@ type FeedbackMapProps = {
 };
 
 export function FeedbackMap({ coords, title, className }: FeedbackMapProps) {
-  const { lat, lng } = parseCoords(coords) ?? FALLBACK_COORDS;
-  const [zoom, setZoom] = useState(DEFAULT_ZOOM);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const changeZoom = useCallback((delta: number) => {
-    setZoom((current) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, current + delta)));
-  }, []);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const onWheel = (event: WheelEvent) => {
-      event.preventDefault();
-      changeZoom(event.deltaY < 0 ? 1 : -1);
-    };
-
-    container.addEventListener("wheel", onWheel, { passive: false });
-    return () => container.removeEventListener("wheel", onWheel);
-  }, [changeZoom]);
+  const position = parseCoords(coords);
+  const src = buildMapEmbedSrc(position, title);
 
   return (
-    <div
-      ref={containerRef}
-      className={cn("relative h-full w-full touch-none", className)}
-      aria-label={title || "Map"}
-    >
-      {title ? (
-        <p className="pointer-events-none absolute top-4 left-4 z-10 rounded-md bg-white/90 px-3 py-2 font-medium text-[rgba(37,37,37,1)]">
-          {title}
-        </p>
-      ) : null}
-
+    <div className={cn("relative h-full w-full", className)} aria-label={title || "Map"}>
       <iframe
-        src={buildMapEmbedSrc(lat, lng, zoom)}
-        className="pointer-events-none h-full w-full border-0"
+        src={src}
+        className="h-full w-full border-0"
         title={title || "Map"}
         loading="lazy"
-        tabIndex={-1}
+        allowFullScreen
+        referrerPolicy="no-referrer-when-downgrade"
       />
-
-      <div className="absolute right-4 bottom-4 z-10 flex flex-col overflow-hidden rounded-lg border border-[rgba(198,198,198,1)] bg-white shadow-sm">
-        <button
-          type="button"
-          aria-label="Zoom in"
-          disabled={zoom >= MAX_ZOOM}
-          onClick={() => changeZoom(1)}
-          className="flex size-9 items-center justify-center text-[rgba(37,37,37,1)] transition-colors hover:bg-[rgba(0,0,0,0.04)] disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <Plus className="size-4" aria-hidden />
-        </button>
-        <div className="h-px bg-[rgba(217,217,217,1)]" />
-        <button
-          type="button"
-          aria-label="Zoom out"
-          disabled={zoom <= MIN_ZOOM}
-          onClick={() => changeZoom(-1)}
-          className="flex size-9 items-center justify-center text-[rgba(37,37,37,1)] transition-colors hover:bg-[rgba(0,0,0,0.04)] disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <Minus className="size-4" aria-hidden />
-        </button>
-      </div>
     </div>
   );
 }

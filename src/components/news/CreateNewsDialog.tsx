@@ -23,12 +23,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { DateFieldInput } from "@/components/ui/date-field-input";
 import { Input } from "@/components/ui/input";
-import {
-  fromNativeDateInputValue,
-  parseDotDisplayDate,
-  toNativeDateInputValue,
-} from "@/lib/format-display-date";
+import { parseDotDisplayDate } from "@/lib/format-display-date";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -310,15 +307,12 @@ export function CreateNewsDialog({
                       Հրապարակվել է
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        type="date"
+                      <DateFieldInput
                         name={field.name}
                         ref={field.ref}
-                        value={toNativeDateInputValue(field.value)}
+                        value={field.value}
                         onBlur={field.onBlur}
-                        onChange={(event) =>
-                          field.onChange(fromNativeDateInputValue(event.target.value))
-                        }
+                        onChange={field.onChange}
                         className="h-9 rounded-[9px] border-[#e6e7eb] bg-white px-3 text-[13px]"
                       />
                     </FormControl>

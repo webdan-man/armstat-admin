@@ -78,9 +78,14 @@ function buildAxisRanges(
       tooltipText: category,
     });
 
+    // Bracket ticks under the plot were removed intentionally; keep vertical dividers.
     range.get("tick")?.setAll({ visible: false });
 
-    range.get("grid")?.setAll({ visible: false });
+    range.get("grid")?.setAll({
+      strokeOpacity: 1,
+      stroke: am5.color(0x000000),
+      strokeWidth: 1,
+    });
 
     ranges.push(range);
   });
@@ -92,7 +97,12 @@ function buildAxisRanges(
 
     lastRange.get("tick")?.setAll({ visible: false });
 
-    lastRange.get("grid")?.setAll({ visible: false });
+    lastRange.get("grid")?.setAll({
+      strokeOpacity: 1,
+      stroke: am5.color(0x000000),
+      strokeWidth: 1,
+      location: 1,
+    });
 
     ranges.push(lastRange);
   }
@@ -162,6 +172,8 @@ function GroupedStackedColumnChart({
     const xRenderer = am5xy.AxisRendererX.new(root, {
       minGridDistance: 20,
       minorGridEnabled: true,
+      cellStartLocation: 0.1,
+      cellEndLocation: 0.9,
     });
     xRenderer.labels.template.set("forceHidden", true);
 
@@ -215,8 +227,7 @@ function GroupedStackedColumnChart({
         stroke: am5.color(0xffffff),
         strokeOpacity: 1,
         strokeWidth: 0.5,
-        // Narrower than the cell so adjacent columns have a visible gap instead of touching.
-        width: am5.percent(70),
+        width: am5.percent(90),
         maxWidth: COLUMN_MAX_WIDTH,
       });
 

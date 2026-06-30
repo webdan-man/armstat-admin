@@ -12,7 +12,7 @@ export default function Footer() {
 
   return (
     <footer className="border-t-warning flex w-full flex-col items-center border-t-4 pt-12 pb-10">
-      <div className="flex w-full max-w-305 flex-col px-5">
+      <div className="flex w-full max-w-400 flex-col px-5">
         <div className="flex w-full items-center justify-between py-4 max-md:flex-col max-md:items-start max-md:gap-4">
           <Link href="/" className="flex w-full items-center gap-4 max-md:gap-2">
             <Image

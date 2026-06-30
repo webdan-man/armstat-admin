@@ -19,7 +19,6 @@ type NewsItem = {
   updatedAt?: string;
 };
 
-const PAGE_SIZE = 3;
 const FETCH_LIMIT = 50;
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "";
 
@@ -58,9 +57,7 @@ export default function NewsPage() {
   const { t } = useTranslation();
   const { formatDisplayDate } = useFormatDisplayDate();
   const [items, setItems] = useState<NewsItem[]>([]);
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
 
   useEffect(() => {
@@ -73,16 +70,6 @@ export default function NewsPage() {
       setLoading(false);
     });
   }, []);
-
-  const visibleItems = items.slice(0, visibleCount);
-  const hasMore = visibleCount < items.length;
-
-  const handleMore = () => {
-    if (loadingMore || !hasMore) return;
-    setLoadingMore(true);
-    setVisibleCount((count) => Math.min(count + PAGE_SIZE, items.length));
-    setLoadingMore(false);
-  };
 
   return (
     <div className="flex w-full max-w-305 flex-col px-5 pt-12 pb-40">
@@ -99,7 +86,7 @@ export default function NewsPage() {
       ) : (
         <>
           <div className="mt-11.25 grid grid-cols-3 gap-10 max-md:flex max-md:flex-col">
-            {visibleItems.map((item) => (
+            {items.map((item) => (
               <div
                 key={item._id}
                 className="border-textBlack300 flex flex-col rounded-sm border shadow-[0px_2px_4px_0px_rgba(0,0,0,0.05)]"
@@ -135,23 +122,6 @@ export default function NewsPage() {
               </div>
             ))}
           </div>
-
-          {hasMore && (
-            <button
-              onClick={handleMore}
-              disabled={loadingMore}
-              className="bg-link border-blue600 my-16.5 self-start rounded-sm border-2 px-10 py-2 font-medium disabled:opacity-60"
-            >
-              {loadingMore ? (
-                <span className="flex items-center gap-2">
-                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  {t("news.loading", "Բեռնում...")}
-                </span>
-              ) : (
-                t("news.load_more", "Տեսնել ավելին")
-              )}
-            </button>
-          )}
         </>
       )}
     </div>

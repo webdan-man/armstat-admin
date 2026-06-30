@@ -128,7 +128,7 @@ export default async function FeedbackPage({ searchParams }: FeedbackPageProps) 
                       {section.title && (
                         <p className="font-medium text-[rgba(37,37,37,1)]">{section.title}</p>
                       )}
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col items-start gap-1">
                         {section.phone && (
                           <a
                             className="flex items-center gap-2 text-[rgba(37,37,37,1)]"
