@@ -3,6 +3,7 @@ import {
   normalizeFeaturedBlockItems,
   type FeaturedBlockItem,
 } from "@/utils/featured-block-topics.util";
+import type { MaybeLocalizedNewsText } from "@/utils/news.util";
 
 export type MainLangCode = "hy" | "ru" | "en";
 
@@ -113,8 +114,9 @@ export type HomePageFeaturedBlock = {
 
 export type HomePageNewsItem = {
   _id: string;
-  title: string;
-  content: string;
+  /** Localized per language; legacy records may still be a plain string. */
+  title: MaybeLocalizedNewsText;
+  content: MaybeLocalizedNewsText;
   url: string;
   image: string;
   publishedAt: string;

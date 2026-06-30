@@ -6,12 +6,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useFormatDisplayDate } from "@/hooks/useFormatDisplayDate";
-import { getNewsDisplayDate, sortNewsByLatestDate, truncateNewsPreview } from "@/utils/news.util";
+import {
+  getNewsDisplayDate,
+  resolveLocalizedNewsText,
+  sortNewsByLatestDate,
+  truncateNewsPreview,
+  type MaybeLocalizedNewsText,
+} from "@/utils/news.util";
 
 type NewsItem = {
   _id: string;
-  title: string;
-  content: string;
+  title: MaybeLocalizedNewsText;
+  content: MaybeLocalizedNewsText;
   image?: string;
   url?: string;
   publishedAt?: string;
@@ -28,9 +34,11 @@ function absolutizeUrl(path?: string): string | undefined {
 }
 
 function NewsCard({ item }: { item: NewsItem }) {
-  const { t } = useTranslation();
+  const { t, activeLang } = useTranslation();
   const { formatDisplayDate } = useFormatDisplayDate();
   const imageSrc = absolutizeUrl(item.image) ?? "/news/content.jpg";
+  const title = resolveLocalizedNewsText(item.title, activeLang);
+  const content = resolveLocalizedNewsText(item.content, activeLang);
 
   return (
     <div className="border-textBlack300 flex w-full flex-col rounded-lg border shadow-[0px_2px_4px_0px_rgba(0,0,0,0.05)]">
@@ -38,14 +46,14 @@ function NewsCard({ item }: { item: NewsItem }) {
         <TypographyP className="text-textBlack600">
           {formatDisplayDate(getNewsDisplayDate(item))}
         </TypographyP>
-        <TypographyH3 className="text-textBlack800 tracking-normal">{item.title}</TypographyH3>
+        <TypographyH3 className="text-textBlack800 tracking-normal">{title}</TypographyH3>
       </div>
       <div className="relative h-59.75 w-full overflow-hidden">
         <Image src={imageSrc} alt="News" fill unoptimized className="object-cover" />
       </div>
       <div className="flex flex-1 flex-col gap-4 px-6 pt-6 pb-4">
         <TypographyP className="text-textBlack700 tracking-normal">
-          {truncateNewsPreview(item.content)}
+          {truncateNewsPreview(content)}
         </TypographyP>
         <Link
           href={`/news/${item._id}`}

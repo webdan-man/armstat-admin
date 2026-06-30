@@ -6,12 +6,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useFormatDisplayDate } from "@/hooks/useFormatDisplayDate";
-import { getNewsDisplayDate, sortNewsByLatestDate, truncateNewsPreview } from "@/utils/news.util";
+import {
+  getNewsDisplayDate,
+  resolveLocalizedNewsText,
+  sortNewsByLatestDate,
+  truncateNewsPreview,
+  type MaybeLocalizedNewsText,
+} from "@/utils/news.util";
 
 type NewsItem = {
   _id: string;
-  title: string;
-  content: string;
+  title: MaybeLocalizedNewsText;
+  content: MaybeLocalizedNewsText;
   image?: string;
   url?: string;
   publishedAt?: string;
@@ -54,7 +60,7 @@ async function fetchAllNews(): Promise<NewsItem[] | null> {
 }
 
 export default function NewsPage() {
-  const { t } = useTranslation();
+  const { t, activeLang } = useTranslation();
   const { formatDisplayDate } = useFormatDisplayDate();
   const [items, setItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,7 +92,10 @@ export default function NewsPage() {
       ) : (
         <>
           <div className="mt-11.25 grid grid-cols-3 gap-10 max-md:flex max-md:flex-col">
-            {items.map((item) => (
+            {items.map((item) => {
+              const title = resolveLocalizedNewsText(item.title, activeLang);
+              const content = resolveLocalizedNewsText(item.content, activeLang);
+              return (
               <div
                 key={item._id}
                 className="border-textBlack300 flex flex-col rounded-sm border shadow-[0px_2px_4px_0px_rgba(0,0,0,0.05)]"
@@ -96,13 +105,13 @@ export default function NewsPage() {
                     {formatDisplayDate(getNewsDisplayDate(item))}
                   </p>
                   <p className="text-fontSizeL text-textBlack800 leading-[24px] font-semibold tracking-normal">
-                    {item.title}
+                    {title}
                   </p>
                 </div>
                 <div className="relative h-59.75 w-full overflow-hidden">
                   <Image
                     src={absolutizeUrl(item.image) ?? "/news/content.jpg"}
-                    alt={item.title}
+                    alt={title}
                     fill
                     unoptimized
                     className="object-cover"
@@ -110,7 +119,7 @@ export default function NewsPage() {
                 </div>
                 <div className="flex flex-1 flex-col gap-4 px-6 pt-4 pb-6">
                   <p className="text-textBlack700 leading-[24px] tracking-normal">
-                    {truncateNewsPreview(item.content)}
+                    {truncateNewsPreview(content)}
                   </p>
                   <Link
                     href={`/news/${item._id}`}
@@ -120,7 +129,8 @@ export default function NewsPage() {
                   </Link>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}

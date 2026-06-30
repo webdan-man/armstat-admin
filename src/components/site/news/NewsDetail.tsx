@@ -6,12 +6,17 @@ import { toast } from "sonner";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useFormatDisplayDate } from "@/hooks/useFormatDisplayDate";
 import { MarkdownText } from "@/components/site/MarkdownText";
-import { getNewsDisplayDate, truncateNewsPreview } from "@/utils/news.util";
+import {
+  getNewsDisplayDate,
+  resolveLocalizedNewsText,
+  truncateNewsPreview,
+  type MaybeLocalizedNewsText,
+} from "@/utils/news.util";
 
 type NewsItem = {
   _id: string;
-  title: string;
-  content: string;
+  title: MaybeLocalizedNewsText;
+  content: MaybeLocalizedNewsText;
   image?: string;
   url?: string;
   publishedAt?: string;
@@ -33,10 +38,12 @@ interface NewsDetailProps {
 }
 
 export default function NewsDetail({ item, related }: NewsDetailProps) {
-  const { t } = useTranslation();
+  const { t, activeLang } = useTranslation();
   const { formatDisplayDate } = useFormatDisplayDate();
   const imageSrc = absolutizeUrl(item.image);
   const displayDate = formatDisplayDate(getNewsDisplayDate(item));
+  const title = resolveLocalizedNewsText(item.title, activeLang);
+  const content = resolveLocalizedNewsText(item.content, activeLang);
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -60,7 +67,7 @@ export default function NewsDetail({ item, related }: NewsDetailProps) {
         </Link>
 
         <h2 className="text-textBlack800 mt-6 text-[30px] leading-10 font-semibold tracking-normal">
-          {item.title}
+          {title}
         </h2>
 
         <div
@@ -87,12 +94,12 @@ export default function NewsDetail({ item, related }: NewsDetailProps) {
 
         {imageSrc && (
           <div className="relative mt-6 h-100 w-full overflow-hidden rounded-2xl">
-            <Image src={imageSrc} alt={item.title} fill unoptimized className="object-cover" />
+            <Image src={imageSrc} alt={title} fill unoptimized className="object-cover" />
           </div>
         )}
 
         <MarkdownText className="text-textBlack800 mt-11 leading-[24px] tracking-normal whitespace-pre-line">
-          {item.content}
+          {content}
         </MarkdownText>
       </div>
 
@@ -105,6 +112,8 @@ export default function NewsDetail({ item, related }: NewsDetailProps) {
             {related.map((rel) => {
               const relImage = absolutizeUrl(rel.image);
               const relHref = `/news/${rel._id}`;
+              const relTitle = resolveLocalizedNewsText(rel.title, activeLang);
+              const relContent = resolveLocalizedNewsText(rel.content, activeLang);
 
               return (
                 <div key={rel._id} className="border-textBlack300 flex flex-col rounded-sm border">
@@ -113,13 +122,13 @@ export default function NewsDetail({ item, related }: NewsDetailProps) {
                       {formatDisplayDate(getNewsDisplayDate(rel))}
                     </p>
                     <p className="text-fontSizeL text-textBlack800 line-clamp-2 leading-[24px] font-semibold tracking-normal">
-                      {rel.title}
+                      {relTitle}
                     </p>
                   </div>
                   <div className="relative h-59.75 w-full overflow-hidden">
                     <Image
                       src={relImage ?? "/news/content.jpg"}
-                      alt={rel.title}
+                      alt={relTitle}
                       fill
                       unoptimized
                       className="object-cover"
@@ -127,7 +136,7 @@ export default function NewsDetail({ item, related }: NewsDetailProps) {
                   </div>
                   <div className="flex flex-col gap-4 px-6 pt-4 pb-6">
                     <p className="text-textBlack700 leading-[24px] tracking-normal">
-                      {truncateNewsPreview(rel.content)}
+                      {truncateNewsPreview(relContent)}
                     </p>
                     <Link
                       href={relHref}

@@ -17,7 +17,12 @@ import { ApiError } from "@/lib/api/api-error";
 import { swrKeys } from "@/lib/swr/cache-keys";
 import { cn } from "@/lib/utils";
 import { formatDisplayDate, parseDotDisplayDate } from "@/lib/format-display-date";
-import { getNewsDisplayDate, sortNewsByLatestDate } from "@/utils/news.util";
+import {
+  getNewsDisplayDate,
+  resolveLocalizedNewsText,
+  sortNewsByLatestDate,
+  toLocalizedNewsText,
+} from "@/utils/news.util";
 import {
   createNews,
   deleteNews,
@@ -42,10 +47,17 @@ function formatPublishedLabel(item: HomePageNewsItem): string {
   return formatted || "—";
 }
 
+/** Display language for the admin list (falls back across languages). */
+const LIST_DISPLAY_LANG = "hy" as const;
+
+function newsListTitle(item: HomePageNewsItem): string {
+  return resolveLocalizedNewsText(item.title, LIST_DISPLAY_LANG);
+}
+
 function filterByTitle(items: HomePageNewsItem[], query: string): HomePageNewsItem[] {
   const q = query.trim().toLowerCase();
   if (!q) return items;
-  return items.filter((n) => (n.title ?? "").toLowerCase().includes(q));
+  return items.filter((n) => newsListTitle(n).toLowerCase().includes(q));
 }
 
 export function NewsPageEditor() {
@@ -54,6 +66,9 @@ export function NewsPageEditor() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingValues, setEditingValues] = useState<CreateNewsFormValues | null>(null);
   const [editingImageUrl, setEditingImageUrl] = useState<string>("");
+  const [localizedDraftsById, setLocalizedDraftsById] = useState<
+    Record<string, CreateNewsFormValues>
+  >({});
   const [editLoadingId, setEditLoadingId] = useState<string | null>(null);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(() => new Set());
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => new Set());
@@ -84,25 +99,17 @@ export function NewsPageEditor() {
     { revalidateOnFocus: false, revalidateFirstPage: false }
   );
 
-  const apiItems = useMemo(
-    () => pages?.flatMap((p) => p.data) ?? [],
-    [pages]
-  );
-
+  const apiItems = useMemo(() => pages?.flatMap((p) => p.data) ?? [], [pages]);
   const total = pages?.[0]?.total ?? 0;
   const loadedCount = apiItems.length;
   const hasMore = loadedCount < total;
-  const isLoadingMore =
-    isValidating && pages !== undefined && size > pages.length;
+  const isLoadingMore = isValidating && pages !== undefined && size > pages.length;
 
   const allItems = useMemo<HomePageNewsItem[]>(() => {
     return sortNewsByLatestDate(apiItems.filter((item) => !hiddenIds.has(item._id)));
   }, [apiItems, hiddenIds]);
 
-  const filtered = useMemo(
-    () => filterByTitle(allItems, search),
-    [allItems, search]
-  );
+  const filtered = useMemo(() => filterByTitle(allItems, search), [allItems, search]);
 
   useEffect(() => {
     const node = sentinelRef.current;
@@ -124,51 +131,40 @@ export function NewsPageEditor() {
     return () => observer.disconnect();
   }, [hasMore, isLoading, isValidating, setSize, filtered.length]);
 
-  const resolveTitleForList = (values: CreateNewsFormValues): string => {
-    return (
-      values.title.hy.trim() ||
-      values.title.ru.trim() ||
-      values.title.en.trim()
-    );
-  };
-
-  const resolveContentForList = (values: CreateNewsFormValues): string => {
-    return (
-      values.content.hy.trim() ||
-      values.content.ru.trim() ||
-      values.content.en.trim()
-    );
-  };
-
-  const toPublishedAtIso = (value: string): string =>
-    parseDotDisplayDate(value)!.toISOString();
+  const toPublishedAtIso = (value: string): string => parseDotDisplayDate(value)!.toISOString();
 
   const buildCreatePayload = (values: CreateNewsFormValues): CreateNewsPayload => ({
-    title: resolveTitleForList(values),
-    content: resolveContentForList(values),
+    title: { ...values.title },
+    content: { ...values.content },
     url: "",
     publishedAt: toPublishedAtIso(values.publishedAt),
   });
 
   const buildUpdatePayload = (values: CreateNewsFormValues): Partial<CreateNewsPayload> => ({
-    title: resolveTitleForList(values),
-    content: resolveContentForList(values),
+    title: { ...values.title },
+    content: { ...values.content },
     publishedAt: toPublishedAtIso(values.publishedAt),
   });
 
   const describeError = (e: unknown, fallback: string) =>
     e instanceof ApiError ? e.message || "Սերվերի սխալ։" : fallback;
 
-  const handleSaveNews = async (
-    values: CreateNewsFormValues,
-    image: NewsImageSubmitInfo
-  ) => {
+  const cloneFormValues = (values: CreateNewsFormValues): CreateNewsFormValues => ({
+    title: { ...values.title },
+    content: { ...values.content },
+    publishedAt: values.publishedAt,
+  });
+
+  const handleSaveNews = async (values: CreateNewsFormValues, image: NewsImageSubmitInfo) => {
     const isEdit = editingId !== null;
     const imageInput = { file: image.file, remove: image.removed };
-
     try {
       if (isEdit) {
         await updateNews(editingId!, buildUpdatePayload(values), imageInput);
+        setLocalizedDraftsById((prev) => ({
+          ...prev,
+          [editingId!]: cloneFormValues(values),
+        }));
         toast.success("Նորությունը թարմացվել է։");
       } else {
         await createNews(buildCreatePayload(values), imageInput);
@@ -178,9 +174,7 @@ export function NewsPageEditor() {
     } catch (e) {
       const description = describeError(
         e,
-        isEdit
-          ? "Չհաջողվեց թարմացնել նորությունը։"
-          : "Չհաջողվեց ստեղծել նորությունը։"
+        isEdit ? "Չհաջողվեց թարմացնել նորությունը։" : "Չհաջողվեց ստեղծել նորությունը։"
       );
       toast.error("Սխալ!", { description });
       throw e;
@@ -198,11 +192,15 @@ export function NewsPageEditor() {
     setEditLoadingId(id);
     try {
       const news = await fetchNewsById(id);
+      const cached = localizedDraftsById[id];
+      const title = cached?.title ?? toLocalizedNewsText(news.title);
+      const content = cached?.content ?? toLocalizedNewsText(news.content);
       setEditingId(id);
       setEditingValues({
-        title: { hy: news.title ?? "", ru: "", en: "" },
-        content: { hy: news.content ?? "", ru: "", en: "" },
-        publishedAt: news.publishedAt ? formatDisplayDate(news.publishedAt) : "",
+        title,
+        content,
+        publishedAt:
+          cached?.publishedAt ?? (news.publishedAt ? formatDisplayDate(news.publishedAt) : ""),
       });
       setEditingImageUrl(news.image ?? "");
       setDialogOpen(true);
@@ -272,9 +270,7 @@ export function NewsPageEditor() {
   return (
     <div className="flex w-full flex-col gap-4 pb-10">
       <div className="sticky top-0 z-10 -mx-11 flex min-h-11 flex-col gap-4 bg-[#f9fafb] px-11 pt-7 pb-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">
-          Նորություններ
-        </h1>
+        <h1 className="text-xl leading-6 font-medium text-[#2c2c2c]">Նորություններ</h1>
         <Button
           type="button"
           className="h-11 shrink-0 rounded-lg border-0 bg-[#004d99] px-5 text-[13px] font-medium text-white hover:bg-[#004080]"
@@ -303,15 +299,11 @@ export function NewsPageEditor() {
           <table className="w-full min-w-[640px] border-collapse text-left text-[13px]">
             <thead>
               <tr className="border-b border-[#e6e7eb] bg-[#fafafa]">
-                <th className="px-4 py-3 font-medium text-[#2c2c2c]">
-                  Վերնագիր
-                </th>
+                <th className="px-4 py-3 font-medium text-[#2c2c2c]">Վերնագիր</th>
                 <th className="w-36 px-4 py-3 font-medium whitespace-nowrap text-[#2c2c2c]">
                   Հրապարակվել է
                 </th>
-                <th className="w-[280px] px-4 py-3 font-medium text-[#2c2c2c]">
-                  Գործողություններ
-                </th>
+                <th className="w-[280px] px-4 py-3 font-medium text-[#2c2c2c]">Գործողություններ</th>
               </tr>
             </thead>
             <tbody>
@@ -331,21 +323,15 @@ export function NewsPageEditor() {
                 </tr>
               ) : showEmpty ? (
                 <tr>
-                  <td
-                    colSpan={3}
-                    className="px-4 py-8 text-center text-[#646464]"
-                  >
+                  <td colSpan={3} className="px-4 py-8 text-center text-[#646464]">
                     Ոչինչ չի գտնվել։
                   </td>
                 </tr>
               ) : (
                 filtered.map((row) => (
-                  <tr
-                    key={row._id}
-                    className="border-b border-[#e6e7eb] last:border-b-0"
-                  >
+                  <tr key={row._id} className="border-b border-[#e6e7eb] last:border-b-0">
                     <td className="max-w-0 px-4 py-3 align-middle text-[#2c2c2c]">
-                      <span className="line-clamp-2">{row.title}</span>
+                      <span className="line-clamp-2">{newsListTitle(row)}</span>
                     </td>
                     <td className="px-4 py-3 align-middle whitespace-nowrap text-[#2c2c2c]">
                       {formatPublishedLabel(row)}
@@ -396,11 +382,7 @@ export function NewsPageEditor() {
             ref={sentinelRef}
             className="flex h-12 items-center justify-center text-[12px] text-[#646464]"
           >
-            {isLoadingMore ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              "Բեռնում..."
-            )}
+            {isLoadingMore ? <Loader2 className="size-4 animate-spin" /> : "Բեռնում..."}
           </div>
         )}
       </div>

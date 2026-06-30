@@ -29,10 +29,11 @@ import { parseDotDisplayDate } from "@/lib/format-display-date";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 
-type LangCode = "hy" | "ru" | "en";
+export type LangCode = "hy" | "ru" | "en";
 type LocalizedText = Record<LangCode, string>;
 
 const locales: LangCode[] = ["en", "hy", "ru"];
+const emptyLocalized = (): LocalizedText => ({ hy: "", ru: "", en: "" });
 
 const createNewsSchema = z
   .object({
@@ -103,13 +104,19 @@ type CreateNewsDialogProps = {
   initialImageUrl?: string;
 };
 
-const defaultLocalized: LocalizedText = { hy: "", ru: "", en: "" };
-
 const defaultFormValues: CreateNewsFormValues = {
-  title: defaultLocalized,
-  content: defaultLocalized,
+  title: emptyLocalized(),
+  content: emptyLocalized(),
   publishedAt: "",
 };
+
+function cloneFormValues(values: CreateNewsFormValues): CreateNewsFormValues {
+  return {
+    title: { ...values.title },
+    content: { ...values.content },
+    publishedAt: values.publishedAt,
+  };
+}
 
 const fieldLabels: Record<LangCode, { title: string; content: string }> = {
   hy: { title: "Վերնագիր", content: "Բովանդակություն" },
@@ -165,10 +172,10 @@ export function CreateNewsDialog({
     setImageDirty(false);
     releaseBlobUrl();
     if (open) {
-      form.reset(initialValues ?? defaultFormValues);
+      form.reset(cloneFormValues(initialValues ?? defaultFormValues));
       setImagePreview(initialImageUrl ?? "");
     } else {
-      form.reset(defaultFormValues);
+      form.reset(cloneFormValues(defaultFormValues));
       setImagePreview("");
     }
   }, [open, initialValues, initialImageUrl, form]);
@@ -210,6 +217,7 @@ export function CreateNewsDialog({
     setIsSubmitting(true);
     try {
       const removed = imageDirty && !imageFile;
+
       await onSubmitNews(values, { file: imageFile, removed });
       onOpenChange(false);
     } finally {
@@ -331,9 +339,7 @@ export function CreateNewsDialog({
               />
 
               <div className="flex flex-col gap-2">
-                <span className="text-[12px] font-semibold text-[#575757]">
-                  Նկար
-                </span>
+                <span className="text-[12px] font-semibold text-[#575757]">Նկար</span>
                 <input
                   ref={fileInputRef}
                   type="file"

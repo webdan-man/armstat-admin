@@ -54,9 +54,12 @@ export async function fetchNewsList({
   return { data: [], total: 0 };
 }
 
+/** News title/content are persisted per language as `{ hy, ru, en }`. */
+export type LocalizedNewsPayloadText = { hy: string; ru: string; en: string };
+
 export type CreateNewsPayload = {
-  title: string;
-  content: string;
+  title: LocalizedNewsPayloadText;
+  content: LocalizedNewsPayloadText;
   url: string;
   publishedAt: string;
 };
@@ -72,8 +75,9 @@ function appendNewsFields(
   formData: FormData,
   payload: Partial<CreateNewsPayload>
 ): void {
-  if (payload.title !== undefined) formData.append("title", payload.title);
-  if (payload.content !== undefined) formData.append("content", payload.content);
+  if (payload.title !== undefined) formData.append("title", JSON.stringify(payload.title));
+  if (payload.content !== undefined)
+    formData.append("content", JSON.stringify(payload.content));
   if (payload.url !== undefined) formData.append("url", payload.url);
   if (payload.publishedAt !== undefined)
     formData.append("publishedAt", payload.publishedAt);
