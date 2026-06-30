@@ -32,6 +32,8 @@ import { Textarea } from "@/components/ui/textarea";
 type LangCode = "hy" | "ru" | "en";
 type LocalizedText = Record<LangCode, string>;
 
+const locales: LangCode[] = ["en", "hy", "ru"];
+
 const createNewsSchema = z
   .object({
     title: z.object({
@@ -254,47 +256,54 @@ export function CreateNewsDialog({
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value={activeLang} className="mt-4 flex w-full flex-col gap-4">
-                <FormField
-                  control={form.control}
-                  name={`title.${activeLang}`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[12px] font-semibold text-[#575757]">
-                        {fieldLabels[activeLang].title}
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder={fieldPlaceholders[activeLang].title}
-                          className="h-9 rounded-[9px] border-[#e6e7eb] bg-white px-3 text-[13px]"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {locales.map((lang) => (
+                <TabsContent
+                  key={lang}
+                  value={lang}
+                  forceMount
+                  className="mt-4 flex w-full flex-col gap-4 data-[state=inactive]:hidden"
+                >
+                  <FormField
+                    control={form.control}
+                    name={`title.${lang}`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[12px] font-semibold text-[#575757]">
+                          {fieldLabels[lang].title}
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder={fieldPlaceholders[lang].title}
+                            className="h-9 rounded-[9px] border-[#e6e7eb] bg-white px-3 text-[13px]"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name={`content.${activeLang}`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[12px] font-semibold text-[#575757]">
-                        {fieldLabels[activeLang].content}
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder={fieldPlaceholders[activeLang].content}
-                          className="min-h-[96px] rounded-[9px] border-[#e6e7eb] bg-white px-3 py-2 text-[13px]"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </TabsContent>
+                  <FormField
+                    control={form.control}
+                    name={`content.${lang}`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[12px] font-semibold text-[#575757]">
+                          {fieldLabels[lang].content}
+                        </FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            placeholder={fieldPlaceholders[lang].content}
+                            className="min-h-[96px] rounded-[9px] border-[#e6e7eb] bg-white px-3 py-2 text-[13px]"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </TabsContent>
+              ))}
             </Tabs>
 
             <div className="mt-5 flex flex-col gap-4">
