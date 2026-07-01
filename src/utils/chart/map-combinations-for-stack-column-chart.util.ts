@@ -45,7 +45,7 @@ export const mapCombinationsForStackedColumnChart = (payload: {
 
   return {
     data: Object.values(resultMap),
-    seriesKeys,
+    seriesKeys: [...new Set(seriesKeys)],
     yAxisAttributeTitle,
   };
 };
