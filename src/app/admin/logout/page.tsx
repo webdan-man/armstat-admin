@@ -9,7 +9,7 @@ export default function LogoutPage() {
 
     useEffect(() => {
         fetch("/api/logout", { method: "POST" }).finally(() => {
-            router.push("/admin/login");
+            router.push("/login");
         });
     }, [router]);
 

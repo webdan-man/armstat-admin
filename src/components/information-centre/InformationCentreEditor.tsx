@@ -70,7 +70,7 @@ function resolveImageSrc(value: string): string {
   if (!value) return "";
   if (value.startsWith("blob:") || value.startsWith("data:")) return value;
   if (value.startsWith("http://") || value.startsWith("https://")) return value;
-  const base = (process.env.NEXT_PUBLIC_BASE_URL ?? "").replace(/\/$/, "");
+  const base = (process.env.NEXT_PUBLIC_BACKEND_URL ?? "").replace(/\/$/, "");
   return `${base}${value.startsWith("/") ? "" : "/"}${value}`;
 }
 

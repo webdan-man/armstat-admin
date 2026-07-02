@@ -58,7 +58,7 @@ function absolutizeUrl(pathOrUrl: string | undefined, baseUrl: string) {
 }
 
 async function getHomePageData(): Promise<HomePageResponse | null> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   if (!baseUrl) return null;
 
   const res = await fetch(`${baseUrl}/home-page`, { cache: "no-store" });
@@ -68,7 +68,7 @@ async function getHomePageData(): Promise<HomePageResponse | null> {
 }
 
 async function getLatestNews(limit = 3): Promise<HomePageResponse["newsItems"]> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   if (!baseUrl) return [];
 
   try {
@@ -87,7 +87,7 @@ type HomePageProps = {
 };
 
 export default async function Home({ searchParams }: HomePageProps) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "";
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
   const { lang: langParam } = await searchParams;
   const [data, lang, latestNews] = await Promise.all([
     getHomePageData(),

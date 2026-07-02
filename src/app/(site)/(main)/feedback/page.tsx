@@ -52,7 +52,7 @@ function parseMapCoords(coords?: string): string {
 }
 
 async function getContactUsData(): Promise<ContactUsResponse | null> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   if (!baseUrl) return null;
 
   const res = await fetch(`${baseUrl}/contact-us`, { cache: "no-store" });

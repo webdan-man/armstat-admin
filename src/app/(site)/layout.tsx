@@ -8,7 +8,7 @@ import type { ContentEntriesResponse } from "@/types/content-entries";
 
 /** Fetch translation entries on the server so the first paint already has them. */
 async function getContentEntries(): Promise<ContentEntriesResponse | null> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   if (!baseUrl) return null;
 
   const res = await fetch(`${baseUrl}/content-entries`, { cache: "no-store" });
@@ -21,11 +21,9 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   const [entries, lang] = await Promise.all([getContentEntries(), getActiveLocale()]);
 
   return (
-    <SWRProvider
-      fallback={entries ? { [swrKeys.contentEntries]: entries } : undefined}
-    >
+    <SWRProvider fallback={entries ? { [swrKeys.contentEntries]: entries } : undefined}>
       <LangProvider initialLang={lang}>
-        <div className="flex min-h-screen items-center justify-center bg-lightTone1 text-textBlack100 text-fontSizeM font-normal tracking-[-0.03em] leading-[1.5] dark:bg-black">
+        <div className="bg-lightTone1 text-textBlack100 text-fontSizeM flex min-h-screen items-center justify-center leading-[1.5] font-normal tracking-[-0.03em] dark:bg-black">
           <main className="flex min-h-screen w-full flex-col">
             <Header />
             {children}

@@ -6,13 +6,12 @@
  *   npx tsx scripts/seed-content.ts
  *
  * Environment variables (optional, fall back to .env.local demo values):
- *   NEXT_PUBLIC_BASE_URL  – backend base URL
- *   SEED_EMAIL            – admin email
- *   SEED_PASSWORD         – admin password
+ *   NEXT_PUBLIC_BACKEND_URL – backend base URL
+ *   SEED_EMAIL – admin email
+ *   SEED_PASSWORD – admin password
  */
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_URL ?? "https://armstat-backend.it.massiv.cc";
+const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 const EMAIL = process.env.SEED_EMAIL ?? "admin@gov.am";
 const PASSWORD = process.env.SEED_PASSWORD ?? "admin123";
 
@@ -116,8 +115,7 @@ const entries: ContentEntry[] = [
   {
     key: "footer.copyright",
     locale: "en",
-    value:
-      "© 2025 Statistical Committee of the Republic of Armenia ARMSTAT. All rights reserved.",
+    value: "© 2025 Statistical Committee of the Republic of Armenia ARMSTAT. All rights reserved.",
     description: "Footer – copyright notice",
   },
 ];

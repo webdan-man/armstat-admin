@@ -24,7 +24,7 @@ type NewsItem = {
   updatedAt?: string;
 };
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "";
+const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
 
 function absolutizeUrl(path?: string): string | undefined {
   if (!path) return undefined;

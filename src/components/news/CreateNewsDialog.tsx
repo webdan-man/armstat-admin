@@ -95,10 +95,7 @@ export type NewsImageSubmitInfo = {
 type CreateNewsDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmitNews: (
-    values: CreateNewsFormValues,
-    image: NewsImageSubmitInfo
-  ) => Promise<void> | void;
+  onSubmitNews: (values: CreateNewsFormValues, image: NewsImageSubmitInfo) => Promise<void> | void;
   mode?: NewsDialogMode;
   initialValues?: CreateNewsFormValues;
   initialImageUrl?: string;
@@ -134,7 +131,7 @@ function resolveImageSrc(value: string): string {
   if (!value) return "";
   if (value.startsWith("blob:") || value.startsWith("data:")) return value;
   if (value.startsWith("http://") || value.startsWith("https://")) return value;
-  const base = (process.env.NEXT_PUBLIC_BASE_URL ?? "").replace(/\/$/, "");
+  const base = (process.env.NEXT_PUBLIC_BACKEND_URL ?? "").replace(/\/$/, "");
   return `${base}${value.startsWith("/") ? "" : "/"}${value}`;
 }
 

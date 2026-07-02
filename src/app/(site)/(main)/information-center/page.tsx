@@ -41,7 +41,7 @@ function getOrigin(url: string) {
 }
 
 async function getInformationCenterData(): Promise<InformationCenterResponse | null> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   if (!baseUrl) return null;
 
   const res = await fetch(`${baseUrl}/information-center`, { cache: "no-store" });
@@ -54,7 +54,7 @@ type InformationCenterPageProps = {
 };
 
 export default async function InformationCenterPage({ searchParams }: InformationCenterPageProps) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "";
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
   const assetBaseUrl = getOrigin(baseUrl);
   const { lang: langParam } = await searchParams;
   const [data, lang] = await Promise.all([getInformationCenterData(), getActiveLocale(langParam)]);
@@ -113,7 +113,7 @@ export default async function InformationCenterPage({ searchParams }: Informatio
                 <div className="mt-6 flex items-center gap-10">
                   {fileLink ? (
                     <a
-                      href={`${process.env.NEXT_PUBLIC_BASE_URL}${fileLink}`}
+                      href={`${process.env.NEXT_PUBLIC_BACKEND_URL}${fileLink}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-link flex items-center text-[12px]"

@@ -13,7 +13,7 @@ type NewsItem = {
   updatedAt?: string;
 };
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "";
+const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
 
 async function getNewsItem(id: string): Promise<NewsItem | null> {
   if (!BASE_URL) return null;

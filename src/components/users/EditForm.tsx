@@ -155,7 +155,7 @@ function EditUserForm({ id }: { id: string }) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.push("/admin/users")}
+              onClick={() => router.push("/users")}
               className="h-11 rounded-[8px] border-[#e0e0e0] bg-white px-5 text-[13px] font-semibold text-[#2c2c2c] hover:bg-[#f8f8f8]"
             >
               Չեղարկել

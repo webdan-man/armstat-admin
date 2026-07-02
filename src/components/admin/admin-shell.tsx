@@ -25,7 +25,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     userPermissionKeys.includes(perm.split(".")[0] + ".*");
 
   function handleLogout() {
-    router.push("/admin/logout");
+    router.push("/logout");
   }
 
   return (
@@ -33,7 +33,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-h-screen items-start bg-[#f9fafb]">
         <aside className="sticky top-0 flex h-screen max-h-screen w-70 shrink-0 flex-col self-start border-r border-[#e6e7eb] bg-white px-4 py-5">
           <div className="mb-6 shrink-0">
-            <Link href="/admin" className="flex items-center gap-[5px]">
+            <Link href="/" className="flex items-center gap-[5px]">
               <Image width={47} height={34} src="/logo.png" alt={"Logo"} />
               <div className={"flex flex-col"}>
                 <h2 className="text-[12px] leading-[14px] font-bold tracking-[-0.12px] text-[#2c2c2c]">

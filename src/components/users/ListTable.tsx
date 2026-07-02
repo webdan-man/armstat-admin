@@ -68,7 +68,7 @@ export default function ListTable() {
           type="button"
           disabled={!hasPermission("user.create")}
           className="h-11 shrink-0 rounded-lg border-0 bg-[#004d99] px-5 text-[13px] font-medium text-white hover:bg-[#004080] disabled:opacity-50"
-          onClick={() => router.push(`/admin/users/create`)}
+          onClick={() => router.push(`/users/create`)}
         >
           Ավելացնել օգտատեր
         </Button>
@@ -99,7 +99,7 @@ export default function ListTable() {
                       disabled={isCurrentUser}
                       variant="outline"
                       size="sm"
-                      onClick={() => router.push(`/admin/users/${item._id}`)}
+                      onClick={() => router.push(`/users/${item._id}`)}
                       className="mr-2"
                     >
                       Դիտել և խմբագրել
