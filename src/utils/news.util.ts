@@ -89,5 +89,5 @@ export function pickLatestNews<T extends NewsDateFields>(items: T[], limit = 3):
 export function truncateNewsPreview(text: string, maxLength = 40): string {
   const trimmed = text.trim();
   if (trimmed.length <= maxLength) return trimmed;
-  return trimmed.slice(0, maxLength);
+  return trimmed.slice(0, maxLength) + "...";
 }
